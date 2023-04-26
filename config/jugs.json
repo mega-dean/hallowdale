@@ -1,0 +1,67 @@
+[
+    {
+        "name": "bookcase",
+        "x": 0,
+        "h": 2,
+        "w": 2
+    },
+    {
+        "name": "chair",
+        "x": 2,
+        "h": 2,
+        "w": 2
+    },
+    {
+        "name": "breakable-wall",
+        "x": 4,
+        "h": 3,
+        "w": 2
+    },
+    {
+        "name": "purple-pen-jar",
+        "x": 6,
+        "h": 1,
+        "w": 1
+    },
+    {
+        "name": "security-camera",
+        "x": 7,
+        "h": 1,
+        "w": 1
+    },
+    {
+        "name": "trashcan",
+        "x": 9,
+        "h": 2
+    },
+    {
+        "name": "door",
+        "x": 10,
+        "h": 2
+    },
+    {
+        "name": "anthropology",
+        "x": 11,
+        "h": 3
+    },
+    {
+        "name": "skeleton",
+        "x": 12,
+        "h": 3
+    },
+    {
+        "name": "coat-rack",
+        "x": 13,
+        "h": 3
+    },
+    {
+        "name": "dog",
+        "x": 14,
+        "h": 2
+    },
+    {
+        "name": "big-door",
+        "x": 15,
+        "h": 5
+    }
+]

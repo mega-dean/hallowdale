@@ -1,0 +1,25 @@
+[
+    ["JUMP", "k"],
+    ["NAIL", "l"],
+    ["DASH", ";"],
+    ["C_DASH", "'"],
+    ["CAST", "O"],
+
+    ["UP", "W"],
+    ["LEFT", "A"],
+    ["DOWN", "S"],
+    ["RIGHT", "D"],
+    ["FOCUS", "Q"],
+    ["D_NAIL", "E"],
+    ["INTERACT", "[tab]"],
+
+    ["DEBUG_1", "1"],
+    ["DEBUG_2", "2"],
+    ["DEBUG_3", "3"],
+    ["DEBUG_4", "4"],
+    ["DEBUG_5", "5"],
+    ["DEBUG_UP", "[up]"],
+    ["DEBUG_LEFT", "[left]"],
+    ["DEBUG_DOWN", "[down]"],
+    ["DEBUG_RIGHT", "[up]"]
+]

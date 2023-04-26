@@ -1,0 +1,124 @@
+[
+    [ "ANNIES_BOOBS", {
+        "w": 24,
+        "h": 24,
+        "texture_configs": [
+            ["idle", {
+                "count": 4,
+                "duration": 0.3,
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "SHIRLEY", {
+        "w": 43,
+        "h": 39,
+        "texture_configs": [
+            ["idle", {
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "NEIL", {
+        "w": 28,
+        "h": 38,
+        "texture_configs": [
+            ["idle", {
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "LEONARD", {
+        "w": 27,
+        "h": 36,
+        "texture_configs": [
+            ["idle", {
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "GARRETT", {
+        "w": 26,
+        "h": 45,
+        "texture_configs": [
+            ["idle", {
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "CHANG", {
+        "w": 36,
+        "h": 43,
+        "texture_configs": [
+            ["idle", {
+                "count": 1,
+                "duration": 0.0,
+                "x_offset": 0,
+                "y_offset": 0
+            }],
+            ["idle-with-locker-boys", {
+                "count": 1,
+                "duration": 0.0,
+                "x_offset": 88,
+                "y_offset": 0
+            }],
+            ["attack-with-locker-boys", {
+                "count": 1,
+                "duration": 0.0,
+                "x_offset": 88,
+                "y_offset": 0
+            }],
+            ["take-damage", {
+                "count": 1,
+                "duration": 0.0,
+                "x_offset": 88,
+                "y_offset": 0
+            }],
+            ["attack", {
+                "count": 1,
+                "duration": 0.0,
+                "x_offset": 0,
+                "y_offset": 0
+            }],
+            ["walking", {
+                "count": 4,
+                "duration": 0.1,
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "HICKEY", {
+        "w": 327,
+        "h": 228,
+        "texture_configs": [
+            ["idle", {
+                "count": 1,
+                "duration": 0.0,
+                "x_offset": 0,
+                "y_offset": 0
+            }],
+            ["walking", {
+                "count": 4,
+                "duration": 0.3,
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }],
+    [ "VICKI", {
+        "w": 27,
+        "h": 36,
+        "texture_configs": [
+            ["idle", {
+                "x_offset": 0,
+                "y_offset": 0
+            }]
+        ]
+    }]
+]

@@ -1,0 +1,10 @@
+margin=120
+let-module=compact
+let-binding-spacing=compact
+type-decl=sparse
+cases-exp-indent=2
+if-then-else=fit-or-vertical
+parens-ite=true
+break-fun-decl=fit-or-vertical
+break-infix=fit-or-vertical
+break-cases=all

@@ -1,0 +1,220 @@
+{
+    "texture_configs": [
+        ["ABED", [
+            ["idle", {
+                "x_offset": 0,
+                "y_offset": 8
+            }],
+            ["jump", {
+                "x_offset": 9,
+                "y_offset": 8
+            }],
+            ["fall", {
+                "x_offset": 14,
+                "y_offset": 8
+            }],
+            ["dash", {
+                "x_offset": 22,
+                "y_offset": 12
+            }],
+            ["walk", {
+                "count": 4,
+                "duration": 0.1,
+                "x_offset": 9,
+                "y_offset": 8
+            }]
+        ]],
+        ["ANNIE", [
+            ["idle", {
+                "x_offset": 1,
+                "y_offset": 0
+            }],
+            ["walk", {
+                "count": 4,
+                "duration": 0.1,
+                "x_offset": 1,
+                "y_offset": 0
+            }],
+            ["nail", {
+                "x_offset": 1,
+                "y_offset": 0
+            }]
+        ]],
+        ["BRITTA", [
+            ["idle", {
+                "count": 6,
+                "duration": 0.25,
+                "x_offset": 2,
+                "y_offset": 3
+            }],
+            ["read", {
+                "x_offset": 3,
+                "y_offset": 2
+            }],
+            ["focus", {
+                "x_offset": 3,
+                "y_offset": 0
+            }],
+            ["crawl", {
+                "count": 4,
+                "x_offset": 18,
+                "y_offset": 0
+            }],
+            ["walk", {
+                "count": 8,
+                "x_offset": 5,
+                "y_offset": 3
+            }],
+            ["fall", {
+                "count": 4,
+                "x_offset": 8,
+                "y_offset": 2
+            }],
+            ["jump", {
+                "count": 4,
+                "x_offset": 3,
+                "y_offset": 3
+            }],
+            ["flap", {
+                "x_offset": 3,
+                "y_offset": 3
+            }],
+            ["cast", {
+                "count": 4,
+                "duration": 0.05,
+                "x_offset": 4,
+                "y_offset": 3
+            }],
+            ["dash", {
+                "count": 4,
+                "duration": 0.05,
+                "x_offset": 20,
+                "y_offset": 3
+            }],
+            ["dive", {
+                "x_offset": 6,
+                "y_offset": 2
+            }],
+            ["nail", {
+                "count": 3,
+                "x_offset": 4,
+                "y_offset": 3
+            }],
+            ["take-damage", {
+                "x_offset": 0,
+                "y_offset": 0
+            }],
+            ["wall-slide", {
+                "x_offset": 0,
+                "y_offset": 7
+            }]
+        ]],
+        ["JEFF", [
+            ["idle", {
+                "x_offset": 3,
+                "y_offset": 9
+            }],
+            ["walk", {
+                "count": 4,
+                "duration": 0.1,
+                "x_offset": 8,
+                "y_offset": 10
+            }],
+            ["nail", {
+                "x_offset": 7,
+                "y_offset": 9
+            }],
+            ["jump", {
+                "x_offset": 6,
+                "y_offset": 9
+            }],
+            ["fall", {
+                "x_offset": 9,
+                "y_offset": 9
+            }],
+            ["crawl", {
+                "x_offset": 18,
+                "y_offset": 0
+            }]
+        ]],
+        ["TROY", [
+            ["idle", {
+                "x_offset": 4,
+                "y_offset": 1
+            }],
+            ["jump", {
+                "x_offset": 8,
+                "y_offset": 1
+            }],
+            ["fall", {
+                "x_offset": 8,
+                "y_offset": 1
+            }],
+            ["dive", {
+                "x_offset": 6,
+                "y_offset": 2
+            }],
+            ["dash", {
+                "x_offset": 22,
+                "y_offset": 2
+            }],
+            ["walk", {
+                "count": 4,
+                "duration": 0.1,
+                "x_offset": 9,
+                "y_offset": 1
+            }],
+            ["dive-landing", {
+                "x_offset": 9,
+                "y_offset": 0
+            }]
+        ]]
+    ],
+    "action_config": [
+        ["jump", {
+            "duration": 0.0,
+            "cooldown": 0.166666,
+            "input_buffer": 0.2
+        }],
+        ["wall-jump", {
+            "duration": 0.166666,
+            "cooldown": 0.166666,
+            "input_buffer": 0.2
+        }],
+        ["double-jump", {
+            "duration": 0.0,
+            "cooldown": 0.0,
+            "input_buffer": 0.0
+        }],
+        ["nail", {
+            "duration": 0.25,
+            "cooldown": 0.333333,
+            "input_buffer": 0.2
+        }],
+        ["dash", {
+            "duration": 0.333333,
+            "cooldown": 0.6,
+            "input_buffer": 0.45
+        }],
+        ["c_dash", {
+            "duration": 3.333333,
+            "cooldown": 0.6,
+            "input_buffer": 0.45
+        }],
+        ["take-damage", {
+            "duration": 0.333333,
+            "cooldown": 0.6,
+            "input_buffer": 0.45
+        }],
+        ["cast", {
+            "duration": 0.3,
+            "cooldown": 0.3,
+            "input_buffer": 0.2
+        }],
+        ["focus", {
+            "duration": 1.5,
+            "cooldown": 0.0,
+            "input_buffer": 0.0
+        }]
+    ]
+}

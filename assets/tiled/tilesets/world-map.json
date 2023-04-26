@@ -1,0 +1,14 @@
+{ "columns":22,
+ "image":"world-map.png",
+ "imageheight":360,
+ "imagewidth":528,
+ "margin":0,
+ "name":"world-map",
+ "spacing":0,
+ "tilecount":330,
+ "tiledversion":"1.10.0",
+ "tileheight":24,
+ "tilewidth":24,
+ "type":"tileset",
+ "version":"1.10"
+}

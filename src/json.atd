@@ -1,0 +1,140 @@
+type tile_layer = {
+  name : string;
+  (* these ints are (gid - firstgid) *)
+  data : int list;
+  h <json name="height"> : int;
+  w <json name="width"> : int;
+  ~parallax_x <ocaml default="1.0"> <json name="parallaxx"> : float;
+  ~parallax_y <ocaml default="1.0"> <json name="parallaxy"> : float;
+  (* offsets are in px, not tiles *)
+  ~offset_x <ocaml default="0.0"> <json name="offsetx"> : float;
+  ~offset_y <ocaml default="0.0"> <json name="offsety"> : float;
+}
+
+type object_layer = {
+  name : string;
+  objects : coll_rect list;
+}
+
+(* the Type_field adapter pulls out the "type" field from json
+   from: { ..., "type": "some-type", ... }
+   into: ["some-type", { ... }]
+ *)
+type layer = [
+    TILE_LAYER <json name="tilelayer"> of tile_layer |
+    OBJECT_LAYER <json name="objectgroup"> of object_layer
+] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
+
+type coll_rect = {
+  name : string;
+  x : float;
+  y : float;
+  h <json name="height"> : float;
+  w <json name="width"> : float;
+}
+
+type object_group = {
+  objects : coll_rect list;
+}
+
+type collision = {
+  id : int;
+  objectgroup : object_group;
+}
+
+type tileset = {
+  name : string;
+  tile_h <json name="tileheight"> : float;
+  tile_w <json name="tilewidth">  : float;
+  source <json name="image"> : string;
+  columns : int;
+  (* only tiles with custom collision rects have a config here *)
+  ~collisions <json name="tiles"> : collision list;
+  tile_count <json name="tilecount"> : int;
+}
+
+type tileset_source = {
+  firstgid: int;
+  source : string;
+}
+
+type room = {
+  tile_h <json name="tileheight"> : float;
+  tile_w <json name="tilewidth">  : float;
+  h_in_tiles <json name="height"> : int;
+  w_in_tiles <json name="width"> : int;
+  layers : layer list;
+  tileset_sources <json name="tilesets"> : tileset_source list;
+}
+
+type global_map = {
+  file_name <json name="fileName"> : string;
+  x : int;
+  y : int;
+  h_in_pixels <json name="height"> : int;
+  w_in_pixels <json name="width"> : int;
+}
+
+type world = {
+  global_maps <json name="maps"> : global_map list;
+}
+
+(*
+ configs below this are not Tiled-specific
+*)
+
+type jug_metadata = {
+  name : string;
+  x : int;
+  ~w <ocaml default="1"> : int;
+  h : int;
+}
+
+type jug_metadata_file = jug_metadata list
+
+type lore_file = (string * string) list
+type keybinds_file = (string * string) list
+
+
+type texture_config = {
+  ~count <ocaml default="1"> : int;
+  ~duration <ocaml default="0.066666"> : float;
+  x_offset : int;
+  y_offset : int;
+}
+
+type enemy_config = {
+  health : int;
+  w : int;
+  h : int;
+  ~kind : string;
+  (* TODO maybe rename this, since the other "props" are temporary/dynamic values, while these don't change *)
+  props : (string * float) list;
+  texture_configs : (string * texture_config) list;
+}
+
+type enemies_file = (string * enemy_config) list
+
+type ghost_texture_configs = (string * texture_config) list
+
+(* TODO not sure what the defaults should be *)
+type ghost_action = {
+  ~duration <ocaml default="0.066666"> : float;
+  ~cooldown <ocaml default="0.0"> : float;
+  ~input_buffer <ocaml default="0.0"> : float;
+}
+
+type ghosts_file = {
+  (* ghost name * texture_configs *)
+  texture_configs : (string * ghost_texture_configs) list;
+  action_config : (string * ghost_action) list;
+}
+
+type npc_config = {
+  w : int;
+  h : int;
+  texture_configs : (string * texture_config) list;
+}
+
+type npcs_file = (string * npc_config) list
+

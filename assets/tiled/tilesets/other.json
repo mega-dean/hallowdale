@@ -1,0 +1,14 @@
+{ "columns":44,
+ "image":"other.png",
+ "imageheight":720,
+ "imagewidth":1056,
+ "margin":0,
+ "name":"other",
+ "spacing":0,
+ "tilecount":1320,
+ "tiledversion":"1.10.1",
+ "tileheight":24,
+ "tilewidth":24,
+ "type":"tileset",
+ "version":"1.10"
+}

@@ -1,0 +1,482 @@
+{
+    "maps": [
+        {
+            "fileName": "forgotten_deans-pass.json",
+            "height": 1440,
+            "width": 2496,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "fileName": "infected_teachers-lounge.json",
+            "height": 864,
+            "width": 672,
+            "x": 2496,
+            "y": -456
+        },
+        {
+            "fileName": "infected_a.json",
+            "height": 720,
+            "width": 1440,
+            "x": 3168,
+            "y": 216
+        },
+        {
+            "fileName": "infected_b.json",
+            "height": 720,
+            "width": 1440,
+            "x": 3168,
+            "y": 936
+        },
+        {
+            "fileName": "forgotten_cafeteria.json",
+            "height": 1080,
+            "width": 2160,
+            "x": 3168,
+            "y": 1656
+        },
+        {
+            "fileName": "forgotten_stairwell.json",
+            "height": 1560,
+            "width": 720,
+            "x": 5328,
+            "y": 1536
+        },
+        {
+            "fileName": "trampoline_a.json",
+            "height": 480,
+            "width": 1200,
+            "x": 6048,
+            "y": 1656
+        },
+        {
+            "fileName": "trampoline_b.json",
+            "height": 480,
+            "width": 960,
+            "x": 7464,
+            "y": 1656
+        },
+        {
+            "fileName": "trampoline_d.json",
+            "height": 600,
+            "width": 1440,
+            "x": 6528,
+            "y": 2136
+        },
+        {
+            "fileName": "trampoline_dreamer.json",
+            "height": 600,
+            "width": 720,
+            "x": 7776,
+            "y": 1056
+        },
+        {
+            "fileName": "trampoline_c.json",
+            "height": 360,
+            "width": 1176,
+            "x": 7008,
+            "y": 624
+        },
+        {
+            "fileName": "beenz_1-a.json",
+            "height": 960,
+            "width": 480,
+            "x": 6048,
+            "y": 2760
+        },
+        {
+            "fileName": "beenz_outlands-a.json",
+            "height": 480,
+            "width": 960,
+            "x": 6528,
+            "y": 2904
+        },
+        {
+            "fileName": "beenz_outlands-b.json",
+            "height": 840,
+            "width": 384,
+            "x": 7104,
+            "y": 3384
+        },
+        {
+            "fileName": "beenz_outlands-c.json",
+            "height": 1488,
+            "width": 480,
+            "x": 7488,
+            "y": 2736
+        },
+        {
+            "fileName": "beenz_2-a.json",
+            "height": 720,
+            "width": 432,
+            "x": 6528,
+            "y": 3456
+        },
+        {
+            "fileName": "beenz_2-b.json",
+            "height": 480,
+            "width": 480,
+            "x": 6048,
+            "y": 3792
+        },
+        {
+            "fileName": "beenz_2-c.json",
+            "height": 432,
+            "width": 2088,
+            "x": 6048,
+            "y": 4272
+        },
+        {
+            "fileName": "beenz_3-elevator.json",
+            "height": 2160,
+            "width": 384,
+            "x": 8136,
+            "y": 2496
+        },
+        {
+            "fileName": "beenz_3-a.json",
+            "height": 336,
+            "width": 1200,
+            "x": 8136,
+            "y": 2160
+        },
+        {
+            "fileName": "beenz_3-colo.json",
+            "height": 720,
+            "width": 960,
+            "x": 8592,
+            "y": 2496
+        },
+        {
+            "fileName": "beenz_4-a.json",
+            "height": 528,
+            "width": 384,
+            "x": 9552,
+            "y": 3024
+        },
+        {
+            "fileName": "beenz_4-colo.json",
+            "height": 960,
+            "width": 960,
+            "x": 8592,
+            "y": 3336
+        },
+        {
+            "fileName": "beenz_5-lounge.json",
+            "height": 480,
+            "width": 720,
+            "x": 9552,
+            "y": 4056
+        },
+        {
+            "fileName": "basement_c.json",
+            "height": 720,
+            "width": 1200,
+            "x": 5328,
+            "y": 5664
+        },
+        {
+            "fileName": "basement_abyss-climb.json",
+            "height": 3600,
+            "width": 1440,
+            "x": 3888,
+            "y": 4272
+        },
+        {
+            "fileName": "basement_a.json",
+            "height": 1608,
+            "width": 672,
+            "x": 5328,
+            "y": 3096
+        },
+        {
+            "fileName": "basement_b.json",
+            "height": 1200,
+            "width": 480,
+            "x": 6528,
+            "y": 4968
+        },
+        {
+            "fileName": "basement_d.json",
+            "height": 384,
+            "width": 2040,
+            "x": 3288,
+            "y": 3720
+        },
+        {
+            "fileName": "ac-repair_a.json",
+            "height": 480,
+            "width": 480,
+            "x": 8424,
+            "y": 1656
+        },
+        {
+            "fileName": "ac-repair_c.json",
+            "height": 840,
+            "width": 720,
+            "x": 8904,
+            "y": 1320
+        },
+        {
+            "fileName": "ac-repair_e.json",
+            "height": 336,
+            "width": 720,
+            "x": 8496,
+            "y": 984
+        },
+        {
+            "fileName": "ac-repair_d.json",
+            "height": 480,
+            "width": 336,
+            "x": 9288,
+            "y": 840
+        },
+        {
+            "fileName": "ac-repair_f.json",
+            "height": 384,
+            "width": 720,
+            "x": 9624,
+            "y": 1800
+        },
+        {
+            "fileName": "ac-repair_b.json",
+            "height": 480,
+            "width": 480,
+            "x": 9864,
+            "y": 1320
+        },
+        {
+            "fileName": "ac-repair_dreamer.json",
+            "height": 720,
+            "width": 480,
+            "x": 10104,
+            "y": 600
+        },
+        {
+            "fileName": "ac-repair_g.json",
+            "height": 384,
+            "width": 1920,
+            "x": 8184,
+            "y": 456
+        },
+        {
+            "fileName": "final_boss.json",
+            "height": 720,
+            "width": 720,
+            "x": 3504,
+            "y": 2736
+        },
+        {
+            "fileName": "computer_a.json",
+            "height": 336,
+            "width": 768,
+            "x": 2520,
+            "y": 3744
+        },
+        {
+            "fileName": "computer_d.json",
+            "height": 480,
+            "width": 1440,
+            "x": 2448,
+            "y": 5352
+        },
+        {
+            "fileName": "computer_e.json",
+            "height": 480,
+            "width": 1440,
+            "x": 1416,
+            "y": 4872
+        },
+        {
+            "fileName": "computer_f.json",
+            "height": 480,
+            "width": 1800,
+            "x": 0,
+            "y": 3600
+        },
+        {
+            "fileName": "computer_b.json",
+            "height": 480,
+            "width": 1440,
+            "x": 360,
+            "y": 4272
+        },
+        {
+            "fileName": "computer_dreamer.json",
+            "height": 480,
+            "width": 840,
+            "x": 2520,
+            "y": 4296
+        },
+        {
+            "fileName": "computer_c.json",
+            "height": 1272,
+            "width": 720,
+            "x": 1800,
+            "y": 3600
+        },
+        {
+            "fileName": "forgotten_a.json",
+            "height": 864,
+            "width": 768,
+            "x": 4560,
+            "y": 2736
+        },
+        {
+            "fileName": "forgotten_e.json",
+            "height": 480,
+            "width": 1344,
+            "x": 1824,
+            "y": 1776
+        },
+        {
+            "fileName": "forgotten_f.json",
+            "height": 480,
+            "width": 960,
+            "x": 864,
+            "y": 1608
+        },
+        {
+            "fileName": "forgotten_g.json",
+            "height": 720,
+            "width": 1440,
+            "x": 288,
+            "y": -720
+        },
+        {
+            "fileName": "forgotten_b.json",
+            "height": 2112,
+            "width": 864,
+            "x": 0,
+            "y": 1488
+        },
+        {
+            "fileName": "infected_c.json",
+            "height": 720,
+            "width": 2880,
+            "x": 3576,
+            "y": -1800
+        },
+        {
+            "fileName": "trampoline_e.json",
+            "height": 1440,
+            "width": 720,
+            "x": 6288,
+            "y": 216
+        },
+        {
+            "fileName": "infected_d.json",
+            "height": 480,
+            "width": 1320,
+            "x": 2136,
+            "y": -1560
+        },
+        {
+            "fileName": "trampoline_f.json",
+            "height": 672,
+            "width": 432,
+            "x": 7296,
+            "y": 984
+        },
+        {
+            "fileName": "beenz_5-palace-grounds.json",
+            "height": 720,
+            "width": 960,
+            "x": 10272,
+            "y": 3816
+        },
+        {
+            "fileName": "forgotten_c.json",
+            "height": 1152,
+            "width": 528,
+            "x": -528,
+            "y": 960
+        },
+        {
+            "fileName": "infected_e.json",
+            "height": 1152,
+            "width": 720,
+            "x": 3168,
+            "y": -1080
+        },
+        {
+            "fileName": "forgotten_d.json",
+            "height": 960,
+            "width": 768,
+            "x": 1728,
+            "y": -1080
+        },
+        {
+            "fileName": "forgotten_h.json",
+            "height": 480,
+            "width": 1152,
+            "x": 576,
+            "y": -1296
+        },
+        {
+            "fileName": "forgotten_i.json",
+            "height": 480,
+            "width": 912,
+            "x": -336,
+            "y": -1296
+        },
+        {
+            "fileName": "basement_e.json",
+            "height": 480,
+            "width": 1200,
+            "x": 5328,
+            "y": 4704
+        },
+        {
+            "fileName": "city_a.json",
+            "height": 600,
+            "width": 1680,
+            "x": 4608,
+            "y": 216
+        },
+        {
+            "fileName": "city_b.json",
+            "height": 720,
+            "width": 960,
+            "x": 5136,
+            "y": 816
+        },
+        {
+            "fileName": "city_c.json",
+            "height": 960,
+            "width": 480,
+            "x": 5088,
+            "y": -744
+        },
+        {
+            "fileName": "city_d.json",
+            "height": 960,
+            "width": 480,
+            "x": 5640,
+            "y": -744
+        },
+        {
+            "fileName": "city_e.json",
+            "height": 504,
+            "width": 1200,
+            "x": 3888,
+            "y": -432
+        },
+        {
+            "fileName": "trampoline_g.json",
+            "height": 1536,
+            "width": 720,
+            "x": 6456,
+            "y": -1320
+        },
+        {
+            "fileName": "basement_f.json",
+            "height": 288,
+            "width": 1200,
+            "x": 5328,
+            "y": 7584
+        }
+    ],
+    "onlyShowAdjacentMaps": false,
+    "type": "world"
+}
