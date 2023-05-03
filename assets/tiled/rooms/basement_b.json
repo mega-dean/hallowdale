@@ -92,6 +92,28 @@
          "y":0
         }, 
         {
+         "draworder":"topdown",
+         "id":5,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":65,
+                 "id":6,
+                 "name":"ability_claw",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":53.5,
+                 "x":230.583333333333,
+                 "y":1085.5
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 332, 332,
@@ -147,7 +169,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":20,
          "x":0,
          "y":0
@@ -208,13 +230,13 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":20,
          "x":0,
          "y":0
         }],
- "nextlayerid":5,
- "nextobjectid":6,
+ "nextlayerid":6,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
