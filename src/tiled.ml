@@ -304,12 +304,12 @@ module Room = struct
                 in
                 (sprite, destroy_resources.fragments)
             in
-            let hits =
+            let door_health =
               (* TODO these numbers are "number of hits - 1" because checking `> 0` in the slash-resolving
                  code makes things a little simpler *)
               match List.assoc_opt idx room.idx_configs with
-              | Some (DOOR_HITS n) -> n
-              | _ -> 0
+              | Some (DOOR_HITS n) -> Some { hits = n; last_hit_at = -1. }
+              | _ -> None
             in
             {
               tile_idxs = !idxs |> uniq;
@@ -317,7 +317,7 @@ module Room = struct
               stub_sprite;
               fragments;
               transformation_bits = Tile.transformation_bits tile_gid;
-              hits;
+              door_health;
             }
           in
           if tile_gid <> 0 then

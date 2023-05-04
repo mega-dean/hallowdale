@@ -47,6 +47,11 @@ let window : window_config =
     144
     (* 60 *)
   in
+  if fps < 60 then
+    (* TODO could make a separate utils.ml file so this can use printing fns, but this whole config
+       file might go away as things are moved into json configs
+    *)
+    failwith (Printf.sprintf "got invalid fps %d, needs to be at least 60 to avoid dropping inputs" fps);
   { width; height; center_x = Float.of_int width /. 2.; center_y = Float.of_int height /. 2.; fps }
 
 type ghost_config = {
@@ -73,7 +78,7 @@ let ghost : ghost_config =
     vx = 400.;
     jump_vy;
     wall_jump_vy;
-    wall_slide_vy = 40.;
+    wall_slide_vy = 400.;
     dash_duration = 20;
     debug_v = 20.;
     small_debug_v = 2.;
@@ -93,7 +98,7 @@ let action : action_config =
     max_soul = 99;
     soul_per_cast = 33;
     soul_gained_per_nail = 11;
-    attack_duration = 0.2;
+    attack_duration = 0.07;
     vengeful_spirit_vx = 800.;
     vengeful_spirit_duration = 1.5;
   }
@@ -115,4 +120,3 @@ type debug_keys = {
 }
 
 let debugs = { n = false; t = false; zero = false; eight = false; nine = true }
-

@@ -9,8 +9,8 @@ let entity_name (e : entity) = sprite_name e.sprite
 let animation_src (anim_src : animation_src) =
   match anim_src with
   | STILL r -> fmt "STILL (at %s)" (rect r)
-  | PARTICLE a -> fmt "PARTICLE (frame %d of %d)" a.current_idx (List.length a.frames)
-  | ANIMATED a -> fmt "ANIMATED (frame %d of %d)" a.current_idx (List.length a.frames)
+  | PARTICLE a -> fmt "PARTICLE (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
+  | LOOPED a -> fmt "LOOPED (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
 
 let direction (d : direction) : string =
   match d with
@@ -18,6 +18,14 @@ let direction (d : direction) : string =
   | DOWN -> "down"
   | LEFT -> "left"
   | RIGHT -> "right"
+
+let attack_direction (d : direction option) : string =
+  match d with
+  | None -> "not attacking"
+  | Some UP -> "up"
+  | Some DOWN -> "down"
+  | Some LEFT -> "left"
+  | Some RIGHT -> "right"
 
 let ghost_id id =
   match id with

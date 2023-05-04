@@ -529,28 +529,33 @@ let tick state : state =
     List.iter draw_ghost ghosts_by_id
   in
 
-  let draw_ghost (g : ghost) =
-    let draw_slash_sprites () =
-      match state.ghost.slash with
+  let draw_ghost (ghost : ghost) =
+    let draw_child () =
+      match ghost.child with
       | None -> ()
-      | Some slash ->
-        Draw.image slash.sprite.texture.image (src_Rect slash.sprite) (slash.sprite.dest |> to_Rect)
-          (Raylib.Vector2.zero ()) 0.0 Color.raywhite;
-        if state.debug.enabled then
-          debug_rect slash.sprite.dest
+      | Some child -> (
+        let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
+        let draw_child_sprite (sprite : sprite) =
+          sprite.dest.pos <- get_child_dest sprite.dest.w sprite.dest.h;
+          Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0
+            Color.raywhite
+        in
+        match child.kind with
+        | NAIL slash -> draw_child_sprite slash.sprite
+        | _ -> ())
     in
     let draw_vengeful_spirit (p : projectile) =
       if state.debug.enabled then
         debug_rect_outline ~size:2. ~color:Color.red p.entity.dest;
       draw_entity p.entity
     in
-    List.iter draw_vengeful_spirit g.spawned_vengeful_spirits;
+    List.iter draw_vengeful_spirit ghost.spawned_vengeful_spirits;
     if state.debug.enabled then (
-      debug_rect_outline ~size:2. ~color:Color.green g.entity.sprite.dest;
-      debug_rect_outline ~size:3. ~color:Color.yellow g.entity.dest);
+      debug_rect_outline ~size:2. ~color:Color.green ghost.entity.sprite.dest;
+      debug_rect_outline ~size:3. ~color:Color.yellow ghost.entity.dest);
     let shine_sprite : sprite =
-      (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame
-      *)
+      (* TODO maybe have different shine for each area (this one might be too bright for basement or computer-wing) *)
+      (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame *)
       let size = 1200. in
       {
         ident = "shine";
@@ -559,8 +564,8 @@ let tick state : state =
           {
             pos =
               {
-                x = g.entity.dest.pos.x -. (size /. 2.) +. (Config.ghost.width *. Config.scale.ghost /. 2.);
-                y = g.entity.dest.pos.y -. (size /. 2.) +. (Config.ghost.height *. Config.scale.ghost /. 2.);
+                x = ghost.entity.dest.pos.x -. (size /. 2.) +. (Config.ghost.width *. Config.scale.ghost /. 2.);
+                y = ghost.entity.dest.pos.y -. (size /. 2.) +. (Config.ghost.height *. Config.scale.ghost /. 2.);
               };
             w = size;
             h = size;
@@ -568,9 +573,10 @@ let tick state : state =
         facing_right = false;
       }
     in
+    (* TODO add new child position ALIGN_CENTERS *)
     draw_sprite shine_sprite;
-    draw_entity g.entity;
-    draw_slash_sprites ()
+    draw_entity ghost.entity;
+    draw_child ()
   in
 
   let draw_hud camera_x camera_y =
@@ -792,9 +798,9 @@ let tick state : state =
       Raylib.Vector2.y (Raylib.Camera2D.target state.camera) -. Config.window.center_y )
   in
   Raylib.begin_drawing ();
-  (* bright green to make tile seams more obvious, but eventually this will be black (or maybe gray) *)
-  Raylib.clear_background (Color.create 50 50 50 255);
+  (* bright green to make tile seams more obvious *)
   (* Raylib.clear_background (Color.create 0 255 0 255); *)
+  Raylib.clear_background state.room.area.bg_color;
   Raylib.begin_mode_2d state.camera;
   draw_bg_tiles state camera_x camera_y;
   draw_solid_tiles state camera_x camera_y;

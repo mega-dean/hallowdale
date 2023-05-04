@@ -84,7 +84,9 @@ let get_steps ?(increase_health = false) state (interaction_name : string) : ste
           "to scootenanny forwards.";
           "Use the chair to scootenanny quickly along the ground or through the air.";
         ]
-      (* this only hides the chair when it is picked up, but it shows up again when the room is re-entered *)
+      (* TODO this only hides the chair when it is picked up, but it shows up again when the room is re-entered
+         - probably can fix this when adding indicators for interactions
+      *)
       @ [ STEP (HIDE_LAYER "bg-iso2") ]
     | "ability_double-bouncies" ->
       get_ability_steps "monarch_wings" 0. 4. [ "Consumed the"; "Double Bouncies." ]
@@ -94,7 +96,12 @@ let get_steps ?(increase_health = false) state (interaction_name : string) : ste
           "At the apex of each bounce, there is a moment outside of time, outside of words, outside of everything - a \
            perfect moment. A silent moment. I call it the World's Whisper.";
         ]
-      (* this only hides the chair when it is picked up, but it shows up again when the room is re-entered *)
+      @ [ STEP (HIDE_LAYER "bg-iso2") ]
+    | "ability_claw" ->
+      get_ability_steps "mantis_claw" 0. 4. [ "Consumed the"; "Mantis Claw." ]
+        [
+          "TODO claw";
+        ]
       @ [ STEP (HIDE_LAYER "bg-iso2") ]
     | "ability_starburns-dash" ->
       get_ability_steps "crystal_heart" 0. 5. [ "Consumed the"; "Starburns Crystal." ]
@@ -103,7 +110,6 @@ let get_steps ?(increase_health = false) state (interaction_name : string) : ste
           "to concentrate the force.";
           "Yeah, he uses some kind of crystal instead of deodorant.";
         ]
-      (* this only hides the chair when it is picked up, but it shows up again when the room is re-entered *)
       @ [ STEP (HIDE_LAYER "bg-iso2") ]
     | "info_focus" ->
       [

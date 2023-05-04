@@ -68,8 +68,8 @@ let apply_v ?(debug = None) dt (e : entity) =
     if recoil.reset_v then
       e.v.y <- 0.;
     e.dest.pos.y <- e.dest.pos.y +. (recoil.speed *. dt);
-    if recoil.time_left.s > 0. then
-      recoil.time_left <- { s = recoil.time_left.s -. dt }
+    if recoil.time_left.seconds > 0. then
+      recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
     else
       e.y_recoil <- None);
   match e.x_recoil with
@@ -78,8 +78,8 @@ let apply_v ?(debug = None) dt (e : entity) =
     if recoil.reset_v then
       e.v.x <- 0.;
     e.dest.pos.x <- e.dest.pos.x +. (recoil.speed *. dt);
-    if recoil.time_left.s > 0. then
-      recoil.time_left <- { s = recoil.time_left.s -. dt }
+    if recoil.time_left.seconds > 0. then
+      recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
     else
       e.x_recoil <- None
 
@@ -144,6 +144,23 @@ let update_pos (state : state) ?(debug = None) (e : entity) =
     e.v.y <- e.v.y +. dvy;
     get_floor_collisions state e |> apply_collisions e)
 
+let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
+  let to_the_left () = { y = parent.dest.pos.y; x = parent.dest.pos.x -. child_w +. (parent.dest.w /. 2.) } in
+  let to_the_right () = { y = parent.dest.pos.y; x = parent.dest.pos.x +. (parent.dest.w /. 2.) } in
+  match relative_pos with
+  | ABOVE -> { y = parent.dest.pos.y -. (child_h /. 2.); x = parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.) }
+  | BELOW -> { y = parent.dest.pos.y; x = parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.) }
+  | IN_FRONT ->
+    if parent.sprite.facing_right then
+      to_the_right ()
+    else
+      to_the_left ()
+  | BEHIND ->
+    if parent.sprite.facing_right then
+      to_the_left ()
+    else
+      to_the_right ()
+
 let on_ground (e : entity) = e.current_floor <> None
 let descending (e : entity) = e.v.y > 0.
 let is_on_screen' (r : rect) = not (r.pos.x < 0. && r.pos.y < 0.)
@@ -205,7 +222,7 @@ let create_for_sprite (sprite : sprite) ?(inanimate = false) ?(v = Zero.vector (
 let to_texture_config asset_dir character_name ((pose_name, json) : string * Json_t.texture_config) : texture_config =
   {
     count = json.count;
-    duration = { s = json.duration };
+    duration = { seconds = json.duration };
     x_offset = json.x_offset |> Int.to_float;
     y_offset = json.y_offset |> Int.to_float;
     asset_dir;

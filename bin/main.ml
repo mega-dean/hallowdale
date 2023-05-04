@@ -10,7 +10,12 @@ let rec loop (state : state) =
     Raylib.close_window ()
   | false ->
     if Hallowdale.Controls.key_pressed DEBUG_5 then
-      state.debug.enabled <- not state.debug.enabled;
+      if state.debug.enabled then (
+        state.debug.enabled <- false;
+        print "disabled debug at %d\n\\------------------\n" state.frame.idx)
+      else (
+        state.debug.enabled <- true;
+        print "\n/-----------------\nenabled debug at %d" state.frame.idx);
     state |> Hallowdale.State.tick |> Hallowdale.Render.tick |> loop
 
 let () =

@@ -90,7 +90,7 @@ type bounds = {
 }
 
 type time = { mutable at : float }
-type duration = { s : float (* in seconds *) }
+type duration = { seconds : float (* in seconds *) }
 type color = Raylib.Color.t
 
 module Zero = struct
@@ -121,18 +121,16 @@ type animation_frame = {
 *)
 type animation = {
   frames : animation_frame list;
-  mutable current_idx : int;
-  mutable current_frame_clock : float;
+  mutable frame_idx : int;
+  mutable frame_started : time;
 }
 
 type animation_src =
   | STILL of rect
-  | ANIMATED of animation
-  | (* TODO maybe use a property like animation.kind to distinguish looping vs. one-time animations *)
-    PARTICLE of
-      animation
+  | LOOPED of animation
+  | PARTICLE of animation
 
-let get_frame (a : animation) : animation_frame = List.nth a.frames (a.current_idx mod List.length a.frames)
+let get_frame (a : animation) : animation_frame = List.nth a.frames (a.frame_idx mod List.length a.frames)
 let make_single_frame ~w ~h : rect = { w; h; pos = { x = 0.; y = 0. } }
 
 type asset_dir =
@@ -178,14 +176,14 @@ let animation_loop_duration (t : texture) : float =
   match t.animation_src with
   | STILL _ -> failwith "can't get animation_loop_duration for STILL"
   | PARTICLE animation
-  | ANIMATED animation ->
-    (get_frame animation).duration.s *. (List.length animation.frames |> Int.to_float)
+  | LOOPED animation ->
+    (get_frame animation).duration.seconds *. (List.length animation.frames |> Int.to_float)
 
 let get_src (t : texture) : rect =
   match t.animation_src with
   | STILL frame_src -> frame_src
   | PARTICLE animation
-  | ANIMATED animation ->
+  | LOOPED animation ->
     (get_frame animation).src
 
 let get_scaled_texture_size ?(scale = Config.scale.room) (t : texture) =
@@ -343,6 +341,7 @@ type ghost_pose =
   | WALL_JUMPING
   | WALL_SLIDING of rect
 
+(* TODO maybe this should be (ghost_pose * texture) list now, but we need to match against ghost_pose anyway to apply side-effects *)
 type ghost_textures = {
   cast : texture;
   crawl : texture;
@@ -610,6 +609,9 @@ type soul = {
 }
 
 type ghost_action_config = {
+  (* TODO add frame_duration
+     - this might be used inconsistently right now, probably need to consolidate usages
+  *)
   duration : duration;
   cooldown : duration;
   input_buffer : duration;
@@ -623,6 +625,7 @@ type ghost_action = {
   mutable doing_until : time;
 }
 
+(* this keeps track of the last time the ghost performed these actions *)
 type ghost_actions = {
   cast : ghost_action;
   (* TODO maybe add c_dash, maybe not - it doesn't have a duration like other actions, so it needs some unique handling *)
@@ -639,10 +642,8 @@ type ghost_actions = {
    a new pose is set, so it can still render the latest pose
    - this data structure tracks the variant arguments that need to be checked/re-set in future frames
 *)
-type pose_status = {
-  mutable attack_direction : direction option;
-  mutable wall : rect option;
-}
+type pose_status = { (* mutable attack_direction : direction option; *)
+                     mutable wall : rect option }
 
 type frame_input = {
   mutable pressed : bool;
@@ -687,20 +688,47 @@ type abilities = {
   mutable howling_wraiths : bool;
 }
 
+type relative_position =
+  | IN_FRONT
+  | BEHIND
+  | ABOVE
+  | BELOW
+
+(* - used for things that are "attached" to the ghost, ie their position depends on ghost
+   - so spawned_vengeful_spirits are not children, but dive and shreik are
+   - only one of these things should be rendered on the screen at a time
+   - some things are purely visual (FOCUS)
+   - some will have collisions, like NAIL, DIVE maybe, C_DASH_WHOOSH
+*)
+type ghost_child_kind =
+  | NAIL of slash
+  (* | DASH_WHOOSH of sprite *)
+  (* | C_DASH_WHOOSH of sprite *)
+  (* | DIVE of sprite *)
+  | FOCUS of sprite
+
+(* TODO might want a bool property for "render in front of or behind parent", esp if this is used for enemy children sprites *)
+type ghost_child = {
+  kind : ghost_child_kind;
+  relative_pos : relative_position;
+}
+
 type ghost = {
   current : pose_status;
   shared_textures : shared_textures;
   actions : ghost_actions;
   entity : entity;
+  (* config : ghost_config; *)
   mutable abilities : abilities;
   mutable in_party : bool;
   mutable id : ghost_id;
   mutable textures : ghost_textures;
+  mutable child : ghost_child option;
   mutable health : health;
   mutable soul : soul;
   mutable can_dash : bool;
   mutable can_flap : bool;
-  mutable slash : slash option;
+  (* mutable slash : slash option; *)
   mutable spawned_vengeful_spirits : projectile list;
 }
 
@@ -730,6 +758,11 @@ type tileset = {
   tiles : texture array;
 }
 
+type door_health = {
+  mutable hits : int;
+  mutable last_hit_at : float;
+}
+
 (* - a rectangle of tiles that is grouped into a single collision
    -  eg floors, jugs, doors
 *)
@@ -742,7 +775,7 @@ type tile_group = {
   *)
   fragments : entity list;
   tile_idxs : int list; (* used for tracking destroyed tiles *)
-  mutable hits : int;
+  door_health : door_health option;
 }
 
 (* seems redundant to have both of these, but it's used to distinguish between things that are in the same plane as the ghost (ie parallax 1)
@@ -759,7 +792,7 @@ type layer_config = {
   render : layer_render_config;
   collides_with_ghost : bool;
   damages_ghost : bool;
-  pogo : bool;
+  pogoable : bool;
   destroyable : bool;
   permanently_removable : bool;
   shaded : bool;
@@ -792,6 +825,7 @@ type area_id =
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
+  bg_color : Raylib.Color.t;
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
@@ -967,6 +1001,11 @@ type room_location = {
 type world = (room_id * room_location) list
 
 type texture_cache = {
+  (* TODO this causes every damage sprite to share the same texture
+     - multiple sprites can still be rendered at separate dests, but they animations are synced
+     - so creating a new damage sprite while one is on the screen will cause it to reset at the beginning
+     - in practice this doesn't matter because the animation is so short, but it might cause problems for other cached textures
+ *)
   damage : texture;
   ability_outlines : texture;
 }

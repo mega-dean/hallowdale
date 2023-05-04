@@ -183,7 +183,7 @@ let init
                   render = { bg = has "bg"; fg = has "fg" };
                   collides_with_ghost = has "collides";
                   damages_ghost = has "damages";
-                  pogo = has "pogo";
+                  pogoable = has "pogo";
                   destroyable = has "destroyable";
                   permanently_removable = has "permanently_removable";
                   shaded = has "shaded";
@@ -336,7 +336,10 @@ let init
     | MEOW_MEOW_BEENZ -> Raylib.Color.create 50 50 50 255
     | FINAL -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
   in
-  let area = { id = area_id; tint } in
+  let bg_color =
+    Raylib.Color.create (Raylib.Color.r tint / 7) (Raylib.Color.g tint / 7) (Raylib.Color.b tint / 7) 255
+  in
+  let area = { id = area_id; tint; bg_color } in
   {
     area;
     id = room_id;

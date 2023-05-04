@@ -15,8 +15,8 @@ let read_config path parse_fn json_file_of_string =
 let read_npcs_config () : (npc_id * json_npc_config) list =
   read_config npcs_config_path Npc.parse_name Json_j.npcs_file_of_string
 
-let read_enemies_config () : (enemy_id * json_enemy_config) list =
-  read_config enemies_config_path Enemy.parse_name Json_j.enemies_file_of_string
+let read_enemies_config () : Json_t.enemies_file =
+  Tiled.read_whole_file (fmt "../%s" enemies_config_path) |> Json_j.enemies_file_of_string
 
 let read_ghost_configs () : (string * ghost_action_config) list * (ghost_id * texture_config list) list =
   let ghost_file : Json_t.ghosts_file =
@@ -39,7 +39,7 @@ let read_ghost_configs () : (string * ghost_action_config) list * (ghost_id * te
         character_name = ghost_id_str;
         pose_name;
         count = ghost_pose.count;
-        duration = { s = ghost_pose.duration };
+        duration = { seconds = ghost_pose.duration };
         x_offset = ghost_pose.x_offset |> Int.to_float;
         y_offset = ghost_pose.y_offset |> Int.to_float;
       }
@@ -51,9 +51,9 @@ let read_ghost_configs () : (string * ghost_action_config) list * (ghost_id * te
   let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
     ( name,
       {
-        duration = { s = json_ghost_action.duration };
-        cooldown = { s = json_ghost_action.cooldown };
-        input_buffer = { s = json_ghost_action.input_buffer };
+        duration = { seconds = json_ghost_action.duration };
+        cooldown = { seconds = json_ghost_action.cooldown };
+        input_buffer = { seconds = json_ghost_action.input_buffer };
       } )
   in
   let actions : (string * ghost_action_config) list = List.map parse_ghost_action ghost_file.action_config in
@@ -72,14 +72,13 @@ let init () : state =
         (* ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.); *)
 
         (* duncan fight *)
-        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.); *)
+        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.);
         (* past duncan fight *)
         (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
+
         (* by the breakable wall *)
-
-        (* ("infected_a", IC_A, true, true, true, 500., 1800.); *)
+        ("infected_a", IC_A, true, true, true, 2200., 1800.);
         (* locker boys fight *)
-
         (* ("infected_b", IC_B, true, true, false, 1700., 900.); *)
         (* after locker boys fight *)
         (* ("infected_b", IC_B, true, true, false, 3200., 900.); *)
@@ -88,6 +87,9 @@ let init () : state =
 
         (* cafeteria floor *)
         (* ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.); *)
+
+        (* stairwell *)
+        (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
       ]
     in
     List.nth xs (List.length xs - 1)
@@ -99,7 +101,12 @@ let init () : state =
   let empty_progress = { rooms = []; global = [] } in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
-  let enemy_configs = read_enemies_config () in
+  let enemy_config : Json_t.enemies_file = read_enemies_config () in
+  let enemy_configs =
+    let parse (enemy_name, enemy_config) = (Enemy.parse_name "state.init" enemy_name, enemy_config) in
+    List.map parse enemy_config.enemies
+  in
+  let shared_enemy_configs = enemy_config.shared_textures in
   let npc_configs = read_npcs_config () in
   let room = Room.init room_name empty_progress exits enemy_configs npc_configs in
 
@@ -142,6 +149,7 @@ let init () : state =
     }
   in
 
+  let shared_ghost_textures = Ghost.load_shared_textures () in
   let make_ghost id in_party textures : ghost =
     Ghost.init id in_party textures.idle action_config (clone_vector start_pos)
       {
@@ -153,7 +161,7 @@ let init () : state =
         desolate_dive = false;
         howling_wraiths = false;
       }
-      textures
+      textures shared_ghost_textures
   in
 
   let ghosts =
@@ -223,19 +231,21 @@ let init () : state =
         character_name = "shared";
         pose_name = "ability-outlines";
         count = 1;
-        duration = { s = 0. };
+        duration = { seconds = 0. };
         x_offset = 0.;
         y_offset = 0.;
       }
   in
+
   let damage =
+    let json_config = List.assoc "damage" shared_enemy_configs in
     Sprite.build_texture_from_config ~particle:true
       {
         asset_dir = ENEMIES;
         character_name = "shared";
         pose_name = "damage";
-        count = 7;
-        duration = { s = 0.05 };
+        count = json_config.count;
+        duration = { seconds = json_config.duration };
         x_offset = 0.;
         y_offset = 0.;
       }
@@ -368,7 +378,7 @@ let update_projectile p (frame_info : frame_info) : bool =
     match p.despawn with
     | X_BOUNDS (min_x, max_x) ->
       p.entity.dest.pos.x < min_x -. Config.window.center_x || p.entity.dest.pos.x > max_x +. Config.window.center_x
-    | TIME_LEFT d -> frame_info.time -. p.spawned.at > d.s
+    | TIME_LEFT d -> frame_info.time -. p.spawned.at > d.seconds
   in
   if despawn_projectile then
     true
@@ -403,15 +413,9 @@ let update_enemies state =
     if (not (interacting ())) && enemy.status.choose_behavior then
       enemy.choose_behavior ~self:enemy behavior_params;
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
-    let new_damage_sprites = ref [] in
-    let update_damage_sprites (damage_sprite : sprite) =
-      let keep_spawned = Sprite.advance_particle_animation state.frame.time damage_sprite.texture damage_sprite in
-      if keep_spawned then
-        new_damage_sprites := damage_sprite :: !new_damage_sprites
-    in
-    List.iter update_damage_sprites enemy.damage_sprites;
-    enemy.damage_sprites <- !new_damage_sprites;
-    if Enemy.is_dead enemy then ((* TODO drop geo *)
+    let advance_or_despawn (sprite : sprite) = Sprite.advance_or_despawn state.frame.time sprite.texture sprite in
+    enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
+    if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
       | None -> ()
       | Some name ->

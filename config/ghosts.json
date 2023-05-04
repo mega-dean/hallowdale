@@ -187,8 +187,10 @@
             "input_buffer": 0.0
         }],
         ["nail", {
-            "duration": 0.25,
-            "cooldown": 0.333333,
+            "duration": 0.0, // TODO add separate frame_duration key
+            // "cooldown": 0.41,
+            "cooldown": 0.62, // cooldown starts counting when action begins, so this is 0.41 + (duration of slash)
+            // (duration of slash) is (number of frames * Config.actions.attack_duration)
             "input_buffer": 0.2
         }],
         ["dash", {

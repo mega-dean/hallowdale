@@ -225,9 +225,9 @@ let take_damage (state : state) (e : enemy) (d : damage_kind) (dest : rect) =
   let kill (e : enemy) =
     (match e.kind with
     | ENEMY ->
-      e.entity.y_recoil <- Some { speed = 100.; time_left = { s = 1. }; reset_v = true };
+      e.entity.y_recoil <- Some { speed = 100.; time_left = { seconds = 1. }; reset_v = true };
       e.entity.x_recoil <-
-        Some { speed = (if Random.bool () then -100. else 100.); time_left = { s = 1. }; reset_v = true }
+        Some { speed = (if Random.bool () then -100. else 100.); time_left = { seconds = 1. }; reset_v = true }
     | _ -> ());
     (match e.id with
     | LOCKER_BOY -> Entity.hide e.entity
@@ -247,10 +247,11 @@ let take_damage (state : state) (e : enemy) (d : damage_kind) (dest : rect) =
   let damage_texture = state.global.textures.damage in
   let texture_w, texture_h = get_scaled_texture_size damage_texture in
   e.damage_sprites <-
-    Sprite.create
+    Sprite.spawn_particle
       (fmt "damage %s" (Show.enemy_name e))
       damage_texture
       { pos = { x = dest.pos.x; y = dest.pos.y }; w = texture_w; h = texture_h }
+      state.frame.time
     :: e.damage_sprites;
   if is_dead e then
     kill e
@@ -262,7 +263,7 @@ let took_damage_at (e : enemy) (d : damage_kind) =
 
 let time_ago (e : enemy) (action_name : string) (clock : time) : duration =
   let performed : time = action_started_at e action_name in
-  { s = clock.at -. performed.at }
+  { seconds = clock.at -. performed.at }
 
 (* object rects in Tiled define the position of the enemy, and enemies.json defines w/h *)
 let create_from_rects

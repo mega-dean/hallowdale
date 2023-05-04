@@ -1,102 +1,112 @@
-[
-    [ "DUNCAN", {
-        "health": 65,
-        "w": 19,
-        "h": 45,
-        "kind": "boss",
-        "props": [
-            ["small_jump_vy", -800.0],
-            ["jump_vy", -1200.0],
-            ["walk_vx", 400.0],
-            ["projectile_vx", 600.0],
-            ["projectile_range", 1000.0],
-            ["jump_wait_time", 1.0]
-        ],
-        "texture_configs": [
-            ["idle", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 2,
-                "y_offset": 0
-            }],
-            ["jumping", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 3,
-                "y_offset": 0
-            }],
-            ["walking", {
-                "count": 4,
-                "duration": 0.1,
-                "x_offset": 6,
-                "y_offset": 1
-            }],
-            ["projectile", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 0,
-                "y_offset": 0
-            }],
-            ["scavenging", {
-                "count": 4,
-                "duration": 0.2,
-                "x_offset": 20,
-                "y_offset": 0
-            }]
-        ]
-    }],
+{
+    "enemies": [
+        [ "DUNCAN", {
+            "health": 65,
+            "w": 19,
+            "h": 45,
+            "kind": "boss",
+            "props": [
+                ["small_jump_vy", -800.0],
+                ["jump_vy", -1200.0],
+                ["walk_vx", 400.0],
+                ["projectile_vx", 600.0],
+                ["projectile_range", 1000.0],
+                ["jump_wait_time", 1.0]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 2,
+                    "y_offset": 0
+                }],
+                ["jumping", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 3,
+                    "y_offset": 0
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 6,
+                    "y_offset": 1
+                }],
+                ["projectile", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 0,
+                    "y_offset": 0
+                }],
+                ["scavenging", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 20,
+                    "y_offset": 0
+                }]
+            ]
+        }],
 
-    [ "LOCKER_BOY", {
-        "health": 55,
-        "w": 22,
-        "h": 40,
-        "kind": "multi-boss",
-        "props": [
-            ["wall_perch_left_x", 2100.0],
-            ["wall_perch_right_x", 3150.0],
-            ["projectile_vx", 600.0],
-            ["dash_vx", 600.0],
-            ["dive_vy", 1250.0],
-            ["dive_y", 777.0]
-        ],
-        "texture_configs": [
-            ["idle", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 2,
-                "y_offset": 4
-            }],
-            ["wall-perch", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 0,
-                "y_offset": 0
-            }],
-            ["dash", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 0,
-                "y_offset": 0
-            }],
-            ["dive", {
-                "count": 1,
-                "duration": 0.0,
-                "x_offset": 2,
-                "y_offset": 4
-            }],
-            ["projectile", {
-                "count": 2,
-                "duration": 0.1,
-                "x_offset": 0,
-                "y_offset": 0
-            }],
-            ["vanish", {
-                "count": 10,
-                "duration": 0.05,
-                "x_offset": 2,
-                "y_offset": 4
-            }]
+        [ "LOCKER_BOY", {
+            "health": 55,
+            "w": 22,
+            "h": 40,
+            "kind": "multi-boss",
+            "props": [
+                ["wall_perch_left_x", 2100.0],
+                ["wall_perch_right_x", 3150.0],
+                ["projectile_vx", 600.0],
+                ["dash_vx", 600.0],
+                ["dive_vy", 1250.0],
+                ["dive_y", 777.0]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 2,
+                    "y_offset": 4
+                }],
+                ["wall-perch", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 0,
+                    "y_offset": 0
+                }],
+                ["dash", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 0,
+                    "y_offset": 0
+                }],
+                ["dive", {
+                    "count": 1,
+                    "duration": 0.0,
+                    "x_offset": 2,
+                    "y_offset": 4
+                }],
+                ["projectile", {
+                    "count": 2,
+                    "duration": 0.1,
+                    "x_offset": 0,
+                    "y_offset": 0
+                }],
+                ["vanish", {
+                    "count": 10,
+                    "duration": 0.05,
+                    "x_offset": 2,
+                    "y_offset": 4
+                }]
 
-        ]
-    }]
-]
+            ]
+        }]
+    ],
+    "shared_textures": [
+        ["damage", {
+            "count": 7,
+            "duration": 0.05,
+            "x_offset": 0,
+            "y_offset": 0
+        }]
+    ]
+}

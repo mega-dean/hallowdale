@@ -10,4 +10,4 @@
 (authors "mega-dean")
 (maintainers "mega-dean")
 
-(license "MIT (code), CC-BY-3.0 (assets)")
+(license "MIT (code), CC-BY-4.0 (assets)")

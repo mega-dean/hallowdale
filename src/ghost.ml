@@ -60,7 +60,7 @@ let pogo state =
   state.ghost.entity.current_floor <- None;
   state.ghost.can_dash <- true;
   state.ghost.can_flap <- true;
-  state.ghost.entity.y_recoil <- Some { speed = -800.; time_left = { s = 0.2 }; reset_v = true }
+  state.ghost.entity.y_recoil <- Some { speed = -800.; time_left = { seconds = 0.2 }; reset_v = true }
 
 (* - adjusts x position for side collisions to place sprite next to colliding rect
    - then adjusts y position for top/bottom collisions
@@ -96,16 +96,7 @@ let apply_collisions (e : entity) (collisions : (collision * rect) list) : unit 
   List.iter adjust_position left_right_collisions;
   List.iter adjust_position up_down_collisions
 
-let get_slash_pos ghost direction slash_w slash_h : vector =
-  let g = ghost.entity.dest in
-  (* let px, py = (p.p.x, p.p.y) in *)
-  match (direction : direction) with
-  | UP -> { y = g.pos.y -. (slash_h /. 2.); x = g.pos.x +. ((g.w -. slash_w) /. 2.) }
-  | DOWN -> { y = g.pos.y; x = g.pos.x +. ((g.w -. slash_w) /. 2.) }
-  | LEFT -> { y = g.pos.y; x = g.pos.x -. slash_w +. (g.w /. 2.) }
-  | RIGHT -> { y = g.pos.y; x = g.pos.x +. (g.w /. 2.) }
-
-let make_slash state (direction : direction) (ghost : sprite) : slash =
+let make_slash state (direction : direction) relative_pos (ghost : sprite) : slash =
   let textures = state.ghost.shared_textures in
   let slash_texture : texture =
     match direction with
@@ -120,23 +111,31 @@ let make_slash state (direction : direction) (ghost : sprite) : slash =
     (* TODO slashes should use PARTICLE, and probably just raise error otherwise *)
     | STILL _ -> 1
     | PARTICLE animation
-    | ANIMATED animation -> List.length animation.frames
+    | LOOPED animation ->
+      List.length animation.frames
   in
   let src_h = Raylib.Texture.height slash_texture.image |> Int.to_float in
   let src_w = Raylib.Texture.width slash_texture.image / count |> Int.to_float in
   let dest_h = src_h *. Config.scale.slash in
   let dest_w = src_w *. Config.scale.slash in
-  let (pos : vector) = get_slash_pos state.ghost direction dest_w dest_h in
-  let dest = { pos; h = dest_h; w = dest_w } in
-  { sprite = { ident = "slash"; texture = slash_texture; dest; facing_right = ghost.facing_right }; direction }
+  let pos = Entity.get_child_pos state.ghost.entity relative_pos dest_w dest_h in
+  let dest =
+    (* pos is arbitrary because this will be adjusted to parent dest based on child's relative_position *)
+    { pos = Zero.vector (); h = dest_h; w = dest_w }
+  in
+  let sprite = Sprite.spawn_particle "slash" slash_texture ~facing_right:ghost.facing_right dest state.frame.time in
+  { sprite; direction }
 
-let update_slash_dest ghost (slash : slash) =
-  let v = get_slash_pos ghost slash.direction slash.sprite.dest.w slash.sprite.dest.h in
-  slash.sprite.dest.pos.x <- v.x;
-  slash.sprite.dest.pos.y <- v.y
+let get_slash (g : ghost) : slash option =
+  match (g.child : ghost_child option) with
+  | Some child -> (
+    match child.kind with
+    | NAIL slash -> Some slash
+    | _ -> None)
+  | _ -> None
 
-let resolve_slash_collisions state (slash_opt : slash option) =
-  match slash_opt with
+let resolve_slash_collisions state =
+  match get_slash state.ghost with
   | None -> ()
   | Some slash ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
@@ -150,7 +149,7 @@ let resolve_slash_collisions state (slash_opt : slash option) =
             | LEFT
             | RIGHT ->
               (* TODO recoil enemy *)
-              Entity.recoil_backwards state.ghost.entity { speed = 800.; time_left = { s = 0.1 }; reset_v = true }
+              Entity.recoil_backwards state.ghost.entity { speed = 800.; time_left = { seconds = 0.1 }; reset_v = true }
             | UP ->
               if state.ghost.entity.v.y < 0. then
                 state.ghost.entity.v.y <- 300.);
@@ -175,44 +174,56 @@ let resolve_slash_collisions state (slash_opt : slash option) =
         new_fragment.update_pos <- true;
         new_fragment
       in
+      let destroy_object (tile_group : tile_group) (collision : collision) =
+        layer.spawned_fragments <- List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
+        let idx = List.nth tile_group.tile_idxs 0 in
+        (match List.assoc_opt idx state.room.idx_configs with
+        | Some (PURPLE_PEN name) -> maybe_begin_interaction state name
+        | _ -> ());
+        layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
+        if layer.config.permanently_removable then (
+          (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
+             - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
+          *)
+          let existing =
+            match List.assoc_opt layer.name state.room.progress.removed_idxs_by_layer with
+            | None -> []
+            | Some idxs -> idxs
+          in
+          state.room.progress.removed_idxs_by_layer <-
+            Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) state.room.progress.removed_idxs_by_layer);
+        (* collision direction is opposite of slash direction *)
+        if collision.direction = UP && layer.config.pogoable then
+          pogo state;
+        match tile_group.stub_sprite with
+        | None -> ()
+        | Some sprite ->
+          layer.spawned_stub_sprites <- (sprite, tile_group.transformation_bits) :: layer.spawned_stub_sprites
+      in
       let resolve_tile_group (tile_group : tile_group) =
         match slash_collision_between slash tile_group.dest with
-        | None -> new_tile_groups := tile_group :: !new_tile_groups
-        | Some coll ->
-          if tile_group.hits > 0 then (
-            if state.ghost.actions.nail.started.at = state.frame.time then (
-              let get_random_fragment_idx () = Random.int (List.length tile_group.fragments - 1) in
-              let make_random_fragment _n = List.nth tile_group.fragments (get_random_fragment_idx ()) in
-              let random_fragments = List.init (Random.int 3) make_random_fragment in
-              layer.spawned_fragments <- List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
-              tile_group.hits <- tile_group.hits - 1);
-            new_tile_groups := tile_group :: !new_tile_groups)
-          else (
-            layer.spawned_fragments <- List.map (spawn_fragment coll) tile_group.fragments @ layer.spawned_fragments;
-            let idx = List.nth tile_group.tile_idxs 0 in
-            (match List.assoc_opt idx state.room.idx_configs with
-            | Some (PURPLE_PEN name) -> maybe_begin_interaction state name
-            | _ -> ());
-            layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
-            if layer.config.permanently_removable then (
-              (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
-                 - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
-              *)
-              let existing =
-                match List.assoc_opt layer.name state.room.progress.removed_idxs_by_layer with
-                | None -> []
-                | Some idxs -> idxs
-              in
-              state.room.progress.removed_idxs_by_layer <-
-                Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing)
-                  state.room.progress.removed_idxs_by_layer);
-            (* collision direction is opposite of slash direction *)
-            if coll.direction = UP && layer.config.pogo then
-              pogo state;
-            match tile_group.stub_sprite with
-            | None -> ()
-            | Some sprite ->
-              layer.spawned_stub_sprites <- (sprite, tile_group.transformation_bits) :: layer.spawned_stub_sprites)
+        | None ->
+          (* if state.debug.enabled then *)
+          (* tmp "got None collision"; *)
+          new_tile_groups := tile_group :: !new_tile_groups
+        | Some coll -> (
+          match tile_group.door_health with
+          | None -> destroy_object tile_group coll
+          | Some door_health ->
+            if door_health.last_hit_at < state.ghost.actions.nail.started.at then (
+              door_health.last_hit_at <- state.frame.time;
+              if door_health.hits > 1 then (
+                let get_random_fragment_idx () = Random.int (List.length tile_group.fragments - 1) in
+                let make_random_fragment _n = List.nth tile_group.fragments (get_random_fragment_idx ()) in
+                let random_fragments = List.init (Random.int 3) make_random_fragment in
+                layer.spawned_fragments <- List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
+                door_health.hits <- door_health.hits - 1;
+                new_tile_groups := tile_group :: !new_tile_groups)
+              else
+                destroy_object tile_group coll)
+            else
+              new_tile_groups := tile_group :: !new_tile_groups;
+            ())
       in
       List.iter resolve_tile_group layer.tile_groups;
       layer.tile_groups <- !new_tile_groups
@@ -233,6 +244,14 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.can_dash <- true;
       ghost.can_flap <- true)
   in
+  let set_facing_right ?(allow_vertical = true) (direction : direction) =
+    match direction with
+    | LEFT -> ghost.entity.sprite.facing_right <- false
+    | RIGHT -> ghost.entity.sprite.facing_right <- true
+    | _ ->
+      if not allow_vertical then
+        failwithf "bad direction in set_facing_right: %s" (Show.direction direction)
+  in
   let next_texture : texture =
     match new_pose with
     | AIRBORNE new_vy ->
@@ -242,9 +261,12 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
         ghost.textures.fall
       else
         ghost.textures.jump
-    | ATTACKING _direction -> ghost.textures.nail
+    | ATTACKING d ->
+      (* handle_attacking is called after handle_walking, so this allows the ghost to walk backwards while attacking *)
+      set_facing_right d;
+      ghost.textures.nail
     | CASTING ->
-      Entity.recoil_backwards ghost.entity { speed = 80.; time_left = { s = 0.16666 }; reset_v = true };
+      Entity.recoil_backwards ghost.entity { speed = 80.; time_left = { seconds = 0.16666 }; reset_v = true };
       ghost.entity.v.y <- 0.;
       ghost.textures.cast
     | CRAWLING ->
@@ -265,6 +287,9 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.textures.flap
     | FOCUSING ->
       update_vx 0.;
+      (* TODO-1 add shared focusing animation
+         - use child sprite so that all characters can just render .focus and overlay the same animation
+      *)
       ghost.textures.focus
     | IDLE ->
       reset_standing_abilities ();
@@ -290,8 +315,8 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
         | RIGHT -> 800.
         | _ -> if ghost.entity.sprite.facing_right then 800. else -800.
       in
-      ghost.entity.x_recoil <- Some { speed = x_recoil_speed; time_left = { s = 0.06666 }; reset_v = true };
-      ghost.entity.y_recoil <- Some { speed = -800.; time_left = { s = 0.06666 }; reset_v = true };
+      ghost.entity.x_recoil <- Some { speed = x_recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
+      ghost.entity.y_recoil <- Some { speed = -800.; time_left = { seconds = 0.06666 }; reset_v = true };
       ghost.health.current <- ghost.health.current - 1;
       if ghost.health.current = 0 then
         (* TODO handle dying:
@@ -304,10 +329,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.textures.take_damage
     | WALKING d ->
       reset_standing_abilities ();
-      (match d with
-      | LEFT -> ghost.entity.sprite.facing_right <- false
-      | RIGHT -> ghost.entity.sprite.facing_right <- true
-      | _ -> failwithf "WALKING invalid direction: %s" (Show.direction d));
+      set_facing_right ~allow_vertical:false d;
       update_vx 1.;
       ghost.textures.walk
     | WALL_JUMPING ->
@@ -329,8 +351,6 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.can_flap <- true;
       ghost.textures.wall_slide
   in
-  (* TODO could move this so it's only called once per frame *)
-  Sprite.advance_animation frame_time next_texture ghost.entity.sprite;
   Entity.update_sprite_texture ghost.entity next_texture
 
 let past_cooldown state pose_frames : bool = pose_frames.blocked_until.at < state.frame.time
@@ -365,7 +385,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   let projectile : projectile =
     {
       entity = Entity.create_for_sprite ~v:{ x = vx; y = 0. } vengeful_spirit dest;
-      despawn = TIME_LEFT { s = Config.action.vengeful_spirit_duration };
+      despawn = TIME_LEFT { seconds = Config.action.vengeful_spirit_duration };
       spawned = { at = state.frame.time };
       pogoable = true;
     }
@@ -377,10 +397,16 @@ let start_action state (pose : ghost_pose) =
   let action : ghost_action =
     match pose with
     | ATTACKING direction ->
-      let slash = make_slash state direction state.ghost.entity.sprite in
-      Sprite.advance_animation state.frame.time slash.sprite.texture slash.sprite;
-      state.ghost.slash <- Some slash;
-      state.ghost.current.attack_direction <- Some direction;
+      let relative_pos =
+        match direction with
+        | UP -> ABOVE
+        | DOWN -> BELOW
+        | LEFT
+        | RIGHT ->
+          IN_FRONT
+      in
+      let slash = make_slash state direction relative_pos state.ghost.entity.sprite in
+      state.ghost.child <- Some { kind = NAIL slash; relative_pos };
       state.ghost.actions.nail
     | WALL_JUMPING -> state.ghost.actions.wall_jump
     | DASHING -> state.ghost.actions.dash
@@ -400,20 +426,21 @@ let start_action state (pose : ghost_pose) =
     | _ -> failwithf "not an action: %s" (Show.ghost_pose pose)
   in
   action.started <- { at = state.frame.time };
-  action.doing_until.at <- state.frame.time +. action.config.duration.s;
-  action.blocked_until.at <- state.frame.time +. action.config.cooldown.s;
+  action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
+  action.blocked_until.at <- state.frame.time +. action.config.cooldown.seconds;
   set_pose state.ghost pose state.frame.time
+
+(* TODO use something like this to interrupt focus when taking damage
+*)
+(* let interrupt_action state action =
+ *   action.doing_until.at <- state.frame.time *)
 
 let continue_action state (pose : ghost_pose) =
   (match pose with
-  | ATTACKING _ -> (
-    match state.ghost.slash with
-    | Some slash ->
-      Sprite.advance_animation state.frame.time slash.sprite.texture slash.sprite;
-      update_slash_dest state.ghost slash
-    | None -> ())
   | FOCUSING ->
-    (let decr_dt = state.ghost.actions.focus.config.duration.s /. (Config.action.soul_per_cast + 50 |> Int.to_float) in
+    (let decr_dt =
+       state.ghost.actions.focus.config.duration.seconds /. (Config.action.soul_per_cast + 50 |> Int.to_float)
+     in
      if
        state.ghost.soul.at_focus_start - state.ghost.soul.current > Config.action.soul_per_cast
        && state.ghost.soul.health_at_focus_start = state.ghost.health.current
@@ -426,17 +453,28 @@ let continue_action state (pose : ghost_pose) =
   | _ -> ());
   set_pose state.ghost pose state.frame.time
 
+let get_current_slash (ghost : ghost) : slash option =
+  match ghost.child with
+  | None -> None
+  | Some child -> (
+    match child.kind with
+    | NAIL slash -> Some slash
+    | _ -> None)
+
+let get_current_attack_direction (ghost : ghost) : direction option =
+  match get_current_slash ghost with
+  | None -> None
+  | Some slash -> Some slash.direction
+
 let is_doing ?(_debug = false) state (pose : ghost_pose) : bool =
-  let action : ghost_action =
-    match pose with
-    | ATTACKING _ -> state.ghost.actions.nail
-    | CASTING -> state.ghost.actions.cast
-    | DASHING -> state.ghost.actions.dash
-    | FOCUSING -> state.ghost.actions.focus
-    | JUMPING -> failwith "is_doing - JUMPING is only true on the frame that jump is pressed"
-    | _ -> failwithf "is_doing - not an action: %s" (Show.ghost_pose pose)
-  in
-  action.started.at <= state.frame.time && state.frame.time <= action.doing_until.at
+  let check_action action = action.started.at <= state.frame.time && state.frame.time <= action.doing_until.at in
+  match pose with
+  | ATTACKING _ -> Option.is_some (get_current_slash state.ghost)
+  | CASTING -> check_action state.ghost.actions.cast
+  | DASHING -> check_action state.ghost.actions.dash
+  | FOCUSING -> check_action state.ghost.actions.focus
+  | JUMPING -> failwith "is_doing - JUMPING is only true on the frame that jump is pressed"
+  | _ -> failwithf "is_doing - not an action: %s" (Show.ghost_pose pose)
 
 let swap_current_ghost state ?(swap_pos = true) target_ghost_id =
   match List.assoc_opt target_ghost_id state.ghosts with
@@ -461,7 +499,7 @@ let swap_current_ghost state ?(swap_pos = true) target_ghost_id =
     new_ghost.soul <- old_ghost.soul;
     new_ghost.can_dash <- old_ghost.can_dash;
     new_ghost.can_flap <- old_ghost.can_flap;
-    new_ghost.slash <- old_ghost.slash;
+    new_ghost.child <- old_ghost.child;
     new_ghost.spawned_vengeful_spirits <- old_ghost.spawned_vengeful_spirits;
 
     state.ghost <- new_ghost;
@@ -479,15 +517,35 @@ let cycle_current_ghost state =
     in
     swap_current_ghost state new_ghost_id)
 
+let change_ability ?(only_enable = false) ghost ability_name =
+  let new_val v = if only_enable then true else not v in
+  match ability_name with
+  | "vengeful_spirit" -> ghost.abilities.vengeful_spirit <- new_val ghost.abilities.vengeful_spirit
+  | "mothwing_cloak" -> ghost.abilities.mothwing_cloak <- new_val ghost.abilities.mothwing_cloak
+  | "mantis_claw" -> ghost.abilities.mantis_claw <- new_val ghost.abilities.mantis_claw
+  | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
+  | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
+  | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
+  | _ -> failwithf "ADD_ABILITY bad ability name: %s" ability_name
+
+let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
+
+let toggle_ability ghost ability_name =
+  tmp "%s" ability_name;
+  change_ability ghost ability_name
+
+(* this is used for actions that block other actions from happening during the same frame *)
+type handled_action = { this_frame : bool }
+
 let update (state : state) : state =
   let stop_wall_sliding = ref false in
   let key_pressed_or_buffered key_action =
     let (input, buffer) : frame_input * float =
       match key_action with
-      | NAIL -> (state.frame_inputs.nail, state.ghost.actions.nail.config.input_buffer.s)
-      | JUMP -> (state.frame_inputs.jump, state.ghost.actions.jump.config.input_buffer.s)
-      | DASH -> (state.frame_inputs.dash, state.ghost.actions.dash.config.input_buffer.s)
-      | CAST -> (state.frame_inputs.cast, state.ghost.actions.cast.config.input_buffer.s)
+      | NAIL -> (state.frame_inputs.nail, state.ghost.actions.nail.config.input_buffer.seconds)
+      | JUMP -> (state.frame_inputs.jump, state.ghost.actions.jump.config.input_buffer.seconds)
+      | DASH -> (state.frame_inputs.dash, state.ghost.actions.dash.config.input_buffer.seconds)
+      | CAST -> (state.frame_inputs.cast, state.ghost.actions.cast.config.input_buffer.seconds)
       | _ -> failwithf "bad key in key_pressed_or_buffered': %s" (show_key_action key_action)
     in
     let input_buffered () =
@@ -514,10 +572,16 @@ let update (state : state) : state =
       state.ghost.entity.dest.pos.x <- state.ghost.entity.dest.pos.x +. dv
     else if key_down DEBUG_LEFT then
       state.ghost.entity.dest.pos.x <- state.ghost.entity.dest.pos.x -. dv
-    else if key_pressed DEBUG_1 then
-      cycle_current_ghost state
-    else if key_pressed DEBUG_2 then
-      state.ghost.soul.current <- state.ghost.soul.max
+    else if key_pressed DEBUG_1 then (*
+
+         cycle_current_ghost state
+      *)
+      toggle_ability state.ghost "mantis_claw"
+    else if key_pressed DEBUG_2 then (*
+
+state.ghost.soul.current <- state.ghost.soul.max
+*)
+      toggle_ability state.ghost "monarch_wings"
     else if key_pressed DEBUG_3 then
       maybe_begin_interaction state "boss-killed_LOCKER_BOY"
     else if key_pressed DEBUG_4 then
@@ -639,7 +703,7 @@ let update (state : state) : state =
           | INITIALIZE_INTERACTIONS remove_nail ->
             state.ghost.entity.v <- Zero.vector ();
             if remove_nail then
-              state.ghost.slash <- None
+              state.ghost.child <- None
           | FADE_SCREEN_OUT -> state.screen_faded <- true
           | FADE_SCREEN_IN -> state.screen_faded <- false
           | TEXT paragraphs ->
@@ -757,14 +821,7 @@ let update (state : state) : state =
             let text : Interaction.text = { content = [ str ]; increases_health } in
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)
-          | ADD_ABILITY ability_name -> (
-            match ability_name with
-            | "vengeful_spirit" -> ghost.abilities.vengeful_spirit <- true
-            | "mothwing_cloak" -> ghost.abilities.mothwing_cloak <- true
-            | "desolate_dive" -> ghost.abilities.desolate_dive <- true
-            | "crystal_heart" -> ghost.abilities.crystal_heart <- true
-            | "monarch_wings" -> ghost.abilities.monarch_wings <- true
-            | _ -> failwithf "ADD_ABILITY bad ability name: %s" ability_name)
+          | ADD_ABILITY ability_name -> enable_ability state.ghost ability_name
         in
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
@@ -874,7 +931,7 @@ let update (state : state) : state =
         true)
   in
 
-  let handle_casting () : bool =
+  let handle_casting () : handled_action =
     let starting_cast =
       state.ghost.soul.current >= Config.action.soul_per_cast
       && state.ghost.abilities.vengeful_spirit
@@ -882,17 +939,20 @@ let update (state : state) : state =
       && (not (is_doing state (ATTACKING RIGHT)))
       && past_cooldown state state.ghost.actions.cast
     in
-    if starting_cast then (
-      start_action state CASTING;
-      true)
-    else if is_doing state CASTING then (
-      continue_action state CASTING;
-      true)
-    else
-      false
+    let this_frame =
+      if starting_cast then (
+        start_action state CASTING;
+        true)
+      else if is_doing state CASTING then (
+        continue_action state CASTING;
+        true)
+      else
+        false
+    in
+    { this_frame }
   in
 
-  let handle_dashing () : bool =
+  let handle_dashing () : handled_action =
     let starting_dash () =
       (* attack direction is arbitrary *)
       state.ghost.abilities.mothwing_cloak
@@ -904,18 +964,21 @@ let update (state : state) : state =
       && past_cooldown state state.ghost.actions.dash
     in
     let still_dashing () = is_doing state DASHING in
-    if starting_dash () then (
-      (* TODO "dash in currently-facing direction" almost always works, but not when walljumping,
-         so this should probably be `DASHING of direction` and check LEFT/RIGHT keys
-      *)
-      start_action state DASHING;
-      stop_wall_sliding := true;
-      true)
-    else if still_dashing () then (
-      continue_action state DASHING;
-      true)
-    else
-      false
+    let this_frame =
+      if starting_dash () then (
+        (* TODO "dash in currently-facing direction" almost always works, but not when walljumping,
+           so this should probably be `DASHING of direction` and check LEFT/RIGHT keys
+        *)
+        start_action state DASHING;
+        stop_wall_sliding := true;
+        true)
+      else if still_dashing () then (
+        continue_action state DASHING;
+        true)
+      else
+        false
+    in
+    { this_frame }
   in
 
   let handle_walking () =
@@ -948,21 +1011,25 @@ let update (state : state) : state =
     | None, None -> set_pose' IDLE
   in
 
-  let handle_wall_jumping () =
+  let handle_wall_jumping () : handled_action =
     let starting_wall_jump () = Option.is_some state.ghost.current.wall && key_pressed_or_buffered JUMP in
     let continuing_wall_jump () =
-      state.frame.time -. state.ghost.actions.wall_jump.started.at < state.ghost.actions.wall_jump.config.duration.s
+      state.frame.time -. state.ghost.actions.wall_jump.started.at
+      < state.ghost.actions.wall_jump.config.duration.seconds
     in
-    if starting_wall_jump () then (
-      stop_wall_sliding := true;
-      start_action state WALL_JUMPING;
-      true)
-    else if continuing_wall_jump () then (
-      stop_wall_sliding := true;
-      continue_action state WALL_JUMPING;
-      true)
-    else
-      false
+    let this_frame =
+      if starting_wall_jump () then (
+        stop_wall_sliding := true;
+        start_action state WALL_JUMPING;
+        true)
+      else if continuing_wall_jump () then (
+        stop_wall_sliding := true;
+        continue_action state WALL_JUMPING;
+        true)
+      else
+        false
+    in
+    { this_frame }
   in
 
   let handle_jumping new_vy =
@@ -994,7 +1061,6 @@ let update (state : state) : state =
 
   let handle_attacking () =
     let starting_attack () = past_cooldown state state.ghost.actions.nail && key_pressed_or_buffered NAIL in
-    let still_attacking () = is_doing state (ATTACKING RIGHT) in
     if starting_attack () then (
       let direction : direction =
         match (state.frame_inputs.up.down, state.frame_inputs.down.down) with
@@ -1009,33 +1075,37 @@ let update (state : state) : state =
           if state.ghost.entity.sprite.facing_right then RIGHT else LEFT
       in
       start_action state (ATTACKING direction))
-    else if still_attacking () then
-      continue_action state (ATTACKING (Option.get state.ghost.current.attack_direction))
     else (
-      state.ghost.current.attack_direction <- None;
-      state.ghost.slash <- None)
+      match get_current_slash state.ghost with
+      | None -> ()
+      | Some slash -> (
+        continue_action state (ATTACKING slash.direction);
+        match Sprite.advance_or_despawn state.frame.time slash.sprite.texture slash.sprite with
+        | None -> state.ghost.child <- None
+        | Some slash_sprite ->
+          (* Sprite.advance_or_despawn modifies sprite, so no need to re-set ghost.child here *)
+          ()))
   in
 
-  let handle_focusing () =
-    (* TODO add a delay before deducting soul
-       - could probably get this to work by calling start_action when charging, continue_action when deducting soul
-       - but that isn't what start/continue action mean now, so maybe not a good idea
-       - maybe add a new charge_action, since it will also be used for wings, c-dash, nail arts
-    *)
+  let handle_focusing () : handled_action =
+    (* TODO-2 add a delay before deducting soul *)
     let starting_focus () =
       Entity.on_ground state.ghost.entity
       && state.ghost.soul.current >= Config.action.soul_per_cast
       && state.frame_inputs.focus.pressed
     in
     let still_focusing () = is_doing state FOCUSING && state.frame_inputs.focus.down in
-    if starting_focus () then (
-      start_action state FOCUSING;
-      true)
-    else if still_focusing () then (
-      continue_action state FOCUSING;
-      true)
-    else
-      false
+    let this_frame =
+      if starting_focus () then (
+        start_action state FOCUSING;
+        true)
+      else if still_focusing () then (
+        continue_action state FOCUSING;
+        true)
+      else
+        false
+    in
+    { this_frame }
   in
 
   let handle_wall_sliding collisions =
@@ -1103,17 +1173,17 @@ let update (state : state) : state =
             state.room.progress.revealed_shadow_layers <- layer_name :: state.room.progress.revealed_shadow_layers;
           layer.hidden <- true));
       let focusing = handle_focusing () in
-      if not focusing then (
+      if not focusing.this_frame then (
         let dashing = handle_dashing () in
-        if not dashing then (
+        if not dashing.this_frame then (
           let casting = handle_casting () in
-          if not casting then (
+          if not casting.this_frame then (
             let wall_jumping = handle_wall_jumping () in
-            if not wall_jumping then (
+            if not wall_jumping.this_frame then (
               handle_walking ();
               handle_jumping new_vy);
             handle_attacking ();
-            resolve_slash_collisions state state.ghost.slash)))));
+            resolve_slash_collisions state)))));
 
   if past_cooldown state state.ghost.actions.take_damage then (
     match get_enemy_collision state with
@@ -1139,37 +1209,38 @@ let update (state : state) : state =
   apply_collisions state.ghost.entity collisions;
   handle_wall_sliding collisions;
   maybe_unset_current_floor state.ghost;
+  Sprite.advance_animation state.frame.time state.ghost.entity.sprite.texture state.ghost.entity.sprite;
   state
 
-let init ghost_id in_party idle_texture action_config start_pos abilities textures =
-  let build_shared_texture ~count ?(duration = 0.) pose_name =
-    Sprite.build_texture_from_config
+let load_shared_textures () =
+  let build_shared_texture ~count ?(duration = 0.) ?(particle = false) pose_name =
+    Sprite.build_texture_from_config ~particle
       {
         asset_dir = GHOSTS;
         character_name = "shared";
         pose_name;
         x_offset = 0.;
         y_offset = 0.;
-        duration = { s = duration };
+        duration = { seconds = duration };
         count;
       }
   in
+
   let build_slash_texture name =
     let count = 3 in
-    build_shared_texture ~count ~duration:Config.action.attack_duration name
+    build_shared_texture ~count ~duration:Config.action.attack_duration ~particle:true name
   in
-  let shared_textures : shared_textures =
-    {
-      shine = build_shared_texture ~count:1 "shine";
-      slash = build_slash_texture "slash";
-      upslash = build_slash_texture "upslash";
-      downslash = build_slash_texture "downslash";
-      health = build_shared_texture ~count:2 "health";
-      energon_pod = build_shared_texture ~count:2 "energon-pod";
-      vengeful_cushion = build_shared_texture ~count:2 ~duration:0.066666 "vengeful-cushion";
-    }
-  in
+  {
+    slash = build_slash_texture "slash";
+    upslash = build_slash_texture "upslash";
+    downslash = build_slash_texture "downslash";
+    shine = build_shared_texture ~count:1 "shine";
+    health = build_shared_texture ~count:2 "health";
+    energon_pod = build_shared_texture ~count:2 "energon-pod";
+    vengeful_cushion = build_shared_texture ~count:2 ~duration:0.066666 "vengeful-cushion";
+  }
 
+let init ghost_id in_party idle_texture action_config start_pos abilities textures shared_textures =
   let use_json_action_config action_name : ghost_action_config =
     match List.assoc_opt action_name action_config with
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
@@ -1187,8 +1258,9 @@ let init ghost_id in_party idle_texture action_config start_pos abilities textur
   {
     id = ghost_id;
     in_party;
-    current = { wall = None; attack_direction = None };
+    current = { wall = None };
     textures;
+    child = None;
     actions =
       {
         focus = make_action "focus";
@@ -1205,7 +1277,6 @@ let init ghost_id in_party idle_texture action_config start_pos abilities textur
       Entity.create_for_sprite
         (Sprite.create (fmt "ghost-%s" (Show.ghost_id ghost_id)) idle_texture dest)
         { pos = dest.pos; w = Config.ghost.width *. Config.scale.ghost; h = Config.ghost.height *. Config.scale.ghost };
-    slash = None;
     can_dash = true;
     can_flap = true;
     health = { current = 5; max = 5 };

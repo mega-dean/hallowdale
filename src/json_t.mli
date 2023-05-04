@@ -94,4 +94,7 @@ type enemy_config = {
   texture_configs: (string * texture_config) list
 }
 
-type enemies_file = (string * enemy_config) list
+type enemies_file = {
+  enemies: (string * enemy_config) list;
+  shared_textures: (string * texture_config) list
+}

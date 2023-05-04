@@ -113,11 +113,14 @@ type enemy_config = {
   texture_configs : (string * texture_config) list;
 }
 
-type enemies_file = (string * enemy_config) list
+type enemies_file =
+  {
+    enemies : (string * enemy_config) list;
+    shared_textures : (string * texture_config) list;
+  }
 
 type ghost_texture_configs = (string * texture_config) list
 
-(* TODO not sure what the defaults should be *)
 type ghost_action = {
   ~duration <ocaml default="0.066666"> : float;
   ~cooldown <ocaml default="0.0"> : float;
@@ -128,6 +131,9 @@ type ghosts_file = {
   (* ghost name * texture_configs *)
   texture_configs : (string * ghost_texture_configs) list;
   action_config : (string * ghost_action) list;
+  (* TODO add something like this
+     other : (string * float) list;
+  *)
 }
 
 type npc_config = {
@@ -137,4 +143,3 @@ type npc_config = {
 }
 
 type npcs_file = (string * npc_config) list
-

@@ -6,10 +6,8 @@ let make_dest x y (t : texture) : rect =
   let w =
     match t.animation_src with
     | STILL _ -> Raylib.Texture.width t.image |> Int.to_float
-    | PARTICLE animation -> (
-      try abs (Raylib.Texture.width t.image / List.length animation.frames) |> Int.to_float with
-      | Division_by_zero -> 1.)
-    | ANIMATED animation -> (
+    | PARTICLE animation
+    | LOOPED animation -> (
       try abs (Raylib.Texture.width t.image / List.length animation.frames) |> Int.to_float with
       | Division_by_zero -> 1.)
   in
@@ -20,37 +18,54 @@ let make_dest x y (t : texture) : rect =
     w = w *. Config.scale.ghost;
   }
 
-let advance_animation (current_clock : float) next_texture (sprite : sprite) : unit =
-  match sprite.texture.animation_src with
-  | STILL _ -> ()
+let get_current_frame_idx (animation_src : animation_src) : int =
+  match animation_src with
+  | STILL _ ->
+    (* TODO maybe just return -1 if crashing is too inconvenient *)
+    failwith "can't get current_idx of STILL animation"
   | PARTICLE animation
-  | ANIMATED animation ->
-    (* TODO this should restart the idx at 0 when the texture changes
-       - this looks especially bad for the locker-boys vanish (it starts fine but desyncs as the fight goes on)
-       - probably have separate fn for advance_animation and change_animation, since next_texture here is almost always the same
-    *)
-    let current_animation_idx = animation.current_idx mod List.length animation.frames in
+  | LOOPED animation ->
+    animation.frame_idx
+
+let advance_animation (current_clock : float) next_texture (sprite : sprite) : unit =
+  let advance_animation' animation =
+    let current_animation_idx = animation.frame_idx mod List.length animation.frames in
     let animation_frame =
       if List.length animation.frames = 0 then
-        { src = Zero.rect (); duration = { s = Float.max_float } }
+        { src = Zero.rect (); duration = { seconds = Float.max_float } }
       else
         List.nth animation.frames current_animation_idx
     in
-    let should_advance_frame () = current_clock -. animation.current_frame_clock > animation_frame.duration.s in
+    let should_advance_frame () = current_clock -. animation.frame_started.at > animation_frame.duration.seconds in
     if should_advance_frame () then (
       match next_texture.animation_src with
       | STILL _ -> ()
       | PARTICLE next_animation
-      | ANIMATED next_animation ->
-        next_animation.current_idx <- current_animation_idx + 1;
-        next_animation.current_frame_clock <- current_clock)
-
-let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) : bool =
+      | LOOPED next_animation ->
+        next_animation.frame_idx <- current_animation_idx + 1;
+        next_animation.frame_started.at <- current_clock)
+  in
   match sprite.texture.animation_src with
-  | PARTICLE next_animation ->
-    advance_animation current_clock next_texture sprite;
-    next_animation.current_idx < List.length next_animation.frames
-  | _ -> failwith "advance_particle_animation on non-PARTICLE animation"
+  | STILL _ -> ()
+  | PARTICLE animation
+  | LOOPED animation ->
+    advance_animation' animation
+
+type particle_animation = { should_despawn : bool }
+
+(* this always advances the animation, and returns None when the animation  *)
+let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : sprite option =
+  let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) : particle_animation =
+    match sprite.texture.animation_src with
+    | PARTICLE animation ->
+      let start_idx = get_current_frame_idx sprite.texture.animation_src in
+      advance_animation current_clock next_texture sprite;
+      let should_despawn = animation.frame_idx = List.length animation.frames in
+      { should_despawn }
+    | _ -> failwith "advance_particle_animation on non-PARTICLE animation"
+  in
+  let particle = advance_particle_animation current_clock next_texture sprite in
+  if particle.should_despawn then None else Some sprite
 
 let get_path (texture_config : texture_config) : string =
   fmt "%s/%s/%s" (get_asset_dir texture_config.asset_dir) texture_config.character_name texture_config.pose_name
@@ -74,19 +89,19 @@ let build_texture'
         let make_frames frame_count ~w ~h ~duration =
           (* creates an animation_frame list with all the same duration *)
           let make_frame (frame_idx : float) : animation_frame =
-            { src = { w; h; pos = { y = 0.; x = frame_idx *. w } }; duration = { s = duration } }
+            { src = { w; h; pos = { y = 0.; x = frame_idx *. w } }; duration = { seconds = duration } }
           in
           List.map make_frame (Utils.rangef frame_count)
         in
-        let frames = make_frames count ~w ~h ~duration:texture_config.duration.s in
+        let frames = make_frames count ~w ~h ~duration:texture_config.duration.seconds in
         if particle then
-          PARTICLE { current_idx = 0; frames; current_frame_clock = 0. }
-        else
-          (* this starts at the final index because Sprite.advance_animation is called on the frame
-             that they are created, which advances the current_idx to 0
-             TODO not sure about ^this, check if it is still true
-          *)
-          ANIMATED { current_idx = List.length frames - 1; frames; current_frame_clock = 0. })
+          PARTICLE { frame_idx = 0; frames; frame_started = { at = 0. } }
+        else (
+          let frame_started =
+            (* frame_started.at will be updated before the first time it starts, so this value is arbitrary *)
+            { at = -100. }
+          in
+          LOOPED { frame_idx = 0; frames; frame_started }))
   in
   {
     ident = get_path texture_config;
@@ -110,7 +125,7 @@ let build_texture_from_image ?(scale = Config.scale.ghost) ?(particle = false) (
       character_name = "";
       pose_name = "";
       count = 1;
-      duration = { s = 0. };
+      duration = { seconds = 0. };
       x_offset = 0.;
       y_offset = 0.;
     }
@@ -123,4 +138,13 @@ let clone (orig : sprite) : sprite =
   { orig with dest = dest_clone }
 
 let create (name : string) (texture : texture) ?(facing_right = true) (dest : rect) : sprite =
+  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest }
+
+let spawn_particle (name : string) (texture : texture) ?(facing_right = true) (dest : rect) frame_time : sprite =
+  (match texture.animation_src with
+  | STILL _ -> ()
+  | PARTICLE animation
+  | LOOPED animation ->
+    animation.frame_idx <- 0;
+    animation.frame_started.at <- frame_time);
   { ident = fmt "Sprite[%s]" name; texture; facing_right; dest }
