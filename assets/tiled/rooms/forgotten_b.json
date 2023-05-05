@@ -240,7 +240,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":36,
          "x":0,
          "y":0
@@ -339,7 +339,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":36,
          "x":0,
          "y":0

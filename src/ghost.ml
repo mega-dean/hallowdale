@@ -203,8 +203,6 @@ let resolve_slash_collisions state =
       let resolve_tile_group (tile_group : tile_group) =
         match slash_collision_between slash tile_group.dest with
         | None ->
-          (* if state.debug.enabled then *)
-          (* tmp "got None collision"; *)
           new_tile_groups := tile_group :: !new_tile_groups
         | Some coll -> (
           match tile_group.door_health with
@@ -638,6 +636,7 @@ state.ghost.soul.current <- state.ghost.soul.max
         let room_uuid = Tiled.Room.get_uuid state.room in
         state.progress.rooms <- Utils.assoc_replace room_uuid state.room.progress state.progress.rooms;
         let room = Room.init path state.progress exits state.global.enemy_configs state.global.npc_configs in
+        tmp "new room: %s" path;
         state.ghost.entity.current_floor <- None;
         state.ghost.entity.dest.pos <- start_pos;
         (* all rooms are using the same tilesets now, but still unload them here (and re-load them

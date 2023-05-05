@@ -57,8 +57,25 @@
                  "type":"",
                  "visible":true,
                  "width":207.938,
-                 "x":153.364333333333,
-                 "y":248.346666666667
+                 "x":265.364333333333,
+                 "y":421.68
+                }, 
+                {
+                 "height":39.307,
+                 "id":5,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "color":"#ffffff",
+                     "text":"spike tunnel, needs c-dash",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":239.938,
+                 "x":478.697666666667,
+                 "y":70.3464999999999
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -139,7 +156,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":5,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

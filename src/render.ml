@@ -787,8 +787,7 @@ let tick state : state =
         List.iteri (display_paragraph config 0) text'.content;
         List.iteri
           (display_paragraph { config with margin_y = increase_health_text_margin_y } 0)
-          [ "{{green}} max health increased by one" ]
-        (* List.iteri (display_paragraph config 0) (text'.content @ [""; "{{green}} max health increased by one"])) *))
+          [ "{{green}} max health increased by one" ])
       else
         List.iteri (display_paragraph config 0) text'.content
   in
