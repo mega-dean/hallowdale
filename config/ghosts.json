@@ -170,6 +170,7 @@
             }]
         ]]
     ],
+
     "action_config": [
         ["jump", {
             "duration": 0.0,

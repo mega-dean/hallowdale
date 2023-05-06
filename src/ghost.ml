@@ -524,13 +524,10 @@ let change_ability ?(only_enable = false) ghost ability_name =
   | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
   | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
   | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
-  | _ -> failwithf "ADD_ABILITY bad ability name: %s" ability_name
+  | _ -> failwithf "change_ability bad ability name: %s" ability_name
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
-
-let toggle_ability ghost ability_name =
-  tmp "%s" ability_name;
-  change_ability ghost ability_name
+let toggle_ability ghost ability_name = change_ability ghost ability_name
 
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
@@ -636,7 +633,6 @@ state.ghost.soul.current <- state.ghost.soul.max
         let room_uuid = Tiled.Room.get_uuid state.room in
         state.progress.rooms <- Utils.assoc_replace room_uuid state.room.progress state.progress.rooms;
         let room = Room.init path state.progress exits state.global.enemy_configs state.global.npc_configs in
-        tmp "new room: %s" path;
         state.ghost.entity.current_floor <- None;
         state.ghost.entity.dest.pos <- start_pos;
         (* all rooms are using the same tilesets now, but still unload them here (and re-load them

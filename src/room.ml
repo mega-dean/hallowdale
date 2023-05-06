@@ -324,16 +324,13 @@ let init
   let tint =
     match area_id with
     | FORGOTTEN_CLASSROOMS -> Raylib.Color.create 107 157 255 255
-    | INFECTED_CLASSROOMS ->
-      (* TODO maybe should be more red than orange *)
-      Raylib.Color.create 107 60 40 255
-    | BASEMENT -> Raylib.Color.create 50 20 50 255
+    | CITY_OF_CHAIRS -> Raylib.Color.create 107 107 205 255
+    | INFECTED_CLASSROOMS -> Raylib.Color.create 107 60 40 255
     | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
-    | CITY_OF_CHAIRS -> Raylib.Color.create 180 50 180 255
-    (* TODO not sure what colors these should be *)
-    | AC_REPAIR_ANNEX -> Raylib.Color.create 50 50 50 255
-    | COMPUTER_WING -> Raylib.Color.create 50 50 50 255
-    | MEOW_MEOW_BEENZ -> Raylib.Color.create 50 50 50 255
+    | BASEMENT -> Raylib.Color.create 50 20 50 255
+    | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
+    | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
+    | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
     | FINAL -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
   in
   let bg_color =
