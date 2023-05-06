@@ -126,7 +126,7 @@ let make_slash state (direction : direction) relative_pos (ghost : sprite) : sla
   let sprite = Sprite.spawn_particle "slash" slash_texture ~facing_right:ghost.facing_right dest state.frame.time in
   { sprite; direction }
 
-let get_slash (g : ghost) : slash option =
+let get_current_slash (g : ghost) : slash option =
   match (g.child : ghost_child option) with
   | Some child -> (
     match child.kind with
@@ -134,8 +134,21 @@ let get_slash (g : ghost) : slash option =
     | _ -> None)
   | _ -> None
 
+let get_current_attack_direction (ghost : ghost) : direction option =
+  match get_current_slash ghost with
+  | None -> None
+  | Some slash -> Some slash.direction
+
+let get_focus_sparkles ghost : sprite option =
+  match ghost.child with
+  | Some child -> (
+    match child.kind with
+    | FOCUS sprite -> Some sprite
+    | _ -> None)
+  | None -> None
+
 let resolve_slash_collisions state =
-  match get_slash state.ghost with
+  match get_current_slash state.ghost with
   | None -> ()
   | Some slash ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
@@ -202,8 +215,7 @@ let resolve_slash_collisions state =
       in
       let resolve_tile_group (tile_group : tile_group) =
         match slash_collision_between slash tile_group.dest with
-        | None ->
-          new_tile_groups := tile_group :: !new_tile_groups
+        | None -> new_tile_groups := tile_group :: !new_tile_groups
         | Some coll -> (
           match tile_group.door_health with
           | None -> destroy_object tile_group coll
@@ -285,9 +297,6 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.textures.flap
     | FOCUSING ->
       update_vx 0.;
-      (* TODO-1 add shared focusing animation
-         - use child sprite so that all characters can just render .focus and overlay the same animation
-      *)
       ghost.textures.focus
     | IDLE ->
       reset_standing_abilities ();
@@ -420,6 +429,11 @@ let start_action state (pose : ghost_pose) =
       state.ghost.soul.at_focus_start <- state.ghost.soul.current;
       state.ghost.soul.health_at_focus_start <- state.ghost.health.current;
       state.ghost.soul.last_decremented <- { at = state.frame.time };
+      let focus_sparkles_sprite =
+        Sprite.create "focus-sparkles" state.ghost.shared_textures.focus_sparkles
+          { state.ghost.entity.dest with w = state.ghost.entity.dest.w *. 2. }
+      in
+      state.ghost.child <- Some { kind = FOCUS focus_sparkles_sprite; relative_pos = ALIGN_CENTERS };
       state.ghost.actions.focus
     | _ -> failwithf "not an action: %s" (Show.ghost_pose pose)
   in
@@ -428,17 +442,13 @@ let start_action state (pose : ghost_pose) =
   action.blocked_until.at <- state.frame.time +. action.config.cooldown.seconds;
   set_pose state.ghost pose state.frame.time
 
-(* TODO use something like this to interrupt focus when taking damage
-*)
-(* let interrupt_action state action =
- *   action.doing_until.at <- state.frame.time *)
-
 let continue_action state (pose : ghost_pose) =
   (match pose with
   | FOCUSING ->
     (let decr_dt =
-       state.ghost.actions.focus.config.duration.seconds /. (Config.action.soul_per_cast + 50 |> Int.to_float)
+       state.ghost.actions.focus.config.duration.seconds /. (Config.action.soul_per_cast + 0 |> Int.to_float)
      in
+     (* TODO probably should be checking >= *)
      if
        state.ghost.soul.at_focus_start - state.ghost.soul.current > Config.action.soul_per_cast
        && state.ghost.soul.health_at_focus_start = state.ghost.health.current
@@ -451,26 +461,13 @@ let continue_action state (pose : ghost_pose) =
   | _ -> ());
   set_pose state.ghost pose state.frame.time
 
-let get_current_slash (ghost : ghost) : slash option =
-  match ghost.child with
-  | None -> None
-  | Some child -> (
-    match child.kind with
-    | NAIL slash -> Some slash
-    | _ -> None)
-
-let get_current_attack_direction (ghost : ghost) : direction option =
-  match get_current_slash ghost with
-  | None -> None
-  | Some slash -> Some slash.direction
-
 let is_doing ?(_debug = false) state (pose : ghost_pose) : bool =
   let check_action action = action.started.at <= state.frame.time && state.frame.time <= action.doing_until.at in
   match pose with
-  | ATTACKING _ -> Option.is_some (get_current_slash state.ghost)
   | CASTING -> check_action state.ghost.actions.cast
   | DASHING -> check_action state.ghost.actions.dash
-  | FOCUSING -> check_action state.ghost.actions.focus
+  | ATTACKING _ -> Option.is_some (get_current_slash state.ghost)
+  | FOCUSING -> Option.is_some (get_focus_sparkles state.ghost)
   | JUMPING -> failwith "is_doing - JUMPING is only true on the frame that jump is pressed"
   | _ -> failwithf "is_doing - not an action: %s" (Show.ghost_pose pose)
 
@@ -572,11 +569,10 @@ let update (state : state) : state =
          cycle_current_ghost state
       *)
       toggle_ability state.ghost "mantis_claw"
-    else if key_pressed DEBUG_2 then (*
-
-state.ghost.soul.current <- state.ghost.soul.max
-*)
-      toggle_ability state.ghost "monarch_wings"
+    else if key_pressed DEBUG_2 then (
+      itmp "current soul: %d" state.ghost.soul.current;
+      state.ghost.soul.current <- state.ghost.soul.max;
+      toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then
       maybe_begin_interaction state "boss-killed_LOCKER_BOY"
     else if key_pressed DEBUG_4 then
@@ -634,6 +630,7 @@ state.ghost.soul.current <- state.ghost.soul.max
         state.progress.rooms <- Utils.assoc_replace room_uuid state.room.progress state.progress.rooms;
         let room = Room.init path state.progress exits state.global.enemy_configs state.global.npc_configs in
         state.ghost.entity.current_floor <- None;
+        state.ghost.current.wall <- None;
         state.ghost.entity.dest.pos <- start_pos;
         (* all rooms are using the same tilesets now, but still unload them here (and re-load them
            in load_room) every time because the tilesets could be in a different order per room
@@ -1088,6 +1085,7 @@ state.ghost.soul.current <- state.ghost.soul.max
       Entity.on_ground state.ghost.entity
       && state.ghost.soul.current >= Config.action.soul_per_cast
       && state.frame_inputs.focus.pressed
+      && not (is_doing state (ATTACKING RIGHT))
     in
     let still_focusing () = is_doing state FOCUSING && state.frame_inputs.focus.down in
     let this_frame =
@@ -1096,9 +1094,17 @@ state.ghost.soul.current <- state.ghost.soul.max
         true)
       else if still_focusing () then (
         continue_action state FOCUSING;
+        (match get_focus_sparkles state.ghost with
+        | None -> ()
+        | Some sprite -> Sprite.advance_animation state.frame.time sprite.texture sprite);
         true)
-      else
-        false
+      else (
+        (* TODO this may not work well, since you can cancel an attack by tapping focus
+           - it doesn't reset the attack cooldown though so this seems pretty harmless for now
+        *)
+        if state.frame_inputs.focus.released then
+          state.ghost.child <- None;
+        false)
     in
     { this_frame }
   in
@@ -1225,6 +1231,7 @@ let load_shared_textures () =
     let count = 3 in
     build_shared_texture ~count ~duration:Config.action.attack_duration ~particle:true name
   in
+  (* FIXME move these to json configs *)
   {
     slash = build_slash_texture "slash";
     upslash = build_slash_texture "upslash";
@@ -1233,6 +1240,7 @@ let load_shared_textures () =
     health = build_shared_texture ~count:2 "health";
     energon_pod = build_shared_texture ~count:2 "energon-pod";
     vengeful_cushion = build_shared_texture ~count:2 ~duration:0.066666 "vengeful-cushion";
+    focus_sparkles = build_shared_texture ~count:24 ~duration:0.033333 "focus-sparkles";
   }
 
 let init ghost_id in_party idle_texture action_config start_pos abilities textures shared_textures =

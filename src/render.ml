@@ -542,7 +542,7 @@ let tick state : state =
         in
         match child.kind with
         | NAIL slash -> draw_child_sprite slash.sprite
-        | _ -> ())
+        | FOCUS focus_sprite -> draw_child_sprite focus_sprite)
     in
     let draw_vengeful_spirit (p : projectile) =
       if state.debug.enabled then
@@ -560,20 +560,10 @@ let tick state : state =
       {
         ident = "shine";
         texture = state.ghost.shared_textures.shine;
-        dest =
-          {
-            pos =
-              {
-                x = ghost.entity.dest.pos.x -. (size /. 2.) +. (Config.ghost.width *. Config.scale.ghost /. 2.);
-                y = ghost.entity.dest.pos.y -. (size /. 2.) +. (Config.ghost.height *. Config.scale.ghost /. 2.);
-              };
-            w = size;
-            h = size;
-          };
+        dest = { pos = Entity.get_child_pos ghost.entity ALIGN_CENTERS size size; w = size; h = size };
         facing_right = false;
       }
     in
-    (* TODO add new child position ALIGN_CENTERS *)
     draw_sprite shine_sprite;
     draw_entity ghost.entity;
     draw_child ()

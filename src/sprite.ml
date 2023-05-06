@@ -142,9 +142,9 @@ let create (name : string) (texture : texture) ?(facing_right = true) (dest : re
 
 let spawn_particle (name : string) (texture : texture) ?(facing_right = true) (dest : rect) frame_time : sprite =
   (match texture.animation_src with
-  | STILL _ -> ()
-  | PARTICLE animation
-  | LOOPED animation ->
+  | STILL _ -> failwith "tried to spawn particle with STILL"
+  | LOOPED animation -> failwith "tried to spawn particle with LOOPED"
+  | PARTICLE animation ->
     animation.frame_idx <- 0;
     animation.frame_started.at <- frame_time);
   { ident = fmt "Sprite[%s]" name; texture; facing_right; dest }

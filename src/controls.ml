@@ -177,3 +177,4 @@ let get_key k =
 let key_up k = Raylib.is_key_up (get_key k)
 let key_down k = Raylib.is_key_down (get_key k)
 let key_pressed k = Raylib.is_key_pressed (get_key k)
+let key_released k = Raylib.is_key_released (get_key k)

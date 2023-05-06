@@ -268,16 +268,16 @@ let init () : state =
     frame = { idx = 0; dt = 0.; time = 0. };
     frame_inputs =
       {
-        up = { pressed = false; down = false; down_since = None };
-        down = { pressed = false; down = false; down_since = None };
-        left = { pressed = false; down = false; down_since = None };
-        right = { pressed = false; down = false; down_since = None };
-        cast = { pressed = false; down = false; down_since = None };
-        d_nail = { pressed = false; down = false; down_since = None };
-        dash = { pressed = false; down = false; down_since = None };
-        focus = { pressed = false; down = false; down_since = None };
-        jump = { pressed = false; down = false; down_since = None };
-        nail = { pressed = false; down = false; down_since = None };
+        up = { pressed = false; down = false; released = false; down_since = None };
+        down = { pressed = false; down = false; released = false; down_since = None };
+        left = { pressed = false; down = false; released = false; down_since = None };
+        right = { pressed = false; down = false; released = false; down_since = None };
+        cast = { pressed = false; down = false; released = false; down_since = None };
+        d_nail = { pressed = false; down = false; released = false; down_since = None };
+        dash = { pressed = false; down = false; released = false; down_since = None };
+        focus = { pressed = false; down = false; released = false; down_since = None };
+        jump = { pressed = false; down = false; released = false; down_since = None };
+        nail = { pressed = false; down = false; released = false; down_since = None };
       };
     progress = empty_progress;
     interaction = { steps = []; text = None; speaker_name = None; name = None };
@@ -485,6 +485,7 @@ let update_spawned_vengeful_spirits state =
 let update_frame_inputs state : state =
   let input_cache = state.frame_inputs in
   let update_frame_input key (input : frame_input) =
+    input.released <- key_released key;
     input.down <- key_down key;
     input.pressed <- key_pressed key;
     if input.pressed then

@@ -144,7 +144,7 @@ let get_asset_dir dir =
   | ENEMIES -> "enemies"
   | NPCS -> "npcs"
 
-(* used to load textures to populate npc_texture_cache and ghost_texture_cache *)
+(* used to load textures to populate npc_texture_cache or ghost_textures *)
 type texture_config = {
   asset_dir : asset_dir;
   (* this is either the npc name or the ghost name, capitalized like a variant name, eg. BRITTA or LOCKER_BOY *)
@@ -319,6 +319,7 @@ type shared_textures = {
   health : texture;
   vengeful_cushion : texture;
   energon_pod : texture;
+  focus_sparkles : texture;
 }
 
 (* the ghost's state that can be mapped to a texture and rendered *)
@@ -365,18 +366,6 @@ type ghost_id =
   | BRITTA
   | JEFF
   | TROY
-
-(* these are loaded at the end of State.init ()
-   trying to load them in config.ml caused seg-faults after loading the first image, not sure why though
-*)
-type ghost_texture_cache = {
-  shared : shared_textures;
-  abed : ghost_textures;
-  annie : ghost_textures;
-  britta : ghost_textures;
-  jeff : ghost_textures;
-  troy : ghost_textures;
-}
 
 (* when an enemy is initialized, this cache is filled with a texture for each image file in their directory *)
 type npc_texture_cache = (string * texture) list
@@ -628,14 +617,16 @@ type ghost_action = {
 (* this keeps track of the last time the ghost performed these actions *)
 type ghost_actions = {
   cast : ghost_action;
-  (* TODO maybe add c_dash, maybe not - it doesn't have a duration like other actions, so it needs some unique handling *)
   dash : ghost_action;
   double_jump : ghost_action;
-  focus : ghost_action;
   jump : ghost_action;
-  nail : ghost_action;
-  take_damage : ghost_action;
   wall_jump : ghost_action;
+  take_damage : ghost_action;
+  (* checking is_doing for nail/focus uses the ghost.child sprite, not
+     the duration/doing_until/blocked_until like the other actions
+  *)
+  nail : ghost_action;
+  focus : ghost_action;
 }
 
 (* - instead of keeping track of the current ghost_pose in state, we just update the sprite texture whenever
@@ -648,9 +639,7 @@ type pose_status = { (* mutable attack_direction : direction option; *)
 type frame_input = {
   mutable pressed : bool;
   mutable down : bool;
-  (* TODO probably need this for c-dash
-     mutable released : bool;
-  *)
+  mutable released : bool;
   mutable down_since : time option;
 }
 
@@ -693,6 +682,7 @@ type relative_position =
   | BEHIND
   | ABOVE
   | BELOW
+  | ALIGN_CENTERS
 
 (* - used for things that are "attached" to the ghost, ie their position depends on ghost
    - so spawned_vengeful_spirits are not children, but dive and shreik are
@@ -1005,7 +995,7 @@ type texture_cache = {
      - multiple sprites can still be rendered at separate dests, but they animations are synced
      - so creating a new damage sprite while one is on the screen will cause it to reset at the beginning
      - in practice this doesn't matter because the animation is so short, but it might cause problems for other cached textures
- *)
+  *)
   damage : texture;
   ability_outlines : texture;
 }
