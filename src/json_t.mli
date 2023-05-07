@@ -81,9 +81,9 @@ type ghost_texture_configs = (string * texture_config) list
 type ghost_action = { duration: float; cooldown: float; input_buffer: float }
 
 type ghosts_file = {
-  texture_configs: (string * ghost_texture_configs) list;
-  action_config: (string * ghost_action) list;
-  shared_textures: (string * texture_config) list
+  individual_textures: (string * ghost_texture_configs) list;
+  shared_textures: (string * texture_config) list;
+  actions: (string * ghost_action) list
 }
 
 type enemy_config = {

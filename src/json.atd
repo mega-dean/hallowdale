@@ -128,10 +128,9 @@ type ghost_action = {
 type ghost_texture_configs = (string * texture_config) list
 type ghosts_file = {
   (* ghost name * texture_configs *)
-  (* FIXME rename (remove "config") *)
-  texture_configs : (string * ghost_texture_configs) list;
-  action_config : (string * ghost_action) list;
+  individual_textures : (string * ghost_texture_configs) list;
   shared_textures : (string * texture_config) list;
+  actions : (string * ghost_action) list;
 }
 
 type npc_config = {

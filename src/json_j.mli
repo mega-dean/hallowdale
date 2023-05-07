@@ -102,9 +102,9 @@ type ghost_action = Json_t.ghost_action = {
 }
 
 type ghosts_file = Json_t.ghosts_file = {
-  texture_configs: (string * ghost_texture_configs) list;
-  action_config: (string * ghost_action) list;
-  shared_textures: (string * texture_config) list
+  individual_textures: (string * ghost_texture_configs) list;
+  shared_textures: (string * texture_config) list;
+  actions: (string * ghost_action) list
 }
 
 type enemy_config = Json_t.enemy_config = {

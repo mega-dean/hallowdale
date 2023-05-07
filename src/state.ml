@@ -28,7 +28,7 @@ let read_ghost_configs () : ghosts_file =
   let ghost_file : Json_t.ghosts_file =
     Tiled.read_whole_file (fmt "../%s" ghost_config_path) |> Json_j.ghosts_file_of_string
   in
-  let make_tc character_name ((pose_name, ghost_pose) : string * Json_t.texture_config) : texture_config =
+  let parse_texture_config character_name ((pose_name, ghost_pose) : string * Json_t.texture_config) : texture_config =
     {
       asset_dir = GHOSTS;
       character_name;
@@ -40,7 +40,7 @@ let read_ghost_configs () : ghosts_file =
     }
   in
   let parse_ghost_texture ((ghost_id_str, ghost_poses) : string * (string * Json_t.texture_config) list) :
-    ghost_id * texture_config list =
+      ghost_id * texture_config list =
     let ghost_id =
       match ghost_id_str with
       | "ABED" -> ABED
@@ -50,16 +50,15 @@ let read_ghost_configs () : ghosts_file =
       | "TROY" -> TROY
       | _ -> failwithf "bad ghost name '%s' in %s" ghost_id_str ghost_config_path
     in
-    let texture_configs : texture_config list = List.map (make_tc ghost_id_str) ghost_poses in
+    let texture_configs : texture_config list = List.map (parse_texture_config ghost_id_str) ghost_poses in
     (ghost_id, texture_configs)
   in
-  let textures = List.map parse_ghost_texture ghost_file.texture_configs in
+  let textures = List.map parse_ghost_texture ghost_file.individual_textures in
   let shared_textures : (string * texture_config) list =
-    let make_tc' (s, tc) : (string * texture_config) =
-      tmp "making texture for %s" s;
-      (s, make_tc "shared" (s, tc))
+    let parse_texture_config' (s, tc) : string * texture_config =
+      (s, parse_texture_config "shared" (s, tc))
     in
-    List.map (make_tc') ghost_file.shared_textures
+    List.map parse_texture_config' ghost_file.shared_textures
   in
   let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
     ( name,
@@ -69,7 +68,7 @@ let read_ghost_configs () : ghosts_file =
         input_buffer = { seconds = json_ghost_action.input_buffer };
       } )
   in
-  let actions : (string * ghost_action_config) list = List.map parse_ghost_action ghost_file.action_config in
+  let actions : (string * ghost_action_config) list = List.map parse_ghost_action ghost_file.actions in
   { actions; textures; shared_textures }
 
 let init () : state =
@@ -100,7 +99,6 @@ let init () : state =
 
         (* cafeteria floor *)
         ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
-
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
       ]

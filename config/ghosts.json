@@ -1,5 +1,5 @@
 {
-    "texture_configs": [
+    "individual_textures": [
         ["ABED", [
             ["idle", {
                 "y_offset": 8
@@ -160,7 +160,22 @@
         ]]
     ],
 
-    "action_config": [
+    "shared_textures": [
+        ["nail", {
+            "count": 3,
+            "duration": 0.07
+        }],
+        ["vengeful-cushion", {
+            "count": 2,
+            "duration": 0.066666
+        }],
+        ["focus-sparkles", {
+            "count": 24,
+            "duration": 0.023333
+        }]
+    ],
+
+    "actions": [
         ["jump", {
             "duration": 0.0,
             "cooldown": 0.166666,
@@ -209,21 +224,6 @@
             "duration": 1.5,
             "cooldown": 0.0,
             "input_buffer": 0.0
-        }]
-    ],
-
-    "shared_textures": [
-        ["nail", {
-            "count": 3,
-            "duration": 0.07
-        }],
-        ["vengeful-cushion", {
-            "count": 2,
-            "duration": 0.066666
-        }],
-        ["focus-sparkles", {
-            "count": 24,
-            "duration": 0.023333
         }]
     ]
 }

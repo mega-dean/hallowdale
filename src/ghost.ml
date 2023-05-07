@@ -570,7 +570,6 @@ let update (state : state) : state =
       *)
       toggle_ability state.ghost "mantis_claw"
     else if key_pressed DEBUG_2 then (
-      itmp "current soul: %d" state.ghost.soul.current;
       state.ghost.soul.current <- state.ghost.soul.max;
       toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then

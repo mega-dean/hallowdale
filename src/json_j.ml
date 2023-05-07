@@ -102,9 +102,9 @@ type ghost_action = Json_t.ghost_action = {
 }
 
 type ghosts_file = Json_t.ghosts_file = {
-  texture_configs: (string * ghost_texture_configs) list;
-  action_config: (string * ghost_action) list;
-  shared_textures: (string * texture_config) list
+  individual_textures: (string * ghost_texture_configs) list;
+  shared_textures: (string * texture_config) list;
+  actions: (string * ghost_action) list
 }
 
 type enemy_config = Json_t.enemy_config = {
@@ -4000,20 +4000,11 @@ let write_ghosts_file : _ -> ghosts_file -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
-      Buffer.add_string ob "\"texture_configs\":";
+      Buffer.add_string ob "\"individual_textures\":";
     (
       write__12
     )
-      ob x.texture_configs;
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"action_config\":";
-    (
-      write__13
-    )
-      ob x.action_config;
+      ob x.individual_textures;
     if !is_first then
       is_first := false
     else
@@ -4023,6 +4014,15 @@ let write_ghosts_file : _ -> ghosts_file -> _ = (
       write__10
     )
       ob x.shared_textures;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"actions\":";
+    (
+      write__13
+    )
+      ob x.actions;
     Buffer.add_char ob '}';
 )
 let string_of_ghosts_file ?(len = 1024) x =
@@ -4033,9 +4033,9 @@ let read_ghosts_file = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_texture_configs = ref (None) in
-    let field_action_config = ref (None) in
+    let field_individual_textures = ref (None) in
     let field_shared_textures = ref (None) in
+    let field_actions = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -4045,35 +4045,29 @@ let read_ghosts_file = (
           if pos < 0 || len < 0 || pos + len > String.length s then
             invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           match len with
-            | 13 -> (
-                if String.unsafe_get s pos = 'a' && String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'c' && String.unsafe_get s (pos+8) = 'o' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 'f' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 'g' then (
-                  1
+            | 7 -> (
+                if String.unsafe_get s pos = 'a' && String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 's' then (
+                  2
                 )
                 else (
                   -1
                 )
               )
             | 15 -> (
-                match String.unsafe_get s pos with
-                  | 's' -> (
-                      if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'd' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' && String.unsafe_get s (pos+11) = 'u' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'e' && String.unsafe_get s (pos+14) = 's' then (
-                        2
-                      )
-                      else (
-                        -1
-                      )
-                    )
-                  | 't' -> (
-                      if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'x' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'r' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'c' && String.unsafe_get s (pos+9) = 'o' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'f' && String.unsafe_get s (pos+12) = 'i' && String.unsafe_get s (pos+13) = 'g' && String.unsafe_get s (pos+14) = 's' then (
-                        0
-                      )
-                      else (
-                        -1
-                      )
-                    )
-                  | _ -> (
-                      -1
-                    )
+                if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'd' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' && String.unsafe_get s (pos+11) = 'u' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'e' && String.unsafe_get s (pos+14) = 's' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
+            | 19 -> (
+                if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 'n' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'i' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = 'u' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'l' && String.unsafe_get s (pos+10) = '_' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'x' && String.unsafe_get s (pos+14) = 't' && String.unsafe_get s (pos+15) = 'u' && String.unsafe_get s (pos+16) = 'r' && String.unsafe_get s (pos+17) = 'e' && String.unsafe_get s (pos+18) = 's' then (
+                  0
+                )
+                else (
+                  -1
+                )
               )
             | _ -> (
                 -1
@@ -4084,7 +4078,7 @@ let read_ghosts_file = (
       (
         match i with
           | 0 ->
-            field_texture_configs := (
+            field_individual_textures := (
               Some (
                 (
                   read__12
@@ -4092,18 +4086,18 @@ let read_ghosts_file = (
               )
             );
           | 1 ->
-            field_action_config := (
-              Some (
-                (
-                  read__13
-                ) p lb
-              )
-            );
-          | 2 ->
             field_shared_textures := (
               Some (
                 (
                   read__10
+                ) p lb
+              )
+            );
+          | 2 ->
+            field_actions := (
+              Some (
+                (
+                  read__13
                 ) p lb
               )
             );
@@ -4120,35 +4114,29 @@ let read_ghosts_file = (
             if pos < 0 || len < 0 || pos + len > String.length s then
               invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             match len with
-              | 13 -> (
-                  if String.unsafe_get s pos = 'a' && String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'c' && String.unsafe_get s (pos+8) = 'o' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 'f' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 'g' then (
-                    1
+              | 7 -> (
+                  if String.unsafe_get s pos = 'a' && String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 's' then (
+                    2
                   )
                   else (
                     -1
                   )
                 )
               | 15 -> (
-                  match String.unsafe_get s pos with
-                    | 's' -> (
-                        if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'd' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' && String.unsafe_get s (pos+11) = 'u' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'e' && String.unsafe_get s (pos+14) = 's' then (
-                          2
-                        )
-                        else (
-                          -1
-                        )
-                      )
-                    | 't' -> (
-                        if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'x' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'r' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'c' && String.unsafe_get s (pos+9) = 'o' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'f' && String.unsafe_get s (pos+12) = 'i' && String.unsafe_get s (pos+13) = 'g' && String.unsafe_get s (pos+14) = 's' then (
-                          0
-                        )
-                        else (
-                          -1
-                        )
-                      )
-                    | _ -> (
-                        -1
-                      )
+                  if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'd' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' && String.unsafe_get s (pos+11) = 'u' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'e' && String.unsafe_get s (pos+14) = 's' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 19 -> (
+                  if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 'n' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'i' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = 'u' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'l' && String.unsafe_get s (pos+10) = '_' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'x' && String.unsafe_get s (pos+14) = 't' && String.unsafe_get s (pos+15) = 'u' && String.unsafe_get s (pos+16) = 'r' && String.unsafe_get s (pos+17) = 'e' && String.unsafe_get s (pos+18) = 's' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
                 )
               | _ -> (
                   -1
@@ -4159,7 +4147,7 @@ let read_ghosts_file = (
         (
           match i with
             | 0 ->
-              field_texture_configs := (
+              field_individual_textures := (
                 Some (
                   (
                     read__12
@@ -4167,18 +4155,18 @@ let read_ghosts_file = (
                 )
               );
             | 1 ->
-              field_action_config := (
-                Some (
-                  (
-                    read__13
-                  ) p lb
-                )
-              );
-            | 2 ->
               field_shared_textures := (
                 Some (
                   (
                     read__10
+                  ) p lb
+                )
+              );
+            | 2 ->
+              field_actions := (
+                Some (
+                  (
+                    read__13
                   ) p lb
                 )
               );
@@ -4191,9 +4179,9 @@ let read_ghosts_file = (
     with Yojson.End_of_object -> (
         (
           {
-            texture_configs = (match !field_texture_configs with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "texture_configs");
-            action_config = (match !field_action_config with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "action_config");
+            individual_textures = (match !field_individual_textures with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "individual_textures");
             shared_textures = (match !field_shared_textures with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "shared_textures");
+            actions = (match !field_actions with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "actions");
           }
          : ghosts_file)
       )
