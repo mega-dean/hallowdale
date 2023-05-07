@@ -12,6 +12,12 @@ let animation_src (anim_src : animation_src) =
   | PARTICLE a -> fmt "PARTICLE (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
   | LOOPED a -> fmt "LOOPED (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
 
+let asset_dir (asset_dir : asset_dir) =
+  match asset_dir with
+  | GHOSTS -> "ghosts"
+  | NPCS -> "npcs"
+  | ENEMIES -> "enemies"
+
 let direction (d : direction) : string =
   match d with
   | UP -> "up"

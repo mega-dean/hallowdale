@@ -18,12 +18,29 @@ let read_npcs_config () : (npc_id * json_npc_config) list =
 let read_enemies_config () : Json_t.enemies_file =
   Tiled.read_whole_file (fmt "../%s" enemies_config_path) |> Json_j.enemies_file_of_string
 
-let read_ghost_configs () : (string * ghost_action_config) list * (ghost_id * texture_config list) list =
+type ghosts_file = {
+  textures : (ghost_id * texture_config list) list;
+  actions : (string * ghost_action_config) list;
+  shared_textures : (string * texture_config) list;
+}
+
+let read_ghost_configs () : ghosts_file =
   let ghost_file : Json_t.ghosts_file =
     Tiled.read_whole_file (fmt "../%s" ghost_config_path) |> Json_j.ghosts_file_of_string
   in
+  let make_tc character_name ((pose_name, ghost_pose) : string * Json_t.texture_config) : texture_config =
+    {
+      asset_dir = GHOSTS;
+      character_name;
+      pose_name;
+      count = ghost_pose.count;
+      duration = { seconds = ghost_pose.duration };
+      x_offset = ghost_pose.x_offset |> Int.to_float;
+      y_offset = ghost_pose.y_offset |> Int.to_float;
+    }
+  in
   let parse_ghost_texture ((ghost_id_str, ghost_poses) : string * (string * Json_t.texture_config) list) :
-      ghost_id * texture_config list =
+    ghost_id * texture_config list =
     let ghost_id =
       match ghost_id_str with
       | "ABED" -> ABED
@@ -33,21 +50,17 @@ let read_ghost_configs () : (string * ghost_action_config) list * (ghost_id * te
       | "TROY" -> TROY
       | _ -> failwithf "bad ghost name '%s' in %s" ghost_id_str ghost_config_path
     in
-    let make_tc ((pose_name, ghost_pose) : string * Json_t.texture_config) : texture_config =
-      {
-        asset_dir = GHOSTS;
-        character_name = ghost_id_str;
-        pose_name;
-        count = ghost_pose.count;
-        duration = { seconds = ghost_pose.duration };
-        x_offset = ghost_pose.x_offset |> Int.to_float;
-        y_offset = ghost_pose.y_offset |> Int.to_float;
-      }
-    in
-    let texture_configs : texture_config list = List.map make_tc ghost_poses in
+    let texture_configs : texture_config list = List.map (make_tc ghost_id_str) ghost_poses in
     (ghost_id, texture_configs)
   in
   let textures = List.map parse_ghost_texture ghost_file.texture_configs in
+  let shared_textures : (string * texture_config) list =
+    let make_tc' (s, tc) : (string * texture_config) =
+      tmp "making texture for %s" s;
+      (s, make_tc "shared" (s, tc))
+    in
+    List.map (make_tc') ghost_file.shared_textures
+  in
   let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
     ( name,
       {
@@ -57,7 +70,7 @@ let read_ghost_configs () : (string * ghost_action_config) list * (ghost_id * te
       } )
   in
   let actions : (string * ghost_action_config) list = List.map parse_ghost_action ghost_file.action_config in
-  (actions, textures)
+  { actions; textures; shared_textures }
 
 let init () : state =
   (* TODO handle this in a config file (probably will be similar to save files) *)
@@ -111,7 +124,7 @@ let init () : state =
   let room = Room.init room_name empty_progress exits enemy_configs npc_configs in
 
   room.layers <- Tiled.Room.get_layer_tile_groups room [];
-  let action_config, ghost_configs = read_ghost_configs () in
+  let ghosts_file = read_ghost_configs () in
 
   let use_json_config configs pose_name =
     let config =
@@ -124,11 +137,11 @@ let init () : state =
     Sprite.build_texture_from_config config
   in
 
-  let britta_configs = List.assoc BRITTA ghost_configs in
-  let jeff_configs = List.assoc JEFF ghost_configs in
-  let abed_configs = List.assoc ABED ghost_configs in
-  let troy_configs = List.assoc TROY ghost_configs in
-  let annie_configs = List.assoc ANNIE ghost_configs in
+  let britta_configs = List.assoc BRITTA ghosts_file.textures in
+  let jeff_configs = List.assoc JEFF ghosts_file.textures in
+  let abed_configs = List.assoc ABED ghosts_file.textures in
+  let troy_configs = List.assoc TROY ghosts_file.textures in
+  let annie_configs = List.assoc ANNIE ghosts_file.textures in
 
   let britta_ghost_textures : ghost_textures =
     {
@@ -149,9 +162,9 @@ let init () : state =
     }
   in
 
-  let shared_ghost_textures = Ghost.load_shared_textures () in
+  let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
   let make_ghost id in_party textures : ghost =
-    Ghost.init id in_party textures.idle action_config (clone_vector start_pos)
+    Ghost.init id in_party textures.idle ghosts_file.actions (clone_vector start_pos)
       {
         mothwing_cloak;
         mantis_claw;

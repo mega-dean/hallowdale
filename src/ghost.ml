@@ -1213,34 +1213,44 @@ let update (state : state) : state =
   Sprite.advance_animation state.frame.time state.ghost.entity.sprite.texture state.ghost.entity.sprite;
   state
 
-let load_shared_textures () =
-  let build_shared_texture ~count ?(duration = 0.) ?(particle = false) pose_name =
-    Sprite.build_texture_from_config ~particle
-      {
-        asset_dir = GHOSTS;
-        character_name = "shared";
-        pose_name;
-        x_offset = 0.;
-        y_offset = 0.;
-        duration = { seconds = duration };
-        count;
-      }
+let load_shared_textures (shared_texture_configs : 'a list) =
+  let build_shared_texture ?(particle = false) ?(config_name = None) pose_name =
+    let config =
+      let config_name' =
+        (* the "nail" shared config applies to "slash"/"upslash"/"downslash", but otherwise the pose_name *)
+        Option.value config_name ~default:pose_name
+      in
+      match List.assoc_opt config_name' shared_texture_configs with
+      | Some config ->
+        (* the `with pose_name` is also because of the "nail" config naming *)
+        { config with pose_name }
+      | None ->
+        {
+          asset_dir = GHOSTS;
+          character_name = "shared";
+          pose_name;
+          x_offset = 0.;
+          y_offset = 0.;
+          duration = { seconds = 0. };
+          count = 1;
+        }
+    in
+
+    Sprite.build_texture_from_config ~particle config
   in
 
-  let build_slash_texture name =
-    let count = 3 in
-    build_shared_texture ~count ~duration:Config.action.attack_duration ~particle:true name
-  in
-  (* FIXME move these to json configs *)
+  let build_slash_texture name = build_shared_texture ~particle:true ~config_name:(Some "nail") name in
+
+  let keys = shared_texture_configs |> List.map fst |> join in
   {
     slash = build_slash_texture "slash";
     upslash = build_slash_texture "upslash";
     downslash = build_slash_texture "downslash";
-    shine = build_shared_texture ~count:1 "shine";
-    health = build_shared_texture ~count:2 "health";
-    energon_pod = build_shared_texture ~count:2 "energon-pod";
-    vengeful_cushion = build_shared_texture ~count:2 ~duration:0.066666 "vengeful-cushion";
-    focus_sparkles = build_shared_texture ~count:24 ~duration:0.033333 "focus-sparkles";
+    shine = build_shared_texture "shine";
+    health = build_shared_texture "health";
+    energon_pod = build_shared_texture "energon-pod";
+    vengeful_cushion = build_shared_texture "vengeful-cushion";
+    focus_sparkles = build_shared_texture "focus-sparkles";
   }
 
 let init ghost_id in_party idle_texture action_config start_pos abilities textures shared_textures =

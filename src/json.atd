@@ -99,6 +99,7 @@ type keybinds_file = (string * string) list
 type texture_config = {
   ~count <ocaml default="1"> : int;
   ~duration <ocaml default="0.066666"> : float;
+  (* FIXME add default values *)
   x_offset : int;
   y_offset : int;
 }
@@ -129,8 +130,10 @@ type ghost_action = {
 
 type ghosts_file = {
   (* ghost name * texture_configs *)
+  (* FIXME rename (remove "config") *)
   texture_configs : (string * ghost_texture_configs) list;
   action_config : (string * ghost_action) list;
+  shared_textures : (string * texture_config) list;
   (* TODO add something like this
      other : (string * float) list;
   *)

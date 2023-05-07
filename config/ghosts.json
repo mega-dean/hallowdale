@@ -188,10 +188,12 @@
             "input_buffer": 0.0
         }],
         ["nail", {
-            "duration": 0.0, // TODO add separate frame_duration key
-            // "cooldown": 0.41,
-            "cooldown": 0.62, // cooldown starts counting when action begins, so this is 0.41 + (duration of slash)
-            // (duration of slash) is (number of frames * Config.actions.attack_duration)
+            // - slashes are PARTICLE animations that despawn when the animation completes, so this
+            //   config value doesn't get used
+            // - slash duration is based on the shared texture below (count *. duration)
+            "duration": 0.0,
+            // cooldown starts counting when action begins, so this is 0.41 + (duration of slash)
+            "cooldown": 0.62,
             "input_buffer": 0.2
         }],
         ["dash", {
@@ -218,6 +220,27 @@
             "duration": 1.5,
             "cooldown": 0.0,
             "input_buffer": 0.0
+        }]
+    ],
+
+    "shared_textures": [
+        ["nail", {
+            "count": 3,
+            "duration": 0.07,
+            "x_offset": 0,
+            "y_offset": 0
+        }],
+        ["vengeful-cushion", {
+            "count": 2,
+            "duration": 0.066666,
+            "x_offset": 0,
+            "y_offset": 0
+        }],
+        ["focus-sparkles", {
+            "count": 24,
+            "duration": 0.023333,
+            "x_offset": 0,
+            "y_offset": 0
         }]
     ]
 }

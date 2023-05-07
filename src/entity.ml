@@ -252,7 +252,7 @@ let create_from_textures (texture_configs : texture_config list) (entity_dest : 
       Sys.readdir (Tiled.convert_path (fmt "../assets/%s/%s" asset_dir char_name)) |> Array.to_list
     in
     let config_names = texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name) in
-    let png_names = get_filenames (get_asset_dir tc.asset_dir) tc.character_name in
+    let png_names = get_filenames (Show.asset_dir tc.asset_dir) tc.character_name in
 
     let validate_png_name png_name =
       if not (List.mem png_name config_names) then

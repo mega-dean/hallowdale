@@ -138,12 +138,6 @@ type asset_dir =
   | ENEMIES
   | NPCS
 
-let get_asset_dir dir =
-  match dir with
-  | GHOSTS -> "ghosts"
-  | ENEMIES -> "enemies"
-  | NPCS -> "npcs"
-
 (* used to load textures to populate npc_texture_cache or ghost_textures *)
 type texture_config = {
   asset_dir : asset_dir;
