@@ -17,14 +17,12 @@
                 ["idle", {
                     "count": 1,
                     "duration": 0.0,
-                    "x_offset": 2,
-                    "y_offset": 0
+                    "x_offset": 2
                 }],
                 ["jumping", {
                     "count": 1,
                     "duration": 0.0,
-                    "x_offset": 3,
-                    "y_offset": 0
+                    "x_offset": 3
                 }],
                 ["walking", {
                     "count": 4,
@@ -34,15 +32,12 @@
                 }],
                 ["projectile", {
                     "count": 1,
-                    "duration": 0.0,
-                    "x_offset": 0,
-                    "y_offset": 0
+                    "duration": 0.0
                 }],
                 ["scavenging", {
                     "count": 4,
                     "duration": 0.2,
-                    "x_offset": 20,
-                    "y_offset": 0
+                    "x_offset": 20
                 }]
             ]
         }],
@@ -69,15 +64,11 @@
                 }],
                 ["wall-perch", {
                     "count": 1,
-                    "duration": 0.0,
-                    "x_offset": 0,
-                    "y_offset": 0
+                    "duration": 0.0
                 }],
                 ["dash", {
                     "count": 1,
-                    "duration": 0.0,
-                    "x_offset": 0,
-                    "y_offset": 0
+                    "duration": 0.0
                 }],
                 ["dive", {
                     "count": 1,
@@ -87,9 +78,7 @@
                 }],
                 ["projectile", {
                     "count": 2,
-                    "duration": 0.1,
-                    "x_offset": 0,
-                    "y_offset": 0
+                    "duration": 0.1
                 }],
                 ["vanish", {
                     "count": 10,
@@ -104,9 +93,7 @@
     "shared_textures": [
         ["damage", {
             "count": 7,
-            "duration": 0.05,
-            "x_offset": 0,
-            "y_offset": 0
+            "duration": 0.05
         }]
     ]
 }

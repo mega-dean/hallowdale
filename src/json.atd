@@ -99,16 +99,15 @@ type keybinds_file = (string * string) list
 type texture_config = {
   ~count <ocaml default="1"> : int;
   ~duration <ocaml default="0.066666"> : float;
-  (* FIXME add default values *)
-  x_offset : int;
-  y_offset : int;
+  ~x_offset <ocaml default="0"> : int;
+  ~y_offset <ocaml default="0"> : int;
 }
 
 type enemy_config = {
   health : int;
   w : int;
   h : int;
-  ~kind : string;
+  kind : string;
   (* TODO maybe rename this, since the other "props" are temporary/dynamic values, while these don't change *)
   props : (string * float) list;
   texture_configs : (string * texture_config) list;
@@ -120,23 +119,19 @@ type enemies_file =
     shared_textures : (string * texture_config) list;
   }
 
-type ghost_texture_configs = (string * texture_config) list
-
 type ghost_action = {
   ~duration <ocaml default="0.066666"> : float;
   ~cooldown <ocaml default="0.0"> : float;
   ~input_buffer <ocaml default="0.0"> : float;
 }
 
+type ghost_texture_configs = (string * texture_config) list
 type ghosts_file = {
   (* ghost name * texture_configs *)
   (* FIXME rename (remove "config") *)
   texture_configs : (string * ghost_texture_configs) list;
   action_config : (string * ghost_action) list;
   shared_textures : (string * texture_config) list;
-  (* TODO add something like this
-     other : (string * float) list;
-  *)
 }
 
 type npc_config = {

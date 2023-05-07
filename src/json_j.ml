@@ -2100,24 +2100,28 @@ let write_texture_config : _ -> texture_config -> _ = (
       )
         ob x.duration;
     );
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"x_offset\":";
-    (
-      Yojson.Safe.write_int
-    )
-      ob x.x_offset;
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"y_offset\":";
-    (
-      Yojson.Safe.write_int
-    )
-      ob x.y_offset;
+    if x.x_offset <> 0 then (
+      if !is_first then
+        is_first := false
+      else
+        Buffer.add_char ob ',';
+        Buffer.add_string ob "\"x_offset\":";
+      (
+        Yojson.Safe.write_int
+      )
+        ob x.x_offset;
+    );
+    if x.y_offset <> 0 then (
+      if !is_first then
+        is_first := false
+      else
+        Buffer.add_char ob ',';
+        Buffer.add_string ob "\"y_offset\":";
+      (
+        Yojson.Safe.write_int
+      )
+        ob x.y_offset;
+    );
     Buffer.add_char ob '}';
 )
 let string_of_texture_config ?(len = 1024) x =
@@ -2130,8 +2134,8 @@ let read_texture_config = (
     Yojson.Safe.read_lcurl p lb;
     let field_count = ref (1) in
     let field_duration = ref (0.066666) in
-    let field_x_offset = ref (None) in
-    let field_y_offset = ref (None) in
+    let field_x_offset = ref (0) in
+    let field_y_offset = ref (0) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -2204,21 +2208,21 @@ let read_texture_config = (
               );
             )
           | 2 ->
-            field_x_offset := (
-              Some (
+            if not (Yojson.Safe.read_null_if_possible p lb) then (
+              field_x_offset := (
                 (
                   Atdgen_runtime.Oj_run.read_int
                 ) p lb
-              )
-            );
+              );
+            )
           | 3 ->
-            field_y_offset := (
-              Some (
+            if not (Yojson.Safe.read_null_if_possible p lb) then (
+              field_y_offset := (
                 (
                   Atdgen_runtime.Oj_run.read_int
                 ) p lb
-              )
-            );
+              );
+            )
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -2295,21 +2299,21 @@ let read_texture_config = (
                 );
               )
             | 2 ->
-              field_x_offset := (
-                Some (
+              if not (Yojson.Safe.read_null_if_possible p lb) then (
+                field_x_offset := (
                   (
                     Atdgen_runtime.Oj_run.read_int
                   ) p lb
-                )
-              );
+                );
+              )
             | 3 ->
-              field_y_offset := (
-                Some (
+              if not (Yojson.Safe.read_null_if_possible p lb) then (
+                field_y_offset := (
                   (
                     Atdgen_runtime.Oj_run.read_int
                   ) p lb
-                )
-              );
+                );
+              )
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -2321,8 +2325,8 @@ let read_texture_config = (
           {
             count = !field_count;
             duration = !field_duration;
-            x_offset = (match !field_x_offset with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x_offset");
-            y_offset = (match !field_y_offset with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y_offset");
+            x_offset = !field_x_offset;
+            y_offset = !field_y_offset;
           }
          : texture_config)
       )
@@ -4297,17 +4301,15 @@ let write_enemy_config : _ -> enemy_config -> _ = (
       Yojson.Safe.write_int
     )
       ob x.h;
-    if x.kind <> "" then (
-      if !is_first then
-        is_first := false
-      else
-        Buffer.add_char ob ',';
-        Buffer.add_string ob "\"kind\":";
-      (
-        Yojson.Safe.write_string
-      )
-        ob x.kind;
-    );
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"kind\":";
+    (
+      Yojson.Safe.write_string
+    )
+      ob x.kind;
     if !is_first then
       is_first := false
     else
@@ -4339,7 +4341,7 @@ let read_enemy_config = (
     let field_health = ref (None) in
     let field_w = ref (None) in
     let field_h = ref (None) in
-    let field_kind = ref ("") in
+    let field_kind = ref (None) in
     let field_props = ref (None) in
     let field_texture_configs = ref (None) in
     try
@@ -4428,13 +4430,13 @@ let read_enemy_config = (
               )
             );
           | 3 ->
-            if not (Yojson.Safe.read_null_if_possible p lb) then (
-              field_kind := (
+            field_kind := (
+              Some (
                 (
                   Atdgen_runtime.Oj_run.read_string
                 ) p lb
-              );
-            )
+              )
+            );
           | 4 ->
             field_props := (
               Some (
@@ -4541,13 +4543,13 @@ let read_enemy_config = (
                 )
               );
             | 3 ->
-              if not (Yojson.Safe.read_null_if_possible p lb) then (
-                field_kind := (
+              field_kind := (
+                Some (
                   (
                     Atdgen_runtime.Oj_run.read_string
                   ) p lb
-                );
-              )
+                )
+              );
             | 4 ->
               field_props := (
                 Some (
@@ -4576,7 +4578,7 @@ let read_enemy_config = (
             health = (match !field_health with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "health");
             w = (match !field_w with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "w");
             h = (match !field_h with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "h");
-            kind = !field_kind;
+            kind = (match !field_kind with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "kind");
             props = (match !field_props with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "props");
             texture_configs = (match !field_texture_configs with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "texture_configs");
           }

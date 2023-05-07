@@ -99,7 +99,7 @@ let init () : state =
         (* ("infected_b", IC_B, true, true, false, 600., 1900.); *)
 
         (* cafeteria floor *)
-        (* ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.); *)
+        ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
 
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)

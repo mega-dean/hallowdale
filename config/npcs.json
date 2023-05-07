@@ -5,9 +5,7 @@
         "texture_configs": [
             ["idle", {
                 "count": 4,
-                "duration": 0.3,
-                "x_offset": 0,
-                "y_offset": 0
+                "duration": 0.3
             }]
         ]
     }],
@@ -16,8 +14,6 @@
         "h": 39,
         "texture_configs": [
             ["idle", {
-                "x_offset": 0,
-                "y_offset": 0
             }]
         ]
     }],
@@ -26,8 +22,6 @@
         "h": 38,
         "texture_configs": [
             ["idle", {
-                "x_offset": 0,
-                "y_offset": 0
             }]
         ]
     }],
@@ -36,8 +30,6 @@
         "h": 36,
         "texture_configs": [
             ["idle", {
-                "x_offset": 0,
-                "y_offset": 0
             }]
         ]
     }],
@@ -46,8 +38,6 @@
         "h": 45,
         "texture_configs": [
             ["idle", {
-                "x_offset": 0,
-                "y_offset": 0
             }]
         ]
     }],
@@ -57,39 +47,30 @@
         "texture_configs": [
             ["idle", {
                 "count": 1,
-                "duration": 0.0,
-                "x_offset": 0,
-                "y_offset": 0
+                "duration": 0.0
             }],
             ["idle-with-locker-boys", {
                 "count": 1,
                 "duration": 0.0,
-                "x_offset": 88,
-                "y_offset": 0
+                "x_offset": 88
             }],
             ["attack-with-locker-boys", {
                 "count": 1,
                 "duration": 0.0,
-                "x_offset": 88,
-                "y_offset": 0
+                "x_offset": 88
             }],
             ["take-damage", {
                 "count": 1,
                 "duration": 0.0,
-                "x_offset": 88,
-                "y_offset": 0
+                "x_offset": 88
             }],
             ["attack", {
                 "count": 1,
-                "duration": 0.0,
-                "x_offset": 0,
-                "y_offset": 0
+                "duration": 0.0
             }],
             ["walking", {
                 "count": 4,
-                "duration": 0.1,
-                "x_offset": 0,
-                "y_offset": 0
+                "duration": 0.1
             }]
         ]
     }],
@@ -99,15 +80,11 @@
         "texture_configs": [
             ["idle", {
                 "count": 1,
-                "duration": 0.0,
-                "x_offset": 0,
-                "y_offset": 0
+                "duration": 0.0
             }],
             ["walking", {
                 "count": 4,
-                "duration": 0.3,
-                "x_offset": 0,
-                "y_offset": 0
+                "duration": 0.3
             }]
         ]
     }],
@@ -116,8 +93,6 @@
         "h": 36,
         "texture_configs": [
             ["idle", {
-                "x_offset": 0,
-                "y_offset": 0
             }]
         ]
     }]
