@@ -535,14 +535,13 @@ let tick state : state =
       | None -> ()
       | Some child -> (
         let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
-        let draw_child_sprite (sprite : sprite) =
+        let draw_child_sprite (sprite : sprite) tint =
           sprite.dest.pos <- get_child_dest sprite.dest.w sprite.dest.h;
-          Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0
-            Color.raywhite
+          Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint
         in
         match child.kind with
-        | NAIL slash -> draw_child_sprite slash.sprite
-        | FOCUS focus_sprite -> draw_child_sprite focus_sprite)
+        | NAIL slash -> draw_child_sprite slash.sprite ghost.current_weapon.tint
+        | FOCUS focus_sprite -> draw_child_sprite focus_sprite Color.raywhite)
     in
     let draw_vengeful_spirit (p : projectile) =
       if state.debug.enabled then

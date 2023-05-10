@@ -698,28 +698,29 @@ type ghost_child = {
   relative_pos : relative_position;
 }
 
+type weapon = {
+  name : string;
+  tint : color;
+}
+
 type ghost = {
+  entity : entity;
   current : pose_status;
+  mutable textures : ghost_textures;
   shared_textures : shared_textures;
   actions : ghost_actions;
-  entity : entity;
+
   mutable abilities : abilities;
-  (* FIXME add current_weapon_name : string to get nail speed/size *)
+  mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
   mutable in_party : bool;
   mutable id : ghost_id;
-  mutable textures : ghost_textures;
   mutable child : ghost_child option;
   mutable health : health;
   mutable soul : soul;
   mutable can_dash : bool;
   mutable can_flap : bool;
   mutable spawned_vengeful_spirits : projectile list;
-}
-
-type collides_with = {
-  ghost : bool;
-  slash : bool;
 }
 
 type json_world = Json_t.world

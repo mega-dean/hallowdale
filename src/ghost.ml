@@ -152,8 +152,8 @@ let get_focus_sparkles ghost : sprite option =
    - nail damage is the sum of all weapons .damage, so there's always a benefit to picking up
      a weapon (even if it is never equipped)
 *)
-let get_nail_damage state =
-  state.ghost.weapons |> List.map snd |> List.map (fun (w : Json_t.weapon) -> w.damage) |> List.fold_left ( + ) 0
+let get_nail_damage (ghost : ghost) =
+  ghost.weapons |> List.map snd |> List.map (fun (w : Json_t.weapon) -> w.damage) |> List.fold_left ( + ) 0
 
 let resolve_slash_collisions state =
   match get_current_slash state.ghost with
@@ -174,7 +174,7 @@ let resolve_slash_collisions state =
             | UP ->
               if state.ghost.entity.v.y < 0. then
                 state.ghost.entity.v.y <- 300.);
-            Enemy.take_damage state enemy NAIL (get_nail_damage state) c.rect;
+            Enemy.take_damage state enemy NAIL (get_nail_damage state.ghost) c.rect;
             state.ghost.soul.current <-
               Utils.boundi 0 (state.ghost.soul.current + Config.action.soul_gained_per_nail) state.ghost.soul.max));
         if slash.direction = DOWN && state.ghost.entity.y_recoil = None then (
@@ -551,6 +551,22 @@ let add_weapon state weapon_name =
       state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons)
   | None -> failwithf "change_weapon bad weapon name: %s" weapon_name
 
+let equip_weapon (ghost : ghost) weapon_name =
+  let weapon =
+    (get_src ghost.shared_textures.slash)
+  in
+  tmp "current nail size: %f x %f" weapon.w weapon.h;
+  let weapon_config = List.assoc ghost.current_weapon.name ghost.weapons in
+  tmp "current weapon scale: %f %f" weapon_config.scale_x weapon_config.scale_y;
+  let weapon_config' = List.assoc weapon_name ghost.weapons in
+  tmp "new weapon scale: %f %f" weapon_config'.scale_x weapon_config'.scale_y;
+  match List.assoc_opt weapon_name ghost.weapons with
+  | None -> tmp "can't equip %s, not in ghost.weapons" weapon_name
+  | Some weapon_config ->
+    ghost.current_weapon <-
+      (let config = weapon_config.tint in
+       { name = weapon_name; tint = Raylib.Color.create config.r config.g config.b config.a })
+
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
 
@@ -589,17 +605,19 @@ let update (state : state) : state =
       state.ghost.entity.dest.pos.x <- state.ghost.entity.dest.pos.x +. dv
     else if key_down DEBUG_LEFT then
       state.ghost.entity.dest.pos.x <- state.ghost.entity.dest.pos.x -. dv
-    else if key_pressed DEBUG_1 then (*
-
-         cycle_current_ghost state
-      *)
-      toggle_ability state.ghost "mantis_claw"
+    else if key_pressed DEBUG_1 then
+      (* cycle_current_ghost state *)
+      (* toggle_ability state.ghost "mantis_claw" *)
+      (* () *)
+      tmp "current weapons: %s" (state.ghost.weapons |> List.map fst |> join)
     else if key_pressed DEBUG_2 then (
       state.ghost.soul.current <- state.ghost.soul.max;
       add_weapon state "orange-paintball-gun";
       toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then
-      maybe_begin_interaction state "boss-killed_LOCKER_BOY"
+      (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
+      (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
+      equip_weapon state.ghost "orange-paintball-gun"
     else if key_pressed DEBUG_4 then
       print "ghost x: %0.1f, y: %0.1f" state.ghost.entity.dest.pos.x state.ghost.entity.dest.pos.y
   in
@@ -1339,4 +1357,5 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
     spawned_vengeful_spirits = [];
     abilities;
     weapons;
+    current_weapon = { name = "old-nail"; tint = Raylib.Color.raywhite };
   }
