@@ -99,7 +99,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -217,10 +217,32 @@
                  "width":172,
                  "x":1679,
                  "y":823.5
+                }, 
+                {
+                 "height":29,
+                 "id":16,
+                 "name":"weapon_limpken-wrench",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":481.166666666667,
+                 "y":999.333333333333
+                }, 
+                {
+                 "height":30,
+                 "id":17,
+                 "name":"enemy_PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":12.66,
+                 "x":614.003333333333,
+                 "y":989.666666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -277,7 +299,7 @@
          "parallaxx":0.2,
          "parallaxy":0.2,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -335,7 +357,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -393,7 +415,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -451,7 +473,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -507,7 +529,7 @@
          "name":"bg-jugs",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -563,7 +585,7 @@
          "name":"floors3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -619,7 +641,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -675,7 +697,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -731,7 +753,7 @@
          "name":"doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -787,7 +809,7 @@
          "name":"fg",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -843,7 +865,7 @@
          "name":"shadow4",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -899,7 +921,7 @@
          "name":"shadow3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -955,7 +977,7 @@
          "name":"shadow2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -1011,7 +1033,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -1069,13 +1091,13 @@
          "parallaxx":0,
          "parallaxy":0,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
         }],
  "nextlayerid":19,
- "nextobjectid":16,
+ "nextobjectid":18,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

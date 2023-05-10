@@ -199,10 +199,7 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
             X_BOUNDS (get_json_prop enemy "wall_perch_left_x" -. 200., get_json_prop enemy "wall_perch_right_x" +. 200.)
           in
           enemy.spawned_projectiles <-
-            [
-              spawn_projectile enemy ~scale:0.5 ~pogoable:true projectile_direction projectile_duration
-                (get_prop' "projectile_start_time");
-            ])
+            [ spawn_projectile enemy ~scale:0.5 ~pogoable:true projectile_direction projectile_duration current_time ])
         else if current_duration > 2. then
           set_prop enemy "should_vanish" 1.
       | _ -> ())
@@ -215,47 +212,43 @@ let start_action (enemy : enemy) (pose_name : string) (current_time : float) cur
 let continue_action (enemy : enemy) (pose_name : string) current_duration_opt current_time current_props =
   set_action enemy ~current_duration_opt pose_name current_time current_props
 
-let log_action (e : enemy) (action_name : string) (current : float) =
-  e.history <- (PERFORMED action_name, { at = current }) :: List.remove_assoc (PERFORMED action_name) e.history
+let log_action (enemy : enemy) (action_name : string) (current : float) =
+  enemy.history <- (PERFORMED action_name, { at = current }) :: List.remove_assoc (PERFORMED action_name) enemy.history
 
-let start_and_log_action (e : enemy) (action_name : string) (current : float) current_props =
-  log_action e action_name current;
-  start_action e action_name current current_props
+let start_and_log_action (enemy : enemy) (action_name : string) (current : float) current_props =
+  log_action enemy action_name current;
+  start_action enemy action_name current current_props
 
-let take_damage (state : state) (e : enemy) (d : damage_kind) (dest : rect) =
-  let kill (e : enemy) =
-    (match e.kind with
+let take_damage (state : state) (enemy : enemy) (d : damage_kind) (damage : int) (dest : rect) =
+  tmp "taking %d damage" damage;
+  let kill_enemy () =
+    (match enemy.kind with
     | ENEMY ->
-      e.entity.y_recoil <- Some { speed = 100.; time_left = { seconds = 1. }; reset_v = true };
-      e.entity.x_recoil <-
+      enemy.entity.y_recoil <- Some { speed = 100.; time_left = { seconds = 1. }; reset_v = true };
+      enemy.entity.x_recoil <-
         Some { speed = (if Random.bool () then -100. else 100.); time_left = { seconds = 1. }; reset_v = true }
     | _ -> ());
-    (match e.id with
-    | LOCKER_BOY -> Entity.hide e.entity
+    (match enemy.id with
+     | LOCKER_BOY -> Entity.hide enemy.entity
     | _ -> ());
     (* TODO start_and_log_action "die"; *)
-    e.spawned_projectiles <- [];
-    e.status.choose_behavior <- false;
-    e.status.check_damage_collisions <- false
+    enemy.spawned_projectiles <- [];
+    enemy.status.choose_behavior <- false;
+    enemy.status.check_damage_collisions <- false
   in
-  let damage =
-    match d with
-    | NAIL -> 5
-    | VENGEFUL_SPIRIT -> 15
-  in
-  e.history <- (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d) e.history;
-  e.health.current <- e.health.current - damage;
+  enemy.history <- (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d) enemy.history;
+  enemy.health.current <- enemy.health.current - damage;
   let damage_texture = state.global.textures.damage in
   let texture_w, texture_h = get_scaled_texture_size damage_texture in
-  e.damage_sprites <-
+  enemy.damage_sprites <-
     Sprite.spawn_particle
-      (fmt "damage %s" (Show.enemy_name e))
+      (fmt "damage %s" (Show.enemy_name enemy))
       damage_texture
       { pos = { x = dest.pos.x; y = dest.pos.y }; w = texture_w; h = texture_h }
       state.frame.time
-    :: e.damage_sprites;
-  if is_dead e then
-    kill e
+    :: enemy.damage_sprites;
+  if is_dead enemy then
+    kill_enemy ()
 
 let took_damage_at (e : enemy) (d : damage_kind) =
   match List.assoc_opt (TOOK_DAMAGE d) e.history with
@@ -291,9 +284,6 @@ let create_from_rects
                 [
                   ("random_direction_right", if Random.bool () then 1. else 0.);
                   ("random_wall_perch_y", get_json_prop self "dive_y" +. 200. +. Random.float 500.);
-                  (* if a lot of actions need the current time, could just pass the extra arg through
-                     to set_action instead of setting props every time *)
-                  ("projectile_start_time", params.time);
                 ]
             | 1 ->
               let left = get_json_prop self "wall_perch_left_x" in
@@ -378,7 +368,7 @@ let create_from_rects
     let enemy_name = Show.enemy_id enemy_id in
     let enemy_config : json_enemy_config =
       match List.assoc_opt enemy_id enemy_configs with
-      | None -> failwithf "missing enemy config for %s" enemy_name
+      | None -> failwithf "missing config in enemies.json for %s" enemy_name
       | Some config -> config
     in
     let cutscene_name, multiple_enemies, enemy_kind =
@@ -398,6 +388,7 @@ let create_from_rects
       let w, h =
         ((enemy_config.w |> Int.to_float) *. Config.scale.ghost, (enemy_config.h |> Int.to_float) *. Config.scale.ghost)
       in
+      tmp "building enemy with %f, %f" dest.pos.x dest.pos.y;
       Some (build enemy_id enemy_kind enemy_name enemy_config { dest with w; h } on_killed))
   in
 

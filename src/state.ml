@@ -55,9 +55,7 @@ let read_ghost_configs () : ghosts_file =
   in
   let textures = List.map parse_ghost_texture ghost_file.individual_textures in
   let shared_textures : (string * texture_config) list =
-    let parse_texture_config' (s, tc) : string * texture_config =
-      (s, parse_texture_config "shared" (s, tc))
-    in
+    let parse_texture_config' (s, tc) : string * texture_config = (s, parse_texture_config "shared" (s, tc)) in
     List.map parse_texture_config' ghost_file.shared_textures
   in
   let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
@@ -84,7 +82,7 @@ let init () : state =
         (* ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.); *)
 
         (* duncan fight *)
-        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.); *)
+        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.);
         (* past duncan fight *)
         (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
 
@@ -99,6 +97,7 @@ let init () : state =
 
         (* cafeteria floor *)
         ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
+
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
       ]
@@ -140,6 +139,7 @@ let init () : state =
   let abed_configs = List.assoc ABED ghosts_file.textures in
   let troy_configs = List.assoc TROY ghosts_file.textures in
   let annie_configs = List.assoc ANNIE ghosts_file.textures in
+  let weapon_configs = Tiled.load_weapons_config () in
 
   let britta_ghost_textures : ghost_textures =
     {
@@ -172,6 +172,7 @@ let init () : state =
         desolate_dive = false;
         howling_wraiths = false;
       }
+      [ ("old-nail", List.assoc "old-nail" weapon_configs) ]
       textures shared_ghost_textures
   in
 
@@ -265,6 +266,7 @@ let init () : state =
   let global =
     {
       lore = Tiled.load_lore_config ();
+      weapons = weapon_configs;
       enemy_configs;
       npc_configs;
       textures = { ability_outlines; damage };
@@ -474,6 +476,10 @@ let update_npcs state =
   List.iter update_npc state.room.npcs;
   state
 
+let get_vs_damage state =
+  (* TODO check ghost.abilities.shade_soul *)
+  15
+
 let update_spawned_vengeful_spirits state =
   let damage_enemies vs_start_frame (f : sprite) =
     let maybe_damage_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
@@ -482,7 +488,7 @@ let update_spawned_vengeful_spirits state =
         | None -> ()
         | Some c ->
           if vs_start_frame > Enemy.took_damage_at enemy VENGEFUL_SPIRIT then
-            Enemy.take_damage state enemy VENGEFUL_SPIRIT c.rect)
+            Enemy.take_damage state enemy VENGEFUL_SPIRIT (get_vs_damage state) c.rect)
     in
     List.iter maybe_damage_enemy state.room.enemies
   in
@@ -524,7 +530,8 @@ let update_frame_inputs state : state =
   state
 
 let tick state =
-  (* TODO add sound effects and music *)
+  (* TODO-6 add menus: main/startup, pause, switch ghosts, switch weapons *)
+  (* TODO-4 add sound effects and music *)
   state
   |> update_frame_inputs
   |> Ghost.update

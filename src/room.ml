@@ -68,6 +68,8 @@ let init
       | "hide" -> shadow_triggers := get_object_rect name coll_rect :: !shadow_triggers
       | "info"
       | "health"
+      | "weapon"
+      (* TODO-7 add dreamer prefix *)
       | "ability" ->
         lore_triggers := get_object_rect coll_rect.name coll_rect :: !lore_triggers
       | "npc" ->

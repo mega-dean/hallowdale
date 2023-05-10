@@ -47,7 +47,6 @@ module Utils = struct
     | Some (idx, _) -> idx
 end
 
-(* only need string sets for now, so just using the term "set" for "set of strings" *)
 module StrSet = Set.Make (String)
 
 type str_set = StrSet.t
@@ -423,6 +422,7 @@ module Interaction = struct
     | SET_POSE of ghost_pose
     | WALK_TO of int
     | FILL_LIFE_VAPOR
+    | ADD_WEAPON of string
     | ADD_ABILITY of string
     | INCREASE_HEALTH_TEXT of bool * string
     | ADD_TO_PARTY
@@ -627,8 +627,10 @@ type ghost_actions = {
    a new pose is set, so it can still render the latest pose
    - this data structure tracks the variant arguments that need to be checked/re-set in future frames
 *)
-type pose_status = { (* mutable attack_direction : direction option; *)
-                     mutable wall : rect option }
+type pose_status = {
+  (* TODO just move this to entity and get rid of this type, since some enemies will need this, and the others can leave it always None *)
+  mutable wall : rect option;
+}
 
 type frame_input = {
   mutable pressed : bool;
@@ -691,7 +693,6 @@ type ghost_child_kind =
   (* | DIVE of sprite *)
   | FOCUS of sprite
 
-(* TODO might want a bool property for "render in front of or behind parent", esp if this is used for enemy children sprites *)
 type ghost_child = {
   kind : ghost_child_kind;
   relative_pos : relative_position;
@@ -702,8 +703,9 @@ type ghost = {
   shared_textures : shared_textures;
   actions : ghost_actions;
   entity : entity;
-  (* config : ghost_config; *)
   mutable abilities : abilities;
+  (* FIXME add current_weapon_name : string to get nail speed/size *)
+  mutable weapons : (string * Json_t.weapon) list;
   mutable in_party : bool;
   mutable id : ghost_id;
   mutable textures : ghost_textures;
@@ -712,7 +714,6 @@ type ghost = {
   mutable soul : soul;
   mutable can_dash : bool;
   mutable can_flap : bool;
-  (* mutable slash : slash option; *)
   mutable spawned_vengeful_spirits : projectile list;
 }
 
@@ -996,11 +997,9 @@ type texture_cache = {
 
 (* these are all things that are eager-loaded from json config files *)
 type global_cache = {
-  lore : (string * string) list;
   textures : texture_cache;
-  (* TODO could use something like this to prevent unloading/reloading the same tilesets in between rooms
-     tilesets : (string * tilesets) list;
-  *)
+  lore : (string * string) list;
+  weapons : (string * Json_t.weapon) list;
   enemy_configs : (enemy_id * json_enemy_config) list;
   npc_configs : (npc_id * json_npc_config) list;
 }

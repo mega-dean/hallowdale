@@ -16,12 +16,13 @@ let maybe_begin_interaction (state : state) name =
     (* these have no side effects and can be repeated *)
     begin_interaction ()
   | "health" ->
+    (* these can be repeated, but health should only be increased once *)
     let increase_health = not (List.mem name state.room.progress.finished_interactions) in
     if increase_health then
       state.room.progress.finished_interactions <- name :: state.room.progress.finished_interactions;
-    (* these can be repeated, but health should only be increased once *)
     begin_interaction ~increase_health ()
-  | "ability"
+  | "ability" (* TODO-7 "dreamer" *)
+  | "weapon"
   | "purple-pen"
   | "boss-killed"
   | "cutscene" ->
@@ -147,6 +148,13 @@ let get_focus_sparkles ghost : sprite option =
     | _ -> None)
   | None -> None
 
+(* - the currently-equipped weapon will determine swing speed and size
+   - nail damage is the sum of all weapons .damage, so there's always a benefit to picking up
+     a weapon (even if it is never equipped)
+*)
+let get_nail_damage state =
+  state.ghost.weapons |> List.map snd |> List.map (fun (w : Json_t.weapon) -> w.damage) |> List.fold_left ( + ) 0
+
 let resolve_slash_collisions state =
   match get_current_slash state.ghost with
   | None -> ()
@@ -166,7 +174,7 @@ let resolve_slash_collisions state =
             | UP ->
               if state.ghost.entity.v.y < 0. then
                 state.ghost.entity.v.y <- 300.);
-            Enemy.take_damage state enemy NAIL c.rect;
+            Enemy.take_damage state enemy NAIL (get_nail_damage state) c.rect;
             state.ghost.soul.current <-
               Utils.boundi 0 (state.ghost.soul.current + Config.action.soul_gained_per_nail) state.ghost.soul.max));
         if slash.direction = DOWN && state.ghost.entity.y_recoil = None then (
@@ -353,7 +361,6 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
         else
           wall.pos.x -. (Config.ghost.width *. Config.scale.ghost));
       update_vx 0.;
-      (* TODO probably group these together somehow *)
       ghost.can_dash <- true;
       ghost.can_flap <- true;
       ghost.textures.wall_slide
@@ -488,7 +495,14 @@ let swap_current_ghost state ?(swap_pos = true) target_ghost_id =
       Entity.hide old_ghost.entity;
       old_ghost.entity.current_floor <- None);
 
-    (* TODO maybe don't need state.ghosts to be a ghost list, just need to keep track of ghost_id, textures, dest *)
+    (* TODO maybe don't need state.ghosts to be a ghost list, just need to keep track of ghost_id, textures, dest
+       - maybe want to do this sooner rather than later, since having to sync every change here is dumb
+       - some of these fields are only mutable for this
+
+       - uncontrolled_ghost still needs to have an entity because it will still be frozen/hidden/etc
+       - this might be pretty simple just by using a new type
+       -
+    *)
     new_ghost.abilities <- old_ghost.abilities;
     new_ghost.health <- old_ghost.health;
     new_ghost.soul <- old_ghost.soul;
@@ -525,6 +539,17 @@ let change_ability ?(only_enable = false) ghost ability_name =
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
 let toggle_ability ghost ability_name = change_ability ghost ability_name
+
+let add_weapon state weapon_name =
+  match List.assoc_opt weapon_name state.global.weapons with
+  | Some weapon_config ->
+    let current_weapon_names = List.map fst state.ghost.weapons in
+    if List.mem weapon_name current_weapon_names then
+      tmp "already have %s" weapon_name
+    else (
+      tmp "new weapon %s" weapon_name;
+      state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons)
+  | None -> failwithf "change_weapon bad weapon name: %s" weapon_name
 
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
@@ -571,6 +596,7 @@ let update (state : state) : state =
       toggle_ability state.ghost "mantis_claw"
     else if key_pressed DEBUG_2 then (
       state.ghost.soul.current <- state.ghost.soul.max;
+      add_weapon state "orange-paintball-gun";
       toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then
       maybe_begin_interaction state "boss-killed_LOCKER_BOY"
@@ -813,6 +839,13 @@ let update (state : state) : state =
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)
           | ADD_ABILITY ability_name -> enable_ability state.ghost ability_name
+          | ADD_WEAPON weapon_name ->
+            let weapon_config = List.assoc weapon_name state.global.weapons in
+            let text : Interaction.text = { content = [ weapon_config.pickup_text ]; increases_health = false } in
+            state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons;
+            state.interaction.speaker_name <- None;
+            state.interaction.text <- Some (PLAIN text)
+          (* tmp "adding weapon %s" weapon_name *)
         in
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
@@ -924,6 +957,7 @@ let update (state : state) : state =
 
   let handle_casting () : handled_action =
     let starting_cast =
+      (* TODO-6 add other spells, check up/down *)
       state.ghost.soul.current >= Config.action.soul_per_cast
       && state.ghost.abilities.vengeful_spirit
       && key_pressed_or_buffered CAST
@@ -1078,8 +1112,11 @@ let update (state : state) : state =
           ()))
   in
 
+  (* TODO-8 add visible pickup indicators *)
+  (* TODO-7 add dreamer item pickups *)
   let handle_focusing () : handled_action =
-    (* TODO-2 add a delay before deducting soul *)
+    (* TODO-4 add a delay before deducting soul *)
+    (* TODO-5 add charge_action that can happen before start_action *)
     let starting_focus () =
       Entity.on_ground state.ghost.entity
       && state.ghost.soul.current >= Config.action.soul_per_cast
@@ -1172,6 +1209,7 @@ let update (state : state) : state =
           if not (List.mem layer_name state.room.progress.revealed_shadow_layers) then
             state.room.progress.revealed_shadow_layers <- layer_name :: state.room.progress.revealed_shadow_layers;
           layer.hidden <- true));
+      (* TODO-3 add c-dashing *)
       let focusing = handle_focusing () in
       if not focusing.this_frame then (
         let dashing = handle_dashing () in
@@ -1239,8 +1277,6 @@ let load_shared_textures (shared_texture_configs : 'a list) =
   in
 
   let build_slash_texture name = build_shared_texture ~particle:true ~config_name:(Some "nail") name in
-
-  let keys = shared_texture_configs |> List.map fst |> join in
   {
     slash = build_slash_texture "slash";
     upslash = build_slash_texture "upslash";
@@ -1252,7 +1288,7 @@ let load_shared_textures (shared_texture_configs : 'a list) =
     focus_sparkles = build_shared_texture "focus-sparkles";
   }
 
-let init ghost_id in_party idle_texture action_config start_pos abilities textures shared_textures =
+let init ghost_id in_party idle_texture action_config start_pos abilities weapons textures shared_textures =
   let use_json_action_config action_name : ghost_action_config =
     match List.assoc_opt action_name action_config with
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
@@ -1302,4 +1338,5 @@ let init ghost_id in_party idle_texture action_config start_pos abilities textur
       };
     spawned_vengeful_spirits = [];
     abilities;
+    weapons;
   }
