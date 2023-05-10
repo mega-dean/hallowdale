@@ -39,14 +39,6 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
       | Some lore -> lore
     in
 
-    let get_weapon () : Json_t.weapon =
-      match List.assoc_opt interaction_name state.global.weapons with
-      | None -> failwithf "weapon name '%s' not found in weapon.json" interaction_name
-      | Some weapon ->
-        tmp "weapon name found: %s" interaction_name;
-        weapon
-    in
-
     let get_locker_boys_ghosts () : ghost_id * ghost_id =
       let is_available (_id, ghost) = ghost.in_party in
       let other_ghosts = List.filter is_available state.ghosts in

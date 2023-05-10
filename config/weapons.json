@@ -4,6 +4,7 @@
         "damage": 5,
         "scale_x": 1.0,
         "scale_y": 1.0,
+        "swing_speed": 1.0,
         "tint": {
             "r": 255,
             "g": 255,
@@ -16,6 +17,7 @@
         "damage": 2,
         "scale_x": 2.0,
         "scale_y": 1.6,
+        "swing_speed": 1.7,
         "tint": {
             "r": 255,
             "g": 160,
@@ -28,6 +30,7 @@
         "damage": 2,
         "scale_x": 0.9,
         "scale_y": 0.9,
+        "swing_speed": 1.4,
         "tint": {
             "r": 170,
             "g": 190,
@@ -40,6 +43,7 @@
         "damage": 2,
         "scale_x": 1.0,
         "scale_y": 1.0,
+        "swing_speed": 1.1,
         "tint": {
             "r": 120,
             "g": 120,
@@ -52,6 +56,7 @@
         "damage": 2,
         "scale_x": 2.0,
         "scale_y": 1.6,
+        "swing_speed": 1.0,
         "tint": {
             "r": 125,
             "g": 165,

@@ -18,7 +18,8 @@ type weapon = Json_t.weapon = {
   pickup_text: string;
   damage: int;
   scale_x: float;
-  scale_y: float
+  scale_y: float;
+  swing_speed: float
 }
 
 type weapons_file = Json_t.weapons_file
@@ -779,6 +780,15 @@ let write_weapon : _ -> weapon -> _ = (
       Yojson.Safe.write_float
     )
       ob x.scale_y;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"swing_speed\":";
+    (
+      Yojson.Safe.write_float
+    )
+      ob x.swing_speed;
     Buffer.add_char ob '}';
 )
 let string_of_weapon ?(len = 1024) x =
@@ -794,6 +804,7 @@ let read_weapon = (
     let field_damage = ref (None) in
     let field_scale_x = ref (None) in
     let field_scale_y = ref (None) in
+    let field_swing_speed = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -837,12 +848,26 @@ let read_weapon = (
                 )
               )
             | 11 -> (
-                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'p' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' then (
-                  1
-                )
-                else (
-                  -1
-                )
+                match String.unsafe_get s pos with
+                  | 'p' -> (
+                      if String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'p' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' then (
+                        1
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | 's' -> (
+                      if String.unsafe_get s (pos+1) = 'w' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'n' && String.unsafe_get s (pos+4) = 'g' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'e' && String.unsafe_get s (pos+10) = 'd' then (
+                        5
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | _ -> (
+                      -1
+                    )
               )
             | _ -> (
                 -1
@@ -886,6 +911,14 @@ let read_weapon = (
             );
           | 4 ->
             field_scale_y := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_number
+                ) p lb
+              )
+            );
+          | 5 ->
+            field_swing_speed := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_number
@@ -939,12 +972,26 @@ let read_weapon = (
                   )
                 )
               | 11 -> (
-                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'p' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' then (
-                    1
-                  )
-                  else (
-                    -1
-                  )
+                  match String.unsafe_get s pos with
+                    | 'p' -> (
+                        if String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'p' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' then (
+                          1
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | 's' -> (
+                        if String.unsafe_get s (pos+1) = 'w' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'n' && String.unsafe_get s (pos+4) = 'g' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'e' && String.unsafe_get s (pos+10) = 'd' then (
+                          5
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | _ -> (
+                        -1
+                      )
                 )
               | _ -> (
                   -1
@@ -994,6 +1041,14 @@ let read_weapon = (
                   ) p lb
                 )
               );
+            | 5 ->
+              field_swing_speed := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_number
+                  ) p lb
+                )
+              );
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -1008,6 +1063,7 @@ let read_weapon = (
             damage = (match !field_damage with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "damage");
             scale_x = (match !field_scale_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "scale_x");
             scale_y = (match !field_scale_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "scale_y");
+            swing_speed = (match !field_swing_speed with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "swing_speed");
           }
          : weapon)
       )

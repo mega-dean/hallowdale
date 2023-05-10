@@ -415,6 +415,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   state.ghost.spawned_vengeful_spirits <- projectile :: state.ghost.spawned_vengeful_spirits
 
 let start_action state (pose : ghost_pose) =
+  let cooldown_scale = ref 1.0 in
   let action : ghost_action =
     match pose with
     | ATTACKING direction ->
@@ -428,6 +429,7 @@ let start_action state (pose : ghost_pose) =
       in
       let slash = make_slash state direction relative_pos state.ghost.entity.sprite in
       state.ghost.child <- Some { kind = NAIL slash; relative_pos };
+      cooldown_scale := state.ghost.current_weapon.cooldown_scale;
       state.ghost.actions.nail
     | WALL_JUMPING -> state.ghost.actions.wall_jump
     | DASHING -> state.ghost.actions.dash
@@ -453,7 +455,7 @@ let start_action state (pose : ghost_pose) =
   in
   action.started <- { at = state.frame.time };
   action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
-  action.blocked_until.at <- state.frame.time +. action.config.cooldown.seconds;
+  action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
   set_pose state.ghost pose state.frame.time
 
 let continue_action state (pose : ghost_pose) =
@@ -547,7 +549,7 @@ let change_ability ?(only_enable = false) ghost ability_name =
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
 let toggle_ability ghost ability_name = change_ability ghost ability_name
 
-let add_weapon state weapon_name =
+let acquire_weapon state weapon_name =
   match List.assoc_opt weapon_name state.global.weapons with
   | Some weapon_config ->
     let current_weapon_names = List.map fst state.ghost.weapons in
@@ -556,17 +558,11 @@ let add_weapon state weapon_name =
     else (
       tmp "new weapon %s" weapon_name;
       state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons)
-  | None -> failwithf "change_weapon bad weapon name: %s" weapon_name
+  | None -> failwithf "acquire_weapon bad weapon name: %s" weapon_name
 
 let equip_weapon (ghost : ghost) weapon_name =
-  let weapon = get_src ghost.shared_textures.slash in
-  tmp "current nail size: %f x %f" weapon.w weapon.h;
-  let weapon_config = List.assoc ghost.current_weapon.name ghost.weapons in
-  tmp "current weapon scale: %f %f" weapon_config.scale_x weapon_config.scale_y;
-  let weapon_config' = List.assoc weapon_name ghost.weapons in
-  tmp "new weapon scale: %f %f" weapon_config'.scale_x weapon_config'.scale_y;
   match List.assoc_opt weapon_name ghost.weapons with
-  | None -> tmp "can't equip %s, not in ghost.weapons" weapon_name
+  | None -> print "can't equip %s, not in ghost.weapons" weapon_name
   | Some weapon_config ->
     ghost.current_weapon <-
       (let config = weapon_config.tint in
@@ -575,6 +571,7 @@ let equip_weapon (ghost : ghost) weapon_name =
          tint = Raylib.Color.create config.r config.g config.b config.a;
          scale_x = weapon_config.scale_x;
          scale_y = weapon_config.scale_y;
+         cooldown_scale = 2. -. weapon_config.swing_speed;
        })
 
 (* this is used for actions that block other actions from happening during the same frame *)
@@ -622,7 +619,7 @@ let update (state : state) : state =
       tmp "current weapons: %s" (state.ghost.weapons |> List.map fst |> join)
     else if key_pressed DEBUG_2 then (
       state.ghost.soul.current <- state.ghost.soul.max;
-      add_weapon state "orange-paintball-gun";
+      acquire_weapon state "orange-paintball-gun";
       toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
@@ -870,10 +867,9 @@ let update (state : state) : state =
           | ADD_WEAPON weapon_name ->
             let weapon_config = List.assoc weapon_name state.global.weapons in
             let text : Interaction.text = { content = [ weapon_config.pickup_text ]; increases_health = false } in
-            state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons;
+            acquire_weapon state weapon_name;
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)
-          (* tmp "adding weapon %s" weapon_name *)
         in
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
@@ -1369,5 +1365,5 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
     weapons;
     current_weapon =
       (* TODO should read these from weapons.json (but do this after adding save files) *)
-      { name = "old-nail"; tint = Raylib.Color.raywhite; scale_x = 1.0; scale_y = 1.0 };
+      { name = "old-nail"; tint = Raylib.Color.raywhite; scale_x = 1.; scale_y = 1.; cooldown_scale = 1. };
   }

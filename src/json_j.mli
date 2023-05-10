@@ -18,7 +18,8 @@ type weapon = Json_t.weapon = {
   pickup_text: string;
   damage: int;
   scale_x: float;
-  scale_y: float
+  scale_y: float;
+  swing_speed: float
 }
 
 type weapons_file = Json_t.weapons_file

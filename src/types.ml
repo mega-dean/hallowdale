@@ -711,6 +711,7 @@ type weapon = {
   tint : color;
   scale_x : float;
   scale_y : float;
+  cooldown_scale : float;
 }
 
 type ghost = {
