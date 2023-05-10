@@ -95,6 +95,15 @@ type jug_metadata_file = jug_metadata list
 type lore_file = (string * string) list
 type keybinds_file = (string * string) list
 
+type weapon = {
+  (* FIXME add tint : color *)
+  pickup_text : string;
+  damage : int;
+  scale_x : float;
+  scale_y : float;
+}
+
+type weapons_file = (string * weapon) list
 
 type texture_config = {
   ~count <ocaml default="1"> : int;
@@ -140,3 +149,5 @@ type npc_config = {
 }
 
 type npcs_file = (string * npc_config) list
+
+(* TODO-6 type save_file *)

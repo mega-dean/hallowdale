@@ -1,0 +1,32 @@
+[
+    ["old-nail", {
+        "pickup_text": "",
+        "damage": 5,
+        "scale_x": 1.0,
+        "scale_y": 1.0
+    }],
+    ["orange-paintball-gun", {
+        "pickup_text": "Buenos dias, children.",
+        "damage": 2,
+        "scale_x": 1.2,
+        "scale_y": 1.2
+    }],
+    ["bush-scissors", {
+        "pickup_text": "This is a place of peace and balance.",
+        "damage": 2,
+        "scale_x": 1.2,
+        "scale_y": 1.2
+    }],
+    ["limpken-wrench", {
+        "pickup_text": "There are many like it but this one is mine! My Limpken Wrench without me is useless -- my Limpken Wrench is part of me.",
+        "damage": 2,
+        "scale_x": 1.2,
+        "scale_y": 1.2
+    }],
+    ["quantum-spanner", {
+        "pickup_text": "Oi Govna!",
+        "damage": 2,
+        "scale_x": 1.2,
+        "scale_y": 1.2
+    }]
+]

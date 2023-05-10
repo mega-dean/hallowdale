@@ -15,11 +15,13 @@ let read_whole_file (filename : string) : string =
   close_in ch;
   s
 
+(* TODO probably move all this to state.ml *)
 let read_config_file file_name (convert : string -> 'a) : 'a =
   let full_path = fmt "../config/%s.json" file_name in
   read_whole_file full_path |> convert
 
-let read_lore_cache () = read_config_file "lore" Json_j.lore_file_of_string
+let load_lore_config () = read_config_file "lore" Json_j.lore_file_of_string
+let load_weapons_config () = read_config_file "weapons" Json_j.weapons_file_of_string
 
 let read_keybinds () =
   try read_config_file "keybinds" Json_j.keybinds_file_of_string with

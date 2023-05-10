@@ -11,6 +11,15 @@ type global_map = Json_t.global_map = {
 
 type world = Json_t.world = { global_maps: global_map list }
 
+type weapon = Json_t.weapon = {
+  pickup_text: string;
+  damage: int;
+  scale_x: float;
+  scale_y: float
+}
+
+type weapons_file = Json_t.weapons_file
+
 type tileset_source = Json_t.tileset_source = {
   firstgid: int;
   source: string
@@ -160,6 +169,46 @@ val read_world :
 val world_of_string :
   string -> world
   (** Deserialize JSON data of type {!type:world}. *)
+
+val write_weapon :
+  Buffer.t -> weapon -> unit
+  (** Output a JSON value of type {!type:weapon}. *)
+
+val string_of_weapon :
+  ?len:int -> weapon -> string
+  (** Serialize a value of type {!type:weapon}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_weapon :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> weapon
+  (** Input JSON data of type {!type:weapon}. *)
+
+val weapon_of_string :
+  string -> weapon
+  (** Deserialize JSON data of type {!type:weapon}. *)
+
+val write_weapons_file :
+  Buffer.t -> weapons_file -> unit
+  (** Output a JSON value of type {!type:weapons_file}. *)
+
+val string_of_weapons_file :
+  ?len:int -> weapons_file -> string
+  (** Serialize a value of type {!type:weapons_file}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_weapons_file :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> weapons_file
+  (** Input JSON data of type {!type:weapons_file}. *)
+
+val weapons_file_of_string :
+  string -> weapons_file
+  (** Deserialize JSON data of type {!type:weapons_file}. *)
 
 val write_tileset_source :
   Buffer.t -> tileset_source -> unit

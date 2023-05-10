@@ -263,7 +263,12 @@ let init () : state =
   in
 
   let global =
-    { lore = Tiled.read_lore_cache (); enemy_configs; npc_configs; textures = { ability_outlines; damage } }
+    {
+      lore = Tiled.load_lore_config ();
+      enemy_configs;
+      npc_configs;
+      textures = { ability_outlines; damage };
+    }
   in
 
   print "initialized state\n=================\n";

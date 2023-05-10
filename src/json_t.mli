@@ -11,6 +11,15 @@ type global_map = {
 
 type world = { global_maps: global_map list }
 
+type weapon = {
+  pickup_text: string;
+  damage: int;
+  scale_x: float;
+  scale_y: float
+}
+
+type weapons_file = (string * weapon) list
+
 type tileset_source = { firstgid: int; source: string }
 
 type coll_rect = { name: string; x: float; y: float; h: float; w: float }
