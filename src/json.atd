@@ -95,12 +95,20 @@ type jug_metadata_file = jug_metadata list
 type lore_file = (string * string) list
 type keybinds_file = (string * string) list
 
+type color = {
+  r : int;
+  g : int;
+  b : int;
+  a : int;
+}
+
 type weapon = {
-  (* FIXME add tint : color *)
+  tint : color;
   pickup_text : string;
   damage : int;
   scale_x : float;
   scale_y : float;
+  (* FIXME add swing speed *)
 }
 
 type weapons_file = (string * weapon) list

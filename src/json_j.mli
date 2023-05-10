@@ -11,7 +11,10 @@ type global_map = Json_t.global_map = {
 
 type world = Json_t.world = { global_maps: global_map list }
 
+type color = Json_t.color = { r: int; g: int; b: int; a: int }
+
 type weapon = Json_t.weapon = {
+  tint: color;
   pickup_text: string;
   damage: int;
   scale_x: float;
@@ -169,6 +172,26 @@ val read_world :
 val world_of_string :
   string -> world
   (** Deserialize JSON data of type {!type:world}. *)
+
+val write_color :
+  Buffer.t -> color -> unit
+  (** Output a JSON value of type {!type:color}. *)
+
+val string_of_color :
+  ?len:int -> color -> string
+  (** Serialize a value of type {!type:color}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_color :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> color
+  (** Input JSON data of type {!type:color}. *)
+
+val color_of_string :
+  string -> color
+  (** Deserialize JSON data of type {!type:color}. *)
 
 val write_weapon :
   Buffer.t -> weapon -> unit

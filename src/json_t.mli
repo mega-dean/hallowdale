@@ -11,7 +11,10 @@ type global_map = {
 
 type world = { global_maps: global_map list }
 
+type color = { r: int; g: int; b: int; a: int }
+
 type weapon = {
+  tint: color;
   pickup_text: string;
   damage: int;
   scale_x: float;

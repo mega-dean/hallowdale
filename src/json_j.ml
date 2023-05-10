@@ -11,7 +11,10 @@ type global_map = Json_t.global_map = {
 
 type world = Json_t.world = { global_maps: global_map list }
 
+type color = Json_t.color = { r: int; g: int; b: int; a: int }
+
 type weapon = Json_t.weapon = {
+  tint: color;
   pickup_text: string;
   damage: int;
   scale_x: float;
@@ -518,10 +521,228 @@ let read_world = (
 )
 let world_of_string s =
   read_world (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_color : _ -> color -> _ = (
+  fun ob (x : color) ->
+    Buffer.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"r\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.r;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"g\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.g;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"b\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.b;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"a\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.a;
+    Buffer.add_char ob '}';
+)
+let string_of_color ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_color ob x;
+  Buffer.contents ob
+let read_color = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_r = ref (None) in
+    let field_g = ref (None) in
+    let field_b = ref (None) in
+    let field_a = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+          if len = 1 then (
+            match String.unsafe_get s pos with
+              | 'a' -> (
+                  3
+                )
+              | 'b' -> (
+                  2
+                )
+              | 'g' -> (
+                  1
+                )
+              | 'r' -> (
+                  0
+                )
+              | _ -> (
+                  -1
+                )
+          )
+          else (
+            -1
+          )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_r := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 1 ->
+            field_g := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 2 ->
+            field_b := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 3 ->
+            field_a := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+            if len = 1 then (
+              match String.unsafe_get s pos with
+                | 'a' -> (
+                    3
+                  )
+                | 'b' -> (
+                    2
+                  )
+                | 'g' -> (
+                    1
+                  )
+                | 'r' -> (
+                    0
+                  )
+                | _ -> (
+                    -1
+                  )
+            )
+            else (
+              -1
+            )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_r := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 1 ->
+              field_g := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 2 ->
+              field_b := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 3 ->
+              field_a := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            r = (match !field_r with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "r");
+            g = (match !field_g with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "g");
+            b = (match !field_b with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "b");
+            a = (match !field_a with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "a");
+          }
+         : color)
+      )
+)
+let color_of_string s =
+  read_color (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_weapon : _ -> weapon -> _ = (
   fun ob (x : weapon) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"tint\":";
+    (
+      write_color
+    )
+      ob x.tint;
     if !is_first then
       is_first := false
     else
@@ -568,6 +789,7 @@ let read_weapon = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
+    let field_tint = ref (None) in
     let field_pickup_text = ref (None) in
     let field_damage = ref (None) in
     let field_scale_x = ref (None) in
@@ -581,9 +803,17 @@ let read_weapon = (
           if pos < 0 || len < 0 || pos + len > String.length s then
             invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           match len with
+            | 4 -> (
+                if String.unsafe_get s pos = 't' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 't' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
             | 6 -> (
                 if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'g' && String.unsafe_get s (pos+5) = 'e' then (
-                  1
+                  2
                 )
                 else (
                   -1
@@ -593,10 +823,10 @@ let read_weapon = (
                 if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' then (
                   match String.unsafe_get s (pos+6) with
                     | 'x' -> (
-                        2
+                        3
                       )
                     | 'y' -> (
-                        3
+                        4
                       )
                     | _ -> (
                         -1
@@ -608,7 +838,7 @@ let read_weapon = (
               )
             | 11 -> (
                 if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'p' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' then (
-                  0
+                  1
                 )
                 else (
                   -1
@@ -623,6 +853,14 @@ let read_weapon = (
       (
         match i with
           | 0 ->
+            field_tint := (
+              Some (
+                (
+                  read_color
+                ) p lb
+              )
+            );
+          | 1 ->
             field_pickup_text := (
               Some (
                 (
@@ -630,7 +868,7 @@ let read_weapon = (
                 ) p lb
               )
             );
-          | 1 ->
+          | 2 ->
             field_damage := (
               Some (
                 (
@@ -638,7 +876,7 @@ let read_weapon = (
                 ) p lb
               )
             );
-          | 2 ->
+          | 3 ->
             field_scale_x := (
               Some (
                 (
@@ -646,7 +884,7 @@ let read_weapon = (
                 ) p lb
               )
             );
-          | 3 ->
+          | 4 ->
             field_scale_y := (
               Some (
                 (
@@ -667,9 +905,17 @@ let read_weapon = (
             if pos < 0 || len < 0 || pos + len > String.length s then
               invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             match len with
+              | 4 -> (
+                  if String.unsafe_get s pos = 't' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 't' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 6 -> (
                   if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'g' && String.unsafe_get s (pos+5) = 'e' then (
-                    1
+                    2
                   )
                   else (
                     -1
@@ -679,10 +925,10 @@ let read_weapon = (
                   if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' then (
                     match String.unsafe_get s (pos+6) with
                       | 'x' -> (
-                          2
+                          3
                         )
                       | 'y' -> (
-                          3
+                          4
                         )
                       | _ -> (
                           -1
@@ -694,7 +940,7 @@ let read_weapon = (
                 )
               | 11 -> (
                   if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'p' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 't' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'x' && String.unsafe_get s (pos+10) = 't' then (
-                    0
+                    1
                   )
                   else (
                     -1
@@ -709,6 +955,14 @@ let read_weapon = (
         (
           match i with
             | 0 ->
+              field_tint := (
+                Some (
+                  (
+                    read_color
+                  ) p lb
+                )
+              );
+            | 1 ->
               field_pickup_text := (
                 Some (
                   (
@@ -716,7 +970,7 @@ let read_weapon = (
                   ) p lb
                 )
               );
-            | 1 ->
+            | 2 ->
               field_damage := (
                 Some (
                   (
@@ -724,7 +978,7 @@ let read_weapon = (
                   ) p lb
                 )
               );
-            | 2 ->
+            | 3 ->
               field_scale_x := (
                 Some (
                   (
@@ -732,7 +986,7 @@ let read_weapon = (
                   ) p lb
                 )
               );
-            | 3 ->
+            | 4 ->
               field_scale_y := (
                 Some (
                   (
@@ -749,6 +1003,7 @@ let read_weapon = (
     with Yojson.End_of_object -> (
         (
           {
+            tint = (match !field_tint with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "tint");
             pickup_text = (match !field_pickup_text with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "pickup_text");
             damage = (match !field_damage with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "damage");
             scale_x = (match !field_scale_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "scale_x");

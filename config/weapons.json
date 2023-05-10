@@ -3,30 +3,63 @@
         "pickup_text": "",
         "damage": 5,
         "scale_x": 1.0,
-        "scale_y": 1.0
+        "scale_y": 1.0,
+        // - Color.raywhite is hardcoded in Ghost.init so this isn't being used now
+        // - eventually the current_weapon.name will be saved in the save file and color can be looked up from there
+        "tint": {
+            "r": 255,
+            "g": 255,
+            "b": 255,
+            "a": 255
+        }
     }],
     ["orange-paintball-gun", {
         "pickup_text": "Buenos dias, children.",
         "damage": 2,
         "scale_x": 1.2,
-        "scale_y": 1.2
+        "scale_y": 1.2,
+        "tint": {
+            "r": 255,
+            "g": 160,
+            "b": 103,
+            "a": 255
+        }
     }],
     ["bush-scissors", {
         "pickup_text": "This is a place of peace and balance.",
         "damage": 2,
-        "scale_x": 1.2,
-        "scale_y": 1.2
+        "scale_x": 0.9,
+        "scale_y": 0.9,
+        "tint": {
+            "r": 170,
+            "g": 190,
+            "b": 170,
+            "a": 255
+        }
     }],
     ["limpken-wrench", {
         "pickup_text": "There are many like it but this one is mine! My Limpken Wrench without me is useless -- my Limpken Wrench is part of me.",
         "damage": 2,
-        "scale_x": 1.2,
-        "scale_y": 1.2
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "tint": {
+            "r": 120,
+            "g": 120,
+            "b": 130,
+            "a": 255
+        }
     }],
     ["quantum-spanner", {
         "pickup_text": "Oi Govna!",
         "damage": 2,
-        "scale_x": 1.2,
-        "scale_y": 1.2
+        "scale_x": 2.0,
+        // FIXME see what the maximum reasonable scale_y is
+        "scale_y": 1.6,
+        "tint": {
+            "r": 125,
+            "g": 165,
+            "b": 255,
+            "a": 255
+        }
     }]
 ]
