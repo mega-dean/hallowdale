@@ -99,10 +99,12 @@ let apply_collisions (e : entity) (collisions : (collision * rect) list) : unit 
 
 let make_slash state (direction : direction) relative_pos (ghost : sprite) : slash =
   let textures = state.ghost.shared_textures in
+  let vertical_slash = ref true in
   let slash_texture : texture =
     match direction with
     | LEFT
     | RIGHT ->
+      vertical_slash := false;
       textures.slash
     | UP -> textures.upslash
     | DOWN -> textures.downslash
@@ -115,10 +117,15 @@ let make_slash state (direction : direction) relative_pos (ghost : sprite) : sla
     | LOOPED animation ->
       List.length animation.frames
   in
-  let src_h = Raylib.Texture.height slash_texture.image |> Int.to_float in
   let src_w = Raylib.Texture.width slash_texture.image / count |> Int.to_float in
-  let dest_h = src_h *. Config.scale.slash in
-  let dest_w = src_w *. Config.scale.slash in
+  let src_h = Raylib.Texture.height slash_texture.image |> Int.to_float in
+  let dest_w', dest_h' = (src_w *. Config.scale.slash, src_h *. Config.scale.slash) in
+  let dest_w, dest_h =
+    if !vertical_slash then
+      (dest_w', dest_h' *. state.ghost.current_weapon.scale_y)
+    else
+      (dest_w' *. state.ghost.current_weapon.scale_x, dest_h')
+  in
   let pos = Entity.get_child_pos state.ghost.entity relative_pos dest_w dest_h in
   let dest =
     (* pos is arbitrary because this will be adjusted to parent dest based on child's relative_position *)
@@ -413,8 +420,8 @@ let start_action state (pose : ghost_pose) =
     | ATTACKING direction ->
       let relative_pos =
         match direction with
-        | UP -> ABOVE
-        | DOWN -> BELOW
+        | UP -> ALIGNED (CENTER, BOTTOM)
+        | DOWN -> ALIGNED (CENTER, TOP)
         | LEFT
         | RIGHT ->
           IN_FRONT
@@ -440,7 +447,7 @@ let start_action state (pose : ghost_pose) =
         Sprite.create "focus-sparkles" state.ghost.shared_textures.focus_sparkles
           { state.ghost.entity.dest with w = state.ghost.entity.dest.w *. 2. }
       in
-      state.ghost.child <- Some { kind = FOCUS focus_sparkles_sprite; relative_pos = ALIGN_CENTERS };
+      state.ghost.child <- Some { kind = FOCUS focus_sparkles_sprite; relative_pos = ALIGNED (CENTER, CENTER) };
       state.ghost.actions.focus
     | _ -> failwithf "not an action: %s" (Show.ghost_pose pose)
   in
@@ -552,9 +559,7 @@ let add_weapon state weapon_name =
   | None -> failwithf "change_weapon bad weapon name: %s" weapon_name
 
 let equip_weapon (ghost : ghost) weapon_name =
-  let weapon =
-    (get_src ghost.shared_textures.slash)
-  in
+  let weapon = get_src ghost.shared_textures.slash in
   tmp "current nail size: %f x %f" weapon.w weapon.h;
   let weapon_config = List.assoc ghost.current_weapon.name ghost.weapons in
   tmp "current weapon scale: %f %f" weapon_config.scale_x weapon_config.scale_y;
@@ -565,7 +570,12 @@ let equip_weapon (ghost : ghost) weapon_name =
   | Some weapon_config ->
     ghost.current_weapon <-
       (let config = weapon_config.tint in
-       { name = weapon_name; tint = Raylib.Color.create config.r config.g config.b config.a })
+       {
+         name = weapon_name;
+         tint = Raylib.Color.create config.r config.g config.b config.a;
+         scale_x = weapon_config.scale_x;
+         scale_y = weapon_config.scale_y;
+       })
 
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
@@ -1357,5 +1367,7 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
     spawned_vengeful_spirits = [];
     abilities;
     weapons;
-    current_weapon = { name = "old-nail"; tint = Raylib.Color.raywhite };
+    current_weapon =
+      (* TODO should read these from weapons.json (but do this after adding save files) *)
+      { name = "old-nail"; tint = Raylib.Color.raywhite; scale_x = 1.0; scale_y = 1.0 };
   }

@@ -540,7 +540,10 @@ let tick state : state =
           Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint
         in
         match child.kind with
-        | NAIL slash -> draw_child_sprite slash.sprite ghost.current_weapon.tint
+        | NAIL slash ->
+          if state.debug.enabled then
+            debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
+          draw_child_sprite slash.sprite ghost.current_weapon.tint
         | FOCUS focus_sprite -> draw_child_sprite focus_sprite Color.raywhite)
     in
     let draw_vengeful_spirit (p : projectile) =
@@ -559,7 +562,7 @@ let tick state : state =
       {
         ident = "shine";
         texture = state.ghost.shared_textures.shine;
-        dest = { pos = Entity.get_child_pos ghost.entity ALIGN_CENTERS size size; w = size; h = size };
+        dest = { pos = Entity.get_child_pos ghost.entity (ALIGNED (CENTER, CENTER)) size size; w = size; h = size };
         facing_right = false;
       }
     in

@@ -4,8 +4,6 @@
         "damage": 5,
         "scale_x": 1.0,
         "scale_y": 1.0,
-        // - Color.raywhite is hardcoded in Ghost.init so this isn't being used now
-        // - eventually the current_weapon.name will be saved in the save file and color can be looked up from there
         "tint": {
             "r": 255,
             "g": 255,
@@ -16,8 +14,8 @@
     ["orange-paintball-gun", {
         "pickup_text": "Buenos dias, children.",
         "damage": 2,
-        "scale_x": 1.2,
-        "scale_y": 1.2,
+        "scale_x": 2.0,
+        "scale_y": 1.6,
         "tint": {
             "r": 255,
             "g": 160,
@@ -53,7 +51,6 @@
         "pickup_text": "Oi Govna!",
         "damage": 2,
         "scale_x": 2.0,
-        // FIXME see what the maximum reasonable scale_y is
         "scale_y": 1.6,
         "tint": {
             "r": 125,
@@ -62,4 +59,11 @@
             "a": 255
         }
     }]
+
+    // other weapons:
+    // extended-plunger - get this after Lava Britta rejoins party
+    // sword of duquesne - reward from Neil
+    // sword of diehard - after both hilt/blade are found
+    // tsunami-3000-anniversary-edition and devils-drench-xj11 - the waterguns that Troy and Abed have
+    // hockey stick, lacrosse stick, meterstick, broom, plunger - weapons from the episode (maybe these can be bought from the shopkeeper)
 ]

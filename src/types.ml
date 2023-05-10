@@ -673,12 +673,20 @@ type abilities = {
   mutable howling_wraiths : bool;
 }
 
+type x_alignment =
+  | LEFT
+  | RIGHT
+  | CENTER
+
+type y_alignment =
+  | TOP
+  | BOTTOM
+  | CENTER
+
 type relative_position =
   | IN_FRONT
   | BEHIND
-  | ABOVE
-  | BELOW
-  | ALIGN_CENTERS
+  | ALIGNED of x_alignment * y_alignment
 
 (* - used for things that are "attached" to the ghost, ie their position depends on ghost
    - so spawned_vengeful_spirits are not children, but dive and shreik are
@@ -701,6 +709,8 @@ type ghost_child = {
 type weapon = {
   name : string;
   tint : color;
+  scale_x : float;
+  scale_y : float;
 }
 
 type ghost = {
@@ -709,7 +719,6 @@ type ghost = {
   mutable textures : ghost_textures;
   shared_textures : shared_textures;
   actions : ghost_actions;
-
   mutable abilities : abilities;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;

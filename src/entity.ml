@@ -148,9 +148,6 @@ let get_child_pos (parent : entity) (relative_pos : relative_position) child_w c
   let to_the_left () = { y = parent.dest.pos.y; x = parent.dest.pos.x -. child_w +. (parent.dest.w /. 2.) } in
   let to_the_right () = { y = parent.dest.pos.y; x = parent.dest.pos.x +. (parent.dest.w /. 2.) } in
   match relative_pos with
-  (* TODO this isn't really above or below, it's used for upslash/downslash which overlap with the ghost *)
-  | ABOVE -> { x = parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.); y = parent.dest.pos.y -. (child_h /. 2.) }
-  | BELOW -> { x = parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.); y = parent.dest.pos.y }
   | IN_FRONT ->
     if parent.sprite.facing_right then
       to_the_right ()
@@ -161,11 +158,20 @@ let get_child_pos (parent : entity) (relative_pos : relative_position) child_w c
       to_the_left ()
     else
       to_the_right ()
-  | ALIGN_CENTERS ->
-    {
-      x = parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.);
-      y = parent.dest.pos.y +. ((parent.dest.h -. child_h) /. 2.);
-    }
+  | ALIGNED (x_alignment, y_alignment) ->
+    let x =
+      match x_alignment with
+      | LEFT -> parent.dest.pos.x
+      | RIGHT -> parent.dest.pos.x +. parent.dest.w -. child_w
+      | CENTER -> parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.)
+    in
+    let y =
+      match y_alignment with
+      | TOP -> parent.dest.pos.y
+      | BOTTOM -> parent.dest.pos.y +. parent.dest.h -. child_h
+      | CENTER -> parent.dest.pos.y +. ((parent.dest.h -. child_h) /. 2.)
+    in
+    { x; y }
 
 let on_ground (e : entity) = e.current_floor <> None
 let descending (e : entity) = e.v.y > 0.
