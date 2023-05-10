@@ -100,6 +100,9 @@ let init () : state =
 
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
+
+        (* bush scissors *)
+        ("trampoline_f", TP_F, true, true, false, 400., 200.);
       ]
     in
     List.nth xs (List.length xs - 1)
@@ -172,7 +175,7 @@ let init () : state =
         desolate_dive = false;
         howling_wraiths = false;
       }
-      [ ("old-nail", List.assoc "old-nail" weapon_configs) ]
+      [ ("Old Nail", List.assoc "Old Nail" weapon_configs) ]
       textures shared_ghost_textures
   in
 

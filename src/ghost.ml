@@ -619,12 +619,12 @@ let update (state : state) : state =
       tmp "current weapons: %s" (state.ghost.weapons |> List.map fst |> join)
     else if key_pressed DEBUG_2 then (
       state.ghost.soul.current <- state.ghost.soul.max;
-      acquire_weapon state "orange-paintball-gun";
+      acquire_weapon state "Orange Paintball Gun";
       toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
-      equip_weapon state.ghost "orange-paintball-gun"
+      equip_weapon state.ghost "Orange Paintball Gun"
     else if key_pressed DEBUG_4 then
       print "ghost x: %0.1f, y: %0.1f" state.ghost.entity.dest.pos.x state.ghost.entity.dest.pos.y
   in
@@ -866,7 +866,9 @@ let update (state : state) : state =
           | ADD_ABILITY ability_name -> enable_ability state.ghost ability_name
           | ADD_WEAPON weapon_name ->
             let weapon_config = List.assoc weapon_name state.global.weapons in
-            let text : Interaction.text = { content = [ weapon_config.pickup_text ]; increases_health = false } in
+            let text : Interaction.text =
+              { content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]; increases_health = false }
+            in
             acquire_weapon state weapon_name;
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)

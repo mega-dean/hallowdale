@@ -42,24 +42,7 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[
-                {
-                 "height":55.14,
-                 "id":4,
-                 "name":"",
-                 "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"Double Bouncies (Monarch Wings)",
-                     "wrap":true
-                    },
-                 "type":"",
-                 "visible":true,
-                 "width":160.438,
-                 "x":117.781,
-                 "y":368.43
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,

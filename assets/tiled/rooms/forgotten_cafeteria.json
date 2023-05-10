@@ -219,17 +219,6 @@
                  "y":823.5
                 }, 
                 {
-                 "height":29,
-                 "id":16,
-                 "name":"weapon_limpken-wrench",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":24,
-                 "x":481.166666666667,
-                 "y":999.333333333333
-                }, 
-                {
                  "height":30,
                  "id":17,
                  "name":"enemy_PENGUIN",

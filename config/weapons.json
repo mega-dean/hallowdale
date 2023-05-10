@@ -1,5 +1,5 @@
 [
-    ["old-nail", {
+    ["Old Nail", {
         "pickup_text": "",
         "damage": 5,
         "scale_x": 1.0,
@@ -12,12 +12,12 @@
             "a": 255
         }
     }],
-    ["orange-paintball-gun", {
+    ["Orange Paintball Gun", {
         "pickup_text": "Buenos dias, children.",
-        "damage": 2,
+        "damage": 3,
         "scale_x": 2.0,
         "scale_y": 1.6,
-        "swing_speed": 1.7,
+        "swing_speed": 1.3,
         "tint": {
             "r": 255,
             "g": 160,
@@ -25,7 +25,7 @@
             "a": 255
         }
     }],
-    ["bush-scissors", {
+    ["Bush Scissors", {
         "pickup_text": "This is a place of peace and balance.",
         "damage": 2,
         "scale_x": 0.9,
@@ -38,7 +38,7 @@
             "a": 255
         }
     }],
-    ["limpken-wrench", {
+    ["Limpken Wrench", {
         "pickup_text": "There are many like it but this one is mine! My Limpken Wrench without me is useless -- my Limpken Wrench is part of me.",
         "damage": 2,
         "scale_x": 1.0,
@@ -51,9 +51,9 @@
             "a": 255
         }
     }],
-    ["quantum-spanner", {
+    ["Quantum Spanner", {
         "pickup_text": "Oi Govna!",
-        "damage": 2,
+        "damage": 3,
         "scale_x": 2.0,
         "scale_y": 1.6,
         "swing_speed": 1.0,
@@ -70,5 +70,6 @@
     // sword of duquesne - reward from Neil
     // sword of diehard - after both hilt/blade are found
     // tsunami-3000-anniversary-edition and devils-drench-xj11 - the waterguns that Troy and Abed have
+    // pickle-magnet - in computer wing
     // hockey stick, lacrosse stick, meterstick, broom, plunger - weapons from the episode (maybe these can be bought from the shopkeeper)
 ]

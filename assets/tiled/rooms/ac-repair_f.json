@@ -33,24 +33,7 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[
-                {
-                 "height":66.64,
-                 "id":4,
-                 "name":"",
-                 "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"Monkey Gas (Howling Wraiths)",
-                     "wrap":true
-                    },
-                 "type":"",
-                 "visible":true,
-                 "width":165.938,
-                 "x":485.364333333333,
-                 "y":190.346666666666
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,

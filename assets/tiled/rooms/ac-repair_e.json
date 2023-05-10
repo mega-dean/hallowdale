@@ -31,23 +31,28 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
+         "objects":[],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":5,
+         "name":"triggers",
          "objects":[
                 {
-                 "height":52.64,
-                 "id":4,
-                 "name":"",
+                 "height":29,
+                 "id":5,
+                 "name":"weapon_Limpken Wrench",
                  "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"weapon: Limpken Wrench",
-                     "wrap":true
-                    },
                  "type":"",
                  "visible":true,
-                 "width":207.938,
-                 "x":215.031,
-                 "y":143.68
+                 "width":24,
+                 "x":312,
+                 "y":257.833333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -105,8 +110,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":5,
- "nextobjectid":5,
+ "nextlayerid":6,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
