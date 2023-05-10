@@ -8,6 +8,7 @@ let parse_name context name : enemy_id =
   match name with
   | "DUNCAN" -> DUNCAN
   | "LOCKER_BOY" -> LOCKER_BOY
+  | "PENGUIN" -> PENGUIN
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
 let last_performed_action (e : enemy) : string * float =

@@ -86,10 +86,25 @@
                     "x_offset": 2,
                     "y_offset": 4
                 }]
+            ]
+        }],
 
+        [ "PENGUIN", {
+            "health": 100,
+            "w": 15,
+            "h": 20,
+            "kind": "enemy",
+            "props": [
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 1,
+                    "duration": 0.0
+                }]
             ]
         }]
     ],
+
     "shared_textures": [
         ["damage", {
             "count": 7,
