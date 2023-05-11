@@ -91,7 +91,10 @@ type npc_config = Json_t.npc_config = {
   texture_configs: (string * texture_config) list
 }
 
-type npcs_file = Json_t.npcs_file
+type npcs_file = Json_t.npcs_file = {
+  npcs: (string * npc_config) list;
+  shared_textures: (string * texture_config) list
+}
 
 type lore_file = Json_t.lore_file
 

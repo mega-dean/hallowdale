@@ -37,7 +37,24 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[],
+         "objects":[
+                {
+                 "height":43.8067,
+                 "id":7,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "color":"#ffffff",
+                     "text":"Dean Nail",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":180.438,
+                 "x":208.447666666667,
+                 "y":375.429983333333
+                }],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -107,7 +124,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":6,
+ "nextobjectid":8,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

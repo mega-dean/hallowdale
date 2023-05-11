@@ -159,6 +159,9 @@ type npc_config = {
   texture_configs : (string * texture_config) list;
 }
 
-type npcs_file = (string * npc_config) list
+type npcs_file = {
+  npcs : (string * npc_config) list;
+  shared_textures : (string * texture_config) list;
+}
 
 (* TODO-6 type save_file *)

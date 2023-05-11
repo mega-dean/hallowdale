@@ -79,7 +79,10 @@ type npc_config = {
   texture_configs: (string * texture_config) list
 }
 
-type npcs_file = (string * npc_config) list
+type npcs_file = {
+  npcs: (string * npc_config) list;
+  shared_textures: (string * texture_config) list
+}
 
 type lore_file = (string * string) list
 

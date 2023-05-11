@@ -440,6 +440,15 @@ end
 let text_box_width (config : text_config) = Config.window.width - (2 * config.margin_x)
 
 let tick state : state =
+  let draw_object_trigger_indicators () =
+    List.iter
+      (fun ((_, sprite) : string * sprite) ->
+        if state.debug.enabled then
+          debug_rect_outline sprite.dest;
+        draw_sprite sprite)
+      state.room.pickup_indicators
+  in
+
   let draw_debug_info () =
     let draw_ghost_debug () =
       let s = state.ghost.entity.sprite in
@@ -458,24 +467,11 @@ let tick state : state =
       | None -> ()
       | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor
     in
-    let draw_object_layer_debug () =
-      let draw_object_layer (layer : json_layer) =
-        match layer with
-        | `TILE_LAYER _ -> ()
-        | `OBJECT_LAYER json ->
-          let draw_object (cr : Json_t.coll_rect) =
-            debug_rect ~r:100 ~g:200 ~b:200 ~a:50 (Tiled.scale_rect cr.x cr.y cr.w cr.h)
-          in
-          List.iter draw_object json.objects
-      in
-      List.iter draw_object_layer state.room.json.layers
-    in
     List.iter
       (fun (l : layer) -> List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
       state.room.layers;
     List.iter (fun (_color, rect) -> debug_rect rect) state.debug.rects;
-    draw_ghost_debug ();
-    draw_object_layer_debug ()
+    draw_ghost_debug ()
   in
 
   let draw_enemies (enemies : (enemy_id * enemy) list) =
@@ -485,9 +481,6 @@ let tick state : state =
         debug_rect p.entity.dest;
         debug_rect_outline p.entity.sprite.dest)
     in
-    (* let draw_damage_sprite (dest, s) =
-     *   draw_sprite s
-     * in *)
     List.iter
       (fun ((_, e) : enemy_id * enemy) ->
         if state.debug.enabled then (
@@ -800,6 +793,7 @@ let tick state : state =
   draw_ghost state.ghost;
   draw_enemies state.room.enemies;
   draw_fg_tiles state camera_x camera_y;
+  draw_object_trigger_indicators ();
   draw_hud camera_x camera_y;
   if state.screen_faded then
     (* this is slightly larger than the window to add some padding for when the camera is moving *)

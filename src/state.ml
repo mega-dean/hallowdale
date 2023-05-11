@@ -12,8 +12,8 @@ let read_config path parse_fn json_file_of_string =
   let parse_name (id_str, props) = (parse_fn path id_str, props) in
   List.map parse_name configs
 
-let read_npcs_config () : (npc_id * json_npc_config) list =
-  read_config npcs_config_path Npc.parse_name Json_j.npcs_file_of_string
+let read_npcs_config () : Json_t.npcs_file =
+  Tiled.read_whole_file (fmt "../%s" npcs_config_path) |> Json_j.npcs_file_of_string
 
 let read_enemies_config () : Json_t.enemies_file =
   Tiled.read_whole_file (fmt "../%s" enemies_config_path) |> Json_j.enemies_file_of_string
@@ -97,12 +97,11 @@ let init () : state =
 
         (* cafeteria floor *)
         ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
-
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
 
         (* bush scissors *)
-        ("trampoline_f", TP_F, true, true, false, 400., 200.);
+        ("trampoline_f", TP_F, true, true, false, 400., 800.);
       ]
     in
     List.nth xs (List.length xs - 1)
@@ -114,14 +113,43 @@ let init () : state =
   let empty_progress = { rooms = []; global = [] } in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
-  let enemy_config : Json_t.enemies_file = read_enemies_config () in
-  let enemy_configs =
-    let parse (enemy_name, enemy_config) = (Enemy.parse_name "state.init" enemy_name, enemy_config) in
-    List.map parse enemy_config.enemies
+  let parse_texture_configs parse_name coll =
+    let parse (name, config) = (parse_name "state.init" name, config) in
+    List.map parse coll
   in
-  let shared_enemy_configs = enemy_config.shared_textures in
-  let npc_configs = read_npcs_config () in
-  let room = Room.init room_name empty_progress exits enemy_configs npc_configs in
+
+  let enemies_file : Json_t.enemies_file = read_enemies_config () in
+  let enemy_configs = parse_texture_configs Enemy.parse_name enemies_file.enemies in
+  let shared_enemy_configs = enemies_file.shared_textures in
+
+  let npcs_file = read_npcs_config () in
+  let npc_configs = parse_texture_configs Npc.parse_name npcs_file.npcs in
+
+  let pickup_indicator =
+    let config = List.assoc "pickup-indicator" npcs_file.shared_textures in
+    Sprite.build_texture_from_config
+      {
+        asset_dir = NPCS;
+        character_name = "shared";
+        pose_name = "pickup-indicator";
+        count = config.count;
+        duration = { seconds = config.duration };
+        x_offset = 0.;
+        y_offset = 0.;
+      }
+  in
+
+  let room =
+    Room.init
+      {
+        file_name = room_name;
+        progress = empty_progress;
+        exits;
+        enemy_configs;
+        npc_configs;
+        pickup_indicator_texture = pickup_indicator;
+      }
+  in
 
   room.layers <- Tiled.Room.get_layer_tile_groups room [];
   let ghosts_file = read_ghost_configs () in
@@ -272,7 +300,7 @@ let init () : state =
       weapons = weapon_configs;
       enemy_configs;
       npc_configs;
-      textures = { ability_outlines; damage };
+      textures = { ability_outlines; damage; pickup_indicator };
     }
   in
 
@@ -461,6 +489,10 @@ let update_npcs state =
     Sprite.advance_animation state.frame.time npc.entity.sprite.texture npc.entity.sprite
   in
 
+  let update_pickup_indicators ((_, sprite) : string * sprite) =
+    Sprite.advance_animation state.frame.time sprite.texture sprite
+  in
+
   let update_ghost (_id, ghost) =
     Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
     if ghost.entity.update_pos then (
@@ -477,6 +509,8 @@ let update_npcs state =
 
   List.iter update_ghost state.ghosts;
   List.iter update_npc state.room.npcs;
+  (* pickup indicators aren't really "npcs" *)
+  List.iter update_pickup_indicators state.room.pickup_indicators;
   state
 
 let get_vs_damage state =

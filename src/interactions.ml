@@ -64,7 +64,9 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
       [ STEP (PURPLE_PEN_TEXT [ "Found a purple pen with a note:"; fmt "{{purple}} %s" (get_lore ()) ]) ]
     | "health" ->
       [ CURRENT_GHOST (SET_POSE READING); CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
-    | "weapon" -> [ CURRENT_GHOST (SET_POSE FOCUSING); CURRENT_GHOST (ADD_WEAPON (interaction_name)) ]
+    | "weapon" ->
+      (* TODO center this text *)
+      [ CURRENT_GHOST (SET_POSE FOCUSING); CURRENT_GHOST (ADD_WEAPON interaction_name) ]
     | _ -> (
       match full_interaction_name with
       | "opening-poem" ->

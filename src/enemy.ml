@@ -220,7 +220,6 @@ let start_and_log_action (enemy : enemy) (action_name : string) (current : float
   start_action enemy action_name current current_props
 
 let take_damage (state : state) (enemy : enemy) (d : damage_kind) (damage : int) (dest : rect) =
-  tmp "taking %d damage" damage;
   let kill_enemy () =
     (match enemy.kind with
     | ENEMY ->
@@ -229,7 +228,7 @@ let take_damage (state : state) (enemy : enemy) (d : damage_kind) (damage : int)
         Some { speed = (if Random.bool () then -100. else 100.); time_left = { seconds = 1. }; reset_v = true }
     | _ -> ());
     (match enemy.id with
-     | LOCKER_BOY -> Entity.hide enemy.entity
+    | LOCKER_BOY -> Entity.hide enemy.entity
     | _ -> ());
     (* TODO start_and_log_action "die"; *)
     enemy.spawned_projectiles <- [];
@@ -388,7 +387,6 @@ let create_from_rects
       let w, h =
         ((enemy_config.w |> Int.to_float) *. Config.scale.ghost, (enemy_config.h |> Int.to_float) *. Config.scale.ghost)
       in
-      tmp "building enemy with %f, %f" dest.pos.x dest.pos.y;
       Some (build enemy_id enemy_kind enemy_name enemy_config { dest with w; h } on_killed))
   in
 

@@ -2,21 +2,61 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let init
-    (file_name : string)
-    (progress : progress)
-    (exits : rect list)
-    (enemy_configs : (enemy_id * json_enemy_config) list)
-    (npc_configs : (npc_id * json_npc_config) list) : room =
+let get_pickup_indicators (room_progress : room_progress) (texture : texture) (json_layers : json_layer list) :
+    (string * sprite) list =
+  let get_object_layer_triggers (layer : json_layer) : (string * sprite) list =
+    match layer with
+    | `TILE_LAYER _ -> []
+    | `OBJECT_LAYER json ->
+      if json.name = "triggers" then (
+        let show_obj (cr : Json_t.coll_rect) : (string * sprite) option =
+          if List.mem cr.name room_progress.finished_interactions then
+            None
+          else (
+            let dest =
+              let child_w, child_h =
+                let src = get_src texture in
+                (src.w *. Config.scale.room, src.h *. Config.scale.room)
+              in
+              let parent_w, parent_h = (cr.w *. Config.scale.room, cr.h *. Config.scale.room) in
+              let parent_x, parent_y = (cr.x *. Config.scale.room, cr.y *. Config.scale.room) in
+              {
+                pos = { x = parent_x +. ((parent_w -. child_w) /. 2.); y = parent_y +. ((parent_h -. child_h) /. 2.) };
+                w = child_w;
+                h = child_h;
+              }
+            in
+            Some (cr.name, Sprite.create "indicator" texture dest))
+        in
+        List.filter_map show_obj json.objects (* [] *))
+      else
+        []
+  in
+  List.map get_object_layer_triggers json_layers |> List.flatten
+
+let update_pickup_indicators state =
+  state.room.pickup_indicators <-
+    get_pickup_indicators state.room.progress state.global.textures.pickup_indicator state.room.json.layers
+
+type room_params = {
+  file_name : string;
+  progress : progress;
+  exits : rect list;
+  enemy_configs : (enemy_id * json_enemy_config) list;
+  npc_configs : (npc_id * json_npc_config) list;
+  pickup_indicator_texture : texture;
+}
+
+let init (params : room_params) : room =
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
-  let (area_id, room_id) : area_id * room_id = Tiled.parse_room_filename "init_room" file_name in
+  let (area_id, room_id) : area_id * room_id = Tiled.parse_room_filename "init_room" params.file_name in
   let room_key = Tiled.Room.get_uuid' area_id room_id in
   let new_room_progress () =
     (* room_progress gets created here, but isn't saved into state.progress.rooms until the room is being unloaded at an exit *)
     { finished_interactions = []; revealed_shadow_layers = []; removed_idxs_by_layer = [] }
   in
   let room_progress =
-    match List.assoc_opt room_key progress.rooms with
+    match List.assoc_opt room_key params.progress.rooms with
     | None -> new_room_progress ()
     | Some rp -> rp
   in
@@ -26,7 +66,7 @@ let init
     Tiled.read_whole_file full_path |> Json_j.room_of_string
   in
 
-  let json_room = parse_room (fmt "%s.json" file_name) in
+  let json_room = parse_room (fmt "%s.json" params.file_name) in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : (string * rect) list ref = ref [] in
   let shadow_triggers : (string * rect) list ref = ref [] in
@@ -116,8 +156,10 @@ let init
     | None -> (* if a room doesn't use the jugs tileset, it never needs to use the cache *) 0
   in
 
-  let enemies : enemy list = Enemy.create_from_rects !enemy_rects room_progress.finished_interactions enemy_configs in
-  let npcs : npc list = Npc.create_from_rects !npc_rects npc_configs in
+  let enemies : enemy list =
+    Enemy.create_from_rects !enemy_rects room_progress.finished_interactions params.enemy_configs
+  in
+  let npcs : npc list = Npc.create_from_rects !npc_rects params.npc_configs in
 
   let tilesets_by_path = Tiled.load_tilesets json_room in
 
@@ -323,22 +365,25 @@ let init
       max = { x = w -. Config.window.center_x; y = h -. Config.window.center_y };
     }
   in
-  let tint =
-    match area_id with
-    | FORGOTTEN_CLASSROOMS -> Raylib.Color.create 107 157 255 255
-    | CITY_OF_CHAIRS -> Raylib.Color.create 107 107 205 255
-    | INFECTED_CLASSROOMS -> Raylib.Color.create 107 60 40 255
-    | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
-    | BASEMENT -> Raylib.Color.create 50 20 50 255
-    | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
-    | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
-    | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
-    | FINAL -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
+  let area =
+    let tint =
+      match area_id with
+      | FORGOTTEN_CLASSROOMS -> Raylib.Color.create 107 157 255 255
+      | CITY_OF_CHAIRS -> Raylib.Color.create 107 107 205 255
+      | INFECTED_CLASSROOMS -> Raylib.Color.create 107 60 40 255
+      | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
+      | BASEMENT -> Raylib.Color.create 50 20 50 255
+      | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
+      | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
+      | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
+      | _ -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
+    in
+    {
+      id = area_id;
+      tint;
+      bg_color = Raylib.Color.create (Raylib.Color.r tint / 7) (Raylib.Color.g tint / 7) (Raylib.Color.b tint / 7) 255;
+    }
   in
-  let bg_color =
-    Raylib.Color.create (Raylib.Color.r tint / 7) (Raylib.Color.g tint / 7) (Raylib.Color.b tint / 7) 255
-  in
-  let area = { id = area_id; tint; bg_color } in
   {
     area;
     id = room_id;
@@ -346,11 +391,12 @@ let init
     progress = room_progress;
     idx_configs = !idx_configs;
     camera_bounds = create_camera_bounds json_room;
-    exits;
+    exits = params.exits;
     triggers =
       { camera = !camera_triggers; lore = !lore_triggers; cutscene = !cutscene_triggers; shadows = !shadow_triggers };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
     npcs;
+    pickup_indicators = get_pickup_indicators room_progress params.pickup_indicator_texture json_room.layers;
     cache;
   }

@@ -458,6 +458,11 @@ module Interaction = struct
     margin_y : int;
     margin_y_bottom : int;
     outline_offset_y : int;
+    (* TODO
+       - move this to type text
+       - center text for ADD_WEAPON
+       - maybe rename this type to text_box_config
+    *)
     centered : bool;
   }
 
@@ -733,6 +738,7 @@ type ghost = {
   mutable spawned_vengeful_spirits : projectile list;
 }
 
+(* FIXME consolidate - either add json_ for all types, or remove all these *)
 type json_world = Json_t.world
 type json_room = Json_t.room
 type json_tileset = Json_t.tileset
@@ -942,7 +948,7 @@ type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
 
-(* TODO levers to unlock doors - use a new trigger type *)
+(* TODO-1 levers to unlock doors - use a new trigger type *)
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death
    - on duncan-killed, move current_interaction into finished_interactions
@@ -969,6 +975,7 @@ type room = {
   exits : rect list;
   mutable npcs : npc list;
   mutable layers : layer list;
+  mutable pickup_indicators : (string * sprite) list;
 }
 
 (* TODO
@@ -1004,6 +1011,7 @@ type texture_cache = {
   *)
   damage : texture;
   ability_outlines : texture;
+  pickup_indicator : texture;
 }
 
 (* these are all things that are eager-loaded from json config files *)
@@ -1019,14 +1027,6 @@ type frame_info = {
   mutable idx : int;
   mutable dt : float;
   mutable time : float;
-}
-
-type ghost_cache = {
-  annie : ghost;
-  abed : ghost;
-  britta : ghost;
-  jeff : ghost;
-  troy : ghost;
 }
 
 type debug = {

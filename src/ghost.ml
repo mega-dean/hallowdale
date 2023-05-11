@@ -126,7 +126,6 @@ let make_slash state (direction : direction) relative_pos (ghost : sprite) : sla
     else
       (dest_w' *. state.ghost.current_weapon.scale_x, dest_h')
   in
-  let pos = Entity.get_child_pos state.ghost.entity relative_pos dest_w dest_h in
   let dest =
     (* pos is arbitrary because this will be adjusted to parent dest based on child's relative_position *)
     { pos = Zero.vector (); h = dest_h; w = dest_w }
@@ -553,11 +552,8 @@ let acquire_weapon state weapon_name =
   match List.assoc_opt weapon_name state.global.weapons with
   | Some weapon_config ->
     let current_weapon_names = List.map fst state.ghost.weapons in
-    if List.mem weapon_name current_weapon_names then
-      tmp "already have %s" weapon_name
-    else (
-      tmp "new weapon %s" weapon_name;
-      state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons)
+    if not (List.mem weapon_name current_weapon_names) then
+      state.ghost.weapons <- (weapon_name, weapon_config) :: state.ghost.weapons
   | None -> failwithf "acquire_weapon bad weapon name: %s" weapon_name
 
 let equip_weapon (ghost : ghost) weapon_name =
@@ -614,16 +610,15 @@ let update (state : state) : state =
       state.ghost.entity.dest.pos.x <- state.ghost.entity.dest.pos.x -. dv
     else if key_pressed DEBUG_1 then
       (* cycle_current_ghost state *)
-      (* toggle_ability state.ghost "mantis_claw" *)
-      (* () *)
-      tmp "current weapons: %s" (state.ghost.weapons |> List.map fst |> join)
+      (* print "current weapons: %s" (state.ghost.weapons |> List.map fst |> join) *)
+      toggle_ability state.ghost "mantis_claw"
     else if key_pressed DEBUG_2 then (
       state.ghost.soul.current <- state.ghost.soul.max;
       acquire_weapon state "Orange Paintball Gun";
       toggle_ability state.ghost "monarch_wings")
     else if key_pressed DEBUG_3 then
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
-      (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
+      (* () *)
       equip_weapon state.ghost "Orange Paintball Gun"
     else if key_pressed DEBUG_4 then
       print "ghost x: %0.1f, y: %0.1f" state.ghost.entity.dest.pos.x state.ghost.entity.dest.pos.y
@@ -678,9 +673,20 @@ let update (state : state) : state =
 
         let room_uuid = Tiled.Room.get_uuid state.room in
         state.progress.rooms <- Utils.assoc_replace room_uuid state.room.progress state.progress.rooms;
-        let room = Room.init path state.progress exits state.global.enemy_configs state.global.npc_configs in
+        let room =
+          Room.init
+            {
+              file_name = path;
+              progress = state.progress;
+              exits;
+              enemy_configs = state.global.enemy_configs;
+              npc_configs = state.global.npc_configs;
+              pickup_indicator_texture = state.global.textures.pickup_indicator;
+            }
+        in
         state.ghost.entity.current_floor <- None;
         state.ghost.current.wall <- None;
+        state.ghost.spawned_vengeful_spirits <- [];
         state.ghost.entity.dest.pos <- start_pos;
         (* all rooms are using the same tilesets now, but still unload them here (and re-load them
            in load_room) every time because the tilesets could be in a different order per room
@@ -863,8 +869,11 @@ let update (state : state) : state =
             let text : Interaction.text = { content = [ str ]; increases_health } in
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)
-          | ADD_ABILITY ability_name -> enable_ability state.ghost ability_name
+          | ADD_ABILITY ability_name ->
+            Room.update_pickup_indicators state;
+            enable_ability state.ghost ability_name
           | ADD_WEAPON weapon_name ->
+            Room.update_pickup_indicators state;
             let weapon_config = List.assoc weapon_name state.global.weapons in
             let text : Interaction.text =
               { content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]; increases_health = false }
