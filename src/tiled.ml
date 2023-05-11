@@ -147,7 +147,7 @@ end
 (* TODO maybe rename this so it's less confusing with room.ml *)
 module Room = struct
   (* TODO this module is a little weird since it works on both json_room and room types *)
-  type t = json_room
+  type t = Json_t.room
 
   let get_uuid' area_id room_id : string = fmt "%s_%s" (Show.area_id area_id) (Show.room_id room_id)
   let get_uuid (room : room) : string = get_uuid' room.area.id room.id
@@ -201,7 +201,7 @@ module Room = struct
     (* TODO this is checking all layers for transformations, even though it's only being used for jugs *)
     let gid = Tile.raw_gid gid' in
     let bits = Tile.transformation_bits gid' in
-    let get_tileset (source : json_tileset_source) =
+    let get_tileset (source : Json_t.tileset_source) =
       match List.assoc_opt source.source room_cache.tilesets_by_path with
       | None -> failwithf "could not find cached tileset %s" source.source
       | Some t -> t
@@ -224,12 +224,12 @@ module Room = struct
         failwithf "look_up_tile error: tileset '%s', gid %d, %d tiles, %d" tileset.json.name gid
           (Array.length tileset.tiles) tileset_source.firstgid)
 
-  let lookup_coll_offsets room (gid : int) (json_room : json_room) : vector =
+  let lookup_coll_offsets room (gid : int) (json_room : Json_t.room) : vector =
     let tile, _ = look_up_tile json_room room.cache gid in
     tile.coll_offset
 
   let get_layer_tile_groups (room : room) (removed_idxs_by_layer : (string * int list) list) : layer list =
-    let get_rectangle_tile_groups (json_layer : json_tile_layer) (layer_name : string) : tile_group list =
+    let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) : tile_group list =
       let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in
       let tile_groups : tile_group list ref =
         (* keeps track of gid indexes too so they can be not rendered after they are destroyed *)
@@ -342,7 +342,7 @@ module Room = struct
     List.map set_tile_groups room.layers
 end
 
-let get_object_collision (json_tileset : json_tileset) (firstgid : int) (id : int) : Json_t.coll_rect option =
+let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) : Json_t.coll_rect option =
   let this_tile (collision : Json_t.collision) : bool = collision.id + firstgid = id in
   match List.find_opt this_tile json_tileset.collisions with
   | None -> None
@@ -354,7 +354,7 @@ let get_object_collision (json_tileset : json_tileset) (firstgid : int) (id : in
         (List.length collision.objectgroup.objects)
         firstgid id
 
-let load_tiles (room : json_room) (json_tileset : json_tileset) image (tileset_source : Json_t.tileset_source) :
+let load_tiles (room : Json_t.room) (json_tileset : Json_t.tileset) image (tileset_source : Json_t.tileset_source) :
     texture array =
   let load_tile idx : texture =
     let x, y = Room.src_xy room idx json_tileset.columns in
@@ -372,9 +372,9 @@ let load_tiles (room : json_room) (json_tileset : json_tileset) image (tileset_s
   in
   Array.init json_tileset.tile_count load_tile
 
-let load_tilesets (room : json_room) : (string * tileset) list =
+let load_tilesets (room : Json_t.room) : (string * tileset) list =
   let load_tileset source' : (string * tileset) option =
-    let parse_tileset (source : Json_t.tileset_source) : json_tileset option =
+    let parse_tileset (source : Json_t.tileset_source) : Json_t.tileset option =
       if String.equal "../tilesets/world-map.json" source.source then
         None
       else if not (String.starts_with ~prefix:"../tilesets/" source.source) then
@@ -414,7 +414,7 @@ let create_camera_at v (shake : float) =
 
 let init_world (path : string) : (room_id * room_location) list =
   let full_path = fmt "../assets/tiled/rooms/%s.world" path in
-  let json_world : json_world = read_whole_file full_path |> Json_j.world_of_string in
+  let json_world : Json_t.world = read_whole_file full_path |> Json_j.world_of_string in
   let filenames_in_world_file : str_set ref = ref StrSet.empty in
   let get_room_location (global_map : Json_t.global_map) : room_id * room_location =
     let filename = Str.first_chars global_map.file_name (String.length global_map.file_name - 5) in

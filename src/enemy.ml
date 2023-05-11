@@ -262,9 +262,9 @@ let time_ago (e : enemy) (action_name : string) (clock : time) : duration =
 let create_from_rects
     (enemy_rects : (enemy_id * rect) list)
     finished_interactions
-    (enemy_configs : (enemy_id * json_enemy_config) list) : enemy list =
+    (enemy_configs : (enemy_id * Json_t.enemy_config) list) : enemy list =
   (* TODO this is loading the same textures multiple times for eg. locker-boys *)
-  let build id kind enemy_name (enemy_config : json_enemy_config) entity_dest on_killed : enemy =
+  let build id kind enemy_name (enemy_config : Json_t.enemy_config) entity_dest on_killed : enemy =
     let choose_behavior =
       match id with
       | LOCKER_BOY ->
@@ -365,7 +365,7 @@ let create_from_rects
   in
   let build_enemy_from_rect ((enemy_id, dest) : enemy_id * rect) : enemy option =
     let enemy_name = Show.enemy_id enemy_id in
-    let enemy_config : json_enemy_config =
+    let enemy_config : Json_t.enemy_config =
       match List.assoc_opt enemy_id enemy_configs with
       | None -> failwithf "missing config in enemies.json for %s" enemy_name
       | Some config -> config

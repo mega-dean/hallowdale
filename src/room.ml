@@ -2,9 +2,9 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let get_pickup_indicators (room_progress : room_progress) (texture : texture) (json_layers : json_layer list) :
+let get_pickup_indicators (room_progress : room_progress) (texture : texture) (json_layers : Json_t.layer list) :
     (string * sprite) list =
-  let get_object_layer_triggers (layer : json_layer) : (string * sprite) list =
+  let get_object_layer_triggers (layer : Json_t.layer) : (string * sprite) list =
     match layer with
     | `TILE_LAYER _ -> []
     | `OBJECT_LAYER json ->
@@ -42,8 +42,8 @@ type room_params = {
   file_name : string;
   progress : progress;
   exits : rect list;
-  enemy_configs : (enemy_id * json_enemy_config) list;
-  npc_configs : (npc_id * json_npc_config) list;
+  enemy_configs : (enemy_id * Json_t.enemy_config) list;
+  npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;
 }
 
@@ -60,7 +60,7 @@ let init (params : room_params) : room =
     | None -> new_room_progress ()
     | Some rp -> rp
   in
-  let parse_room (path : string) : json_room =
+  let parse_room (path : string) : Json_t.room =
     let full_path = fmt "../assets/tiled/rooms/%s" path in
     (* TODO cache these instead of reloading the tileset between every room *)
     Tiled.read_whole_file full_path |> Json_j.room_of_string
@@ -74,7 +74,7 @@ let init (params : room_params) : room =
   let cutscene_triggers : (string * rect) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
-  let get_object_rects (jl : json_layer) =
+  let get_object_rects (jl : Json_t.layer) =
     let get_object_rect ?(floor = false) ?(hidden = false) name (coll_rect : Json_t.coll_rect) =
       let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       if floor then
@@ -148,7 +148,7 @@ let init (params : room_params) : room =
 
   (* need this for on_destroy cache keys *)
   let jug_firstgid =
-    let is_jug (ts : json_tileset_source) =
+    let is_jug (ts : Json_t.tileset_source) =
       String.length ts.source > 10 && Str.last_chars ts.source 10 = "/jugs.json"
     in
     match List.find_opt is_jug json_room.tileset_sources with
@@ -166,7 +166,7 @@ let init (params : room_params) : room =
   let tile_layers =
     let layers = ref [] in
     let layer_names = ref [] in
-    let build_tile_layer (json_layer : json_layer) =
+    let build_tile_layer (json_layer : Json_t.layer) =
       match json_layer with
       | `OBJECT_LAYER _ -> ()
       | `TILE_LAYER json ->
@@ -357,7 +357,7 @@ let init (params : room_params) : room =
       { jug_fragments_by_gid = List.map make_jug metadata; tilesets_by_path }
   in
 
-  let create_camera_bounds (room : json_room) =
+  let create_camera_bounds (room : Json_t.room) =
     let w = (room.w_in_tiles |> Int.to_float) *. room.tile_w *. Config.scale.room in
     let h = (room.h_in_tiles |> Int.to_float) *. room.tile_h *. Config.scale.room in
     {

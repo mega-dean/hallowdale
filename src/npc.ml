@@ -14,10 +14,10 @@ let parse_name context name : npc_id =
   | "GARRETT" -> GARRETT
   | _ -> failwithf "Npc.parse_name: found unrecognized npc name '%s' in %s" name context
 
-let create_from_rects (npc_rects : (npc_id * rect * bool) list) (npc_configs : (npc_id * json_npc_config) list) =
+let create_from_rects (npc_rects : (npc_id * rect * bool) list) (npc_configs : (npc_id * Json_t.npc_config) list) =
   let build_npc_from_rect ((npc_id, dest, facing_right) : npc_id * rect * bool) : npc =
     let npc_name = Show.npc_id npc_id in
-    let npc_config : json_npc_config =
+    let npc_config : Json_t.npc_config =
       match List.assoc_opt npc_id npc_configs with
       | None -> failwithf "missing npc config for %s" npc_name
       | Some config -> config

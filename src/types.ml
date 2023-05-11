@@ -738,20 +738,9 @@ type ghost = {
   mutable spawned_vengeful_spirits : projectile list;
 }
 
-(* FIXME consolidate - either add json_ for all types, or remove all these *)
-type json_world = Json_t.world
-type json_room = Json_t.room
-type json_tileset = Json_t.tileset
-type json_tileset_source = Json_t.tileset_source
-type json_tile_layer = Json_t.tile_layer
-type json_object_layer = Json_t.object_layer
-type json_layer = Json_t.layer
-type json_enemy_config = Json_t.enemy_config
-type json_npc_config = Json_t.npc_config
-
 (* a cache for image/tiles that have been loaded for a tileset *)
 type tileset = {
-  json : json_tileset;
+  json : Json_t.tileset;
   (* TODO this doesn't really need to be an array of textures, since the image is
      always the same and the animation is always STILL. This is just needed to parse
      the collision rects per-tile, so maybe this could be a `coll_offsets list`
@@ -803,7 +792,7 @@ type layer_config = {
 (* a tilelayer in Tiled *)
 type layer = {
   name : string;
-  json : json_tile_layer;
+  json : Json_t.tile_layer;
   config : layer_config;
   mutable hidden : bool;
   mutable tile_groups : tile_group list;
@@ -965,7 +954,7 @@ type room_progress = {
 type room = {
   id : room_id;
   area : area;
-  json : json_room;
+  json : Json_t.room;
   progress : room_progress;
   mutable idx_configs : (int * idx_config) list;
   camera_bounds : bounds;
@@ -1019,8 +1008,8 @@ type global_cache = {
   textures : texture_cache;
   lore : (string * string) list;
   weapons : (string * Json_t.weapon) list;
-  enemy_configs : (enemy_id * json_enemy_config) list;
-  npc_configs : (npc_id * json_npc_config) list;
+  enemy_configs : (enemy_id * Json_t.enemy_config) list;
+  npc_configs : (npc_id * Json_t.npc_config) list;
 }
 
 type frame_info = {
