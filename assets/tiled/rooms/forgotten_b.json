@@ -107,23 +107,6 @@
          "name":"world-map-labels",
          "objects":[
                 {
-                 "height":102.640625,
-                 "id":4,
-                 "name":"",
-                 "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"Dreamer item: note from Ass-Crack Bandit",
-                     "wrap":true
-                    },
-                 "type":"",
-                 "visible":true,
-                 "width":166.4375,
-                 "x":67.28125,
-                 "y":115.1796875
-                }, 
-                {
                  "height":113.640625,
                  "id":5,
                  "name":"",
@@ -139,6 +122,28 @@
                  "width":172.4375,
                  "x":190.78125,
                  "y":506.513020833333
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":5,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":65,
+                 "id":7,
+                 "name":"dreamer_Note from Ass Crack Bandit",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":53.5,
+                 "x":84.25,
+                 "y":173.833333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -344,8 +349,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":5,
- "nextobjectid":6,
+ "nextlayerid":6,
+ "nextobjectid":8,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

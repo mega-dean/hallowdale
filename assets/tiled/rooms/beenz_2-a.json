@@ -49,21 +49,21 @@
          "name":"world-map-labels",
          "objects":[
                 {
-                 "height":113.14,
-                 "id":4,
+                 "height":43.8067,
+                 "id":5,
                  "name":"",
                  "rotation":0,
                  "text":
                     {
                      "color":"#ffffff",
-                     "text":"1 meowmeowbeen - maybe a reward from npc for a quest",
+                     "text":"1 meowmeowbeen",
                      "wrap":true
                     },
                  "type":"",
                  "visible":true,
-                 "width":160.438,
-                 "x":106.781,
-                 "y":388.43
+                 "width":180.438,
+                 "x":127.114333333333,
+                 "y":458.09665
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -154,7 +154,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":5,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

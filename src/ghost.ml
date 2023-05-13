@@ -3,6 +3,15 @@ open Controls
 
 [@@@ocaml.warning "-26-27-32"]
 
+let parse_name name : ghost_id =
+  match name with
+  | "ABED" -> ABED
+  | "ANNIE" -> ANNIE
+  | "BRITTA" -> BRITTA
+  | "JEFF" -> JEFF
+  | "TROY" -> TROY
+  | _ -> failwithf "bad ghost name '%s'" name
+
 let available_ghost_ids ghosts : ghost_id list = ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
 
 let maybe_begin_interaction (state : state) name =
@@ -21,7 +30,8 @@ let maybe_begin_interaction (state : state) name =
     if increase_health then
       state.room.progress.finished_interactions <- name :: state.room.progress.finished_interactions;
     begin_interaction ~increase_health ()
-  | "ability" (* TODO-7 "dreamer" *)
+  | "ability"
+  | "dreamer"
   | "weapon"
   | "purple-pen"
   | "boss-killed"
@@ -869,9 +879,17 @@ let update (state : state) : state =
             let text : Interaction.text = { content = [ str ]; increases_health } in
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)
+          (* FIXME group these three into a single ADD_ITEM and add variant type item_kind *)
           | ADD_ABILITY ability_name ->
             Room.update_pickup_indicators state;
             enable_ability state.ghost ability_name
+          | ADD_DREAMER_ITEM (item_name, dreamer_item_text) ->
+            Room.update_pickup_indicators state;
+            let text : Interaction.text =
+              { content = [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]; increases_health = false }
+            in
+            state.interaction.speaker_name <- None;
+            state.interaction.text <- Some (PLAIN text)
           | ADD_WEAPON weapon_name ->
             Room.update_pickup_indicators state;
             let weapon_config = List.assoc weapon_name state.global.weapons in
@@ -1147,8 +1165,6 @@ let update (state : state) : state =
           ()))
   in
 
-  (* TODO-8 add visible pickup indicators *)
-  (* TODO-7 add dreamer item pickups *)
   let handle_focusing () : handled_action =
     (* TODO-4 add a delay before deducting soul *)
     (* TODO-5 add charge_action that can happen before start_action *)

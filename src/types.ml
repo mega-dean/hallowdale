@@ -424,6 +424,7 @@ module Interaction = struct
     | FILL_LIFE_VAPOR
     | ADD_WEAPON of string
     | ADD_ABILITY of string
+    | ADD_DREAMER_ITEM of string * string
     | INCREASE_HEALTH_TEXT of bool * string
     | ADD_TO_PARTY
     | REMOVE_FROM_PARTY
@@ -964,7 +965,7 @@ type room = {
   exits : rect list;
   mutable npcs : npc list;
   mutable layers : layer list;
-  mutable pickup_indicators : (string * sprite) list;
+  mutable pickup_indicators : sprite list;
 }
 
 (* TODO

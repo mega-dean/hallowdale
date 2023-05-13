@@ -169,6 +169,12 @@ let font_size = Config.scale.font_size
 let line_height = font_size |> Int.to_float
 let measure_text s = Raylib.measure_text s font_size
 
+(* TODO this works ok for two kinds of interaction text input:
+   - one single long line (that gets wrapped by this fn)
+   - several short/non-wrapping lines
+
+   using several long lines sets the vertical spacing incorrectly so lines overlap each other
+*)
 let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : string list) : line list =
   let new_segment ?(color = Color.raywhite) content content_w line_w =
     {
@@ -442,7 +448,7 @@ let text_box_width (config : text_config) = Config.window.width - (2 * config.ma
 let tick state : state =
   let draw_object_trigger_indicators () =
     List.iter
-      (fun ((_, sprite) : string * sprite) ->
+      (fun (sprite : sprite) ->
         if state.debug.enabled then
           debug_rect_outline sprite.dest;
         draw_sprite sprite)
@@ -750,13 +756,23 @@ let tick state : state =
         in
         display_paragraph config 0 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name hd))
     | Some (PLAIN text') ->
+      let margin_y_bottom =
+        let tall_text =
+          (* TODO it's worth cleaning this up if there are any long dialogs needed besides the ACB note *)
+          String.length (List.nth text'.content (List.length text'.content - 1)) > 300
+        in
+        if tall_text then
+          50
+        else
+          350
+      in
       let margin_x = 150 in
       let config : text_config =
         {
           text_box_width = get_text_box_width margin_x;
           margin_x;
           margin_y = 50;
-          margin_y_bottom = 350;
+          margin_y_bottom;
           outline_offset_y = 0;
           padding_x = 50;
           padding_y = 50;
@@ -767,7 +783,7 @@ let tick state : state =
       if text'.increases_health then (
         let increase_health_text_margin_y =
           (* print the line at the bottom of the text box *)
-          config.margin_y_bottom - config.padding_y - (line_height |> Float.to_int)
+          Config.window.height - config.margin_y_bottom - (2 * config.padding_y)
         in
         List.iteri (display_paragraph config 0) text'.content;
         List.iteri

@@ -41,15 +41,7 @@ let read_ghost_configs () : ghosts_file =
   in
   let parse_ghost_texture ((ghost_id_str, ghost_poses) : string * (string * Json_t.texture_config) list) :
       ghost_id * texture_config list =
-    let ghost_id =
-      match ghost_id_str with
-      | "ABED" -> ABED
-      | "ANNIE" -> ANNIE
-      | "BRITTA" -> BRITTA
-      | "JEFF" -> JEFF
-      | "TROY" -> TROY
-      | _ -> failwithf "bad ghost name '%s' in %s" ghost_id_str ghost_config_path
-    in
+    let ghost_id = Ghost.parse_name ghost_id_str in
     let texture_configs : texture_config list = List.map (parse_texture_config ghost_id_str) ghost_poses in
     (ghost_id, texture_configs)
   in
@@ -80,11 +72,10 @@ let init () : state =
         ("forgotten_deans-pass", FC_DEANS_PASS, true, true, true, 1500., 3600.);
         (* big door *)
         (* ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.); *)
-
         (* duncan fight *)
-        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.);
+        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.); *)
         (* past duncan fight *)
-        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
+        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.);
 
         (* by the breakable wall *)
         (* ("infected_a", IC_A, true, true, true, 2200., 1800.); *)
@@ -96,12 +87,16 @@ let init () : state =
         (* ("infected_b", IC_B, true, true, false, 600., 1900.); *)
 
         (* cafeteria floor *)
-        ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
+        (* ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.); *)
+
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
 
         (* bush scissors *)
-        ("trampoline_f", TP_F, true, true, false, 400., 800.);
+        (* ("trampoline_f", TP_F, true, true, false, 400., 800.); *)
+
+        (* acb note *)
+        (* ("forgotten_b", FC_B, true, true, true, 400., 200.); *)
       ]
     in
     List.nth xs (List.length xs - 1)
@@ -489,9 +484,7 @@ let update_npcs state =
     Sprite.advance_animation state.frame.time npc.entity.sprite.texture npc.entity.sprite
   in
 
-  let update_pickup_indicators ((_, sprite) : string * sprite) =
-    Sprite.advance_animation state.frame.time sprite.texture sprite
-  in
+  let update_pickup_indicators (sprite : sprite) = Sprite.advance_animation state.frame.time sprite.texture sprite in
 
   let update_ghost (_id, ghost) =
     Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;

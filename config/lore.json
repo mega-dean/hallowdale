@@ -1,4 +1,5 @@
 [
+    // lore
     ["1.04.1", "Who's erratic and unstable now, Princess Gringa?"],
     ["1.12.1", "You took all the winterdoodles. What are you, a douche bag?"],
     ["1.16.1", "You were dancing like the girl in that movie \"Kids in Detention\"."],
@@ -62,5 +63,7 @@
     ["5.10.2", "I am Joseph Gordon Diehard and I'm only here to hug my father."],
     ["5.11.1", "I guess you found a way to deal with it unconsciously through a psychotic break."],
     ["5.12.1", "Well \"bread\" is a substance. What do you call the units of bread you use? \"Breads\"?"],
-    ["5.13.1", "You're special, Richie. Your mind is special. You know it works differently from other kids' minds."]
+    ["5.13.1", "You're special, Richie. Your mind is special. You know it works differently from other kids' minds."],
+    // dreamer items
+    ["Note from Ass Crack Bandit", "It will take more than a {{blue}} jimi thing {{white}} to uncover my identity, for I am hidden beyond your grasp. It is amusing to see the pressure of solving this case {{blue}} crush {{white}} you, as you struggle in vain to unravel the truth. Lost like a {{blue}} satellite {{white}} adrift in the vast expanse, your search for meaning orbits fruitlessly, while I remain a distant enigma, observing from afar. {{blue}} Where are you going {{white}} when this is all finished? Will you ever be able to leave, or will you {{blue}} stay (wasting time) {{white}} forever? {{blue}} What would you say {{white}} if I revealed my true identity? I can feel your judgments {{blue}} crash into me, {{white}} but do you truly comprehend the reasons behind my actions?"]
 ]

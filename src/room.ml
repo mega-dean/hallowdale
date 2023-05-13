@@ -3,34 +3,43 @@ open Types
 [@@@ocaml.warning "-26-27-32"]
 
 let get_pickup_indicators (room_progress : room_progress) (texture : texture) (json_layers : Json_t.layer list) :
-    (string * sprite) list =
-  let get_object_layer_triggers (layer : Json_t.layer) : (string * sprite) list =
+    sprite list =
+  let get_object_layer_triggers (layer : Json_t.layer) : sprite list =
     match layer with
     | `TILE_LAYER _ -> []
+    | `OBJECT_LAYER json when json.name <> "triggers" -> []
     | `OBJECT_LAYER json ->
-      if json.name = "triggers" then (
-        let show_obj (cr : Json_t.coll_rect) : (string * sprite) option =
-          if List.mem cr.name room_progress.finished_interactions then
-            None
-          else (
-            let dest =
-              let child_w, child_h =
-                let src = get_src texture in
-                (src.w *. Config.scale.room, src.h *. Config.scale.room)
-              in
-              let parent_w, parent_h = (cr.w *. Config.scale.room, cr.h *. Config.scale.room) in
-              let parent_x, parent_y = (cr.x *. Config.scale.room, cr.y *. Config.scale.room) in
-              {
-                pos = { x = parent_x +. ((parent_w -. child_w) /. 2.); y = parent_y +. ((parent_h -. child_h) /. 2.) };
-                w = child_w;
-                h = child_h;
-              }
+      let show_obj (cr : Json_t.coll_rect) : sprite option =
+        if List.mem cr.name room_progress.finished_interactions then
+          None
+        else (
+          let dest =
+            let child_w, child_h =
+              let src = get_src texture in
+              (src.w *. Config.scale.room, src.h *. Config.scale.room)
             in
-            Some (cr.name, Sprite.create "indicator" texture dest))
-        in
-        List.filter_map show_obj json.objects (* [] *))
-      else
-        []
+            let parent_w, parent_h = (cr.w *. Config.scale.room, cr.h *. Config.scale.room) in
+            let parent_x, parent_y = (cr.x *. Config.scale.room, cr.y *. Config.scale.room) in
+            {
+              pos = { x = parent_x +. ((parent_w -. child_w) /. 2.); y = parent_y +. ((parent_h -. child_h) /. 2.) };
+              w = child_w;
+              h = child_h;
+            }
+          in
+          itmp " =========================== making with %s" cr.name;
+          let prefix = Utils.separate cr.name '_' |> fst in
+          (* FIXME better check
+             - Room.init is already matching on prefix name to put everything into lore_triggers
+             - so maybe that could start using a separate collection for pickup_triggers
+             - then this code should just be looking at room.triggers.pickups, not room.layers.objects
+             - this is what it should have been doing in the first place
+          *)
+          if List.mem prefix [ "weapon"; "dreamer" ] then
+            Some (Sprite.create "indicator" texture dest)
+          else
+            None)
+      in
+      List.filter_map show_obj json.objects
   in
   List.map get_object_layer_triggers json_layers |> List.flatten
 
@@ -109,7 +118,7 @@ let init (params : room_params) : room =
       | "info"
       | "health"
       | "weapon"
-      (* TODO-7 add dreamer prefix *)
+      | "dreamer"
       | "ability" ->
         lore_triggers := get_object_rect coll_rect.name coll_rect :: !lore_triggers
       | "npc" ->

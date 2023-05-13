@@ -12,21 +12,27 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
   let remove_nail = ref true in
 
   let interaction_steps : step list =
-    let get_ability_steps ability_name outline_x outline_y top_lines bottom_lines =
+    let fade_screen_with_dramatic_pause steps =
       [
         STEP (WAIT 0.5);
         CURRENT_GHOST (SET_POSE FOCUSING);
         STEP (WAIT 1.);
+        (* TODO gradually fade screen out to black *)
         STEP FADE_SCREEN_OUT;
         STEP (WAIT 0.8);
-        CURRENT_GHOST (ADD_ABILITY ability_name);
-        STEP
-          (ABILITY_TEXT
-             (ability_text_outline outline_x outline_y, top_lines @ [ "-----------------------------" ] @ bottom_lines));
-        STEP FADE_SCREEN_IN;
-        STEP (WAIT 0.2);
-        CURRENT_GHOST (SET_POSE IDLE);
       ]
+      @ steps
+      @ [ STEP FADE_SCREEN_IN; STEP (WAIT 0.2); CURRENT_GHOST (SET_POSE IDLE) ]
+    in
+
+    let get_ability_steps ability_name outline_x outline_y top_lines bottom_lines =
+      fade_screen_with_dramatic_pause
+        [
+          CURRENT_GHOST (ADD_ABILITY ability_name);
+          STEP
+            (ABILITY_TEXT
+               (ability_text_outline outline_x outline_y, top_lines @ [ "-----------------------------" ] @ bottom_lines));
+        ]
     in
 
     let matches regex = Str.string_match (Str.regexp regex) full_interaction_name 0 in
@@ -64,6 +70,7 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
       [ STEP (PURPLE_PEN_TEXT [ "Found a purple pen with a note:"; fmt "{{purple}} %s" (get_lore ()) ]) ]
     | "health" ->
       [ CURRENT_GHOST (SET_POSE READING); CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
+    | "dreamer" -> fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_DREAMER_ITEM (interaction_name, get_lore ())) ]
     | "weapon" ->
       (* TODO center this text *)
       [ CURRENT_GHOST (SET_POSE FOCUSING); CURRENT_GHOST (ADD_WEAPON interaction_name) ]
