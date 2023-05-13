@@ -93,7 +93,7 @@ let init () : state =
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
 
         (* bush scissors *)
-        ("trampoline_f", TP_F, true, true, false, 400., 800.);
+        (* ("trampoline_f", TP_F, true, true, false, 400., 800.); *)
         (* acb note *)
         (* ("forgotten_b", FC_B, true, true, true, 400., 600.); *)
       ]

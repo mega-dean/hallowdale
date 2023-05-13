@@ -808,8 +808,8 @@ let tick state : state =
   draw_ghosts state.ghosts;
   draw_ghost state.ghost;
   draw_enemies state.room.enemies;
-  draw_fg_tiles state camera_x camera_y;
   draw_object_trigger_indicators ();
+  draw_fg_tiles state camera_x camera_y;
   draw_hud camera_x camera_y;
   if state.screen_faded then
     (* this is slightly larger than the window to add some padding for when the camera is moving *)

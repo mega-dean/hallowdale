@@ -624,12 +624,13 @@ let update (state : state) : state =
       toggle_ability state.ghost "mantis_claw"
     else if key_pressed DEBUG_2 then (
       state.ghost.soul.current <- state.ghost.soul.max;
-      acquire_weapon state "Orange Paintball Gun";
       toggle_ability state.ghost "monarch_wings")
-    else if key_pressed DEBUG_3 then
+    else if key_pressed DEBUG_3 then (
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
       (* () *)
-      equip_weapon state.ghost "Orange Paintball Gun"
+      let weapon_name = "Devil's Drench XJ-11" in
+      acquire_weapon state weapon_name;
+      equip_weapon state.ghost weapon_name)
     else if key_pressed DEBUG_4 then
       print "ghost x: %0.1f, y: %0.1f" state.ghost.entity.dest.pos.x state.ghost.entity.dest.pos.y
   in
