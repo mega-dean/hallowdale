@@ -71,14 +71,15 @@ let init () : state =
         (* bottom of start drop *)
         ("forgotten_deans-pass", FC_DEANS_PASS, true, true, true, 1500., 3600.);
         (* big door *)
-        (* ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.); *)
+        ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.);
         (* duncan fight *)
         (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.); *)
         (* past duncan fight *)
-        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.);
+        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
 
         (* by the breakable wall *)
-        (* ("infected_a", IC_A, true, true, true, 2200., 1800.); *)
+        ("infected_a", IC_A, true, true, true, 2200., 1800.);
+
         (* locker boys fight *)
         (* ("infected_b", IC_B, true, true, false, 1700., 900.); *)
         (* after locker boys fight *)
@@ -93,10 +94,10 @@ let init () : state =
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
 
         (* bush scissors *)
-        (* ("trampoline_f", TP_F, true, true, false, 400., 800.); *)
+        ("trampoline_f", TP_F, true, true, false, 400., 800.);
 
         (* acb note *)
-        (* ("forgotten_b", FC_B, true, true, true, 400., 200.); *)
+        (* ("forgotten_b", FC_B, true, true, true, 400., 600.); *)
       ]
     in
     List.nth xs (List.length xs - 1)

@@ -714,7 +714,8 @@ let update (state : state) : state =
   let handle_interactions () =
     (* the ghost can only collide with one trigger at a time *)
     let check_for_new_interactions () : bool =
-      (match find_trigger_collision state.ghost state.room.triggers.lore with
+      let interactable_triggers = state.room.triggers.lore @ state.room.triggers.item_pickups in
+      (match find_trigger_collision state.ghost interactable_triggers with
       | None -> ()
       | Some (name, _rect) ->
         (* TODO maybe want to also check `Entity.on_ground state.ghost.entity` *)

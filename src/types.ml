@@ -924,6 +924,7 @@ type room_cache = {
 type triggers = {
   camera : (string * rect) list;
   lore : (string * rect) list;
+  item_pickups : (string * rect) list;
   shadows : (string * rect) list;
   cutscene : (string * rect) list;
 }

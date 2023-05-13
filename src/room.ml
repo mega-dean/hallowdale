@@ -2,50 +2,32 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let get_pickup_indicators (room_progress : room_progress) (texture : texture) (json_layers : Json_t.layer list) :
+let get_pickup_indicators (room_progress : room_progress) (texture : texture) (triggers : (string * rect) list) :
     sprite list =
-  let get_object_layer_triggers (layer : Json_t.layer) : sprite list =
-    match layer with
-    | `TILE_LAYER _ -> []
-    | `OBJECT_LAYER json when json.name <> "triggers" -> []
-    | `OBJECT_LAYER json ->
-      let show_obj (cr : Json_t.coll_rect) : sprite option =
-        if List.mem cr.name room_progress.finished_interactions then
-          None
-        else (
-          let dest =
-            let child_w, child_h =
-              let src = get_src texture in
-              (src.w *. Config.scale.room, src.h *. Config.scale.room)
-            in
-            let parent_w, parent_h = (cr.w *. Config.scale.room, cr.h *. Config.scale.room) in
-            let parent_x, parent_y = (cr.x *. Config.scale.room, cr.y *. Config.scale.room) in
-            {
-              pos = { x = parent_x +. ((parent_w -. child_w) /. 2.); y = parent_y +. ((parent_h -. child_h) /. 2.) };
-              w = child_w;
-              h = child_h;
-            }
-          in
-          itmp " =========================== making with %s" cr.name;
-          let prefix = Utils.separate cr.name '_' |> fst in
-          (* FIXME better check
-             - Room.init is already matching on prefix name to put everything into lore_triggers
-             - so maybe that could start using a separate collection for pickup_triggers
-             - then this code should just be looking at room.triggers.pickups, not room.layers.objects
-             - this is what it should have been doing in the first place
-          *)
-          if List.mem prefix [ "weapon"; "dreamer" ] then
-            Some (Sprite.create "indicator" texture dest)
-          else
-            None)
+  let show_obj ((name, dest') : string * rect) : sprite option =
+    if List.mem name room_progress.finished_interactions then
+      None
+    else (
+      let dest =
+        let child_w, child_h =
+          let src = get_src texture in
+          (src.w *. Config.scale.room, src.h *. Config.scale.room)
+        in
+        let parent_w, parent_h = (dest'.w, dest'.h) in
+        let parent_x, parent_y = (dest'.pos.x, dest'.pos.y) in
+        {
+          pos = { x = parent_x +. ((parent_w -. child_w) /. 2.); y = parent_y +. ((parent_h -. child_h) /. 2.) };
+          w = child_w;
+          h = child_h;
+        }
       in
-      List.filter_map show_obj json.objects
+      Some (Sprite.create "indicator" texture dest))
   in
-  List.map get_object_layer_triggers json_layers |> List.flatten
+  List.filter_map show_obj triggers
 
 let update_pickup_indicators state =
   state.room.pickup_indicators <-
-    get_pickup_indicators state.room.progress state.global.textures.pickup_indicator state.room.json.layers
+    get_pickup_indicators state.room.progress state.global.textures.pickup_indicator state.room.triggers.item_pickups
 
 type room_params = {
   file_name : string;
@@ -80,6 +62,7 @@ let init (params : room_params) : room =
   let camera_triggers : (string * rect) list ref = ref [] in
   let shadow_triggers : (string * rect) list ref = ref [] in
   let lore_triggers : (string * rect) list ref = ref [] in
+  let pickup_triggers : (string * rect) list ref = ref [] in
   let cutscene_triggers : (string * rect) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
@@ -117,10 +100,11 @@ let init (params : room_params) : room =
       | "hide" -> shadow_triggers := get_object_rect name coll_rect :: !shadow_triggers
       | "info"
       | "health"
-      | "weapon"
-      | "dreamer"
       | "ability" ->
         lore_triggers := get_object_rect coll_rect.name coll_rect :: !lore_triggers
+      | "weapon"
+      | "dreamer" ->
+        pickup_triggers := get_object_rect coll_rect.name coll_rect :: !pickup_triggers
       | "npc" ->
         let npc_id, dest = get_object_rect (Npc.parse_name (fmt "Tiled rect npc_%s" name) name) coll_rect in
         npc_rects := (npc_id, dest, true) :: !npc_rects
@@ -402,10 +386,16 @@ let init (params : room_params) : room =
     camera_bounds = create_camera_bounds json_room;
     exits = params.exits;
     triggers =
-      { camera = !camera_triggers; lore = !lore_triggers; cutscene = !cutscene_triggers; shadows = !shadow_triggers };
+      {
+        camera = !camera_triggers;
+        lore = !lore_triggers;
+        item_pickups = !pickup_triggers;
+        cutscene = !cutscene_triggers;
+        shadows = !shadow_triggers;
+      };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
     npcs;
-    pickup_indicators = get_pickup_indicators room_progress params.pickup_indicator_texture json_room.layers;
+    pickup_indicators = get_pickup_indicators room_progress params.pickup_indicator_texture !pickup_triggers;
     cache;
   }
