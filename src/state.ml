@@ -79,7 +79,6 @@ let init () : state =
 
         (* by the breakable wall *)
         ("infected_a", IC_A, true, true, true, 2200., 1800.);
-
         (* locker boys fight *)
         (* ("infected_b", IC_B, true, true, false, 1700., 900.); *)
         (* after locker boys fight *)
@@ -95,7 +94,6 @@ let init () : state =
 
         (* bush scissors *)
         ("trampoline_f", TP_F, true, true, false, 400., 800.);
-
         (* acb note *)
         (* ("forgotten_b", FC_B, true, true, true, 400., 600.); *)
       ]

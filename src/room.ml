@@ -99,9 +99,9 @@ let init (params : room_params) : room =
       | "purple-pen" -> idx_configs := (tile_idx (), PURPLE_PEN coll_rect.name) :: !idx_configs
       | "hide" -> shadow_triggers := get_object_rect name coll_rect :: !shadow_triggers
       | "info"
-      | "health"
-      | "ability" ->
+      | "health" ->
         lore_triggers := get_object_rect coll_rect.name coll_rect :: !lore_triggers
+      | "ability"
       | "weapon"
       | "dreamer" ->
         pickup_triggers := get_object_rect coll_rect.name coll_rect :: !pickup_triggers

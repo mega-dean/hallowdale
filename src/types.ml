@@ -418,13 +418,16 @@ module Interaction = struct
     | FREEZE
     | UNFREEZE
 
+  type item_kind =
+    | WEAPON of string
+    | ABILITY of string
+    | DREAMER of string * string
+
   type ghost_step =
     | SET_POSE of ghost_pose
     | WALK_TO of int
     | FILL_LIFE_VAPOR
-    | ADD_WEAPON of string
-    | ADD_ABILITY of string
-    | ADD_DREAMER_ITEM of string * string
+    | ADD_ITEM of item_kind
     | INCREASE_HEALTH_TEXT of bool * string
     | ADD_TO_PARTY
     | REMOVE_FROM_PARTY

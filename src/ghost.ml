@@ -844,6 +844,26 @@ let update (state : state) : state =
           | UNFREEZE -> Entity.unfreeze entity
         in
 
+        let add_item (item_kind : Interaction.item_kind) =
+          Room.update_pickup_indicators state;
+          match item_kind with
+          | ABILITY ability_name -> enable_ability state.ghost ability_name
+          | DREAMER (item_name, dreamer_item_text) ->
+            let text : Interaction.text =
+              { content = [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]; increases_health = false }
+            in
+            state.interaction.speaker_name <- None;
+            state.interaction.text <- Some (PLAIN text)
+          | WEAPON weapon_name ->
+            let weapon_config = List.assoc weapon_name state.global.weapons in
+            let text : Interaction.text =
+              { content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]; increases_health = false }
+            in
+            acquire_weapon state weapon_name;
+            state.interaction.speaker_name <- None;
+            state.interaction.text <- Some (PLAIN text)
+        in
+
         let handle_ghost_step ghost (step : Interaction.ghost_step) =
           match step with
           | ADD_TO_PARTY -> ghost.in_party <- true
@@ -880,26 +900,7 @@ let update (state : state) : state =
             let text : Interaction.text = { content = [ str ]; increases_health } in
             state.interaction.speaker_name <- None;
             state.interaction.text <- Some (PLAIN text)
-          (* FIXME group these three into a single ADD_ITEM and add variant type item_kind *)
-          | ADD_ABILITY ability_name ->
-            Room.update_pickup_indicators state;
-            enable_ability state.ghost ability_name
-          | ADD_DREAMER_ITEM (item_name, dreamer_item_text) ->
-            Room.update_pickup_indicators state;
-            let text : Interaction.text =
-              { content = [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]; increases_health = false }
-            in
-            state.interaction.speaker_name <- None;
-            state.interaction.text <- Some (PLAIN text)
-          | ADD_WEAPON weapon_name ->
-            Room.update_pickup_indicators state;
-            let weapon_config = List.assoc weapon_name state.global.weapons in
-            let text : Interaction.text =
-              { content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]; increases_health = false }
-            in
-            acquire_weapon state weapon_name;
-            state.interaction.speaker_name <- None;
-            state.interaction.text <- Some (PLAIN text)
+          | ADD_ITEM item_kind -> add_item item_kind
         in
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
