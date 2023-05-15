@@ -3,17 +3,8 @@
 module Utils = struct
   let range (n : int) : int list = List.init n (fun x -> x)
   let rangef (n : int) : float list = List.init n (fun x -> x) |> List.map Int.to_float
-  let boundi (min : int) (n : int) (max : int) : int = Int.max min (Int.min n max)
-  let boundi_below (min : int) (n : int) : int = Int.max min n
-  let boundi_above (max : int) (n : int) : int = Int.min max n
-
-  let bound ?(debug = false) (min : float) (n : float) (max : float) : float =
-    if debug then
-      print_endline (Printf.sprintf "bound %0.1f between (%0.1f, %0.1f)" n min max);
-    Float.max min (Float.min n max)
-
-  let bound_below (min : float) (n : float) : float = Float.max min n
-  let bound_above (max : float) (n : float) : float = Float.min max n
+  let bound_int (min : int) (n : int) (max : int) : int = Int.max min (Int.min n max)
+  let bound (min : float) (n : float) (max : float) : float = Float.max min (Float.min n max)
 
   let uniq xs =
     let res = ref [] in
@@ -45,6 +36,10 @@ module Utils = struct
     match List.find_opt matches (List.mapi (fun i x -> (i, x)) xs) with
     | None -> failwith "find_idx"
     | Some (idx, _) -> idx
+end
+
+module Bound = struct
+  let int (min : int) (n : int) (max : int) : int = Int.max min (Int.min n max)
 end
 
 module StrSet = Set.Make (String)
@@ -315,24 +310,32 @@ type shared_textures = {
   focus_sparkles : texture;
 }
 
+type ghost_action_id =
+  (* TODO-7 either needs to be CASTING of spell_type, or make separate variants for dive/shreik *)
+  | FLAP
+  | WALL_KICK
+  | JUMP
+  | TAKE_DAMAGE of direction
+  | CAST
+  | DASH
+  | ATTACK of direction
+  | FOCUS
+
 (* the ghost's state that can be mapped to a texture and rendered *)
 type ghost_pose =
+  | PERFORMING of ghost_action_id
   | AIRBORNE of float (* new_vy *)
-  | ATTACKING of direction
-  | (* TODO either needs to be CASTING of spell_type, or make separate variants for dive/shreik *)
-    CASTING
   | CRAWLING
-  | DASHING
+    (* TODO-7
+       - what am I doing with this?
+       - probably setting it in the dive interaction
+       - but this will probably be replaced with PERFORMING (CAST DIVE)
+    *)
   | DIVING
-  | FLAPPING
-  | FOCUSING
   | IDLE
-  | JUMPING
   | LANDING of rect
   | READING
-  | TAKING_DAMAGE of direction
   | WALKING of direction
-  | WALL_JUMPING
   | WALL_SLIDING of rect
 
 (* TODO maybe this should be (ghost_pose * texture) list now, but we need to match against ghost_pose anyway to apply side-effects *)
@@ -618,12 +621,12 @@ type ghost_action = {
 }
 
 (* this keeps track of the last time the ghost performed these actions *)
-type ghost_actions = {
+type ghost_action_history = {
   cast : ghost_action;
   dash : ghost_action;
-  double_jump : ghost_action;
+  flap : ghost_action;
   jump : ghost_action;
-  wall_jump : ghost_action;
+  wall_kick : ghost_action;
   take_damage : ghost_action;
   (* checking is_doing for nail/focus uses the ghost.child sprite, not
      the duration/doing_until/blocked_until like the other actions
@@ -650,7 +653,6 @@ type frame_input = {
 
 (* - this is updated every frame based on which keys are pressed, and should be used for inputs that:
    -- need to be buffered
-   -- need to be checked with is_doing
    -- need socd (only left-right currently)
    - other inputs (eg. INTERACT) are checked directly with key_pressed
 *)
@@ -728,7 +730,7 @@ type ghost = {
   current : pose_status;
   mutable textures : ghost_textures;
   shared_textures : shared_textures;
-  actions : ghost_actions;
+  history : ghost_action_history;
   mutable abilities : abilities;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;

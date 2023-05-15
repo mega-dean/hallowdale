@@ -15,7 +15,7 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
     let fade_screen_with_dramatic_pause steps =
       [
         STEP (WAIT 0.5);
-        CURRENT_GHOST (SET_POSE FOCUSING);
+        CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
         STEP (WAIT 1.);
         (* TODO gradually fade screen out to black *)
         STEP FADE_SCREEN_OUT;
@@ -74,7 +74,7 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
       fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_ITEM (DREAMER (interaction_name, get_lore ()))) ]
     | "weapon" ->
       (* TODO center this text *)
-      [ CURRENT_GHOST (SET_POSE FOCUSING); CURRENT_GHOST (ADD_ITEM (WEAPON interaction_name)) ]
+      [ CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); CURRENT_GHOST (ADD_ITEM (WEAPON interaction_name)) ]
     | _ -> (
       match full_interaction_name with
       | "opening-poem" ->
@@ -246,8 +246,8 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
               (DIALOGUE ("Jeff", "Sweet, sweet portable chairs. {{gold}} Plastic gold, {{white}} four-legged diamonds!"));
             GHOST (JEFF, SET_POSE IDLE);
             STEP (DIALOGUE ("Jeff", "You claimin' this?"));
-            GHOST (JEFF, SET_POSE (ATTACKING RIGHT));
-            GHOST (ANNIE, SET_POSE (ATTACKING RIGHT));
+            GHOST (JEFF, SET_POSE (PERFORMING (ATTACK RIGHT)));
+            GHOST (ANNIE, SET_POSE (PERFORMING (ATTACK RIGHT)));
             STEP (DIALOGUE ("Jeff", "Lava joust?"));
             STEP (DIALOGUE ("Britta", "Did you all hit your heads on each other's heads?"));
             GHOST (JEFF, SET_POSE IDLE);

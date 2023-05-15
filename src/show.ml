@@ -41,23 +41,27 @@ let ghost_id id =
   | JEFF -> "JEFF"
   | TROY -> "TROY"
 
+let ghost_action_id id =
+  match id with
+  | TAKE_DAMAGE d -> fmt "TAKE_DAMAGE (%s)" (direction d)
+  | ATTACK d -> fmt "ATTACK (%s)" (direction d)
+  | CAST -> "CAST"
+  | DASH -> "DASH"
+  | FOCUS -> "FOCUS"
+  | JUMP -> "JUMP"
+  | FLAP -> "FLAP"
+  | WALL_KICK -> "WALL_KICK"
+
 let ghost_pose pose =
   match pose with
+  | PERFORMING action_id -> fmt "PERFORMING %s" (ghost_action_id action_id)
   | AIRBORNE f -> fmt (if f >= 0. then "DESCENDING(%f)" else "ASCENDING(%f)") f
-  | ATTACKING d -> fmt "ATTACKING (%s)" (direction d)
-  | CASTING -> "CASTING"
   | CRAWLING -> "CRAWLING"
-  | DASHING -> "DASHING"
   | DIVING -> "DIVING"
-  | FLAPPING -> "FLAPPING"
-  | FOCUSING -> "FOCUSING"
   | IDLE -> "IDLE"
-  | JUMPING -> "JUMPING"
   | LANDING _r -> "LANDING"
   | READING -> "READING"
-  | TAKING_DAMAGE d -> fmt "TAKING_DAMAGE (%s)" (direction d)
   | WALKING d -> fmt "WALKING (%s)" (direction d)
-  | WALL_JUMPING -> "WALL_JUMPING"
   | WALL_SLIDING _r -> "WALL_SLIDING"
 
 let ghost_location (g : ghost) = print "ghost at %0.1f, %0.1f" g.entity.sprite.dest.pos.x g.entity.sprite.dest.pos.y

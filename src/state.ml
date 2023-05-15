@@ -73,12 +73,12 @@ let init () : state =
         (* big door *)
         ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.);
         (* duncan fight *)
-        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.); *)
+        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.);
         (* past duncan fight *)
         (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
 
         (* by the breakable wall *)
-        ("infected_a", IC_A, true, true, true, 2200., 1800.);
+        (* ("infected_a", IC_A, true, true, true, 2200., 1800.); *)
         (* locker boys fight *)
         (* ("infected_b", IC_B, true, true, false, 1700., 900.); *)
         (* after locker boys fight *)
@@ -416,6 +416,7 @@ let update_fragments state =
   List.iter update_fragment all_spawned_fragments;
   state
 
+(* return value is "keep spawned" *)
 let update_projectile p (frame_info : frame_info) : bool =
   let despawn_projectile =
     match p.despawn with
@@ -424,31 +425,31 @@ let update_projectile p (frame_info : frame_info) : bool =
     | TIME_LEFT d -> frame_info.time -. p.spawned.at > d.seconds
   in
   if despawn_projectile then
-    true
+    false
   else (
     Entity.apply_v frame_info.dt p.entity;
     Sprite.advance_animation frame_info.time p.entity.sprite.texture p.entity.sprite;
-    false)
+    true)
 
 let update_enemies state =
   let behavior_params : enemy_behavior_params =
     { ghost_pos = state.ghost.entity.dest.pos; room_bounds = state.room.camera_bounds; time = state.frame.time }
   in
-  let ghost_vulnerable = Ghost.past_cooldown state state.ghost.actions.take_damage in
+  let ghost_vulnerable = Ghost.past_cooldown state state.ghost.history.take_damage in
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
-    let update_projectile (projectile : projectile) =
-      let despawned = update_projectile projectile state.frame in
-      if despawned then
-        ()
-      else (
+    let update_projectile' (projectile : projectile) =
+      let keep_spawned = update_projectile projectile state.frame in
+      if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
         if ghost_vulnerable then (
           match collision_between state.ghost.entity projectile.entity.dest with
           | None -> ()
-          | Some c -> Ghost.start_action state (TAKING_DAMAGE c.direction)))
+          | Some c ->
+            Ghost.start_action state (TAKE_DAMAGE c.direction)
+        ))
     in
-    List.iter update_projectile enemy.spawned_projectiles;
+    List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
     if enemy.entity.update_pos then
       Entity.update_pos state enemy.entity;
@@ -522,12 +523,12 @@ let update_spawned_vengeful_spirits state =
     List.iter maybe_damage_enemy state.room.enemies
   in
   let update_vengeful_spirit (projectile : projectile) =
-    let despawned = update_projectile projectile state.frame in
-    if despawned then
+    let keep_spawned = update_projectile projectile state.frame in
+    if keep_spawned then
+      damage_enemies projectile.spawned projectile.entity.sprite
+    else
       state.ghost.spawned_vengeful_spirits <-
         List.filter (fun p -> p <> projectile) state.ghost.spawned_vengeful_spirits
-    else
-      damage_enemies projectile.spawned projectile.entity.sprite
   in
 
   List.iter update_vengeful_spirit state.ghost.spawned_vengeful_spirits;
@@ -561,6 +562,14 @@ let update_frame_inputs state : state =
 let tick state =
   (* TODO-6 add menus: main/startup, pause, switch ghosts, switch weapons *)
   (* TODO-4 add sound effects and music *)
+  if Controls.key_pressed DEBUG_5 then
+    if state.debug.enabled then (
+      state.debug.enabled <- false;
+      print "disabled debug at %d\n\\------------------\n" state.frame.idx)
+    else (
+      state.debug.enabled <- true;
+      print "\n/-----------------\nenabled debug at %d" state.frame.idx);
+
   state
   |> update_frame_inputs
   |> Ghost.update
