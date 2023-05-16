@@ -169,6 +169,14 @@
             "count": 2,
             "duration": 0.066666
         }],
+        ["desolate-dive", {
+            "count": 2,
+            "duration": 0.066666
+        }],
+        ["monkey-gas", {
+            "count": 9,
+            "duration": 0.066666
+        }],
         ["focus-sparkles", {
             "count": 24,
             "duration": 0.023333
@@ -206,7 +214,7 @@
             "cooldown": 0.6,
             "input_buffer": 0.45
         }],
-        ["c_dash", {
+        ["c-dash", {
             "duration": 3.333333,
             "cooldown": 0.6,
             "input_buffer": 0.45
@@ -216,7 +224,22 @@
             "cooldown": 1.3,
             "input_buffer": -1.0
         }],
-        ["cast", {
+        ["cast-vs", {
+            "duration": 0.3,
+            "cooldown": 0.3,
+            "input_buffer": 0.2
+        }],
+        ["cast-dive", {
+            "duration": 1.0,
+            "cooldown": 1.7,
+            "input_buffer": 0.2
+        }],
+        ["dive-cooldown", {
+            "duration": 1.3, // this is how long the ghost is stuck in the intimidation stance
+            "cooldown": 2.3, // this is how long the i-frames last after diving
+            "input_buffer": 0.2
+        }],
+        ["cast-wraiths", {
             "duration": 0.3,
             "cooldown": 0.3,
             "input_buffer": 0.2

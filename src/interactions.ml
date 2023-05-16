@@ -387,7 +387,7 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
           STEP (DIALOGUE ("Troy", "Troy and Abed Intimidation Stance!"));
           NPC (CHANG, SET_POSE "take-damage");
         ]
-        @ jump_ghost ~end_pose:DIVING TROY RIGHT 300.
+        @ jump_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT 300.
         @ [ NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
         @ get_ability_steps "desolate_dive" 0. 3.
             [ "Consumed the"; "Troy and Abed Intimidation Stance." ]

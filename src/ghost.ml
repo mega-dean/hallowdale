@@ -143,13 +143,31 @@ let make_slash state (direction : direction) relative_pos (ghost : sprite) : sla
   let sprite = Sprite.spawn_particle "slash" slash_texture ~facing_right:ghost.facing_right dest state.frame.time in
   { sprite; direction }
 
-let get_current_slash (g : ghost) : slash option =
-  match (g.child : ghost_child option) with
-  | Some child -> (
+(* let remove_child_sprite (children : ghost_child list) (child_kind : ghost_child_kind) =
+ *   List.filter (fun child -> not (child.kind = child_kind)) children *)
+
+let check_child (child_opt : ghost_child option) (fn : ghost_child -> 'a option) : 'a option =
+  match child_opt with
+  | None -> None
+  | Some child -> fn child
+
+let get_current_slash (ghost : ghost) : slash option =
+  let get_slash (child : ghost_child) : slash option =
     match child.kind with
     | NAIL slash -> Some slash
-    | _ -> None)
-  | _ -> None
+    | _ -> None
+  in
+  check_child ghost.child get_slash
+
+let get_dive_sprite (ghost : ghost) : sprite option =
+  let get_sprite (child : ghost_child) : sprite option =
+    match child.kind with
+    | DIVE
+    | DIVE_COOLDOWN ->
+      Some child.sprite
+    | _ -> None
+  in
+  check_child ghost.child get_sprite
 
 let get_current_attack_direction (ghost : ghost) : direction option =
   match get_current_slash ghost with
@@ -157,12 +175,12 @@ let get_current_attack_direction (ghost : ghost) : direction option =
   | Some slash -> Some slash.direction
 
 let get_focus_sparkles ghost : sprite option =
-  match ghost.child with
-  | Some child -> (
+  let get_sprite (child : ghost_child) : sprite option =
     match child.kind with
-    | FOCUS sprite -> Some sprite
-    | _ -> None)
-  | None -> None
+    | FOCUS -> Some child.sprite
+    | _ -> None
+  in
+  check_child ghost.child get_sprite
 
 (* - the currently-equipped weapon will determine swing speed and size
    - nail damage is the sum of all weapons .damage, so there's always a benefit to picking up
@@ -171,17 +189,31 @@ let get_focus_sparkles ghost : sprite option =
 let get_nail_damage (ghost : ghost) =
   ghost.weapons |> List.map snd |> List.map (fun (w : Json_t.weapon) -> w.damage) |> List.fold_left ( + ) 0
 
+let get_vs_damage state =
+  (* TODO check ghost.abilities.shade_soul *)
+  15
+
+let get_dive_damage state =
+  (* TODO check ghost.abilities.descending_dark *)
+  if state.ghost.current.is_diving then
+    15
+  else
+    20
+
 let resolve_slash_collisions state =
   match get_current_slash state.ghost with
   | None -> ()
   | Some slash ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
-        (match slash_collision_between slash enemy.entity.dest with
+        match slash_collision_between slash enemy.entity.dest with
         | None -> ()
         | Some c ->
-          if state.ghost.history.nail.started.at > (Enemy.took_damage_at enemy NAIL).at then (
-            (match opposite_of c.direction with
+          if
+            Enemy.maybe_take_damage state enemy state.ghost.history.nail.started NAIL (get_nail_damage state.ghost)
+              c.rect
+          then (
+            match opposite_of c.direction with
             | DOWN -> pogo state
             | LEFT
             | RIGHT ->
@@ -189,18 +221,17 @@ let resolve_slash_collisions state =
               Entity.recoil_backwards state.ghost.entity { speed = 800.; time_left = { seconds = 0.1 }; reset_v = true }
             | UP ->
               if state.ghost.entity.v.y < 0. then
-                state.ghost.entity.v.y <- 300.);
-            Enemy.take_damage state enemy NAIL (get_nail_damage state.ghost) c.rect;
-            state.ghost.soul.current <-
-              Utils.bound_int 0 (state.ghost.soul.current + Config.action.soul_gained_per_nail) state.ghost.soul.max));
-        if slash.direction = DOWN && state.ghost.entity.y_recoil = None then (
-          let check_projectile_pogo (projectile : projectile) =
-            if projectile.pogoable then (
-              match slash_collision_between slash projectile.entity.dest with
-              | None -> ()
-              | Some _ -> pogo state)
-          in
-          List.iter check_projectile_pogo enemy.spawned_projectiles))
+                state.ghost.entity.v.y <- 300.;
+              state.ghost.soul.current <-
+                Utils.bound_int 0 (state.ghost.soul.current + Config.action.soul_gained_per_nail) state.ghost.soul.max);
+          if slash.direction = DOWN && state.ghost.entity.y_recoil = None then (
+            let check_projectile_pogo (projectile : projectile) =
+              if projectile.pogoable then (
+                match slash_collision_between slash projectile.entity.dest with
+                | None -> ()
+                | Some _ -> pogo state)
+            in
+            List.iter check_projectile_pogo enemy.spawned_projectiles))
     in
     let resolve_layer (layer : layer) =
       let new_tile_groups : tile_group list ref = ref [] in
@@ -286,6 +317,18 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       if not allow_vertical then
         failwithf "bad direction in set_facing_right: %s" (Show.direction direction)
   in
+  let handle_cast (spell_kind : spell_kind) =
+    match spell_kind with
+    | VENGEFUL_SPIRIT ->
+      Entity.recoil_backwards ghost.entity { speed = 80.; time_left = { seconds = 0.16666 }; reset_v = true };
+      ghost.entity.v.y <- 0.;
+      ghost.textures.cast
+    | DESOLATE_DIVE -> ghost.textures.dive
+    | HOWLING_WRAITHS ->
+      (* TODO-7 maybe add a new texture for this (but the cast texture will probably look ok) *)
+      ghost.textures.cast
+  in
+
   let handle_action_id action_id =
     match action_id with
     | ATTACK direction ->
@@ -297,10 +340,14 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.entity.v.y <- 0.;
       update_vx 2.;
       ghost.textures.dash
-    | CAST ->
-      Entity.recoil_backwards ghost.entity { speed = 80.; time_left = { seconds = 0.16666 }; reset_v = true };
-      ghost.entity.v.y <- 0.;
-      ghost.textures.cast
+    | CAST DESOLATE_DIVE ->
+      update_vx 0.;
+      ghost.entity.v.y <- (* TODO config value *) 1600.;
+      ghost.textures.dive
+    | CAST spell_kind -> handle_cast spell_kind
+    | DIVE_COOLDOWN ->
+      update_vx 0.;
+      ghost.textures.dive
     | FOCUS ->
       update_vx 0.;
       ghost.textures.focus
@@ -350,10 +397,6 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
     | CRAWLING ->
       update_vx 0.;
       ghost.textures.crawl
-    | DIVING ->
-      update_vx 0.;
-      ghost.entity.v.y <- 800.;
-      ghost.textures.dive
     | IDLE ->
       reset_standing_abilities ();
       update_vx 0.;
@@ -428,7 +471,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
 
   state.ghost.spawned_vengeful_spirits <- projectile :: state.ghost.spawned_vengeful_spirits
 
-let start_action state (action_id : ghost_action_id) =
+let start_action ?(debug = false) state (action_id : ghost_action_id) =
   let cooldown_scale = ref 1.0 in
   let action : ghost_action =
     match action_id with
@@ -442,19 +485,38 @@ let start_action state (action_id : ghost_action_id) =
           IN_FRONT
       in
       let slash = make_slash state direction relative_pos state.ghost.entity.sprite in
-      state.ghost.child <- Some { kind = NAIL slash; relative_pos };
+      state.ghost.child <- Some { kind = NAIL slash; relative_pos; sprite = slash.sprite };
       cooldown_scale := state.ghost.current_weapon.cooldown_scale;
+      (* state.ghost.current.slash <- Some slash; *)
       state.ghost.history.nail
     | DASH -> state.ghost.history.dash
-    | CAST ->
+    | CAST spell_kind -> (
       state.ghost.soul.current <- state.ghost.soul.current - Config.action.soul_per_cast;
-      spawn_vengeful_spirit state;
-      state.ghost.history.cast
-    (* | WALL_JUMPING -> state.ghost.history.wall_jump *)
+      match spell_kind with
+      | VENGEFUL_SPIRIT ->
+        spawn_vengeful_spirit state;
+        state.ghost.history.cast_vs
+      | DESOLATE_DIVE ->
+        state.ghost.child <-
+          Some
+            {
+              kind = DIVE;
+              relative_pos = ALIGNED (CENTER, BOTTOM);
+              sprite =
+                Sprite.create "dive child" state.ghost.shared_textures.desolate_dive
+                  {
+                    state.ghost.entity.dest with
+                    w = state.ghost.entity.dest.w *. 5.;
+                    h = state.ghost.entity.dest.h *. 5.;
+                  };
+            };
+        state.ghost.history.cast_dive
+      | _ -> state.ghost.history.cast_wraiths)
     | TAKE_DAMAGE _ ->
       state.shake <- 0.5;
       (* TODO cancel focus *)
       state.ghost.history.take_damage
+    | DIVE_COOLDOWN -> state.ghost.history.dive_cooldown
     | FOCUS ->
       state.ghost.soul.at_focus_start <- state.ghost.soul.current;
       state.ghost.soul.health_at_focus_start <- state.ghost.health.current;
@@ -463,7 +525,8 @@ let start_action state (action_id : ghost_action_id) =
         Sprite.create "focus-sparkles" state.ghost.shared_textures.focus_sparkles
           { state.ghost.entity.dest with w = state.ghost.entity.dest.w *. 2. }
       in
-      state.ghost.child <- Some { kind = FOCUS focus_sparkles_sprite; relative_pos = ALIGNED (CENTER, CENTER) };
+      state.ghost.child <-
+        Some { kind = FOCUS; relative_pos = ALIGNED (CENTER, CENTER); sprite = focus_sparkles_sprite };
       state.ghost.history.focus
     | JUMP -> state.ghost.history.jump
     | FLAP -> state.ghost.history.flap
@@ -473,6 +536,11 @@ let start_action state (action_id : ghost_action_id) =
   action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
   set_pose state.ghost (PERFORMING action_id) state.frame.time
+
+let maybe_despawn_child state sprite =
+  match Sprite.advance_or_despawn state.frame.time sprite.texture sprite with
+  | None -> state.ghost.child <- None
+  | Some slash_sprite -> Sprite.advance_animation state.frame.time sprite.texture sprite
 
 let continue_action state (action_id : ghost_action_id) =
   (match action_id with
@@ -490,6 +558,10 @@ let continue_action state (action_id : ghost_action_id) =
        state.ghost.soul.current <- state.ghost.soul.current - 1;
        state.ghost.soul.last_decremented <- { at = state.frame.time }));
     ()
+  | DIVE_COOLDOWN -> (
+    match get_dive_sprite state.ghost with
+    | None -> ()
+    | Some dive_sprite -> maybe_despawn_child state dive_sprite)
   | _ -> ());
   set_pose state.ghost (PERFORMING action_id) state.frame.time
 
@@ -498,9 +570,17 @@ let is_doing state (action_id : ghost_action_id) : bool =
   match action_id with
   | ATTACK _ -> Option.is_some (get_current_slash state.ghost)
   | FOCUS -> Option.is_some (get_focus_sparkles state.ghost)
-  | CAST -> check_action state.ghost.history.cast
+  | CAST spell_kind -> (
+    match spell_kind with
+    | VENGEFUL_SPIRIT -> check_action state.ghost.history.cast_vs
+    | HOWLING_WRAITHS -> check_action state.ghost.history.cast_wraiths
+    | DESOLATE_DIVE -> state.ghost.current.is_diving)
   | DASH -> check_action state.ghost.history.dash
+  | DIVE_COOLDOWN -> check_action state.ghost.history.dive_cooldown
   | _ -> failwithf "is_doing - invalid action %s" (Show.ghost_action_id action_id)
+
+let is_casting state =
+  is_doing state (CAST VENGEFUL_SPIRIT) || state.ghost.current.is_diving || is_doing state (CAST HOWLING_WRAITHS)
 
 let swap_current_ghost state ?(swap_pos = true) target_ghost_id =
   match List.assoc_opt target_ghost_id state.ghosts with
@@ -550,19 +630,24 @@ let cycle_current_ghost state =
     in
     swap_current_ghost state new_ghost_id)
 
-let change_ability ?(only_enable = false) ghost ability_name =
-  let new_val v = if only_enable then true else not v in
+let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
+  let new_val v =
+    if debug then
+      print "toggling %s -> %b" ability_name (not v);
+    if only_enable then true else not v
+  in
   match ability_name with
   | "vengeful_spirit" -> ghost.abilities.vengeful_spirit <- new_val ghost.abilities.vengeful_spirit
+  | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
+  | "howling_wraiths" -> ghost.abilities.howling_wraiths <- new_val ghost.abilities.howling_wraiths
   | "mothwing_cloak" -> ghost.abilities.mothwing_cloak <- new_val ghost.abilities.mothwing_cloak
   | "mantis_claw" -> ghost.abilities.mantis_claw <- new_val ghost.abilities.mantis_claw
-  | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
   | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
   | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
   | _ -> failwithf "change_ability bad ability name: %s" ability_name
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
-let toggle_ability ghost ability_name = change_ability ghost ability_name
+let toggle_ability ghost ability_name = change_ability ~debug:true ghost ability_name
 
 let acquire_weapon state weapon_name =
   match List.assoc_opt weapon_name state.global.weapons with
@@ -586,6 +671,11 @@ let equip_weapon (ghost : ghost) weapon_name =
          cooldown_scale = 2. -. weapon_config.swing_speed;
        })
 
+let is_vulnerable (state : state) : bool =
+  past_cooldown state state.ghost.history.take_damage
+  && (not state.ghost.current.is_diving)
+  && past_cooldown state state.ghost.history.dive_cooldown
+
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
 
@@ -597,7 +687,13 @@ let update (state : state) : state =
       | NAIL -> (state.frame_inputs.nail, state.ghost.history.nail.config.input_buffer.seconds)
       | JUMP -> (state.frame_inputs.jump, state.ghost.history.jump.config.input_buffer.seconds)
       | DASH -> (state.frame_inputs.dash, state.ghost.history.dash.config.input_buffer.seconds)
-      | CAST -> (state.frame_inputs.cast, state.ghost.history.cast.config.input_buffer.seconds)
+      | CAST ->
+        ( state.frame_inputs.cast,
+          (* TODO-7 all spells use the vs config for input_buffer
+             - probably don't want to check state.frame_inputs.up/down here again
+             - maybe just use the same config for all three now
+          *)
+          state.ghost.history.cast_vs.config.input_buffer.seconds )
       | _ -> failwithf "bad key in key_pressed_or_buffered': %s" (show_key_action key_action)
     in
     let input_buffered () =
@@ -627,16 +723,19 @@ let update (state : state) : state =
     else if key_pressed DEBUG_1 then
       (* cycle_current_ghost state *)
       (* print "current weapons: %s" (state.ghost.weapons |> List.map fst |> join) *)
-      toggle_ability state.ghost "mantis_claw"
+      (* toggle_ability state.ghost "mantis_claw" *)
+      toggle_ability state.ghost "vengeful_spirit"
     else if key_pressed DEBUG_2 then (
+      (* toggle_ability state.ghost "monarch_wings" *)
       state.ghost.soul.current <- state.ghost.soul.max;
-      toggle_ability state.ghost "monarch_wings")
-    else if key_pressed DEBUG_3 then (
+      toggle_ability state.ghost "desolate_dive")
+    else if key_pressed DEBUG_3 then
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
       (* () *)
-      let weapon_name = "Devil's Drench XJ-11" in
-      acquire_weapon state weapon_name;
-      equip_weapon state.ghost weapon_name)
+      toggle_ability state.ghost "howling_wraiths"
+    (* let weapon_name = "Devil's Drench XJ-11" in
+     * acquire_weapon state weapon_name;
+     * equip_weapon state.ghost weapon_name *)
     else if key_pressed DEBUG_4 then
       print "ghost x: %0.1f, y: %0.1f" state.ghost.entity.dest.pos.x state.ghost.entity.dest.pos.y
   in
@@ -768,8 +867,10 @@ let update (state : state) : state =
           match general_step with
           | INITIALIZE_INTERACTIONS remove_nail ->
             state.ghost.entity.v <- Zero.vector ();
-            if remove_nail then
-              state.ghost.child <- None
+            if remove_nail then (
+              match get_current_slash state.ghost with
+              | Some slash -> state.ghost.child <- None
+              | None -> ())
           | FADE_SCREEN_OUT -> state.screen_faded <- true
           | FADE_SCREEN_IN -> state.screen_faded <- false
           | TEXT paragraphs ->
@@ -1018,24 +1119,81 @@ let update (state : state) : state =
   in
 
   let handle_casting () : handled_action =
-    let starting_cast =
-      (* TODO-7 add other spells, check up/down *)
+    let trying_cast =
       key_pressed_or_buffered CAST
-      && state.ghost.abilities.vengeful_spirit
       && state.ghost.soul.current >= Config.action.soul_per_cast
-      && past_cooldown state state.ghost.history.cast
-      && not (is_doing state (ATTACK RIGHT))
+      && past_cooldown state state.ghost.history.cast_vs
+      && (not (is_doing state (ATTACK RIGHT)))
+      && not (is_casting state)
     in
+
     let this_frame =
-      if starting_cast then (
-        start_action state CAST;
-        true)
-      else if is_doing state CAST then (
-        continue_action state CAST;
-        true)
-      else
-        false
+      if trying_cast then (
+        let cast_spell spell_kind =
+          start_action ~debug:true state (CAST spell_kind);
+          true
+        in
+        let can_howl () =
+          state.ghost.abilities.howling_wraiths
+          && past_cooldown state state.ghost.history.cast_wraiths
+          && state.frame_inputs.up.down
+        in
+        let can_dive () =
+          state.ghost.abilities.desolate_dive
+          && past_cooldown state state.ghost.history.cast_dive
+          && state.frame_inputs.down.down
+        in
+        let can_vs () = state.ghost.abilities.vengeful_spirit && past_cooldown state state.ghost.history.cast_vs in
+        if can_howl () then
+          cast_spell HOWLING_WRAITHS
+        else if can_dive () then (
+          state.ghost.current.is_diving <- true;
+          cast_spell DESOLATE_DIVE)
+        else if can_vs () then
+          cast_spell VENGEFUL_SPIRIT
+        else
+          false)
+      else (
+        let continuing_spell_kind =
+          (* this should not be checking DESOLATE_DIVE because that ends when landing on a floor *)
+          List.find_opt (fun s -> is_doing state (CAST s)) [ VENGEFUL_SPIRIT; HOWLING_WRAITHS ]
+        in
+
+        match continuing_spell_kind with
+        | None ->
+          if state.ghost.current.is_diving then
+            if Option.is_some state.ghost.entity.current_floor then (
+              state.shake <- 1.;
+              state.ghost.current.is_diving <- false;
+              start_action state DIVE_COOLDOWN;
+              state.ghost.child <-
+                (let dest = state.ghost.entity.dest in
+                 let relative_pos = ALIGNED (CENTER, BOTTOM) in
+                 let w, h = (dest.w *. 15., dest.h *. 3.) in
+                 Some
+                   {
+                     kind = DIVE_COOLDOWN;
+                     relative_pos;
+                     sprite =
+                       Sprite.spawn_particle "dive child" state.ghost.shared_textures.dive_shockwave
+                         { pos = Entity.get_child_pos state.ghost.entity relative_pos w h; w; h }
+                         state.frame.time;
+                   });
+              false)
+            else (
+              match get_dive_sprite state.ghost with
+              | None -> false
+              | Some dive_sprite ->
+                Sprite.advance_animation state.frame.time dive_sprite.texture dive_sprite;
+                continue_action state (CAST DESOLATE_DIVE);
+                true)
+          else
+            false
+        | Some kind ->
+          continue_action state (CAST kind);
+          true)
     in
+
     { this_frame }
   in
 
@@ -1043,11 +1201,11 @@ let update (state : state) : state =
     let starting_dash () =
       (* attack direction is arbitrary *)
       state.ghost.abilities.mothwing_cloak
+      && key_pressed_or_buffered DASH
       && (not (is_doing state (ATTACK RIGHT)))
-      && (not (is_doing state CAST))
+      && (not (is_casting state))
       && Option.is_none state.ghost.entity.x_recoil
       && state.ghost.can_dash
-      && key_pressed_or_buffered DASH
       && past_cooldown state state.ghost.history.dash
     in
     let still_dashing () = is_doing state DASH in
@@ -1166,18 +1324,16 @@ let update (state : state) : state =
     else (
       match get_current_slash state.ghost with
       | None -> ()
-      | Some slash -> (
+      | Some slash ->
         continue_action state (ATTACK slash.direction);
-        match Sprite.advance_or_despawn state.frame.time slash.sprite.texture slash.sprite with
-        | None -> state.ghost.child <- None
-        | Some slash_sprite ->
-          (* Sprite.advance_or_despawn modifies sprite, so no need to re-set ghost.child here *)
-          ()))
+        maybe_despawn_child state slash.sprite)
   in
 
   let handle_focusing () : handled_action =
     (* TODO-4 add a delay before deducting soul *)
-    (* TODO-5 add charge_action that can happen before start_action *)
+    (* TODO-5 add charge_action that can happen before start_action
+       - also used for c-dash, dive, wings, nail arts, etc. so it needs to be a reusable way to handle this
+    *)
     let starting_focus () =
       state.frame_inputs.focus.pressed
       && Entity.on_ground state.ghost.entity
@@ -1196,9 +1352,6 @@ let update (state : state) : state =
         | Some sprite -> Sprite.advance_animation state.frame.time sprite.texture sprite);
         true)
       else (
-        (* TODO this may not work well, since you can cancel an attack by tapping focus
-           - it doesn't reset the attack cooldown though so this seems pretty harmless for now
-        *)
         if state.frame_inputs.focus.released then
           state.ghost.child <- None;
         false)
@@ -1271,20 +1424,24 @@ let update (state : state) : state =
             state.room.progress.revealed_shadow_layers <- layer_name :: state.room.progress.revealed_shadow_layers;
           layer.hidden <- true));
       (* TODO-3 add c-dashing *)
-      let focusing = handle_focusing () in
-      if not focusing.this_frame then (
-        let dashing = handle_dashing () in
-        if not dashing.this_frame then (
-          let casting = handle_casting () in
-          if not casting.this_frame then (
-            let wall_kicking = handle_wall_kicking () in
-            if not wall_kicking.this_frame then (
-              handle_walking ();
-              handle_jumping new_vy);
-            handle_attacking ();
-            resolve_slash_collisions state)))));
+      let in_dive_cooldown = (not state.ghost.current.is_diving) && is_doing state DIVE_COOLDOWN in
+      if in_dive_cooldown then
+        continue_action state DIVE_COOLDOWN
+      else (
+        let focusing = handle_focusing () in
+        if not focusing.this_frame then (
+          let dashing = handle_dashing () in
+          if not dashing.this_frame then (
+            let casting = handle_casting () in
+            if not casting.this_frame then (
+              let wall_kicking = handle_wall_kicking () in
+              if not wall_kicking.this_frame then (
+                handle_walking ();
+                handle_jumping new_vy);
+              handle_attacking ();
+              resolve_slash_collisions state))))));
 
-  if past_cooldown state state.ghost.history.take_damage then (
+  if is_vulnerable state then (
     match get_enemy_collision state with
     | Some (collision, r) ->
       let direction =
@@ -1311,7 +1468,7 @@ let update (state : state) : state =
   Sprite.advance_animation state.frame.time state.ghost.entity.sprite.texture state.ghost.entity.sprite;
   state
 
-let load_shared_textures (shared_texture_configs : 'a list) =
+let load_shared_textures (shared_texture_configs : (string * texture_config) list) =
   let build_shared_texture ?(particle = false) ?(config_name = None) pose_name =
     let config =
       let config_name' =
@@ -1346,6 +1503,9 @@ let load_shared_textures (shared_texture_configs : 'a list) =
     health = build_shared_texture "health";
     energon_pod = build_shared_texture "energon-pod";
     vengeful_cushion = build_shared_texture "vengeful-cushion";
+    desolate_dive = build_shared_texture "desolate-dive";
+    dive_shockwave = (* TODO add more frames to the dive .png *)
+                     build_shared_texture ~particle:true "desolate-dive";
     focus_sparkles = build_shared_texture "focus-sparkles";
   }
 
@@ -1367,14 +1527,17 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
   {
     id = ghost_id;
     in_party;
-    current = { wall = None };
+    current = { wall = None; is_diving = false };
     textures;
     child = None;
     history =
       {
         focus = make_action "focus";
         dash = make_action "dash";
-        cast = make_action "cast";
+        cast_vs = make_action "cast-vs";
+        cast_dive = make_action "cast-dive";
+        dive_cooldown = make_action "dive-cooldown";
+        cast_wraiths = make_action "cast-wraiths";
         take_damage = make_action "take-damage";
         nail = make_action "nail";
         jump = make_action "jump";

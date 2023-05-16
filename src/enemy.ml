@@ -219,7 +219,18 @@ let start_and_log_action (enemy : enemy) (action_name : string) (current : float
   log_action enemy action_name current;
   start_action enemy action_name current current_props
 
-let take_damage (state : state) (enemy : enemy) (d : damage_kind) (damage : int) (dest : rect) =
+let took_damage_at (e : enemy) (d : damage_kind) =
+  match List.assoc_opt (TOOK_DAMAGE d) e.history with
+  | None -> Zero.time ()
+  | Some time -> time
+
+let maybe_take_damage
+    (state : state)
+    (enemy : enemy)
+    (ghost_action_started : time)
+    (d : damage_kind)
+    (damage : int)
+    (dest : rect) : bool =
   let kill_enemy () =
     (match enemy.kind with
     | ENEMY ->
@@ -235,24 +246,23 @@ let take_damage (state : state) (enemy : enemy) (d : damage_kind) (damage : int)
     enemy.status.choose_behavior <- false;
     enemy.status.check_damage_collisions <- false
   in
-  enemy.history <- (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d) enemy.history;
-  enemy.health.current <- enemy.health.current - damage;
-  let damage_texture = state.global.textures.damage in
-  let texture_w, texture_h = get_scaled_texture_size damage_texture in
-  enemy.damage_sprites <-
-    Sprite.spawn_particle
-      (fmt "damage %s" (Show.enemy_name enemy))
-      damage_texture
-      { pos = { x = dest.pos.x; y = dest.pos.y }; w = texture_w; h = texture_h }
-      state.frame.time
-    :: enemy.damage_sprites;
-  if is_dead enemy then
-    kill_enemy ()
-
-let took_damage_at (e : enemy) (d : damage_kind) =
-  match List.assoc_opt (TOOK_DAMAGE d) e.history with
-  | None -> Zero.time ()
-  | Some time -> time
+  if ghost_action_started > took_damage_at enemy d then (
+    enemy.history <- (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d) enemy.history;
+    enemy.health.current <- enemy.health.current - damage;
+    let damage_texture = state.global.textures.damage in
+    let texture_w, texture_h = get_scaled_texture_size damage_texture in
+    enemy.damage_sprites <-
+      Sprite.spawn_particle
+        (fmt "damage %s" (Show.enemy_name enemy))
+        damage_texture
+        { pos = { x = dest.pos.x; y = dest.pos.y }; w = texture_w; h = texture_h }
+        state.frame.time
+      :: enemy.damage_sprites;
+    if is_dead enemy then
+      kill_enemy ();
+    true)
+  else
+    false
 
 let time_ago (e : enemy) (action_name : string) (clock : time) : duration =
   let performed : time = action_started_at e action_name in

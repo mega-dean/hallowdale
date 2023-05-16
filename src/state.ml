@@ -73,7 +73,7 @@ let init () : state =
         (* big door *)
         ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.);
         (* duncan fight *)
-        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 800., 2200.);
+        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, true, false, 800., 2200.);
         (* past duncan fight *)
         (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
 
@@ -87,8 +87,7 @@ let init () : state =
         (* ("infected_b", IC_B, true, true, false, 600., 1900.); *)
 
         (* cafeteria floor *)
-        (* ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.); *)
-
+        ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
         (* stairwell *)
         (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
 
@@ -194,7 +193,7 @@ let init () : state =
         crystal_heart = false;
         monarch_wings = false;
         vengeful_spirit;
-        desolate_dive = false;
+        desolate_dive = true;
         howling_wraiths = false;
       }
       [ ("Old Nail", List.assoc "Old Nail" weapon_configs) ]
@@ -435,19 +434,16 @@ let update_enemies state =
   let behavior_params : enemy_behavior_params =
     { ghost_pos = state.ghost.entity.dest.pos; room_bounds = state.room.camera_bounds; time = state.frame.time }
   in
-  let ghost_vulnerable = Ghost.past_cooldown state state.ghost.history.take_damage in
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
     let update_projectile' (projectile : projectile) =
       let keep_spawned = update_projectile projectile state.frame in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
-        if ghost_vulnerable then (
+        if Ghost.is_vulnerable state then (
           match collision_between state.ghost.entity projectile.entity.dest with
           | None -> ()
-          | Some c ->
-            Ghost.start_action state (TAKE_DAMAGE c.direction)
-        ))
+          | Some c -> Ghost.start_action state (TAKE_DAMAGE c.direction)))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
@@ -459,6 +455,16 @@ let update_enemies state =
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) = Sprite.advance_or_despawn state.frame.time sprite.texture sprite in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
+    (match Ghost.get_dive_sprite state.ghost with
+    | None -> ()
+    | Some dive_sprite -> (
+      match collision_between enemy.entity dive_sprite.dest with
+      | None -> ()
+      | Some c ->
+        ignore
+          (Enemy.maybe_take_damage state enemy state.ghost.history.cast_dive.started DESOLATE_DIVE
+             (Ghost.get_dive_damage state) c.rect)));
+
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
       | None -> ()
@@ -506,19 +512,14 @@ let update_npcs state =
   List.iter update_pickup_indicators state.room.pickup_indicators;
   state
 
-let get_vs_damage state =
-  (* TODO check ghost.abilities.shade_soul *)
-  15
-
 let update_spawned_vengeful_spirits state =
-  let damage_enemies vs_start_frame (f : sprite) =
+  let damage_enemies vs_start_time (f : sprite) =
     let maybe_damage_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
         match collision_between enemy.entity f.dest with
         | None -> ()
         | Some c ->
-          if vs_start_frame > Enemy.took_damage_at enemy VENGEFUL_SPIRIT then
-            Enemy.take_damage state enemy VENGEFUL_SPIRIT (get_vs_damage state) c.rect)
+          ignore (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT (Ghost.get_vs_damage state) c.rect))
     in
     List.iter maybe_damage_enemy state.room.enemies
   in

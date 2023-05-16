@@ -140,6 +140,7 @@ let clone (orig : sprite) : sprite =
 let create (name : string) (texture : texture) ?(facing_right = true) (dest : rect) : sprite =
   { ident = fmt "Sprite[%s]" name; texture; facing_right; dest }
 
+(* TODO maybe this should take a relative_pos option arg, and use Entity.get_child_pos when it's provided *)
 let spawn_particle (name : string) (texture : texture) ?(facing_right = true) (dest : rect) frame_time : sprite =
   (match texture.animation_src with
   | STILL _ -> failwith "tried to spawn particle with STILL"

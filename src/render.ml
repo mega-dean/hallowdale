@@ -480,6 +480,8 @@ let tick state : state =
     draw_ghost_debug ()
   in
 
+  let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
+
   let draw_enemies (enemies : (enemy_id * enemy) list) =
     let draw_projectile (p : projectile) =
       draw_entity p.entity;
@@ -497,7 +499,7 @@ let tick state : state =
             let d = state.frame.time -. (Enemy.last_damage e).at in
             (* TODO move to config *)
             if d < 0.25 then (
-              let gb = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
+              let gb = get_flashing_tint d in
               Color.create 200 gb gb 255)
             else
               Color.create 255 255 255 255
@@ -529,8 +531,18 @@ let tick state : state =
   in
 
   let draw_ghost (ghost : ghost) =
-    let draw_child () =
-      match ghost.child with
+    let tint =
+      (* TODO move to config *)
+      if Ghost.is_vulnerable state then
+        Color.create 255 255 255 255
+      else (
+        let d = state.frame.time -. state.ghost.history.take_damage.started.at in
+        let a = get_flashing_tint d in
+        Color.create 255 255 255 a)
+    in
+
+    let draw_child (child_opt : ghost_child option) =
+      match child_opt with
       | None -> ()
       | Some child -> (
         let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
@@ -543,7 +555,12 @@ let tick state : state =
           if state.debug.enabled then
             debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
           draw_child_sprite slash.sprite ghost.current_weapon.tint
-        | FOCUS focus_sprite -> draw_child_sprite focus_sprite Color.raywhite)
+        | FOCUS
+        | DIVE_COOLDOWN
+        | DIVE ->
+          if state.debug.enabled then
+            debug_rect_outline ~size:2. ~color:Color.purple child.sprite.dest;
+          draw_child_sprite child.sprite Color.raywhite)
     in
     let draw_vengeful_spirit (p : projectile) =
       if state.debug.enabled then
@@ -566,8 +583,8 @@ let tick state : state =
       }
     in
     draw_sprite shine_sprite;
-    draw_entity ghost.entity;
-    draw_child ()
+    draw_entity ~tint ghost.entity;
+    draw_child ghost.child
   in
 
   let draw_hud camera_x camera_y =

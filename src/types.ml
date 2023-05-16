@@ -306,17 +306,25 @@ type shared_textures = {
   shine : texture;
   health : texture;
   vengeful_cushion : texture;
+  desolate_dive : texture;
+  dive_shockwave : texture;
+  (* TODO-7 add howling wraiths *)
   energon_pod : texture;
   focus_sparkles : texture;
 }
 
+type spell_kind =
+  | VENGEFUL_SPIRIT
+  | DESOLATE_DIVE
+  | HOWLING_WRAITHS
+
 type ghost_action_id =
-  (* TODO-7 either needs to be CASTING of spell_type, or make separate variants for dive/shreik *)
   | FLAP
   | WALL_KICK
   | JUMP
   | TAKE_DAMAGE of direction
-  | CAST
+  | CAST of spell_kind
+  | DIVE_COOLDOWN
   | DASH
   | ATTACK of direction
   | FOCUS
@@ -326,12 +334,6 @@ type ghost_pose =
   | PERFORMING of ghost_action_id
   | AIRBORNE of float (* new_vy *)
   | CRAWLING
-    (* TODO-7
-       - what am I doing with this?
-       - probably setting it in the dive interaction
-       - but this will probably be replaced with PERFORMING (CAST DIVE)
-    *)
-  | DIVING
   | IDLE
   | LANDING of rect
   | READING
@@ -515,6 +517,7 @@ type enemy_on_killed = {
 type damage_kind =
   | NAIL
   | VENGEFUL_SPIRIT
+  | DESOLATE_DIVE
 
 type enemy_action =
   | PERFORMED of string
@@ -622,7 +625,11 @@ type ghost_action = {
 
 (* this keeps track of the last time the ghost performed these actions *)
 type ghost_action_history = {
-  cast : ghost_action;
+  cast_vs : ghost_action;
+  (* cast_dive uses "landing on a floor" *)
+  cast_dive : ghost_action;
+  dive_cooldown : ghost_action;
+  cast_wraiths : ghost_action;
   dash : ghost_action;
   flap : ghost_action;
   jump : ghost_action;
@@ -639,9 +646,15 @@ type ghost_action_history = {
    a new pose is set, so it can still render the latest pose
    - this data structure tracks the variant arguments that need to be checked/re-set in future frames
 *)
-type pose_status = {
+type current_status = {
   (* TODO just move this to entity and get rid of this type, since some enemies will need this, and the others can leave it always None *)
   mutable wall : rect option;
+  (* can't remove this:
+     - `is_doing (CAST DIVE)` doesn't work because the dive config.duration is very large
+     - dive doesn't use config.duration because it ends when hitting the floor
+     - so this field is just updated whenever a dive starts/ends
+  *)
+  mutable is_diving : bool;
 }
 
 type frame_input = {
@@ -709,12 +722,14 @@ type ghost_child_kind =
   | NAIL of slash
   (* | DASH_WHOOSH of sprite *)
   (* | C_DASH_WHOOSH of sprite *)
-  (* | DIVE of sprite *)
-  | FOCUS of sprite
+  | DIVE
+  | DIVE_COOLDOWN
+  | FOCUS
 
 type ghost_child = {
   kind : ghost_child_kind;
   relative_pos : relative_position;
+  sprite : sprite;
 }
 
 type weapon = {
@@ -727,7 +742,7 @@ type weapon = {
 
 type ghost = {
   entity : entity;
-  current : pose_status;
+  current : current_status;
   mutable textures : ghost_textures;
   shared_textures : shared_textures;
   history : ghost_action_history;
