@@ -532,13 +532,14 @@ let tick state : state =
 
   let draw_ghost (ghost : ghost) =
     let tint =
-      (* TODO move to config *)
-      if Ghost.is_vulnerable state then
-        Color.create 255 255 255 255
-      else (
+      match Ghost.get_invincibility_kind state with
+      | None -> Color.create 255 255 255 255
+      | Some invincibility_kind -> (
         let d = state.frame.time -. state.ghost.history.take_damage.started.at in
         let a = get_flashing_tint d in
-        Color.create 255 255 255 a)
+        match invincibility_kind with
+        | TOOK_DAMAGE -> Color.create 255 255 255 a
+        | DIVE_IFRAMES -> Color.create a a a 255)
     in
 
     let draw_child (child_opt : ghost_child option) =
@@ -556,6 +557,7 @@ let tick state : state =
             debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
           draw_child_sprite slash.sprite ghost.current_weapon.tint
         | FOCUS
+        | WRAITHS
         | DIVE_COOLDOWN
         | DIVE ->
           if state.debug.enabled then

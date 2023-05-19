@@ -194,7 +194,7 @@ let init () : state =
         monarch_wings = false;
         vengeful_spirit;
         desolate_dive = true;
-        howling_wraiths = false;
+        howling_wraiths = true;
       }
       [ ("Old Nail", List.assoc "Old Nail" weapon_configs) ]
       textures shared_ghost_textures
@@ -455,15 +455,21 @@ let update_enemies state =
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) = Sprite.advance_or_despawn state.frame.time sprite.texture sprite in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
-    (match Ghost.get_dive_sprite state.ghost with
+    (match Ghost.get_damaging_sprite state.ghost with
     | None -> ()
-    | Some dive_sprite -> (
-      match collision_between enemy.entity dive_sprite.dest with
+    | Some (sprite, action) -> (
+      match collision_between enemy.entity sprite.dest with
       | None -> ()
       | Some c ->
-        ignore
-          (Enemy.maybe_take_damage state enemy state.ghost.history.cast_dive.started DESOLATE_DIVE
-             (Ghost.get_dive_damage state) c.rect)));
+        let damage_kind =
+          if state.ghost.current.is_diving then
+            DESOLATE_DIVE
+          else if not (Ghost.past_cooldown state state.ghost.history.dive_cooldown) then
+            DESOLATE_DIVE_SHOCKWAVE
+          else
+            HOWLING_WRAITHS
+        in
+        ignore (Enemy.maybe_take_damage state enemy action damage_kind (Ghost.get_damage state damage_kind) c.rect)));
 
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
@@ -519,7 +525,10 @@ let update_spawned_vengeful_spirits state =
         match collision_between enemy.entity f.dest with
         | None -> ()
         | Some c ->
-          ignore (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT (Ghost.get_vs_damage state) c.rect))
+          ignore
+            (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT
+               (Ghost.get_damage state VENGEFUL_SPIRIT)
+               c.rect))
     in
     List.iter maybe_damage_enemy state.room.enemies
   in

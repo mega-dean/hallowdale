@@ -62,6 +62,7 @@ type ghost_config = {
   jump_vy : float;
   wall_jump_vy : float;
   dash_duration : int;
+  dive_vy : float;
   max_vy : float;
   debug_v : float;
   small_debug_v : float;
@@ -75,6 +76,7 @@ let ghost : ghost_config =
     width;
     height;
     max_vy = 1400.;
+    dive_vy = 1600.;
     vx = 400.;
     jump_vy;
     wall_jump_vy;

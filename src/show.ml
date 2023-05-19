@@ -47,7 +47,7 @@ let spell_kind (kind : spell_kind) =
   | DESOLATE_DIVE -> "DESOLATE_DIVE"
   | HOWLING_WRAITHS -> "HOWLING_WRAITHS"
 
-let ghost_action_id id =
+let ghost_action_kind id =
   match id with
   | TAKE_DAMAGE d -> fmt "TAKE_DAMAGE (%s)" (direction d)
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)
@@ -61,7 +61,7 @@ let ghost_action_id id =
 
 let ghost_pose pose =
   match pose with
-  | PERFORMING action_id -> fmt "PERFORMING %s" (ghost_action_id action_id)
+  | PERFORMING action_kind -> fmt "PERFORMING %s" (ghost_action_kind action_kind)
   | AIRBORNE f -> fmt (if f >= 0. then "DESCENDING(%f)" else "ASCENDING(%f)") f
   | CRAWLING -> "CRAWLING"
   | IDLE -> "IDLE"
@@ -165,6 +165,16 @@ let damage_kind (d : damage_kind) : string =
   | NAIL -> "NAIL"
   | VENGEFUL_SPIRIT -> "VENGEFUL_SPIRIT"
   | DESOLATE_DIVE -> "DESOLATE_DIVE"
+  | DESOLATE_DIVE_SHOCKWAVE -> "DESOLATE_DIVE_SHOCKWAVE"
+  | HOWLING_WRAITHS -> "HOWLING_WRAITHS"
+
+let ghost_child_kind (d : ghost_child_kind) : string =
+  match d with
+  | DIVE -> "DIVE"
+  | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
+  | FOCUS -> "FOCUS"
+  | NAIL _ -> "NAIL"
+  | WRAITHS -> "WRAITHS"
 
 let time (t : time) = fmt "%f" t.at
 

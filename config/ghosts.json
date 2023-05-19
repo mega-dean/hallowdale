@@ -170,10 +170,10 @@
             "duration": 0.066666
         }],
         ["desolate-dive", {
-            "count": 2,
+            "count": 6,
             "duration": 0.066666
         }],
-        ["monkey-gas", {
+        ["howling-wraiths", {
             "count": 9,
             "duration": 0.066666
         }],
@@ -240,7 +240,10 @@
             "input_buffer": 0.2
         }],
         ["cast-wraiths", {
-            "duration": 0.3,
+            // - when duration is less than PARTICLE duration (count * duration), the sprite lingers on the screen
+            // - this is a little longer than that (0.6 to 0.63) because when they are too close
+            //   and wraiths are buffered, the next sprite is never spawned (or maybe it spawns/despawns right away, idk)
+            "duration": 0.63,
             "cooldown": 0.3,
             "input_buffer": 0.2
         }],

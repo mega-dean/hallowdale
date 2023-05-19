@@ -219,8 +219,8 @@ let start_and_log_action (enemy : enemy) (action_name : string) (current : float
   log_action enemy action_name current;
   start_action enemy action_name current current_props
 
-let took_damage_at (e : enemy) (d : damage_kind) =
-  match List.assoc_opt (TOOK_DAMAGE d) e.history with
+let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
+  match List.assoc_opt (TOOK_DAMAGE damage_kind : enemy_action) enemy.history with
   | None -> Zero.time ()
   | Some time -> time
 
@@ -246,8 +246,10 @@ let maybe_take_damage
     enemy.status.choose_behavior <- false;
     enemy.status.check_damage_collisions <- false
   in
+
   if ghost_action_started > took_damage_at enemy d then (
-    enemy.history <- (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d) enemy.history;
+    enemy.history <-
+      (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d : enemy_action) enemy.history;
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size damage_texture in

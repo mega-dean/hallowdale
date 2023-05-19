@@ -308,7 +308,7 @@ type shared_textures = {
   vengeful_cushion : texture;
   desolate_dive : texture;
   dive_shockwave : texture;
-  (* TODO-7 add howling wraiths *)
+  howling_wraiths : texture;
   energon_pod : texture;
   focus_sparkles : texture;
 }
@@ -318,7 +318,7 @@ type spell_kind =
   | DESOLATE_DIVE
   | HOWLING_WRAITHS
 
-type ghost_action_id =
+type ghost_action_kind =
   | FLAP
   | WALL_KICK
   | JUMP
@@ -331,7 +331,7 @@ type ghost_action_id =
 
 (* the ghost's state that can be mapped to a texture and rendered *)
 type ghost_pose =
-  | PERFORMING of ghost_action_id
+  | PERFORMING of ghost_action_kind
   | AIRBORNE of float (* new_vy *)
   | CRAWLING
   | IDLE
@@ -518,6 +518,8 @@ type damage_kind =
   | NAIL
   | VENGEFUL_SPIRIT
   | DESOLATE_DIVE
+  | DESOLATE_DIVE_SHOCKWAVE
+  | HOWLING_WRAITHS
 
 type enemy_action =
   | PERFORMED of string
@@ -722,6 +724,7 @@ type ghost_child_kind =
   | NAIL of slash
   (* | DASH_WHOOSH of sprite *)
   (* | C_DASH_WHOOSH of sprite *)
+  | WRAITHS
   | DIVE
   | DIVE_COOLDOWN
   | FOCUS
@@ -739,6 +742,11 @@ type weapon = {
   scale_y : float;
   cooldown_scale : float;
 }
+
+type invincibility_kind =
+  (* TODO add something like | NO_FLASHING *)
+  | DIVE_IFRAMES
+  | TOOK_DAMAGE
 
 type ghost = {
   entity : entity;
