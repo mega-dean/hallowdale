@@ -185,6 +185,53 @@ type recoil = {
   reset_v : bool;
 }
 
+(* ax + by + c = 0 *)
+type line = {
+  a : float;
+  b : float;
+  c : float;
+}
+
+type shape = {
+  (* CLEANUP probably don't need this *)
+  name : string;
+  edges : (vector * line) list;
+}
+
+(* CLEANUP maybe move get_normal/project_point_onto_line here too, since they aren't necessarily related to collisions *)
+let make_line_from_points (p1 : vector) (p2 : vector) : line =
+  if p1.x = p2.x then
+    { a = 1.; b = 0.; c = -1. *. p1.x }
+  else (
+    let slope = (p1.y -. p2.y) /. (p1.x -. p2.x) in
+    let y_intercept = p1.y -. (slope *. p1.x) in
+    { a = -1. *. slope; b = 1.; c = -1. *. y_intercept })
+
+(* this assumes that the points are in-order *)
+(* CLEANUP add some validations:
+   - at least 3 points
+   - no points are too close to each other?
+*)
+let make_shape (name : string) (points : vector list) : shape =
+  let get_point_and_line point_idx point =
+    let next_point = List.nth points ((point_idx + 1) mod List.length points) in
+    let line = make_line_from_points point next_point in
+    (point, line)
+  in
+  { name; edges = List.mapi get_point_and_line points }
+
+let get_points (shape : shape) = List.map fst shape.edges
+let get_lines (shape : shape) = List.map snd shape.edges
+
+let get_rect_shape (rect : rect) =
+  make_shape "rect"
+    [
+      { x = rect.pos.x; y = rect.pos.y };
+      { x = rect.pos.x +. rect.w; y = rect.pos.y };
+      { x = rect.pos.x +. rect.w; y = rect.pos.y +. rect.h };
+      { x = rect.pos.x; y = rect.pos.y +. rect.h };
+    ]
+
 (* a texture that is rendered at a specific location:
    - for sprites that belong to entities, changes are applied to entity.dest.p and mirrored to sprite.dest
    - sprites that don't belong to entities don't change position each frame (eg tiles)
@@ -193,8 +240,31 @@ type sprite = {
   ident : string;
   mutable texture : texture;
   mutable dest : rect;
+  collision : shape option;
+  (* FIXME-5 add dummy collision shape to ghost/enemy for testing *)
+  (* FIXME-4 read shapes from configs (try using atd/tiled) *)
+  (* FIXME-3
+     - replace other things that are currently using sprite.dest for collision:
+     -  dive shockwave
+     -  nail slash
+     -  projectiles - these are probably using entity.dest
+  *)
   mutable facing_right : bool;
 }
+
+let align_shape_with_parent (sprite : sprite) (shape : shape) : shape =
+  let adjust_point point_idx (point : vector) : vector =
+    let x =
+      if sprite.facing_right then
+        sprite.dest.pos.x +. point.x
+      else
+        sprite.dest.pos.x +. sprite.dest.w -. point.x
+    in
+    let y = sprite.dest.pos.y +. point.y in
+    { x; y }
+  in
+  let adjusted_points : vector list = List.mapi adjust_point (get_points shape) in
+  make_shape "mirrored shape" adjusted_points
 
 type entity_config = {
   bounce : float;
@@ -224,79 +294,6 @@ type collision = {
   rect : rect;
   direction : direction;
 }
-
-(* TODO move to collision.ml *)
-(* direction here means "the direction that the entity is (probably) colliding from" *)
-let collision_between (e : entity) (r2 : rect) : collision option =
-  let cr : rect = Raylib.get_collision_rec (to_Rect e.dest) (to_Rect r2) |> of_Rect in
-  let feq a b =
-    (* - Float.equal is too precise
-       - 0.0001 was also too precise (for CAFETERIA-sized rooms)
-    *)
-    abs_float (a -. b) < 0.0001
-  in
-  let no_collision = cr.w < 0.1 || cr.h < 0.1 in
-  (* let no_collision = feq cr.w 0. || feq cr.h 0. in *)
-  if no_collision then
-    None
-  else
-    Some
-      {
-        rect = cr;
-        direction =
-          (let up = feq r2.pos.y cr.pos.y in
-           let down = feq (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in
-           let left = feq r2.pos.x cr.pos.x in
-           let right = feq (r2.pos.x +. r2.w) (cr.pos.x +. cr.w) in
-           match (up, down, left, right) with
-           (* one side *)
-           | true, false, false, false -> UP
-           | false, true, false, false -> DOWN
-           | false, false, true, false -> LEFT
-           | false, false, false, true -> RIGHT
-           (* top-bottom / left-right *)
-           | true, true, false, false ->
-             if e.v.y >= 0. then
-               UP
-             else
-               DOWN
-           | false, false, true, true -> if e.v.x >= 0. then LEFT else RIGHT
-           (* corners *)
-           (* TODO this is too "slippery": falling too fast causes top collisions to be considered side collisions
-              - can probably fix this by considering position of entity at start of frame (before applying v)
-              - this is much more noticeable at 60fps
-           *)
-           | false, true, true, false -> if cr.h < cr.w then DOWN else LEFT
-           | true, false, true, false ->
-             if cr.h < cr.w then
-               UP
-             else
-               LEFT
-           | false, true, false, true -> if cr.h < cr.w then DOWN else RIGHT
-           | true, false, false, true ->
-             if cr.h < cr.w then
-               UP
-             else
-               RIGHT
-           (* three sides *)
-           | false, true, true, true -> DOWN
-           | true, false, true, true -> UP
-           | true, true, false, true -> RIGHT
-           | true, true, true, false -> LEFT
-           (* ghost covers entire collision *)
-           | true, true, true, true
-           (* ghost is entirely inside collision *)
-           | false, false, false, false -> (
-             match (e.v.x > 0., e.v.y > 0., e.v.x > e.v.y) with
-             | true, true, true -> LEFT
-             | true, true, false -> UP
-             | true, false, true -> LEFT
-             | true, false, false -> DOWN
-             | false, true, true -> RIGHT
-             | false, true, false -> UP
-             | false, false, true -> RIGHT
-             | false, false, false -> DOWN));
-      }
 
 (* non-ghost-specific textures that will be needed for any ghost *)
 type shared_textures = {
@@ -589,6 +586,7 @@ type slash = {
   direction : direction;
 }
 
+(* CLEANUP move to collision.ml *)
 let slash_collision_between (slash : slash) (r2 : rect) : collision option =
   let cr : rect =
     (* TODO use slash.collision instead of sprite.dest *)

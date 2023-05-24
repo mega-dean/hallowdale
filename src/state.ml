@@ -440,8 +440,8 @@ let update_enemies state =
       let keep_spawned = update_projectile projectile state.frame in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
-        if Ghost.is_vulnerable state then (
-          match collision_between state.ghost.entity projectile.entity.dest with
+        if Ghost.is_vulnerable state then ((* FIXME-5 use Collision.between_shapes *)
+          match Collision.between_rects state.ghost.entity projectile.entity.dest with
           | None -> ()
           | Some c -> Ghost.start_action state (TAKE_DAMAGE c.direction)))
     in
@@ -458,7 +458,8 @@ let update_enemies state =
     (match Ghost.get_damaging_sprite state.ghost with
     | None -> ()
     | Some (sprite, action) -> (
-      match collision_between enemy.entity sprite.dest with
+      (* FIXME-3 use Collision.between_shapes *)
+      match Collision.between_rects enemy.entity sprite.dest with
       | None -> ()
       | Some c ->
         let damage_kind =
@@ -522,7 +523,7 @@ let update_spawned_vengeful_spirits state =
   let damage_enemies vs_start_time (f : sprite) =
     let maybe_damage_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
-        match collision_between enemy.entity f.dest with
+        match Collision.between_rects enemy.entity f.dest with
         | None -> ()
         | Some c ->
           ignore

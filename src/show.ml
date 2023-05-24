@@ -1,10 +1,21 @@
 open Types
 
+let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c
+
+let line_mx_b (line : line) : string =
+  let slope = -1. *. (line.a /. line.b) in
+  let y_intercept = -1. *. (line.c /. line.b) in
+  fmt "y = %0.1fx + %0.1f" slope y_intercept
+
 let vector (v : vector) : string = fmt "(%0.1f, %0.1f)" v.x v.y
 let rect (r : rect) : string = fmt "[w: %0.1f, h: %0.1f, at (%0.1f, %0.1f)]" r.w r.h r.pos.x r.pos.y
 let int_list xs = List.map string_of_int xs
 let sprite_name (s : sprite) = s.ident
 let entity_name (e : entity) = sprite_name e.sprite
+let shape (shape : shape) = fmt "shape with %d edges" (List.length shape.edges)
+let shape_points (shape : shape) = fmt "shape with points: %s" (List.map vector (get_points shape) |> join)
+let shape_lines (shape : shape) =
+  fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> join ~sep:"\n")
 
 let animation_src (anim_src : animation_src) =
   match anim_src with

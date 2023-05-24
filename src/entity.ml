@@ -87,7 +87,7 @@ let get_floor_collisions state (e : entity) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (layer : layer) =
     let check_tile_group (tile_group : tile_group) =
-      match collision_between e tile_group.dest with
+      match Collision.between_rects e tile_group.dest with
       | None -> ()
       | Some coll -> collisions := (coll, tile_group.dest) :: !collisions
     in

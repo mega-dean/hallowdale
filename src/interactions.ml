@@ -477,6 +477,9 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
             GHOST (BRITTA, ENTITY HIDE);
             GHOST (BRITTA, REMOVE_FROM_PARTY);
           ]
+      | "ability_monkey-gas" -> [
+          STEP (TEXT [ "... hello chat ..." ]);
+        ]
       | other -> failwithf "unrecognized interaction name: %s" other)
   in
   (* SET_GHOST_CAMERA to reset the camera if it changed *)

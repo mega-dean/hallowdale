@@ -137,8 +137,8 @@ let clone (orig : sprite) : sprite =
   let dest_clone = { pos = { x = orig.dest.pos.x; y = orig.dest.pos.y }; w = orig.dest.w; h = orig.dest.h } in
   { orig with dest = dest_clone }
 
-let create (name : string) (texture : texture) ?(facing_right = true) (dest : rect) : sprite =
-  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest }
+let create (name : string) (texture : texture) ?(facing_right = true) ?(collision = None) (dest : rect) : sprite =
+  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest; collision }
 
 (* TODO maybe this should take a relative_pos option arg, and use Entity.get_child_pos when it's provided *)
 let spawn_particle (name : string) (texture : texture) ?(facing_right = true) (dest : rect) frame_time : sprite =
@@ -148,4 +148,4 @@ let spawn_particle (name : string) (texture : texture) ?(facing_right = true) (d
   | PARTICLE animation ->
     animation.frame_idx <- 0;
     animation.frame_started.at <- frame_time);
-  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest }
+  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest; collision = None (* FIXME-3  *) }

@@ -302,7 +302,8 @@ module Room = struct
                     let stub_dest =
                       { pos = { x = rect.pos.x; y = rect.pos.y +. y_offset }; w = rect.w; h = rect.h -. y_offset }
                     in
-                    Some { ident = "sprite stub"; texture = stub; dest = stub_dest; facing_right = true }
+                    Some
+                      { ident = "sprite stub"; texture = stub; dest = stub_dest; facing_right = true; collision = None }
                 in
                 (sprite, destroy_resources.fragments)
             in

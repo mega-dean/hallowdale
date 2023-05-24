@@ -57,6 +57,18 @@ let draw_texture ?(_debug = false) ?(tint = Color.raywhite) (t : texture) (dest 
   in
   Draw.image t.image (src |> to_Rect) dest' (Raylib.Vector2.create 0. 0.) rotation tint
 
+let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
+  let adjusted_shape : shape = align_shape_with_parent sprite shape in
+  let points = get_points adjusted_shape in
+  let draw_edge point_idx (point : vector) =
+    (* CLEANUP duplicated in make_shape *)
+    let next_point = List.nth points ((point_idx + 1) mod List.length points) in
+    Draw.line_ex (Raylib.Vector2.create point.x point.y) (Raylib.Vector2.create next_point.x next_point.y) size color
+  in
+  let points' = List.map Show.vector points |> join in
+  itmp "drawing a shape with points: %s" points';
+  List.iteri draw_edge points
+
 let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
   Draw.rect_lines (rect |> to_Rect) size color
 
@@ -71,14 +83,19 @@ let debug_v (v : Raylib.Vector2.t) = Draw.circle_v v 4. Color.green
 (* this function should only be used by sprites that don't have an entity
    - when an entity is present, use draw_entity because it corrects the sprite position before rendering
 *)
-let draw_sprite ?(_debug = false) ?(tint = Color.create 255 255 255 255) (s : sprite) =
-  let dest = s.dest |> to_Rect in
-  Draw.image s.texture.image (src_Rect s) dest (Raylib.Vector2.create 0. 0.) 0. tint
+let draw_sprite ?(debug = false) ?(tint = Color.create 255 255 255 255) (sprite : sprite) =
+  let dest = sprite.dest |> to_Rect in
+  (match sprite.collision with
+  | None -> ()
+  | Some shape ->
+    if debug then
+      debug_shape_outline sprite shape);
+  Draw.image sprite.texture.image (src_Rect sprite) dest (Raylib.Vector2.create 0. 0.) 0. tint
 
-let draw_entity ?(_debug = false) ?(tint = Color.create 255 255 255 255) (e : entity) =
+let draw_entity ?(debug = false) ?(tint = Color.create 255 255 255 255) (e : entity) =
   (* drawing entity and drawing sprite are the same thing since sprite.dest is updated every frame to match entity.dest *)
   Entity.adjust_sprite_dest e;
-  draw_sprite ~_debug ~tint e.sprite
+  draw_sprite ~debug ~tint e.sprite
 
 let center (r : rect) : Raylib.Vector2.t = Raylib.Vector2.create (r.pos.x +. (r.w /. 2.)) (r.pos.y +. (r.h /. 2.))
 
@@ -582,10 +599,11 @@ let tick state : state =
         texture = state.ghost.shared_textures.shine;
         dest = { pos = Entity.get_child_pos ghost.entity (ALIGNED (CENTER, CENTER)) size size; w = size; h = size };
         facing_right = false;
+        collision = None;
       }
     in
     draw_sprite shine_sprite;
-    draw_entity ~tint ghost.entity;
+    draw_entity ~debug:state.debug.enabled ~tint ghost.entity;
     draw_child ghost.child
   in
 
