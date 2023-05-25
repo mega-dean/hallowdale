@@ -58,15 +58,16 @@ let draw_texture ?(_debug = false) ?(tint = Color.raywhite) (t : texture) (dest 
   Draw.image t.image (src |> to_Rect) dest' (Raylib.Vector2.create 0. 0.) rotation tint
 
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
-  let adjusted_shape : shape = align_shape_with_parent sprite shape in
+  let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
   let points = get_points adjusted_shape in
   let draw_edge point_idx (point : vector) =
-    (* CLEANUP duplicated in make_shape *)
+    (* TODO duplicated in make_shape
+       - could add a fn that operates on every pair of points in a shape, but probably not worth it yet
+    *)
     let next_point = List.nth points ((point_idx + 1) mod List.length points) in
     Draw.line_ex (Raylib.Vector2.create point.x point.y) (Raylib.Vector2.create next_point.x next_point.y) size color
   in
   let points' = List.map Show.vector points |> join in
-  itmp "drawing a shape with points: %s" points';
   List.iteri draw_edge points
 
 let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
@@ -85,12 +86,12 @@ let debug_v (v : Raylib.Vector2.t) = Draw.circle_v v 4. Color.green
 *)
 let draw_sprite ?(debug = false) ?(tint = Color.create 255 255 255 255) (sprite : sprite) =
   let dest = sprite.dest |> to_Rect in
-  (match sprite.collision with
-  | None -> ()
-  | Some shape ->
+  Draw.image sprite.texture.image (src_Rect sprite) dest (Raylib.Vector2.create 0. 0.) 0. tint;
+  match sprite.collision with
+  | Some (SHAPE shape) ->
     if debug then
-      debug_shape_outline sprite shape);
-  Draw.image sprite.texture.image (src_Rect sprite) dest (Raylib.Vector2.create 0. 0.) 0. tint
+      debug_shape_outline sprite shape
+  | _ -> ()
 
 let draw_entity ?(debug = false) ?(tint = Color.create 255 255 255 255) (e : entity) =
   (* drawing entity and drawing sprite are the same thing since sprite.dest is updated every frame to match entity.dest *)
@@ -566,7 +567,8 @@ let tick state : state =
         let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
         let draw_child_sprite (sprite : sprite) tint =
           sprite.dest.pos <- get_child_dest sprite.dest.w sprite.dest.h;
-          Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint
+          draw_sprite ~debug:true sprite
+          (* Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint *)
         in
         match child.kind with
         | NAIL slash ->
@@ -603,7 +605,7 @@ let tick state : state =
       }
     in
     draw_sprite shine_sprite;
-    draw_entity ~debug:state.debug.enabled ~tint ghost.entity;
+    draw_entity ~tint ghost.entity;
     draw_child ghost.child
   in
 

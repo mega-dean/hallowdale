@@ -11,7 +11,7 @@
                 ["walk_vx", 400.0],
                 ["projectile_vx", 600.0],
                 ["projectile_range", 1000.0],
-                ["jump_wait_time", 1.0]
+                ["jump_wait_time", 100.0]
             ],
             "texture_configs": [
                 ["idle", {
@@ -50,7 +50,7 @@
             "props": [
                 ["wall_perch_left_x", 2100.0],
                 ["wall_perch_right_x", 3150.0],
-                ["projectile_vx", 600.0],
+                ["projectile_vx", 60.0],
                 ["dash_vx", 600.0],
                 ["dive_vy", 1250.0],
                 ["dive_y", 777.0]

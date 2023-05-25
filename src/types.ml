@@ -78,6 +78,8 @@ type rect = {
   mutable h : float;
 }
 
+let get_center (rect : rect) = { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
+
 type bounds = {
   min : vector;
   max : vector;
@@ -143,7 +145,7 @@ type texture_config = {
   x_offset : float;
   y_offset : float;
   count : int;
-  duration : duration;
+  duration : duration; (* TODO collision_shape configs should probably go here *)
 }
 
 (* an image that has a collision box and that might be animated
@@ -192,39 +194,35 @@ type line = {
   c : float;
 }
 
-type shape = {
-  (* CLEANUP probably don't need this *)
-  name : string;
-  edges : (vector * line) list;
-}
+type shape = { edges : (vector * line) list }
 
-(* CLEANUP maybe move get_normal/project_point_onto_line here too, since they aren't necessarily related to collisions *)
-let make_line_from_points (p1 : vector) (p2 : vector) : line =
-  if p1.x = p2.x then
-    { a = 1.; b = 0.; c = -1. *. p1.x }
-  else (
-    let slope = (p1.y -. p2.y) /. (p1.x -. p2.x) in
-    let y_intercept = p1.y -. (slope *. p1.x) in
-    { a = -1. *. slope; b = 1.; c = -1. *. y_intercept })
+type collision_shape =
+  | DEST
+  | SHAPE of shape
 
-(* this assumes that the points are in-order *)
-(* CLEANUP add some validations:
-   - at least 3 points
-   - no points are too close to each other?
-*)
-let make_shape (name : string) (points : vector list) : shape =
+let make_shape (points : vector list) : shape =
+  if List.length points < 3 then
+    failwith "can't make a shape with < 3 points";
+  let make_line_from_points (p1 : vector) (p2 : vector) : line =
+    if p1.x = p2.x then
+      { a = 1.; b = 0.; c = -1. *. p1.x }
+    else (
+      let slope = (p1.y -. p2.y) /. (p1.x -. p2.x) in
+      let y_intercept = p1.y -. (slope *. p1.x) in
+      { a = -1. *. slope; b = 1.; c = -1. *. y_intercept })
+  in
   let get_point_and_line point_idx point =
     let next_point = List.nth points ((point_idx + 1) mod List.length points) in
     let line = make_line_from_points point next_point in
     (point, line)
   in
-  { name; edges = List.mapi get_point_and_line points }
+  { edges = List.mapi get_point_and_line points }
 
 let get_points (shape : shape) = List.map fst shape.edges
 let get_lines (shape : shape) = List.map snd shape.edges
 
-let get_rect_shape (rect : rect) =
-  make_shape "rect"
+let shape_of_rect (rect : rect) : shape =
+  make_shape
     [
       { x = rect.pos.x; y = rect.pos.y };
       { x = rect.pos.x +. rect.w; y = rect.pos.y };
@@ -240,31 +238,32 @@ type sprite = {
   ident : string;
   mutable texture : texture;
   mutable dest : rect;
-  collision : shape option;
-  (* FIXME-5 add dummy collision shape to ghost/enemy for testing *)
-  (* FIXME-4 read shapes from configs (try using atd/tiled) *)
-  (* FIXME-3
-     - replace other things that are currently using sprite.dest for collision:
-     -  dive shockwave
-     -  nail slash
-     -  projectiles - these are probably using entity.dest
-  *)
+  collision : collision_shape option;
   mutable facing_right : bool;
 }
 
-let align_shape_with_parent (sprite : sprite) (shape : shape) : shape =
+let align_shape_with_parent (dest : rect) (facing_right : bool) (shape : shape) : shape =
   let adjust_point point_idx (point : vector) : vector =
     let x =
-      if sprite.facing_right then
-        sprite.dest.pos.x +. point.x
+      if facing_right then
+        dest.pos.x +. point.x
       else
-        sprite.dest.pos.x +. sprite.dest.w -. point.x
+        dest.pos.x +. dest.w -. point.x
     in
-    let y = sprite.dest.pos.y +. point.y in
+    let y = dest.pos.y +. point.y in
     { x; y }
   in
   let adjusted_points : vector list = List.mapi adjust_point (get_points shape) in
-  make_shape "mirrored shape" adjusted_points
+  make_shape adjusted_points
+
+let align_shape_with_parent_sprite (sprite : sprite) (shape : shape) : shape =
+  align_shape_with_parent sprite.dest sprite.facing_right shape
+
+let get_collision_shape (sprite : sprite) =
+  match sprite.collision with
+  | None -> failwith "get_collision_shape for a shape with no collision"
+  | Some DEST -> shape_of_rect sprite.dest
+  | Some (SHAPE shape) -> align_shape_with_parent_sprite sprite shape
 
 type entity_config = {
   bounce : float;
@@ -581,22 +580,15 @@ let get_npc_texture (npc : npc) (texture_name : string) : texture =
   | Some v -> v
 
 type slash = {
-  (* TODO add collision_shape instead of using entire sprite.dest *)
   sprite : sprite;
   direction : direction;
+  collision : collision_shape;
 }
 
-(* CLEANUP move to collision.ml *)
-let slash_collision_between (slash : slash) (r2 : rect) : collision option =
-  let cr : rect =
-    (* TODO use slash.collision instead of sprite.dest *)
-    Raylib.get_collision_rec (to_Rect slash.sprite.dest) (to_Rect r2) |> of_Rect
-  in
-  let no_collision = cr.w < 0.1 || cr.h < 0.1 in
-  if no_collision then
-    None
-  else
-    Some { rect = cr; direction = opposite_of slash.direction }
+let get_slash_shape (slash : slash) : shape =
+  match slash.collision with
+  | SHAPE slash_shape -> align_shape_with_parent_sprite slash.sprite slash_shape
+  | _ -> failwith "slash should have SHAPE collision"
 
 type soul = {
   mutable current : int;
@@ -1036,6 +1028,7 @@ type global_cache = {
   textures : texture_cache;
   lore : (string * string) list;
   weapons : (string * Json_t.weapon) list;
+  (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
 }

@@ -114,7 +114,8 @@ type ghost_texture_configs = Json_t.ghost_texture_configs
 type ghost_action = Json_t.ghost_action = {
   duration: float;
   cooldown: float;
-  input_buffer: float
+  input_buffer: float;
+  collision_shape: (float * float) list
 }
 
 type ghosts_file = Json_t.ghosts_file = {

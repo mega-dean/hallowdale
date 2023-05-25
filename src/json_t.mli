@@ -94,7 +94,12 @@ type jug_metadata_file = jug_metadata list
 
 type ghost_texture_configs = (string * texture_config) list
 
-type ghost_action = { duration: float; cooldown: float; input_buffer: float }
+type ghost_action = {
+  duration: float;
+  cooldown: float;
+  input_buffer: float;
+  collision_shape: (float * float) list
+}
 
 type ghosts_file = {
   individual_textures: (string * ghost_texture_configs) list;

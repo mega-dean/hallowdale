@@ -143,6 +143,7 @@ type ghost_action = {
   ~duration <ocaml default="0.066666"> : float;
   ~cooldown <ocaml default="0.0"> : float;
   ~input_buffer <ocaml default="0.0"> : float;
+  ~collision_shape : (float * float) list;
 }
 
 type ghost_texture_configs = (string * texture_config) list

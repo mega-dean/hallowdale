@@ -87,7 +87,7 @@ let get_floor_collisions state (e : entity) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (layer : layer) =
     let check_tile_group (tile_group : tile_group) =
-      match Collision.between_rects e tile_group.dest with
+      match Collision.with_entity e tile_group.dest with
       | None -> ()
       | Some coll -> collisions := (coll, tile_group.dest) :: !collisions
     in
@@ -202,6 +202,7 @@ let create
     ?(inanimate = false)
     ?(v = Zero.vector ())
     ?(facing_right = true)
+    ?(collision = None)
     initial_texture
     (dest : rect) : entity =
   let animation_src = get_src initial_texture in
@@ -209,7 +210,7 @@ let create
   {
     dest;
     sprite =
-      Sprite.create path initial_texture ~facing_right
+      Sprite.create path initial_texture ~facing_right ~collision
         { pos = { x = dest.pos.x; y = dest.pos.y }; w = sprite_w; h = sprite_h };
     config = { bounce = (if inanimate then 0.2 else 0.); inanimate };
     update_pos = (not inanimate) && is_on_screen' dest;
@@ -245,8 +246,8 @@ let to_texture_config asset_dir character_name ((pose_name, json) : string * Jso
 let load_pose (texture_config : texture_config) : string * texture =
   (texture_config.pose_name, Sprite.build_texture_from_config texture_config)
 
-let create_from_textures (texture_configs : texture_config list) (entity_dest : rect) : entity * (string * texture) list
-    =
+let create_from_textures ?(collision = None) (texture_configs : texture_config list) (entity_dest : rect) :
+    entity * (string * texture) list =
   (* let animation_src = get_src sprite.texture in *)
   let textures = List.map load_pose texture_configs in
   let validate_configs_are_complete () =
@@ -279,4 +280,4 @@ let create_from_textures (texture_configs : texture_config list) (entity_dest : 
   let initial_texture = List.nth textures 0 |> snd in
   let texture_config = List.nth texture_configs 0 in
   validate_configs_are_complete ();
-  (create texture_config.character_name initial_texture entity_dest, textures)
+  (create ~collision texture_config.character_name initial_texture entity_dest, textures)

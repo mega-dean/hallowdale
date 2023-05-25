@@ -348,7 +348,7 @@ let create_from_rects
     let texture_configs : texture_config list =
       List.map (Entity.to_texture_config ENEMIES enemy_name) enemy_config.texture_configs
     in
-    let entity, textures = Entity.create_from_textures texture_configs entity_dest in
+    let entity, textures = Entity.create_from_textures ~collision:(Some DEST) texture_configs entity_dest in
 
     let json =
       match List.assoc_opt id enemy_configs with

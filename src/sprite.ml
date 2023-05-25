@@ -138,14 +138,46 @@ let clone (orig : sprite) : sprite =
   { orig with dest = dest_clone }
 
 let create (name : string) (texture : texture) ?(facing_right = true) ?(collision = None) (dest : rect) : sprite =
+  let validate_shape_is_inside_sprite_dest () =
+    match collision with
+    | Some (SHAPE shape) ->
+      let first xs = List.nth xs 0 in
+      let last xs = List.nth xs (List.length xs - 1) in
+      let aligned_shape = align_shape_with_parent dest facing_right shape in
+      let points = get_points aligned_shape in
+      let get_points' fn = List.map fn points |> List.sort Float.compare in
+      let xs, ys = (get_points' (fun v -> v.x), get_points' (fun v -> v.y)) in
+      let sprite_min_x, sprite_max_x = (dest.pos.x, dest.pos.x +. dest.w) in
+      let sprite_min_y, sprite_max_y = (dest.pos.y, dest.pos.y +. dest.h) in
+      if first xs < sprite_min_x then
+        failwithf "collision shape min x %f is too small, needs to be bigger than sprite dest %f" (first xs)
+          sprite_min_x;
+      if last xs > sprite_max_x then
+        failwithf "collision shape max x %f is too big, needs to be smaller than sprite dest %f" (last xs) sprite_max_x;
+      if first ys < sprite_min_y then
+        failwithf "collision shape min y %f is too small, needs to be bigger than sprite dest %f" (first ys)
+          sprite_min_y;
+      if last ys > sprite_max_y then
+        failwithf "collision shape max y %f is too big, needs to be smaller than sprite dest %f" (last ys) sprite_max_y
+    | None
+    | Some _ ->
+      ()
+  in
+  validate_shape_is_inside_sprite_dest ();
   { ident = fmt "Sprite[%s]" name; texture; facing_right; dest; collision }
 
 (* TODO maybe this should take a relative_pos option arg, and use Entity.get_child_pos when it's provided *)
-let spawn_particle (name : string) (texture : texture) ?(facing_right = true) (dest : rect) frame_time : sprite =
+let spawn_particle
+    ?(facing_right = true)
+    ?(collision = None)
+    (name : string)
+    (texture : texture)
+    (dest : rect)
+    frame_time : sprite =
   (match texture.animation_src with
   | STILL _ -> failwith "tried to spawn particle with STILL"
   | LOOPED animation -> failwith "tried to spawn particle with LOOPED"
   | PARTICLE animation ->
     animation.frame_idx <- 0;
     animation.frame_started.at <- frame_time);
-  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest; collision = None (* FIXME-3  *) }
+  { ident = fmt "Sprite[%s]" name; texture; facing_right; dest; collision }

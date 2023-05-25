@@ -52,24 +52,26 @@ let maybe_unset_current_floor (ghost : ghost) =
       ghost.entity.current_floor <- None
 
 let find_trigger_collision ghost triggers =
-  let colliding (_label, trigger_rect) = Option.is_some (Collision.between_rects ghost.entity trigger_rect) in
+  let colliding (_label, trigger_rect) = Option.is_some (Collision.with_entity ghost.entity trigger_rect) in
   List.find_opt colliding triggers
 
 (* returns the first enemy collision *)
-let get_enemy_collision state : (collision * rect) option =
-  let find_colliding_enemy ((_enemy_id, enemy) : enemy_id * enemy) : (collision * rect) option =
+let get_enemy_collision state : direction option =
+  let find_colliding_enemy ((_enemy_id, enemy) : enemy_id * enemy) : direction option =
     if Enemy.is_dead enemy then
       None
-    else (
-      let ghost_shape = Option.get state.ghost.entity.sprite.collision in
-      let aligned_ghost_shape = align_shape_with_parent state.ghost.entity.sprite ghost_shape in
-      let enemy_shape = get_rect_shape enemy.entity.dest in
-      if Collision.between_shapes aligned_ghost_shape enemy_shape then (
-        tmp " %d ------------------ got shape collision" state.frame.idx;
-        (* FIXME-9 figure out what to return from here - probably just need direction *)
-        None)
-      else
-        None)
+    else if Collision.between_entities state.ghost.entity enemy.entity then (
+      let direction : direction =
+        (* TODO probably doing this in multiple places, move this to a function in Entity *)
+        let mid_x rect = rect.pos.x +. (rect.w /. 2.) in
+        if mid_x enemy.entity.dest > mid_x state.ghost.entity.dest then
+          LEFT
+        else
+          RIGHT
+      in
+      Some direction)
+    else
+      None
   in
   List.find_map find_colliding_enemy state.room.enemies
 
@@ -146,15 +148,56 @@ let make_slash state (direction : direction) relative_pos (ghost : sprite) : sla
     (* pos is arbitrary because this will be adjusted to parent dest based on child's relative_position *)
     { pos = Zero.vector (); h = dest_h; w = dest_w }
   in
-  let sprite = Sprite.spawn_particle "slash" slash_texture ~facing_right:ghost.facing_right dest state.frame.time in
-  { sprite; direction }
 
-(* CLEANUP rename this
-   - these are the sprites that _can_ deal damage, but they may not be
-   colliding with anything so it's weird to call them "damaging"
-   - maybe call it spell_sprite, since nail collisions are handled in resolve_slash_collisions
-*)
-let get_damaging_sprite (ghost : ghost) : (sprite * time) option =
+  (* TODO move these to config *)
+  let sideways_points =
+    [
+      { x = 0.; y = 0. };
+      { x = 111.; y = 8. };
+      { x = 158.; y = 16. };
+      { x = 184.; y = 26. };
+      { x = 196.; y = 37. };
+      { x = 195.; y = 49. };
+      { x = 178.; y = 64. };
+      { x = 136.; y = 77. };
+      { x = 60.; y = 86. };
+      { x = 1.; y = 87. };
+    ]
+  in
+  let up_points =
+    [
+      { x = 0.; y = 189. };
+      { x = 4.; y = 110. };
+      { x = 12.; y = 63. };
+      { x = 25.; y = 25. };
+      { x = 35.; y = 8. };
+      { x = 45.; y = 0. };
+      { x = 60.; y = 1. };
+      { x = 73.; y = 14. };
+      { x = 87.; y = 46. };
+      { x = 97.; y = 86. };
+      { x = 103.; y = 189. };
+    ]
+  in
+  let down_points = List.map (fun (point : vector) -> { point with y = 189. -. point.y }) up_points in
+  let make_scaled_shape ?(scale = Config.scale.slash) points =
+    let scale_point point = { x = point.x *. scale; y = point.y *. scale } in
+    let scaled_points = List.map scale_point points in
+    make_shape scaled_points
+  in
+  let sprite =
+    (* slash will have a sprite with None .collision because there is a (non-optional) .collision on slash itself *)
+    Sprite.spawn_particle "slash" slash_texture ~facing_right:ghost.facing_right dest state.frame.time
+  in
+  let collision =
+    match direction with
+    | DOWN -> SHAPE (make_scaled_shape down_points)
+    | UP -> SHAPE (make_scaled_shape up_points)
+    | _ -> SHAPE (make_scaled_shape sideways_points)
+  in
+  { sprite; direction; collision }
+
+let get_spell_sprite (ghost : ghost) : (sprite * time) option =
   match ghost.child with
   | None -> None
   | Some child -> (
@@ -221,12 +264,14 @@ let resolve_slash_collisions state =
   | Some slash ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
-        match slash_collision_between slash enemy.entity.dest with
+        match Collision.with_slash slash enemy.entity.sprite with
         | None -> ()
-        | Some c ->
-          if Enemy.maybe_take_damage state enemy state.ghost.history.nail.started NAIL (get_damage state NAIL) c.rect
+        | Some collision ->
+          if
+            Enemy.maybe_take_damage state enemy state.ghost.history.nail.started NAIL (get_damage state NAIL)
+              enemy.entity.dest
           then (
-            match opposite_of c.direction with
+            match collision.direction with
             | DOWN -> pogo state
             | LEFT
             | RIGHT ->
@@ -240,7 +285,7 @@ let resolve_slash_collisions state =
           if slash.direction = DOWN && state.ghost.entity.y_recoil = None then (
             let check_projectile_pogo (projectile : projectile) =
               if projectile.pogoable then (
-                match slash_collision_between slash projectile.entity.dest with
+                match Collision.with_slash slash projectile.entity.sprite with
                 | None -> ()
                 | Some _ -> pogo state)
             in
@@ -274,7 +319,7 @@ let resolve_slash_collisions state =
           state.room.progress.removed_idxs_by_layer <-
             Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) state.room.progress.removed_idxs_by_layer);
         (* collision direction is opposite of slash direction *)
-        if collision.direction = UP && layer.config.pogoable then
+        if collision.direction = DOWN && layer.config.pogoable then
           pogo state;
         match tile_group.stub_sprite with
         | None -> ()
@@ -282,7 +327,7 @@ let resolve_slash_collisions state =
           layer.spawned_stub_sprites <- (sprite, tile_group.transformation_bits) :: layer.spawned_stub_sprites
       in
       let resolve_tile_group (tile_group : tile_group) =
-        match slash_collision_between slash tile_group.dest with
+        match Collision.with_slash' slash tile_group.dest with
         | None -> new_tile_groups := tile_group :: !new_tile_groups
         | Some coll -> (
           match tile_group.door_health with
@@ -471,7 +516,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
       texture;
       dest;
       facing_right;
-      collision = None (* FIXME-3  *);
+      collision = Some DEST (* TODO add VS collision shape *);
     }
   in
   let vx =
@@ -519,7 +564,6 @@ let start_action ?(debug = false) state (action_kind : ghost_action_kind) =
       let slash = make_slash state direction relative_pos state.ghost.entity.sprite in
       state.ghost.child <- Some { kind = NAIL slash; relative_pos; sprite = slash.sprite };
       cooldown_scale := state.ghost.current_weapon.cooldown_scale;
-      (* state.ghost.current.slash <- Some slash; *)
       state.ghost.history.nail
     | DASH -> state.ghost.history.dash
     | CAST spell_kind -> (
@@ -734,7 +778,7 @@ let update (state : state) : state =
   let handle_debug_keys () =
     let dv =
       if state.debug.enabled then
-        Config.ghost.small_debug_v /. 10.
+        Config.ghost.small_debug_v /. 3.
       else
         Config.ghost.debug_v
     in
@@ -751,7 +795,8 @@ let update (state : state) : state =
       (* print "current weapons: %s" (state.ghost.weapons |> List.map fst |> join) *)
       (* toggle_ability state.ghost "mantis_claw" *)
       (* toggle_ability state.ghost "vengeful_spirit" *)
-      print "%s" (Show.shape_lines (Option.get state.ghost.entity.sprite.collision))
+      (* print "%s" (Show.shape_lines (Option.get state.ghost.entity.sprite.collision)) *)
+      ()
     else if key_pressed DEBUG_2 then (
       (* toggle_ability state.ghost "monarch_wings" *)
       state.ghost.soul.current <- state.ghost.soul.max;
@@ -779,7 +824,7 @@ let update (state : state) : state =
      - also bound velocity to prevent falling through floors with high vy through horizontal doors
   *)
   let handle_room_exits () =
-    let colliding exit_rect = Collision.between_rects state.ghost.entity exit_rect in
+    let colliding exit_rect = Collision.with_entity state.ghost.entity exit_rect in
     match List.find_map colliding state.room.exits with
     | None -> false
     | Some collision ->
@@ -1434,7 +1479,7 @@ let update (state : state) : state =
     if interacting then
       Entity.update_pos state state.ghost.entity
     else (
-      let colliding (_label, trigger_rect) = Option.is_some (Collision.between_rects state.ghost.entity trigger_rect) in
+      let colliding (_label, trigger_rect) = Option.is_some (Collision.with_entity state.ghost.entity trigger_rect) in
       (match List.find_opt colliding state.room.triggers.shadows with
       | None -> ()
       | Some (layer_name, _rect) -> (
@@ -1467,22 +1512,7 @@ let update (state : state) : state =
   | Some dive_sprite -> maybe_despawn_child state dive_sprite);
   if is_vulnerable state then (
     match get_enemy_collision state with
-    | Some (collision, r) ->
-      let direction =
-        match collision.direction with
-        | LEFT
-        | RIGHT ->
-          collision.direction
-        | UP
-        | DOWN ->
-          (* TODO probably doing this in multiple places, move this to a function in Entity *)
-          let mid_x rect = rect.pos.x +. (rect.w /. 2.) in
-          if mid_x r > mid_x state.ghost.entity.dest then
-            LEFT
-          else
-            RIGHT
-      in
-      start_action state (TAKE_DAMAGE direction)
+    | Some direction -> start_action state (TAKE_DAMAGE direction)
     | None -> ());
   let collisions = Entity.get_floor_collisions state state.ghost.entity in
   state.debug.rects <- List.map (fun c -> (Raylib.Color.green, snd c)) collisions;
@@ -1548,29 +1578,7 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
       started = { at = -1000. };
     }
   in
-  let collision : shape option =
-    (* FIXME-4 get this from one of the configs (probably pass in a new arg) *)
-    Some
-      (make_shape "stub"
-         [
-           (* expecting this to be a triangle starting in the back-corner of the ghost:
-              _____
-              \   |
-               \  |
-                \ |
-                 \|
 
-                         - this is working, but there should probably be some validation that collision shapes
-                         are contained within sprite.dest, since currently this is wider than the ghost
-                         - actually this may need to be fixed soon to make testing easier, since eventually it
-                         will check the bounding box sprite.dest first
-                         - FIXME-8 add this check in Sprite.create
-           *)
-           { x = 0.; y = 1. };
-           { x = 100.; y = 101. };
-           { x = 102.; y = 2. };
-         ])
-  in
   {
     id = ghost_id;
     in_party;
@@ -1594,7 +1602,7 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
     shared_textures;
     entity =
       Entity.create_for_sprite
-        (Sprite.create (fmt "ghost-%s" (Show.ghost_id ghost_id)) ~collision idle_texture dest)
+        (Sprite.create (fmt "ghost-%s" (Show.ghost_id ghost_id)) ~collision:(Some DEST) idle_texture dest)
         { pos = dest.pos; w = Config.ghost.width *. Config.scale.ghost; h = Config.ghost.height *. Config.scale.ghost };
     can_dash = true;
     can_flap = true;

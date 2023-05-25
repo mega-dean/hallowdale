@@ -71,7 +71,7 @@ let init () : state =
         (* bottom of start drop *)
         ("forgotten_deans-pass", FC_DEANS_PASS, true, true, true, 1500., 3600.);
         (* big door *)
-        ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.);
+        (* ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.); *)
         (* duncan fight *)
         ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, true, false, 800., 2200.);
         (* past duncan fight *)
@@ -440,10 +440,13 @@ let update_enemies state =
       let keep_spawned = update_projectile projectile state.frame in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
-        if Ghost.is_vulnerable state then ((* FIXME-5 use Collision.between_shapes *)
-          match Collision.between_rects state.ghost.entity projectile.entity.dest with
+        if Ghost.is_vulnerable state then (
+          match Collision.with_entity state.ghost.entity projectile.entity.dest with
           | None -> ()
-          | Some c -> Ghost.start_action state (TAKE_DAMAGE c.direction)))
+          | Some c ->
+            (* TODO add collision shape to enemy projectiles *)
+            if Collision.between_entities state.ghost.entity projectile.entity then
+              Ghost.start_action state (TAKE_DAMAGE c.direction)))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
@@ -455,11 +458,11 @@ let update_enemies state =
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) = Sprite.advance_or_despawn state.frame.time sprite.texture sprite in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
-    (match Ghost.get_damaging_sprite state.ghost with
+    (match Ghost.get_spell_sprite state.ghost with
     | None -> ()
     | Some (sprite, action) -> (
-      (* FIXME-3 use Collision.between_shapes *)
-      match Collision.between_rects enemy.entity sprite.dest with
+      (* TODO use Collision.between_shapes *)
+        match Collision.with_entity enemy.entity sprite.dest with
       | None -> ()
       | Some c ->
         let damage_kind =
@@ -523,7 +526,7 @@ let update_spawned_vengeful_spirits state =
   let damage_enemies vs_start_time (f : sprite) =
     let maybe_damage_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
-        match Collision.between_rects enemy.entity f.dest with
+        match Collision.with_entity enemy.entity f.dest with
         | None -> ()
         | Some c ->
           ignore

@@ -74,17 +74,9 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
   Option.is_none (List.find_map edge_with_separating_axis [ s1; s2 ])
 
 (* direction here means "the direction that the entity is (probably) colliding from" *)
-(* FIXME-3 update uses of this to also check collision shape when needed *)
-let between_rects (entity : entity) (r2 : rect) : collision option =
-  let cr : rect = Raylib.get_collision_rec (to_Rect entity.dest) (to_Rect r2) |> of_Rect in
-  let feq a b =
-    (* - Float.equal is too precise
-       - 0.0001 was also too precise (for CAFETERIA-sized rooms)
-    *)
-    abs_float (a -. b) < 0.0001
-  in
+let between_rects (r1 : rect) (r2 : rect) : collision option =
+  let cr = Raylib.get_collision_rec (to_Rect r1) (to_Rect r2) |> of_Rect in
   let no_collision = cr.w < 0.1 || cr.h < 0.1 in
-  (* let no_collision = feq cr.w 0. || feq cr.h 0. in *)
   if no_collision then
     None
   else
@@ -92,23 +84,27 @@ let between_rects (entity : entity) (r2 : rect) : collision option =
       {
         rect = cr;
         direction =
-          (let up = feq r2.pos.y cr.pos.y in
-           let down = feq (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in
-           let left = feq r2.pos.x cr.pos.x in
-           let right = feq (r2.pos.x +. r2.w) (cr.pos.x +. cr.w) in
+          ((* at one point, Float.equal was too precise for this fn
+              - so if collision directions start to not work, try using this instead:
+                  let feq a b = abs_float (a -. b) < 0.0001
+           *)
+           let up = Float.equal r2.pos.y cr.pos.y in
+           let down = Float.equal (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in
+           let left = Float.equal r2.pos.x cr.pos.x in
+           let right = Float.equal (r2.pos.x +. r2.w) (cr.pos.x +. cr.w) in
+
            match (up, down, left, right) with
            (* one side *)
            | true, false, false, false -> UP
            | false, true, false, false -> DOWN
            | false, false, true, false -> LEFT
            | false, false, false, true -> RIGHT
-           (* top-bottom / left-right *)
-           | true, true, false, false ->
-             if entity.v.y >= 0. then
-               UP
-             else
-               DOWN
-           | false, false, true, true -> if entity.v.x >= 0. then LEFT else RIGHT
+           (* top-bottom / left-right
+              - these are arbitrary directions, because this currently only happens for VS
+              - when VS knockback is implemented, these will probably need to be fixed
+           *)
+           | true, true, false, false -> UP
+           | false, false, true, true -> UP
            (* corners *)
            (* TODO this is too "slippery": falling too fast causes top collisions to be considered side collisions
               - can probably fix this by considering position of entity at start of frame (before applying v)
@@ -133,16 +129,44 @@ let between_rects (entity : entity) (r2 : rect) : collision option =
            | true, true, true, false -> LEFT
            (* ghost covers entire collision *)
            | true, true, true, true
-           (* ghost is entirely inside collision *)
-           | false, false, false, false -> (
-             match (entity.v.x > 0., entity.v.y > 0., entity.v.x > entity.v.y) with
-             | true, true, true -> LEFT
-             | true, true, false -> UP
-             | true, false, true -> LEFT
-             | true, false, false -> DOWN
-             | false, true, true -> RIGHT
-             | false, true, false -> UP
-             | false, false, true -> RIGHT
-             | false, false, false -> DOWN));
+           (* ghost is entirely inside collision
+              - this happens for interaction triggers, camera bounds, etc., so the direction doesn't matter
+           *)
+           | false, false, false, false ->
+             DOWN);
       }
 
+let with_entity (entity : entity) (r2 : rect) : collision option = between_rects entity.dest r2
+
+let between_entities (entity1 : entity) (entity2 : entity) : bool =
+  match with_entity entity1 entity2.dest with
+  | None -> false
+  | Some c ->
+    let get_aligned_shape (entity : entity) =
+      match entity.sprite.collision with
+      | Some (SHAPE shape) -> align_shape_with_parent_sprite entity.sprite shape
+      | Some DEST -> shape_of_rect entity.dest
+      | None -> failwith "can't get collision for entity.sprite without collision_shape"
+    in
+    let shape1 = get_aligned_shape entity1 in
+    let shape2 = get_aligned_shape entity2 in
+    between_shapes shape1 shape2
+
+(* this is only used for tile_group collisions
+   - should consolidate these at some point, but tile_groups will eventually have collision_shapes of their own
+*)
+let with_slash' (slash : slash) (rect : rect) : collision option =
+  let target_collision_shape = shape_of_rect rect in
+  let slash_shape = get_slash_shape slash in
+  if between_shapes slash_shape target_collision_shape then
+    Some { rect; direction = UP }
+  else
+    None
+
+let with_slash (slash : slash) (target_sprite : sprite) : collision option =
+  let target_collision_shape = get_collision_shape target_sprite in
+  let slash_shape = get_slash_shape slash in
+  if between_shapes slash_shape target_collision_shape then
+    Some { rect = slash.sprite.dest; direction = slash.direction }
+  else
+    None
