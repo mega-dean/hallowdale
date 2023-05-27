@@ -82,7 +82,8 @@ let spawn_projectile
   let entity =
     Entity.create
       (fmt "%s projectile ---------------------- " (Show.enemy_name e))
-      ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.) projectile_texture dest
+      ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.) ~collision:(Some DEST)
+      projectile_texture dest
   in
 
   { entity; despawn; spawned = { at = spawn_time }; pogoable }

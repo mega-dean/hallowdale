@@ -14,8 +14,7 @@ let sprite_name (s : sprite) = s.ident
 let entity_name (e : entity) = sprite_name e.sprite
 let shape (shape : shape) = fmt "shape with %d edges" (List.length shape.edges)
 let shape_points (shape : shape) = fmt "shape with points: %s" (List.map vector (get_points shape) |> join)
-let shape_lines (shape : shape) =
-  fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> join ~sep:"\n")
+let shape_lines (shape : shape) = fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> join ~sep:"\n")
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
@@ -215,3 +214,27 @@ let npc_id (n : npc_id) : string =
 
 let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity_name enemy.entity)
 let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
+
+let main_menu_choice (choice : main_menu_choice) =
+  match choice with
+  | START_GAME -> "START_GAME"
+  | QUIT -> "QUIT"
+
+let save_files_choice (choice : save_files_choice) =
+  match choice with
+  | SLOT_1 -> "SLOT_1"
+  | SLOT_2 -> "SLOT_2"
+  | SLOT_3 -> "SLOT_3"
+  | SLOT_4 -> "SLOT_4"
+  | BACK -> "BACK"
+
+let pause_menu_choice (choice : pause_menu_choice) =
+  match choice with
+  | CONTINUE -> "CONTINUE"
+  | QUIT_TO_MAIN_MENU -> "QUIT_TO_MAIN_MENU"
+
+let menu_choice (choice : menu_choice) =
+  match choice with
+  | MAIN_MENU choice -> main_menu_choice choice
+  | SAVE_FILES choice -> save_files_choice choice
+  | PAUSE choice -> pause_menu_choice choice

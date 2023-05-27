@@ -198,10 +198,21 @@
                  "width":373.333333333333,
                  "x":1425.33333333333,
                  "y":736.666666666667
+                }, 
+                {
+                 "height":29,
+                 "id":43,
+                 "name":"npc_ANNIES_BOOBS",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":539,
+                 "y":1166.5
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1512,7 +1523,7 @@
          "y":0
         }],
  "nextlayerid":43,
- "nextobjectid":43,
+ "nextobjectid":44,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

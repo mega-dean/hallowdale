@@ -43,6 +43,8 @@ type window_config = {
 let window : window_config =
   let width, height = (1280, 720) in
   let fps =
+    (* 960 *)
+    (* 480 *)
     (* 240 *)
     144
     (* 60 *)

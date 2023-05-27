@@ -9,6 +9,7 @@ type key_action =
   | INTERACT
   | JUMP
   | NAIL
+  | PAUSE
   (* directions *)
   | UP
   | DOWN
@@ -36,6 +37,7 @@ let show_key_action k =
   | INTERACT -> "INTERACT"
   | JUMP -> "JUMP"
   | NAIL -> "NAIL"
+  | PAUSE -> "PAUSE"
   (* directions *)
   | UP -> "UP"
   | DOWN -> "DOWN"
@@ -152,6 +154,7 @@ let default_keybinds : (key_action * Raylib.Key.t) list =
     (D_NAIL, Raylib.Key.D);
     (CAST, Raylib.Key.F);
     (INTERACT, Raylib.Key.Left_shift);
+    (PAUSE, Raylib.Key.Space);
     (* directions *)
     (UP, Raylib.Key.Up);
     (DOWN, Raylib.Key.Down);

@@ -25,13 +25,14 @@ let get_pickup_indicators (room_progress : room_progress) (texture : texture) (t
   in
   List.filter_map show_obj triggers
 
-let update_pickup_indicators state =
-  state.room.pickup_indicators <-
-    get_pickup_indicators state.room.progress state.global.textures.pickup_indicator state.room.triggers.item_pickups
+let update_pickup_indicators ((state, game) : state * game) =
+  game.room.pickup_indicators <-
+    get_pickup_indicators game.room.progress state.global.textures.pickup_indicator game.room.triggers.item_pickups
 
+(* CLEANUP maybe get rid of this type *)
 type room_params = {
   file_name : string;
-  progress : progress;
+  progress : (string * room_progress) list;
   exits : rect list;
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
@@ -47,7 +48,7 @@ let init (params : room_params) : room =
     { finished_interactions = []; revealed_shadow_layers = []; removed_idxs_by_layer = [] }
   in
   let room_progress =
-    match List.assoc_opt room_key params.progress.rooms with
+    match List.assoc_opt room_key params.progress with
     | None -> new_room_progress ()
     | Some rp -> rp
   in

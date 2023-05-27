@@ -60,6 +60,20 @@ type texture_config = {
   y_offset: int
 }
 
+type room_progress = {
+  removed_idxs_by_layer: (string * int list) list;
+  finished_interactions: string list;
+  revealed_shadow_layers: string list
+}
+
+type save_file = {
+  ghost_x: float;
+  ghost_y: float;
+  room_name: string;
+  abilities: string list;
+  progress: (string * room_progress) list
+}
+
 type object_layer = { name: string; objects: coll_rect list }
 
 type layer = [ `TILE_LAYER of tile_layer | `OBJECT_LAYER of object_layer ]

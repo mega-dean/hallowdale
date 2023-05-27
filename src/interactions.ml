@@ -3,7 +3,7 @@ open Types.Interaction
 
 [@@@ocaml.warning "-26-27-32"]
 
-let get_steps ?(increase_health = false) state (full_interaction_name : string) : step list =
+let get_steps ?(increase_health = false) state game (full_interaction_name : string) : step list =
   let ability_text_outline x y =
     (* TODO move these to config *)
     let w, h = (150., 60.) in
@@ -47,7 +47,7 @@ let get_steps ?(increase_health = false) state (full_interaction_name : string) 
 
     let get_locker_boys_ghosts () : ghost_id * ghost_id =
       let is_available (_id, ghost) = ghost.in_party in
-      let other_ghosts = List.filter is_available state.ghosts in
+      let other_ghosts = List.filter is_available game.ghosts in
       if List.length other_ghosts <> 2 then
         failwithf "got %d other_ghosts" (List.length other_ghosts)
       else

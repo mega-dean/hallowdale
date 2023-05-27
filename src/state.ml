@@ -6,11 +6,12 @@ open Controls
 let npcs_config_path = "config/npcs.json"
 let enemies_config_path = "config/enemies.json"
 let ghost_config_path = "config/ghosts.json"
+let save_file_path idx = fmt "saves/%d.json" idx
 
-let read_config path parse_fn json_file_of_string =
-  let configs = Tiled.read_whole_file (fmt "../%s" path) |> json_file_of_string in
-  let parse_name (id_str, props) = (parse_fn path id_str, props) in
-  List.map parse_name configs
+(* let read_config path parse_fn json_file_of_string =
+ *   let configs = Tiled.read_whole_file (fmt "../%s" path) |> json_file_of_string in
+ *   let parse_name (id_str, props) = (parse_fn path id_str, props) in
+ *   List.map parse_name configs *)
 
 let read_npcs_config () : Json_t.npcs_file =
   Tiled.read_whole_file (fmt "../%s" npcs_config_path) |> Json_j.npcs_file_of_string
@@ -61,92 +62,11 @@ let read_ghost_configs () : ghosts_file =
   let actions : (string * ghost_action_config) list = List.map parse_ghost_action ghost_file.actions in
   { actions; textures; shared_textures }
 
-let init () : state =
-  (* TODO handle this in a config file (probably will be similar to save files) *)
-  let room_name, room_id, vengeful_spirit, mothwing_cloak, mantis_claw, start_x, start_y =
-    let xs =
-      [
-        (* starting drop *)
-        ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 1500., 100.);
-        (* bottom of start drop *)
-        ("forgotten_deans-pass", FC_DEANS_PASS, true, true, true, 1500., 3600.);
-        (* big door *)
-        (* ("forgotten_deans-pass", FC_DEANS_PASS, false, false, false, 7000., 600.); *)
-        (* duncan fight *)
-        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, true, false, 800., 2200.);
-        (* past duncan fight *)
-        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
+(* CLEANUP maybe want a new game.ml file *)
+let load_game (save_file : Json_t.save_file) (global : global_cache) (world : world) : game =
+  let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
-        (* by the breakable wall *)
-        (* ("infected_a", IC_A, true, true, true, 2200., 1800.); *)
-        (* locker boys fight *)
-        (* ("infected_b", IC_B, true, true, false, 1700., 900.); *)
-        (* after locker boys fight *)
-        (* ("infected_b", IC_B, true, true, false, 3200., 900.); *)
-        (* by cafeteria exit *)
-        (* ("infected_b", IC_B, true, true, false, 600., 1900.); *)
-
-        (* cafeteria floor *)
-        ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.);
-        (* stairwell *)
-        (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
-
-        (* bush scissors *)
-        (* ("trampoline_f", TP_F, true, true, false, 400., 800.); *)
-        (* acb note *)
-        (* ("forgotten_b", FC_B, true, true, true, 400., 600.); *)
-      ]
-    in
-    List.nth xs (List.length xs - 1)
-  in
-
-  let start_pos = { x = start_x; y = start_y } in
-
-  let world = Tiled.init_world "Deepnest_East" in
-  let empty_progress = { rooms = []; global = [] } in
-  let room_location = List.assoc room_id world in
-  let exits = Tiled.Room.get_exits room_location in
-  let parse_texture_configs parse_name coll =
-    let parse (name, config) = (parse_name "state.init" name, config) in
-    List.map parse coll
-  in
-
-  let enemies_file : Json_t.enemies_file = read_enemies_config () in
-  let enemy_configs = parse_texture_configs Enemy.parse_name enemies_file.enemies in
-  let shared_enemy_configs = enemies_file.shared_textures in
-
-  let npcs_file = read_npcs_config () in
-  let npc_configs = parse_texture_configs Npc.parse_name npcs_file.npcs in
-
-  let pickup_indicator =
-    let config = List.assoc "pickup-indicator" npcs_file.shared_textures in
-    Sprite.build_texture_from_config
-      {
-        asset_dir = NPCS;
-        character_name = "shared";
-        pose_name = "pickup-indicator";
-        count = config.count;
-        duration = { seconds = config.duration };
-        x_offset = 0.;
-        y_offset = 0.;
-      }
-  in
-
-  let room =
-    Room.init
-      {
-        file_name = room_name;
-        progress = empty_progress;
-        exits;
-        enemy_configs;
-        npc_configs;
-        pickup_indicator_texture = pickup_indicator;
-      }
-  in
-
-  room.layers <- Tiled.Room.get_layer_tile_groups room [];
   let ghosts_file = read_ghost_configs () in
-
   let use_json_config configs pose_name =
     let config =
       match List.find_opt (fun (tc : texture_config) -> tc.pose_name = pose_name) configs with
@@ -163,7 +83,6 @@ let init () : state =
   let abed_configs = List.assoc ABED ghosts_file.textures in
   let troy_configs = List.assoc TROY ghosts_file.textures in
   let annie_configs = List.assoc ANNIE ghosts_file.textures in
-  let weapon_configs = Tiled.load_weapons_config () in
 
   let britta_ghost_textures : ghost_textures =
     {
@@ -186,17 +105,18 @@ let init () : state =
 
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
   let make_ghost id in_party textures : ghost =
+    let check s = List.mem s save_file.abilities in
     Ghost.init id in_party textures.idle ghosts_file.actions (clone_vector start_pos)
       {
-        mothwing_cloak;
-        mantis_claw;
-        crystal_heart = false;
-        monarch_wings = false;
-        vengeful_spirit;
-        desolate_dive = true;
-        howling_wraiths = true;
+        mothwing_cloak = check "mothwing_cloak";
+        mantis_claw = check "mantis_claw";
+        crystal_heart = check "crystal_heart";
+        monarch_wings = check "monarch_wings";
+        vengeful_spirit = check "vengeful_spirit";
+        desolate_dive = check "desolate_dive";
+        howling_wraiths = check "howling_wraiths";
       }
-      [ ("Old Nail", List.assoc "Old Nail" weapon_configs) ]
+      [ ("Old Nail", List.assoc "Old Nail" global.weapons) ]
       textures shared_ghost_textures
   in
 
@@ -257,8 +177,103 @@ let init () : state =
   let britta = make_ghost BRITTA true britta_ghost_textures in
   britta.entity.update_pos <- true;
 
-  let camera_target = Raylib.Vector2.create britta.entity.dest.pos.x britta.entity.dest.pos.y in
-  let camera = Tiled.create_camera_at camera_target 0. in
+  let _, room_id = Tiled.parse_room_filename "State.load_room" save_file.room_name in
+  let room_location = List.assoc room_id world in
+  let exits = Tiled.Room.get_exits room_location in
+  let parse_texture_configs parse_name coll =
+    let parse (name, config) = (parse_name "state.init" name, config) in
+    List.map parse coll
+  in
+
+  let room : room =
+    Room.init
+      {
+        file_name = save_file.room_name;
+        progress = [];
+        exits;
+        enemy_configs = global.enemy_configs;
+        npc_configs = global.npc_configs;
+        pickup_indicator_texture = global.textures.pickup_indicator;
+      }
+  in
+  room.layers <- Tiled.Room.get_layer_tile_groups room [];
+
+  {
+    ghost = britta;
+    ghosts = [];
+    room;
+    interaction = { steps = []; text = (* TODO-9 start on main menu *) None; speaker_name = None; name = None };
+    progress = [];
+  }
+
+(* this function initializes state and sets loaded_state to MAIN_MENU *)
+let init () : state =
+  (* FIXME remove *)
+  let _room_name, _room_id, _start_x, _start_y =
+    let xs =
+      [
+        (* starting drop *)
+        ("forgotten_deans-pass", FC_DEANS_PASS, 1500., 100.);
+        (* bottom of start drop *)
+        ("forgotten_deans-pass", FC_DEANS_PASS, 1500., 3600.);
+        (* big door *)
+        ("forgotten_deans-pass", FC_DEANS_PASS, 7000., 600.);
+        (* duncan fight *)
+        ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, 800., 2200.);
+        (* past duncan fight *)
+        (* ("infected_teachers-lounge", IC_TEACHERS_LOUNGE, true, false, false, 1000., 2200.); *)
+
+        (* by the breakable wall *)
+        (* ("infected_a", IC_A, true, true, true, 2200., 1800.); *)
+        (* locker boys fight *)
+        (* ("infected_b", IC_B, true, true, false, 1700., 900.); *)
+        (* after locker boys fight *)
+        (* ("infected_b", IC_B, true, true, false, 3200., 900.); *)
+        (* by cafeteria exit *)
+        (* ("infected_b", IC_B, true, true, false, 600., 1900.); *)
+
+        (* cafeteria floor *)
+        (* ("forgotten_cafeteria", FC_CAFETERIA, true, true, false, 1400., 2600.); *)
+        (* stairwell *)
+        (* ("forgotten_stairwell", FC_STAIRWELL, true, true, false, 400., 200.); *)
+
+        (* bush scissors *)
+        (* ("trampoline_f", TP_F, true, true, false, 400., 800.); *)
+        (* acb note *)
+        (* ("forgotten_b", FC_B, true, true, true, 400., 600.); *)
+      ]
+    in
+    List.nth xs (List.length xs - 1)
+  in
+
+  let world = Tiled.init_world "Deepnest_East" in
+  let parse_texture_configs parse_name coll =
+    let parse (name, config) = (parse_name "state.init" name, config) in
+    List.map parse coll
+  in
+
+  let enemies_file : Json_t.enemies_file = read_enemies_config () in
+  let enemy_configs = parse_texture_configs Enemy.parse_name enemies_file.enemies in
+  let shared_enemy_configs = enemies_file.shared_textures in
+
+  let npcs_file = read_npcs_config () in
+  let npc_configs = parse_texture_configs Npc.parse_name npcs_file.npcs in
+
+  let pickup_indicator =
+    let config = List.assoc "pickup-indicator" npcs_file.shared_textures in
+    Sprite.build_texture_from_config
+      {
+        asset_dir = NPCS;
+        character_name = "shared";
+        pose_name = "pickup-indicator";
+        count = config.count;
+        duration = { seconds = config.duration };
+        x_offset = 0.;
+        y_offset = 0.;
+      }
+  in
+
+  let weapon_configs = Tiled.load_weapons_config () in
 
   let ability_outlines =
     Sprite.build_texture_from_config
@@ -297,16 +312,15 @@ let init () : state =
     }
   in
 
+  let camera_target = Raylib.Vector2.create 0. 0. in
+  let camera = Tiled.create_camera_at camera_target 0. in
+
   print "initialized state\n=================\n";
   {
-    ghost = britta;
-    ghosts;
-    room;
+    loaded_state = MAIN_MENU main_menu;
     world;
-    camera;
-    camera_subject = GHOST;
+    camera = { raylib = camera; subject = GHOST; shake = 0. };
     screen_faded = false;
-    shake = 0.;
     frame = { idx = 0; dt = 0.; time = 0. };
     frame_inputs =
       {
@@ -320,19 +334,18 @@ let init () : state =
         focus = { pressed = false; down = false; released = false; down_since = None };
         jump = { pressed = false; down = false; released = false; down_since = None };
         nail = { pressed = false; down = false; released = false; down_since = None };
+        pause = { pressed = false; down = false; released = false; down_since = None };
       };
-    progress = empty_progress;
-    interaction = { steps = []; text = None; speaker_name = None; name = None };
     debug = { enabled = false; rects = [] };
     global;
   }
 
-let update_camera state : state =
-  let trigger_config : (string * rect) option = Ghost.find_trigger_collision state.ghost state.room.triggers.camera in
+let update_camera (game : game) (state : state) =
+  let trigger_config : (string * rect) option = Ghost.find_trigger_collision game.ghost game.room.triggers.camera in
   let subject =
-    match state.camera_subject with
+    match state.camera.subject with
     | GHOST ->
-      let e = state.ghost.entity in
+      let e = game.ghost.entity in
       let offset = (* TODO move to config *) 50. in
       if e.sprite.facing_right then
         { e.dest.pos with x = e.dest.pos.x +. offset }
@@ -341,12 +354,12 @@ let update_camera state : state =
     | FIXED pos -> pos
   in
   let new_camera =
-    let current = Raylib.Camera2D.target state.camera in
+    let current = Raylib.Camera2D.target state.camera.raylib in
     let camera_state =
       {
         current_pos = { x = Raylib.Vector2.x current; y = Raylib.Vector2.y current };
         subject;
-        room_bounds = state.room.camera_bounds;
+        room_bounds = game.room.camera_bounds;
       }
     in
     let bounded_target () =
@@ -402,16 +415,16 @@ let update_camera state : state =
         (Utils.bound camera_state.room_bounds.min.y smooth_y camera_state.room_bounds.max.y)
     in
     let target = bounded_target () in
-    Tiled.create_camera_at target state.shake
+    Tiled.create_camera_at target state.camera.shake
   in
-  state.camera <- new_camera;
-  if state.shake > 0. then
-    state.shake <- state.shake -. state.frame.dt;
+  state.camera.raylib <- new_camera;
+  if state.camera.shake > 0. then
+    state.camera.shake <- state.camera.shake -. state.frame.dt;
   state
 
-let update_fragments state =
-  let update_fragment (f : entity) = Entity.update_pos state f in
-  let all_spawned_fragments = List.map (fun l -> l.spawned_fragments) state.room.layers |> List.flatten in
+let update_fragments (game : game) (state : state) =
+  let update_fragment (f : entity) = Entity.update_pos game.room f state.frame.dt in
+  let all_spawned_fragments = List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten in
   List.iter update_fragment all_spawned_fragments;
   state
 
@@ -430,9 +443,9 @@ let update_projectile p (frame_info : frame_info) : bool =
     Sprite.advance_animation frame_info.time p.entity.sprite.texture p.entity.sprite;
     true)
 
-let update_enemies state =
+let update_enemies (game : game) (state : state) =
   let behavior_params : enemy_behavior_params =
-    { ghost_pos = state.ghost.entity.dest.pos; room_bounds = state.room.camera_bounds; time = state.frame.time }
+    { ghost_pos = game.ghost.entity.dest.pos; room_bounds = game.room.camera_bounds; time = state.frame.time }
   in
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
@@ -440,40 +453,41 @@ let update_enemies state =
       let keep_spawned = update_projectile projectile state.frame in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
-        if Ghost.is_vulnerable state then (
-          match Collision.with_entity state.ghost.entity projectile.entity.dest with
+        if Ghost.is_vulnerable (state, game) then (
+          match Collision.with_entity game.ghost.entity projectile.entity.dest with
           | None -> ()
           | Some c ->
             (* TODO add collision shape to enemy projectiles *)
-            if Collision.between_entities state.ghost.entity projectile.entity then
-              Ghost.start_action state (TAKE_DAMAGE c.direction)))
+            if Collision.between_entities game.ghost.entity projectile.entity then
+              Ghost.start_action (state, game) (TAKE_DAMAGE c.direction)))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
     if enemy.entity.update_pos then
-      Entity.update_pos state enemy.entity;
-    let interacting () = List.length state.interaction.steps > 0 in
+      Entity.update_pos game.room enemy.entity state.frame.dt;
+    let interacting () = List.length game.interaction.steps > 0 in
     if (not (interacting ())) && enemy.status.choose_behavior then
       enemy.choose_behavior ~self:enemy behavior_params;
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) = Sprite.advance_or_despawn state.frame.time sprite.texture sprite in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
-    (match Ghost.get_spell_sprite state.ghost with
+    (match Ghost.get_spell_sprite game.ghost with
     | None -> ()
     | Some (sprite, action) -> (
       (* TODO use Collision.between_shapes *)
-        match Collision.with_entity enemy.entity sprite.dest with
+      match Collision.with_entity enemy.entity sprite.dest with
       | None -> ()
       | Some c ->
         let damage_kind =
-          if state.ghost.current.is_diving then
+          if game.ghost.current.is_diving then
             DESOLATE_DIVE
-          else if not (Ghost.past_cooldown state state.ghost.history.dive_cooldown) then
+          else if not (Ghost.past_cooldown game.ghost.history.dive_cooldown state.frame.time) then
             DESOLATE_DIVE_SHOCKWAVE
           else
             HOWLING_WRAITHS
         in
-        ignore (Enemy.maybe_take_damage state enemy action damage_kind (Ghost.get_damage state damage_kind) c.rect)));
+        ignore (Enemy.maybe_take_damage state enemy action damage_kind (Ghost.get_damage game.ghost damage_kind) c.rect)
+      ));
 
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
@@ -482,21 +496,21 @@ let update_enemies state =
         if enemy.on_killed.multiple_enemies then (
           let all_bosses_dead =
             let living_bosses =
-              List.filter (fun (enemy_id, e) -> enemy_id = enemy.id && not (Enemy.is_dead e)) state.room.enemies
+              List.filter (fun (enemy_id, e) -> enemy_id = enemy.id && not (Enemy.is_dead e)) game.room.enemies
             in
             List.length living_bosses = 0
           in
           if all_bosses_dead then
-            Ghost.maybe_begin_interaction state name)
+            Ghost.maybe_begin_interaction (state, game) name)
         else
-          Ghost.maybe_begin_interaction state name)
+          Ghost.maybe_begin_interaction (state, game) name)
   in
-  List.iter update_enemy state.room.enemies;
+  List.iter update_enemy game.room.enemies;
   state
 
-let update_npcs state =
+let update_npcs (game : game) (state : state) =
   let update_npc (npc : npc) =
-    Entity.update_pos state npc.entity;
+    Entity.update_pos game.room npc.entity state.frame.dt;
     Sprite.advance_animation state.frame.time npc.entity.sprite.texture npc.entity.sprite
   in
 
@@ -512,17 +526,17 @@ let update_npcs state =
           None
       in
 
-      Entity.update_pos ~debug state ghost.entity;
+      Entity.update_pos ~debug game.room ghost.entity state.frame.dt;
       Ghost.maybe_unset_current_floor ghost)
   in
 
-  List.iter update_ghost state.ghosts;
-  List.iter update_npc state.room.npcs;
+  List.iter update_ghost game.ghosts;
+  List.iter update_npc game.room.npcs;
   (* pickup indicators aren't really "npcs" *)
-  List.iter update_pickup_indicators state.room.pickup_indicators;
+  List.iter update_pickup_indicators game.room.pickup_indicators;
   state
 
-let update_spawned_vengeful_spirits state =
+let update_spawned_vengeful_spirits (game : game) (state : state) =
   let damage_enemies vs_start_time (f : sprite) =
     let maybe_damage_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
@@ -531,25 +545,23 @@ let update_spawned_vengeful_spirits state =
         | Some c ->
           ignore
             (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT
-               (Ghost.get_damage state VENGEFUL_SPIRIT)
+               (Ghost.get_damage game.ghost VENGEFUL_SPIRIT)
                c.rect))
     in
-    List.iter maybe_damage_enemy state.room.enemies
+    List.iter maybe_damage_enemy game.room.enemies
   in
   let update_vengeful_spirit (projectile : projectile) =
     let keep_spawned = update_projectile projectile state.frame in
     if keep_spawned then
       damage_enemies projectile.spawned projectile.entity.sprite
     else
-      state.ghost.spawned_vengeful_spirits <-
-        List.filter (fun p -> p <> projectile) state.ghost.spawned_vengeful_spirits
+      game.ghost.spawned_vengeful_spirits <- List.filter (fun p -> p <> projectile) game.ghost.spawned_vengeful_spirits
   in
 
-  List.iter update_vengeful_spirit state.ghost.spawned_vengeful_spirits;
+  List.iter update_vengeful_spirit game.ghost.spawned_vengeful_spirits;
   state
 
-let update_frame_inputs state : state =
-  let input_cache = state.frame_inputs in
+let update_frame_inputs (state : state) : state =
   let update_frame_input key (input : frame_input) =
     input.released <- key_released key;
     input.down <- key_down key;
@@ -561,20 +573,58 @@ let update_frame_inputs state : state =
     else
       input.down_since <- None
   in
-  update_frame_input UP input_cache.up;
-  update_frame_input DOWN input_cache.down;
-  update_frame_input LEFT input_cache.left;
-  update_frame_input RIGHT input_cache.right;
-  update_frame_input CAST input_cache.cast;
-  update_frame_input DASH input_cache.dash;
-  update_frame_input D_NAIL input_cache.d_nail;
-  update_frame_input FOCUS input_cache.focus;
-  update_frame_input JUMP input_cache.jump;
-  update_frame_input NAIL input_cache.nail;
+  update_frame_input UP state.frame_inputs.up;
+  update_frame_input DOWN state.frame_inputs.down;
+  update_frame_input LEFT state.frame_inputs.left;
+  update_frame_input RIGHT state.frame_inputs.right;
+  update_frame_input CAST state.frame_inputs.cast;
+  update_frame_input DASH state.frame_inputs.dash;
+  update_frame_input D_NAIL state.frame_inputs.d_nail;
+  update_frame_input FOCUS state.frame_inputs.focus;
+  update_frame_input JUMP state.frame_inputs.jump;
+  update_frame_input NAIL state.frame_inputs.nail;
+  update_frame_input PAUSE state.frame_inputs.pause;
   state
 
-let tick state =
-  (* TODO-6 add menus: main/startup, pause, switch ghosts, switch weapons *)
+let update_main_menu (menu : menu) (state : state) : state =
+  (* if state.frame_inputs.pause.pressed then (
+   *   match game.interaction.text with
+   *   | None -> game.interaction.text <- Some (MENU pause_menu)
+   *   | Some _ -> game.interaction.text <- None); *)
+  if state.frame_inputs.down.pressed then
+    menu.current_choice_idx <- Int.min (menu.current_choice_idx + 1) (List.length menu.choices - 1);
+  if state.frame_inputs.up.pressed then
+    menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1);
+
+  let load_file save_file_idx =
+    let save_file : Json_t.save_file =
+      match Tiled.try_read_file (fmt "../%s" (save_file_path save_file_idx)) with
+      | None -> { ghost_x = 1500.; ghost_y = 100.; room_name = "forgotten_deans-pass"; abilities = []; progress = [] }
+      | Some save_file -> Json_j.save_file_of_string save_file
+    in
+    let game = load_game save_file state.global state.world in
+    state.loaded_state <- IN_PROGRESS game
+  in
+
+  if state.frame_inputs.d_nail.pressed then (
+    match List.nth menu.choices menu.current_choice_idx with
+    | MAIN_MENU START_GAME ->
+      tmp "open save_files menu";
+      state.loaded_state <- SAVE_FILES save_files_menu
+    | MAIN_MENU QUIT ->
+      tmp "exiting";
+      exit 0
+    | SAVE_FILES SLOT_1 -> load_file 1
+    | SAVE_FILES SLOT_2 -> load_file 2
+    | SAVE_FILES SLOT_3 -> load_file 3
+    | SAVE_FILES SLOT_4 -> load_file 4
+    | SAVE_FILES BACK -> state.loaded_state <- MAIN_MENU main_menu
+    | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
+  (* | PAUSE CONTINUE -> game.interaction.text <- None
+   * | PAUSE QUIT_TO_MAIN_MENU -> game.interaction.text <- Some (MENU main_menu)); *)
+  state
+
+let tick (state : state) =
   (* TODO-4 add sound effects and music *)
   if Controls.key_pressed DEBUG_5 then
     if state.debug.enabled then (
@@ -584,11 +634,21 @@ let tick state =
       state.debug.enabled <- true;
       print "\n/-----------------\nenabled debug at %d" state.frame.idx);
 
-  state
-  |> update_frame_inputs
-  |> Ghost.update
-  |> update_spawned_vengeful_spirits
-  |> update_enemies
-  |> update_npcs
-  |> update_fragments
-  |> update_camera
+  match state.loaded_state with
+  | SAVE_FILES menu
+  | MAIN_MENU menu ->
+    state |> update_frame_inputs |> update_main_menu menu
+  | IN_PROGRESS game ->
+    (* FIXME-2 check game.pause_menu
+       - update_frame_inputs, update_menu, render to get the cursor moving around the menu
+       - select "continue" -> exit pause menu
+       - select "quit to main menu" -> save game, exit to main menu, unload textures
+    *)
+    state
+    |> update_frame_inputs
+    |> Ghost.update game
+    |> update_spawned_vengeful_spirits game
+    |> update_enemies game
+    |> update_npcs game
+    |> update_fragments game
+    |> update_camera game

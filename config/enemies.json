@@ -11,7 +11,7 @@
                 ["walk_vx", 400.0],
                 ["projectile_vx", 600.0],
                 ["projectile_range", 1000.0],
-                ["jump_wait_time", 100.0]
+                ["jump_wait_time", 1.0]
             ],
             "texture_configs": [
                 ["idle", {

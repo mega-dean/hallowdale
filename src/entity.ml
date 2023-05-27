@@ -83,7 +83,7 @@ let apply_v ?(debug = None) dt (e : entity) =
     else
       e.x_recoil <- None
 
-let get_floor_collisions state (e : entity) : (collision * rect) list =
+let get_floor_collisions (room : room) (e : entity) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (layer : layer) =
     let check_tile_group (tile_group : tile_group) =
@@ -93,7 +93,7 @@ let get_floor_collisions state (e : entity) : (collision * rect) list =
     in
     List.iter check_tile_group layer.tile_groups
   in
-  let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) state.room.layers in
+  let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
   List.iter check_collision layers;
   !collisions
 
@@ -133,16 +133,16 @@ let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * r
   List.iter adjust_position left_right_collisions;
   List.iter adjust_position up_down_collisions
 
-let update_pos (state : state) ?(debug = None) (e : entity) =
-  if e.update_pos then (
+let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) =
+  if entity.update_pos then (
     let dvy =
-      match e.current_floor with
+      match entity.current_floor with
       | Some _ -> 0.
-      | None -> Config.physics.gravity *. state.frame.dt
+      | None -> Config.physics.gravity *. dt
     in
-    apply_v ~debug state.frame.dt e;
-    e.v.y <- e.v.y +. dvy;
-    get_floor_collisions state e |> apply_collisions e)
+    apply_v ~debug dt entity;
+    entity.v.y <- entity.v.y +. dvy;
+    get_floor_collisions room entity |> apply_collisions entity)
 
 let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
   let to_the_left () = { y = parent.dest.pos.y; x = parent.dest.pos.x -. child_w +. (parent.dest.w /. 2.) } in

@@ -107,8 +107,14 @@ let draw_velocity (e : entity) : unit =
     (Raylib.Vector2.create end_x end_y) 5. Color.purple;
   Draw.circle_v (Raylib.Vector2.create end_x end_y) 5. Color.blue
 
-let draw_tiled_layer state camera_x camera_y ?(tint = Color.create 255 255 255 255) ?(parallax = None) (layer : layer) :
-    unit =
+let draw_tiled_layer
+    ?(debug = false)
+    (room : room)
+    camera_x
+    camera_y
+    ?(tint = Color.create 255 255 255 255)
+    ?(parallax = None)
+    (layer : layer) : unit =
   let within_camera dest_x dest_y =
     let camera_min_x, camera_max_x = (camera_x -. 100., camera_x +. (Config.window.width + 100 |> Int.to_float)) in
     let camera_min_y, camera_may_y = (camera_y -. 100., camera_y +. (Config.window.height + 100 |> Int.to_float)) in
@@ -120,17 +126,16 @@ let draw_tiled_layer state camera_x camera_y ?(tint = Color.create 255 255 255 2
     let render_data_tile (idx : int) (gid : int) =
       if gid <> 0 && not (List.mem idx layer.destroyed_tiles) then (
         let x, y =
-          Tiled.Room.dest_xy state.room.json ~parallax_opt:parallax layer.json.offset_x layer.json.offset_y idx
-            layer.json.w
+          Tiled.Room.dest_xy room.json ~parallax_opt:parallax layer.json.offset_x layer.json.offset_y idx layer.json.w
         in
         if within_camera x y then (
-          let texture, transformations = Tiled.Room.look_up_tile state.room.json state.room.cache gid in
-          let w, h = Tiled.Room.dest_wh state.room.json () in
+          let texture, transformations = Tiled.Room.look_up_tile room.json room.cache gid in
+          let w, h = Tiled.Room.dest_wh room.json () in
           let dest = { pos = { x; y }; w; h } in
           draw_texture ~tint:tint' texture dest transformations))
     in
     let draw_spawned_fragment (f : entity) =
-      if state.debug.enabled then
+      if debug then
         debug_rect f.dest;
       draw_entity ~tint f
     in
@@ -138,26 +143,26 @@ let draw_tiled_layer state camera_x camera_y ?(tint = Color.create 255 255 255 2
     List.iter draw_spawned_fragment layer.spawned_fragments;
     List.iter draw_stub layer.spawned_stub_sprites)
 
-let draw_tiles state camera_x camera_y layers : unit =
+let draw_tiles room camera_x camera_y layers : unit =
   let draw_parallax_layer (layer : layer) =
     let parallax =
       (* TODO maybe just pass in the parallax values and do this calculation somewhere like Tiled.Tile.dest_xy *)
       Some { x = camera_x *. (1. -. layer.json.parallax_x); y = camera_y *. (1. -. layer.json.parallax_y) }
     in
-    draw_tiled_layer ~tint:state.room.area.tint ~parallax state camera_x camera_y layer
+    draw_tiled_layer ~tint:room.area.tint ~parallax room camera_x camera_y layer
   in
   List.iter draw_parallax_layer layers
 
-let draw_solid_tiles state camera_x camera_y : unit =
+let draw_solid_tiles room camera_x camera_y : unit =
   List.iter
-    (draw_tiled_layer state camera_x camera_y)
-    (List.filter (fun layer -> layer.config.collides_with_ghost) state.room.layers)
+    (draw_tiled_layer room camera_x camera_y)
+    (List.filter (fun layer -> layer.config.collides_with_ghost) room.layers)
 
-let draw_bg_tiles state camera_x camera_y : unit =
-  draw_tiles state camera_x camera_y (List.filter (fun (layer : layer) -> layer.config.render.bg) state.room.layers)
+let draw_bg_tiles room camera_x camera_y : unit =
+  draw_tiles room camera_x camera_y (List.filter (fun (layer : layer) -> layer.config.render.bg) room.layers)
 
-let draw_fg_tiles state camera_x camera_y : unit =
-  draw_tiles state camera_x camera_y (List.filter (fun (layer : layer) -> layer.config.render.fg) state.room.layers)
+let draw_fg_tiles room camera_x camera_y : unit =
+  draw_tiles room camera_x camera_y (List.filter (fun (layer : layer) -> layer.config.render.fg) room.layers)
 
 (* - lines are broken up into line_segments based on colors - this is three line_segments:
    I {{red}} said {{white}} "Betty Grable"
@@ -463,196 +468,10 @@ end
 
 let text_box_width (config : text_config) = Config.window.width - (2 * config.margin_x)
 
-let tick state : state =
-  let draw_object_trigger_indicators () =
-    List.iter
-      (fun (sprite : sprite) ->
-        if state.debug.enabled then
-          debug_rect_outline sprite.dest;
-        draw_sprite sprite)
-      state.room.pickup_indicators
-  in
-
-  let draw_debug_info () =
-    let draw_ghost_debug () =
-      let s = state.ghost.entity.sprite in
-      if state.ghost.entity.sprite.facing_right then
-        Draw.rect
-          (s.dest.pos.x +. s.dest.w |> Float.to_int)
-          (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
-          (s.dest.w |> Float.to_int) 3 Color.green
-      else
-        Draw.rect
-          (s.dest.pos.x -. s.dest.w |> Float.to_int)
-          (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
-          (s.dest.w |> Float.to_int) 4 Color.green;
-      draw_velocity state.ghost.entity;
-      match state.ghost.entity.current_floor with
-      | None -> ()
-      | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor
-    in
-    List.iter
-      (fun (l : layer) -> List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
-      state.room.layers;
-    List.iter (fun (_color, rect) -> debug_rect rect) state.debug.rects;
-    draw_ghost_debug ()
-  in
-
-  let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
-
-  let draw_enemies (enemies : (enemy_id * enemy) list) =
-    let draw_projectile (p : projectile) =
-      draw_entity p.entity;
-      if state.debug.enabled then (
-        debug_rect p.entity.dest;
-        debug_rect_outline p.entity.sprite.dest)
-    in
-    List.iter
-      (fun ((_, e) : enemy_id * enemy) ->
-        if state.debug.enabled then (
-          debug_rect_outline ~color:Color.purple e.entity.dest;
-          debug_rect e.entity.sprite.dest);
-        if e.entity.dest.pos.x > -1. && e.entity.dest.pos.y > -1. then (
-          let tint =
-            let d = state.frame.time -. (Enemy.last_damage e).at in
-            (* TODO move to config *)
-            if d < 0.25 then (
-              let gb = get_flashing_tint d in
-              Color.create 200 gb gb 255)
-            else
-              Color.create 255 255 255 255
-          in
-          draw_entity ~tint e.entity;
-          List.iter draw_projectile e.spawned_projectiles;
-          List.iter draw_sprite e.damage_sprites))
-      enemies
-  in
-
-  let draw_npcs (npcs : npc list) =
-    let draw_npc (n : npc) =
-      draw_entity n.entity;
-      if state.debug.enabled then (
-        debug_rect n.entity.dest;
-        debug_rect_outline n.entity.sprite.dest)
-    in
-    List.iter draw_npc npcs
-  in
-
-  let draw_ghosts (ghosts_by_id : (ghost_id * ghost) list) =
-    let draw_ghost ((_, g) : ghost_id * ghost) =
-      draw_entity g.entity;
-      if state.debug.enabled then (
-        debug_rect g.entity.dest;
-        debug_rect_outline g.entity.sprite.dest)
-    in
-    List.iter draw_ghost ghosts_by_id
-  in
-
-  let draw_ghost (ghost : ghost) =
-    let tint =
-      match Ghost.get_invincibility_kind state with
-      | None -> Color.create 255 255 255 255
-      | Some invincibility_kind -> (
-        let d = state.frame.time -. state.ghost.history.take_damage.started.at in
-        let a = get_flashing_tint d in
-        match invincibility_kind with
-        | TOOK_DAMAGE -> Color.create 255 255 255 a
-        | DIVE_IFRAMES -> Color.create a a a 255)
-    in
-
-    let draw_child (child_opt : ghost_child option) =
-      match child_opt with
-      | None -> ()
-      | Some child -> (
-        let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
-        let draw_child_sprite (sprite : sprite) tint =
-          sprite.dest.pos <- get_child_dest sprite.dest.w sprite.dest.h;
-          draw_sprite ~debug:true sprite
-          (* Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint *)
-        in
-        match child.kind with
-        | NAIL slash ->
-          if state.debug.enabled then
-            debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
-          draw_child_sprite slash.sprite ghost.current_weapon.tint
-        | FOCUS
-        | WRAITHS
-        | DIVE_COOLDOWN
-        | DIVE ->
-          if state.debug.enabled then
-            debug_rect_outline ~size:2. ~color:Color.purple child.sprite.dest;
-          draw_child_sprite child.sprite Color.raywhite)
-    in
-    let draw_vengeful_spirit (p : projectile) =
-      if state.debug.enabled then
-        debug_rect_outline ~size:2. ~color:Color.red p.entity.dest;
-      draw_entity p.entity
-    in
-    List.iter draw_vengeful_spirit ghost.spawned_vengeful_spirits;
-    if state.debug.enabled then (
-      debug_rect_outline ~size:2. ~color:Color.green ghost.entity.sprite.dest;
-      debug_rect_outline ~size:3. ~color:Color.yellow ghost.entity.dest);
-    let shine_sprite : sprite =
-      (* TODO maybe have different shine for each area (this one might be too bright for basement or computer-wing) *)
-      (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame *)
-      let size = 1200. in
-      {
-        ident = "shine";
-        texture = state.ghost.shared_textures.shine;
-        dest = { pos = Entity.get_child_pos ghost.entity (ALIGNED (CENTER, CENTER)) size size; w = size; h = size };
-        facing_right = false;
-        collision = None;
-      }
-    in
-    draw_sprite shine_sprite;
-    draw_entity ~tint ghost.entity;
-    draw_child ghost.child
-  in
-
-  let draw_hud camera_x camera_y =
-    let padding = 8. in
-    let energon_pod_image = state.ghost.shared_textures.energon_pod.image in
-    let pod_src_w, pod_src_h =
-      ( Raylib.Texture.width energon_pod_image / 2 |> Int.to_float,
-        Raylib.Texture.height energon_pod_image |> Int.to_float )
-    in
-    let pod_dest_w, pod_dest_h = (pod_src_w *. Config.scale.soul, pod_src_h *. Config.scale.soul) in
-    let draw_soul (soul : soul) : unit =
-      (* draws the complete empty energon pod, then draws the filled portion on top of that
-         TODO the base of the energon pod shouldn't be considered in this height, currently can't see the difference between 0% - 25% soul
-      *)
-      let full_src_h = (soul.current |> Int.to_float) /. (soul.max |> Int.to_float) *. pod_src_h in
-      let full_dest_h = full_src_h *. Config.scale.soul in
-      let empty_src_h = pod_src_h -. full_src_h in
-      let empty_dest_h = pod_dest_h -. full_dest_h in
-      let full_src = Rectangle.create 0. empty_src_h pod_src_w full_src_h in
-      let empty_src = Rectangle.create pod_src_w 0. pod_src_w pod_src_h in
-      let empty_dest = { pos = { x = camera_x +. padding; y = camera_y +. padding }; h = pod_dest_h; w = pod_dest_w } in
-      let full_dest =
-        { pos = { x = camera_x +. padding; y = camera_y +. padding +. empty_dest_h }; h = full_dest_h; w = pod_dest_w }
-      in
-      Draw.image energon_pod_image empty_src (empty_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite;
-      Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite
-    in
-    let draw_head idx =
-      let image = state.ghost.shared_textures.health.image in
-      let w, h = (Raylib.Texture.width image / 2 |> Int.to_float, Raylib.Texture.height image |> Int.to_float) in
-      let dest_w, dest_h = (w *. Config.scale.health, h *. Config.scale.health) in
-      let dest =
-        Rectangle.create
-          (camera_x +. pod_dest_h +. padding +. (idx *. (dest_w +. padding)))
-          (camera_y +. 10.) dest_w dest_h
-      in
-      let src =
-        if (idx |> Float.to_int) + 1 > state.ghost.health.current then
-          Rectangle.create w 0. w h
-        else
-          Rectangle.create 0. 0. w h
-      in
-      Draw.image image src dest (Raylib.Vector2.zero ()) 0.0 Color.raywhite
-    in
-    draw_soul state.ghost.soul;
-    List.iter draw_head (Utils.rangef state.ghost.health.max)
+let tick (state : state) =
+  let camera_x, camera_y =
+    ( Raylib.Vector2.x (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_x,
+      Raylib.Vector2.y (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_y )
   in
 
   let draw_screen_fade camera_x camera_y =
@@ -662,7 +481,7 @@ let tick state : state =
       (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 160)
   in
 
-  let draw_interaction_text camera_x camera_y =
+  let draw_interaction_text camera_x camera_y (interaction_text : Interaction.text_kind option) =
     let draw_text_bg_box (config : text_config) =
       let w = Config.window.width - (2 * config.margin_x) in
       let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
@@ -711,7 +530,7 @@ let tick state : state =
 
     let get_text_box_width margin_x = Config.window.width - (2 * margin_x) in
 
-    match state.interaction.text with
+    match interaction_text with
     | None -> ()
     | Some (ABILITY ability_text) ->
       let margin_x = 50 in
@@ -830,33 +649,257 @@ let tick state : state =
           [ "{{green}} max health increased by one" ])
       else
         List.iteri (display_paragraph config 0) text'.content
+    | Some (MENU menu) ->
+      let margin_x = 50 in
+      let config : text_config =
+        {
+          text_box_width = get_text_box_width margin_x;
+          margin_x;
+          margin_y = 20;
+          margin_y_bottom = 20;
+          outline_offset_y = Config.window.height / 4;
+          padding_x = 50;
+          padding_y = 50;
+          centered = true;
+        }
+      in
+      draw_text_bg_box config;
+      List.iteri (display_paragraph config 0) (List.map Show.menu_choice menu.choices);
+      display_paragraph config 0 menu.current_choice_idx "->                                           "
   in
 
-  let camera_x, camera_y =
-    ( Raylib.Vector2.x (Raylib.Camera2D.target state.camera) -. Config.window.center_x,
-      Raylib.Vector2.y (Raylib.Camera2D.target state.camera) -. Config.window.center_y )
-  in
-  Raylib.begin_drawing ();
-  (* bright green to make tile seams more obvious *)
-  (* Raylib.clear_background (Color.create 0 255 0 255); *)
-  Raylib.clear_background state.room.area.bg_color;
-  Raylib.begin_mode_2d state.camera;
-  draw_bg_tiles state camera_x camera_y;
-  draw_solid_tiles state camera_x camera_y;
-  draw_npcs state.room.npcs;
-  draw_ghosts state.ghosts;
-  draw_ghost state.ghost;
-  draw_enemies state.room.enemies;
-  draw_object_trigger_indicators ();
-  draw_fg_tiles state camera_x camera_y;
-  draw_hud camera_x camera_y;
-  if state.screen_faded then
-    (* this is slightly larger than the window to add some padding for when the camera is moving *)
-    draw_screen_fade camera_x camera_y;
-  draw_interaction_text camera_x camera_y;
-  Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
-  if state.debug.enabled then
-    draw_debug_info ();
-  Raylib.end_mode_2d ();
-  Raylib.end_drawing ();
-  state
+  match state.loaded_state with
+  | SAVE_FILES menu
+  | MAIN_MENU menu ->
+    Raylib.begin_drawing ();
+    Raylib.clear_background (Color.create 50 50 50 255);
+    Raylib.begin_mode_2d state.camera.raylib;
+    draw_interaction_text camera_x camera_y (Some (MENU menu));
+    Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
+    Raylib.end_mode_2d ();
+    Raylib.end_drawing ();
+    state
+  | IN_PROGRESS game ->
+    let draw_object_trigger_indicators () =
+      List.iter
+        (fun (sprite : sprite) ->
+          if state.debug.enabled then
+            debug_rect_outline sprite.dest;
+          draw_sprite sprite)
+        game.room.pickup_indicators
+    in
+
+    let draw_debug_info () =
+      let draw_ghost_debug () =
+        let s = game.ghost.entity.sprite in
+        if game.ghost.entity.sprite.facing_right then
+          Draw.rect
+            (s.dest.pos.x +. s.dest.w |> Float.to_int)
+            (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
+            (s.dest.w |> Float.to_int) 3 Color.green
+        else
+          Draw.rect
+            (s.dest.pos.x -. s.dest.w |> Float.to_int)
+            (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
+            (s.dest.w |> Float.to_int) 4 Color.green;
+        draw_velocity game.ghost.entity;
+        match game.ghost.entity.current_floor with
+        | None -> ()
+        | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor
+      in
+      List.iter
+        (fun (l : layer) -> List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
+        game.room.layers;
+      List.iter (fun (_color, rect) -> debug_rect rect) state.debug.rects;
+      draw_ghost_debug ()
+    in
+
+    let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
+
+    let draw_enemies (enemies : (enemy_id * enemy) list) =
+      let draw_projectile (p : projectile) =
+        draw_entity p.entity;
+        if state.debug.enabled then (
+          debug_rect p.entity.dest;
+          debug_rect_outline p.entity.sprite.dest)
+      in
+      List.iter
+        (fun ((_, e) : enemy_id * enemy) ->
+          if state.debug.enabled then (
+            debug_rect_outline ~color:Color.purple e.entity.dest;
+            debug_rect e.entity.sprite.dest);
+          if e.entity.dest.pos.x > -1. && e.entity.dest.pos.y > -1. then (
+            let tint =
+              let d = state.frame.time -. (Enemy.last_damage e).at in
+              (* TODO move to config *)
+              if d < 0.25 then (
+                let gb = get_flashing_tint d in
+                Color.create 200 gb gb 255)
+              else
+                Color.create 255 255 255 255
+            in
+            draw_entity ~tint e.entity;
+            List.iter draw_projectile e.spawned_projectiles;
+            List.iter draw_sprite e.damage_sprites))
+        enemies
+    in
+
+    let draw_npcs (npcs : npc list) =
+      let draw_npc (n : npc) =
+        draw_entity n.entity;
+        if state.debug.enabled then (
+          debug_rect n.entity.dest;
+          debug_rect_outline n.entity.sprite.dest)
+      in
+      List.iter draw_npc npcs
+    in
+
+    let draw_ghosts (ghosts_by_id : (ghost_id * ghost) list) =
+      let draw_ghost ((_, g) : ghost_id * ghost) =
+        draw_entity g.entity;
+        if state.debug.enabled then (
+          debug_rect g.entity.dest;
+          debug_rect_outline g.entity.sprite.dest)
+      in
+      List.iter draw_ghost ghosts_by_id
+    in
+
+    let draw_ghost (ghost : ghost) =
+      let tint =
+        match Ghost.get_invincibility_kind (state, game) with
+        | None -> Color.create 255 255 255 255
+        | Some invincibility_kind -> (
+          let d = state.frame.time -. game.ghost.history.take_damage.started.at in
+          let a = get_flashing_tint d in
+          match invincibility_kind with
+          | TOOK_DAMAGE -> Color.create 255 255 255 a
+          | DIVE_IFRAMES -> Color.create a a a 255)
+      in
+
+      let draw_child (child_opt : ghost_child option) =
+        match child_opt with
+        | None -> ()
+        | Some child -> (
+          let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
+          let draw_child_sprite (sprite : sprite) tint =
+            sprite.dest.pos <- get_child_dest sprite.dest.w sprite.dest.h;
+            draw_sprite ~debug:true sprite
+            (* Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint *)
+          in
+          match child.kind with
+          | NAIL slash ->
+            if state.debug.enabled then
+              debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
+            draw_child_sprite slash.sprite ghost.current_weapon.tint
+          | FOCUS
+          | WRAITHS
+          | DIVE_COOLDOWN
+          | DIVE ->
+            if state.debug.enabled then
+              debug_rect_outline ~size:2. ~color:Color.purple child.sprite.dest;
+            draw_child_sprite child.sprite Color.raywhite)
+      in
+      let draw_vengeful_spirit (p : projectile) =
+        if state.debug.enabled then
+          debug_rect_outline ~size:2. ~color:Color.red p.entity.dest;
+        draw_entity p.entity
+      in
+      List.iter draw_vengeful_spirit ghost.spawned_vengeful_spirits;
+      if state.debug.enabled then (
+        debug_rect_outline ~size:2. ~color:Color.green ghost.entity.sprite.dest;
+        debug_rect_outline ~size:3. ~color:Color.yellow ghost.entity.dest);
+      let shine_sprite : sprite =
+        (* TODO maybe have different shine for each area (this one might be too bright for basement or computer-wing) *)
+        (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame *)
+        let size = 1200. in
+        {
+          ident = "shine";
+          texture = game.ghost.shared_textures.shine;
+          dest = { pos = Entity.get_child_pos ghost.entity (ALIGNED (CENTER, CENTER)) size size; w = size; h = size };
+          facing_right = false;
+          collision = None;
+        }
+      in
+      draw_sprite shine_sprite;
+      draw_entity ~tint ghost.entity;
+      draw_child ghost.child
+    in
+
+    let draw_hud camera_x camera_y =
+      let padding = 8. in
+      let energon_pod_image = game.ghost.shared_textures.energon_pod.image in
+      let pod_src_w, pod_src_h =
+        ( Raylib.Texture.width energon_pod_image / 2 |> Int.to_float,
+          Raylib.Texture.height energon_pod_image |> Int.to_float )
+      in
+      let pod_dest_w, pod_dest_h = (pod_src_w *. Config.scale.soul, pod_src_h *. Config.scale.soul) in
+      let draw_soul (soul : soul) : unit =
+        (* draws the complete empty energon pod, then draws the filled portion on top of that
+           TODO the base of the energon pod shouldn't be considered in this height, currently can't see the difference between 0% - 25% soul
+        *)
+        let full_src_h = (soul.current |> Int.to_float) /. (soul.max |> Int.to_float) *. pod_src_h in
+        let full_dest_h = full_src_h *. Config.scale.soul in
+        let empty_src_h = pod_src_h -. full_src_h in
+        let empty_dest_h = pod_dest_h -. full_dest_h in
+        let full_src = Rectangle.create 0. empty_src_h pod_src_w full_src_h in
+        let empty_src = Rectangle.create pod_src_w 0. pod_src_w pod_src_h in
+        let empty_dest =
+          { pos = { x = camera_x +. padding; y = camera_y +. padding }; h = pod_dest_h; w = pod_dest_w }
+        in
+        let full_dest =
+          {
+            pos = { x = camera_x +. padding; y = camera_y +. padding +. empty_dest_h };
+            h = full_dest_h;
+            w = pod_dest_w;
+          }
+        in
+        Draw.image energon_pod_image empty_src (empty_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite;
+        Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite
+      in
+      let draw_head idx =
+        let image = game.ghost.shared_textures.health.image in
+        let w, h = (Raylib.Texture.width image / 2 |> Int.to_float, Raylib.Texture.height image |> Int.to_float) in
+        let dest_w, dest_h = (w *. Config.scale.health, h *. Config.scale.health) in
+        let dest =
+          Rectangle.create
+            (camera_x +. pod_dest_h +. padding +. (idx *. (dest_w +. padding)))
+            (camera_y +. 10.) dest_w dest_h
+        in
+        let src =
+          if (idx |> Float.to_int) + 1 > game.ghost.health.current then
+            Rectangle.create w 0. w h
+          else
+            Rectangle.create 0. 0. w h
+        in
+        Draw.image image src dest (Raylib.Vector2.zero ()) 0.0 Color.raywhite
+      in
+      draw_soul game.ghost.soul;
+      List.iter draw_head (Utils.rangef game.ghost.health.max)
+    in
+
+    Raylib.begin_drawing ();
+    (* bright green to make tile seams more obvious *)
+    (* Raylib.clear_background (Color.create 0 255 0 255); *)
+    Raylib.clear_background game.room.area.bg_color;
+    Raylib.begin_mode_2d state.camera.raylib;
+    draw_bg_tiles game.room camera_x camera_y;
+    draw_solid_tiles game.room camera_x camera_y;
+    draw_npcs game.room.npcs;
+    draw_ghosts game.ghosts;
+    draw_ghost game.ghost;
+    draw_enemies game.room.enemies;
+    draw_object_trigger_indicators ();
+    draw_fg_tiles game.room camera_x camera_y;
+    draw_hud camera_x camera_y;
+    if state.screen_faded then
+      (* this is slightly larger than the window to add some padding for when the camera is moving *)
+      draw_screen_fade camera_x camera_y;
+    draw_interaction_text camera_x camera_y game.interaction.text;
+    Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
+    if state.debug.enabled then
+      draw_debug_info ();
+    Raylib.end_mode_2d ();
+    Raylib.end_drawing ();
+    state
+
+let stub_camera = Tiled.create_camera_at (Raylib.Vector2.create 0. 0.) 0.

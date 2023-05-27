@@ -69,6 +69,20 @@ type texture_config = Json_t.texture_config = {
   y_offset: int
 }
 
+type room_progress = Json_t.room_progress = {
+  removed_idxs_by_layer: (string * int list) list;
+  finished_interactions: string list;
+  revealed_shadow_layers: string list
+}
+
+type save_file = Json_t.save_file = {
+  ghost_x: float;
+  ghost_y: float;
+  room_name: string;
+  abilities: string list;
+  progress: (string * room_progress) list
+}
+
 type object_layer = Json_t.object_layer = {
   name: string;
   objects: coll_rect list
@@ -377,6 +391,46 @@ val read_texture_config :
 val texture_config_of_string :
   string -> texture_config
   (** Deserialize JSON data of type {!type:texture_config}. *)
+
+val write_room_progress :
+  Buffer.t -> room_progress -> unit
+  (** Output a JSON value of type {!type:room_progress}. *)
+
+val string_of_room_progress :
+  ?len:int -> room_progress -> string
+  (** Serialize a value of type {!type:room_progress}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_room_progress :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> room_progress
+  (** Input JSON data of type {!type:room_progress}. *)
+
+val room_progress_of_string :
+  string -> room_progress
+  (** Deserialize JSON data of type {!type:room_progress}. *)
+
+val write_save_file :
+  Buffer.t -> save_file -> unit
+  (** Output a JSON value of type {!type:save_file}. *)
+
+val string_of_save_file :
+  ?len:int -> save_file -> string
+  (** Serialize a value of type {!type:save_file}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_save_file :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> save_file
+  (** Input JSON data of type {!type:save_file}. *)
+
+val save_file_of_string :
+  string -> save_file
+  (** Deserialize JSON data of type {!type:save_file}. *)
 
 val write_object_layer :
   Buffer.t -> object_layer -> unit

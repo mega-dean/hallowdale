@@ -388,6 +388,46 @@ type enemy_id =
   | DUNCAN
   | LOCKER_BOY
 
+type main_menu_choice =
+  | START_GAME
+  | QUIT
+
+type save_files_choice =
+  | SLOT_1
+  | SLOT_2
+  | SLOT_3
+  | SLOT_4
+  (* TODO add buttons for DELETE_SLOT_N *)
+  | BACK
+
+(* TODO-9 probably need to do recursive types to support submenus *)
+type pause_menu_choice =
+  | CONTINUE
+  (* CLEANUP add these
+     | CHANGE_GHOST
+     | CHANGE_WEAPON
+  *)
+  | QUIT_TO_MAIN_MENU
+
+type menu_choice =
+  | PAUSE of pause_menu_choice
+  | MAIN_MENU of main_menu_choice
+  | SAVE_FILES of save_files_choice
+
+type menu = {
+  choices : menu_choice list;
+  mutable current_choice_idx : int;
+}
+
+(* CLEANUP maybe move these *)
+let main_menu : menu = { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
+
+let save_files_menu : menu =
+  {
+    choices = [ SAVE_FILES SLOT_1; SAVE_FILES SLOT_2; SAVE_FILES SLOT_3; SAVE_FILES SLOT_4; SAVE_FILES BACK ];
+    current_choice_idx = 0;
+  }
+
 module Interaction = struct
   type general_step =
     | INITIALIZE_INTERACTIONS of bool
@@ -456,6 +496,7 @@ module Interaction = struct
     | NPC of npc_id * npc_step
 
   type text_config = {
+    (* CLEANUP remove this *)
     text_box_width : int;
     padding_x : int;
     padding_y : int;
@@ -491,6 +532,10 @@ module Interaction = struct
     | FOCUS_ABILITY of ability_text
     | ABILITY of ability_text
     | DIALOGUE of string * text
+    | (* CLEANUP probably call this PAUSE_MENU, since main menu will be handled separately
+         (and everything here will be a pause menu or submenu) *)
+      MENU of
+        menu
 
   type t = {
     mutable name : string option;
@@ -674,6 +719,7 @@ type frame_inputs = {
   focus : frame_input;
   jump : frame_input;
   nail : frame_input;
+  pause : frame_input;
 }
 
 (* spells and abilities *)
@@ -987,20 +1033,6 @@ type room = {
   mutable pickup_indicators : sprite list;
 }
 
-(* TODO
-   type camera = {
-     mutable raylib : Raylib.Camera2D.t;
-     mutable subject : camera_subject;
-     mutable shake : int;
-   }
-*)
-
-type progress = {
-  (* string is room uuid *)
-  mutable rooms : (string * room_progress) list;
-  mutable global : string list;
-}
-
 (* these are all in pixels, scaled by Config.scale.room *)
 type room_location = {
   filename : string;
@@ -1044,18 +1076,37 @@ type debug = {
   mutable rects : (color * rect) list;
 }
 
-type state = {
+(* FIXME-3 serialize into save file with atd *)
+type game = {
   mutable ghost : ghost;
   mutable ghosts : (ghost_id * ghost) list;
   mutable room : room;
+  interaction : Interaction.t;
+  (* string is room uuid *)
+  mutable progress : (string * room_progress) list;
+}
+
+type camera = {
+  mutable raylib : Raylib.Camera2D.t;
+  mutable subject : camera_subject;
+  mutable shake : float;
+}
+
+(* CLEANUP better name for this *)
+type loaded_state =
+  | MAIN_MENU of menu
+  | (* TODO maybe this doesn't need to be separate from MAIN_MENU *) SAVE_FILES of menu
+  | IN_PROGRESS of game
+
+type state = {
+  mutable loaded_state : loaded_state;
   world : world;
   mutable screen_faded : bool;
-  interaction : Interaction.t;
-  progress : progress;
-  mutable camera : Raylib.Camera2D.t;
-  mutable camera_subject : camera_subject;
-  mutable shake : float;
+  mutable camera : camera;
   mutable frame : frame_info;
+  (* FIXME-2 add pausing
+     mutable pause_menu : Interaction.menu option;
+  *)
   frame_inputs : frame_inputs;
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)

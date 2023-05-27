@@ -15,6 +15,12 @@ let read_whole_file (filename : string) : string =
   close_in ch;
   s
 
+let try_read_file (filename : string) : string option =
+  if Sys.file_exists filename then
+    Some (read_whole_file filename)
+  else
+    None
+
 (* TODO probably move all this to state.ml *)
 let read_config_file file_name (convert : string -> 'a) : 'a =
   let full_path = fmt "../config/%s.json" file_name in

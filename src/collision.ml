@@ -84,14 +84,14 @@ let between_rects (r1 : rect) (r2 : rect) : collision option =
       {
         rect = cr;
         direction =
-          ((* at one point, Float.equal was too precise for this fn
-              - so if collision directions start to not work, try using this instead:
-                  let feq a b = abs_float (a -. b) < 0.0001
-           *)
-           let up = Float.equal r2.pos.y cr.pos.y in
-           let down = Float.equal (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in
-           let left = Float.equal r2.pos.x cr.pos.x in
-           let right = Float.equal (r2.pos.x +. r2.w) (cr.pos.x +. cr.w) in
+          (let feq a b =
+             (* Float.equal is too precise (causes issues for room transitions) *)
+             abs_float (a -. b) < 0.0001
+           in
+           let up = feq r2.pos.y cr.pos.y in
+           let down = feq (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in
+           let left = feq r2.pos.x cr.pos.x in
+           let right = feq (r2.pos.x +. r2.w) (cr.pos.x +. cr.w) in
 
            match (up, down, left, right) with
            (* one side *)
@@ -159,7 +159,7 @@ let with_slash' (slash : slash) (rect : rect) : collision option =
   let target_collision_shape = shape_of_rect rect in
   let slash_shape = get_slash_shape slash in
   if between_shapes slash_shape target_collision_shape then
-    Some { rect; direction = UP }
+    Some { rect; direction = slash.direction }
   else
     None
 
