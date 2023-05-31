@@ -63,7 +63,7 @@ let read_ghost_configs () : ghosts_file =
   { actions; textures; shared_textures }
 
 (* CLEANUP maybe want a new game.ml file *)
-let load_game (save_file : Json_t.save_file) (global : global_cache) (world : world) : game =
+let load_game (save_file : Json_t.save_file) (global : global_cache) (world : world) (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
   let ghosts_file = read_ghost_configs () in
@@ -104,25 +104,38 @@ let load_game (save_file : Json_t.save_file) (global : global_cache) (world : wo
   in
 
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
+  let load_weapon name = (name, List.assoc name global.weapons) in
+  let max_health =
+    let finished_interaction_names =
+      match List.assoc_opt save_file.room_name save_file.progress with
+      | None -> []
+      | Some progress -> progress.finished_interactions
+    in
+    tmp "got finished_interaction_names: %s" (finished_interaction_names |> join);
+    let health_increases =
+      List.filter (String.starts_with ~prefix:"health_") finished_interaction_names |> List.length
+    in
+    tmp "got health_increases: %d" health_increases;
+    let base_health = 5 in
+    base_health + health_increases
+  in
   let make_ghost id in_party textures : ghost =
-    let check s = List.mem s save_file.abilities in
-    Ghost.init id in_party textures.idle ghosts_file.actions (clone_vector start_pos)
-      {
-        mothwing_cloak = check "mothwing_cloak";
-        mantis_claw = check "mantis_claw";
-        crystal_heart = check "crystal_heart";
-        monarch_wings = check "monarch_wings";
-        vengeful_spirit = check "vengeful_spirit";
-        desolate_dive = check "desolate_dive";
-        howling_wraiths = check "howling_wraiths";
-      }
-      [ ("Old Nail", List.assoc "Old Nail" global.weapons) ]
-      textures shared_ghost_textures
+    tmp " =========================== making ghost %s with max health %d" (Show.ghost_id id) max_health;
+    Ghost.init id in_party textures.idle ghosts_file.actions (clone_vector start_pos) save_file.abilities
+      (List.map load_weapon save_file.weapons)
+      textures shared_ghost_textures max_health
   in
 
+  let britta = make_ghost BRITTA true britta_ghost_textures in
+  britta.entity.update_pos <- true;
+
   let ghosts =
+    tmp "making ghosts with in_party: %s" (save_file.ghosts_in_party |> join);
     (* TODO could check config keys to decide when to fall back to britta so poses can be added without recompiling *)
-    let make_uncontrolled_ghost name config = make_ghost name false config in
+    let make_uncontrolled_ghost name config =
+      let in_party = List.mem (Show.ghost_id name) save_file.ghosts_in_party in
+      make_ghost name in_party config
+    in
     [
       ( ABED,
         make_uncontrolled_ghost ABED
@@ -174,9 +187,6 @@ let load_game (save_file : Json_t.save_file) (global : global_cache) (world : wo
       g.entity.dest.pos.y <- -1. *. g.entity.dest.pos.y)
     ghosts;
 
-  let britta = make_ghost BRITTA true britta_ghost_textures in
-  britta.entity.update_pos <- true;
-
   let _, room_id = Tiled.parse_room_filename "State.load_room" save_file.room_name in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
@@ -189,26 +199,72 @@ let load_game (save_file : Json_t.save_file) (global : global_cache) (world : wo
     Room.init
       {
         file_name = save_file.room_name;
-        progress = [];
+        progress = save_file.progress;
         exits;
         enemy_configs = global.enemy_configs;
         npc_configs = global.npc_configs;
         pickup_indicator_texture = global.textures.pickup_indicator;
       }
   in
-  room.layers <- Tiled.Room.get_layer_tile_groups room [];
-
+  room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;
+  let ghost =
+    let ghost_id = Ghost.parse_name save_file.ghost_id in
+    match List.assoc_opt ghost_id ghosts with
+    | None -> britta
+    | Some ghost ->
+      if ghost.in_party then (
+        (* CLEANUP shouldn't need to do this
+           - this is only here because Ghost.init hides every ghost except britta
+        *)
+        Entity.unhide ghost.entity;
+        ghost)
+      else
+        failwithf "invalid save file: ghost %s is not in party" (Show.ghost_id ghost.id)
+  in
   {
-    ghost = britta;
-    ghosts = [];
+    ghost;
+    ghosts;
     room;
-    interaction = { steps = []; text = (* TODO-9 start on main menu *) None; speaker_name = None; name = None };
-    progress = [];
+    interaction = { steps = []; text = None; speaker_name = None; name = None };
+    progress = save_file.progress;
+    save_file_slot;
   }
+
+let load_all_save_slots () =
+  (* CLEANUP duplicated *)
+  let load_file save_file_idx : Json_t.save_file =
+    match Tiled.try_read_file (fmt "../%s" (save_file_path save_file_idx)) with
+    | None ->
+      {
+        ghost_id = "BRITTA";
+        ghosts_in_party = (* CLEANUP should only be britta *) [ "BRITTA"; "TROY" ];
+        ghost_x = 1500.;
+        ghost_y = 100.;
+        room_name = "forgotten_deans-pass";
+        abilities =
+          {
+            mothwing_cloak = false;
+            mantis_claw = false;
+            crystal_heart = false;
+            monarch_wings = false;
+            vengeful_spirit = false;
+            desolate_dive = false;
+            howling_wraiths = false;
+          };
+        progress = [];
+        weapons = [ "Old Nail" ];
+        current_weapon = "Old Nail";
+      }
+    | Some save_file ->
+      let s = Json_j.save_file_of_string save_file in
+      itmp "loading save file with current_weapon: %s" s.current_weapon;
+      s
+  in
+  { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
 
 (* this function initializes state and sets loaded_state to MAIN_MENU *)
 let init () : state =
-  (* FIXME remove *)
+  (* CLEANUP remove *)
   let _room_name, _room_id, _start_x, _start_y =
     let xs =
       [
@@ -317,7 +373,8 @@ let init () : state =
 
   print "initialized state\n=================\n";
   {
-    loaded_state = MAIN_MENU main_menu;
+    loaded_state = MAIN_MENU (main_menu (), load_all_save_slots ());
+    pause_menu = None;
     world;
     camera = { raylib = camera; subject = GHOST; shake = 0. };
     screen_faded = false;
@@ -586,23 +643,110 @@ let update_frame_inputs (state : state) : state =
   update_frame_input PAUSE state.frame_inputs.pause;
   state
 
-let update_main_menu (menu : menu) (state : state) : state =
-  (* if state.frame_inputs.pause.pressed then (
-   *   match game.interaction.text with
-   *   | None -> game.interaction.text <- Some (MENU pause_menu)
-   *   | Some _ -> game.interaction.text <- None); *)
-  if state.frame_inputs.down.pressed then
+(* CLEANUP move this somewhere *)
+let write_file (filename : string) (contents : string) : bool =
+  let filename' = convert_path filename in
+  let ch = open_out filename' in
+  let s = Printf.fprintf ch "%s\n" contents in
+  close_out ch;
+  true
+
+let update_menu_choice (menu : menu) frame_inputs =
+  if frame_inputs.down.pressed then
     menu.current_choice_idx <- Int.min (menu.current_choice_idx + 1) (List.length menu.choices - 1);
-  if state.frame_inputs.up.pressed then
-    menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1);
+  if frame_inputs.up.pressed then
+    menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
+
+(* CLEANUP move these to new file menu.ml *)
+let update_pause_menu (game : game) (state : state) : state =
+  if state.frame_inputs.pause.pressed then (
+    match state.pause_menu with
+    | None -> state.pause_menu <- Some (pause_menu ())
+    | Some _ -> state.pause_menu <- None);
+
+  (match state.pause_menu with
+  | None -> ()
+  | Some menu ->
+    update_menu_choice menu state.frame_inputs;
+
+    if state.frame_inputs.d_nail.pressed then (
+      match List.nth menu.choices menu.current_choice_idx with
+      | PAUSE_MENU' CONTINUE ->
+        state.pause_menu <- None;
+        game.interaction.text <- None
+      | PAUSE_MENU' CHANGE_WEAPON ->
+        tmp "opening CHANGE_WEAPON";
+        state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
+      | PAUSE_MENU' QUIT_TO_MAIN_MENU ->
+        state.pause_menu <- None;
+        (* TODO unload textures *)
+        let save_file : Json_t.save_file =
+          itmp "saving file with finished interactions: %s" (game.room.progress.finished_interactions |> join);
+          itmp "saving file with %d removed idxs" (List.length game.room.progress.removed_idxs_by_layer);
+          let ghosts_in_party = Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id in
+          itmp "saving ghosts_in_party: %s" (ghosts_in_party |> join);
+          itmp "saving ghost at: %s" (Show.vector game.ghost.entity.dest.pos);
+
+          (* CLEANUP duplicated *)
+          let room_uuid = Tiled.Room.get_uuid game.room in
+          game.progress <- Utils.assoc_replace room_uuid game.room.progress game.progress;
+
+          tmp "got progress keys: %s" (List.map fst game.progress |> join);
+
+          {
+            ghost_id = Show.ghost_id game.ghost.id;
+            ghosts_in_party =
+              (* game.ghosts only has the uncontrolled ghosts, but save_file.ghosts_in_party
+                 should include the current ghost's id *)
+              [ game.ghost.id ] @ Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id;
+            ghost_x = game.ghost.entity.dest.pos.x;
+            ghost_y = game.ghost.entity.dest.pos.y;
+            room_name = Tiled.Room.get_uuid' game.room.area.id game.room.id;
+            abilities = game.ghost.abilities;
+            progress = game.progress;
+            weapons = List.map fst game.ghost.weapons;
+            current_weapon = game.ghost.current_weapon.name;
+          }
+        in
+        let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
+        let contents = Json_j.string_of_save_file save_file in
+        tmp "saving contents in %d:\n%s" game.save_file_slot contents;
+        let written = write_file save_file_path contents in
+        if written then
+          state.loaded_state <- MAIN_MENU (main_menu (), load_all_save_slots ())
+        else
+          failwith "error when trying to save"
+      | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) ->
+        tmp "equipping weapon %s" weapon_name;
+        Ghost.equip_weapon game.ghost weapon_name
+      | CHANGE_WEAPON_MENU BACK -> state.pause_menu <- Some (pause_menu ())
+      | c -> tmp "menu choice: %s" (Show.menu_choice c)));
+  state
+
+let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : state =
+  update_menu_choice menu state.frame_inputs;
 
   let load_file save_file_idx =
     let save_file : Json_t.save_file =
-      match Tiled.try_read_file (fmt "../%s" (save_file_path save_file_idx)) with
-      | None -> { ghost_x = 1500.; ghost_y = 100.; room_name = "forgotten_deans-pass"; abilities = []; progress = [] }
-      | Some save_file -> Json_j.save_file_of_string save_file
+      (* CLEANUP this seems dumb *)
+      match save_file_idx with
+      | 1 -> save_slots.slot_1
+      | 2 -> save_slots.slot_2
+      | 3 -> save_slots.slot_3
+      | 4 -> save_slots.slot_4
+      | _ -> failwith "bad save file idx"
     in
-    let game = load_game save_file state.global state.world in
+    let game =
+      itmp "load_game with slot %d" save_file_idx;
+      load_game save_file state.global state.world save_file_idx
+    in
+    (* CLEANUP move this somewhere better - probably in load_game *)
+    Ghost.equip_weapon game.ghost save_file.current_weapon;
+    state.camera.raylib <-
+      (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
+         CLEANUP can maybe improve this, since it can still be off if the camera is bounded
+      *)
+      Tiled.create_camera_at (Raylib.Vector2.create game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y) 0.;
     state.loaded_state <- IN_PROGRESS game
   in
 
@@ -610,7 +754,7 @@ let update_main_menu (menu : menu) (state : state) : state =
     match List.nth menu.choices menu.current_choice_idx with
     | MAIN_MENU START_GAME ->
       tmp "open save_files menu";
-      state.loaded_state <- SAVE_FILES save_files_menu
+      state.loaded_state <- SAVE_FILES (save_files_menu (), save_slots)
     | MAIN_MENU QUIT ->
       tmp "exiting";
       exit 0
@@ -618,15 +762,13 @@ let update_main_menu (menu : menu) (state : state) : state =
     | SAVE_FILES SLOT_2 -> load_file 2
     | SAVE_FILES SLOT_3 -> load_file 3
     | SAVE_FILES SLOT_4 -> load_file 4
-    | SAVE_FILES BACK -> state.loaded_state <- MAIN_MENU main_menu
+    | SAVE_FILES BACK -> state.loaded_state <- MAIN_MENU (main_menu (), load_all_save_slots ())
     | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
-  (* | PAUSE CONTINUE -> game.interaction.text <- None
-   * | PAUSE QUIT_TO_MAIN_MENU -> game.interaction.text <- Some (MENU main_menu)); *)
   state
 
 let tick (state : state) =
   (* TODO-4 add sound effects and music *)
-  if Controls.key_pressed DEBUG_5 then
+  if Controls.key_pressed DEBUG_4 then
     if state.debug.enabled then (
       state.debug.enabled <- false;
       print "disabled debug at %d\n\\------------------\n" state.frame.idx)
@@ -635,20 +777,19 @@ let tick (state : state) =
       print "\n/-----------------\nenabled debug at %d" state.frame.idx);
 
   match state.loaded_state with
-  | SAVE_FILES menu
-  | MAIN_MENU menu ->
-    state |> update_frame_inputs |> update_main_menu menu
-  | IN_PROGRESS game ->
-    (* FIXME-2 check game.pause_menu
-       - update_frame_inputs, update_menu, render to get the cursor moving around the menu
-       - select "continue" -> exit pause menu
-       - select "quit to main menu" -> save game, exit to main menu, unload textures
-    *)
-    state
-    |> update_frame_inputs
-    |> Ghost.update game
-    |> update_spawned_vengeful_spirits game
-    |> update_enemies game
-    |> update_npcs game
-    |> update_fragments game
-    |> update_camera game
+  | SAVE_FILES (menu, save_slots)
+  | MAIN_MENU (menu, save_slots) ->
+    state |> update_frame_inputs |> update_main_menu menu save_slots
+  | IN_PROGRESS game -> (
+    tmp "max ghost health: %d" game.ghost.health.max;
+    let state' = state |> update_frame_inputs |> update_pause_menu game in
+    match state'.pause_menu with
+    | Some menu -> state'
+    | None ->
+      state'
+      |> Ghost.update game
+      |> update_spawned_vengeful_spirits game
+      |> update_enemies game
+      |> update_npcs game
+      |> update_fragments game
+      |> update_camera game)

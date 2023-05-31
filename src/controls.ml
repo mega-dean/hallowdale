@@ -66,6 +66,7 @@ let override_keybinds : (key_action * Raylib.Key.t) list =
       | "D_NAIL" -> D_NAIL
       | "FOCUS" -> FOCUS
       | "INTERACT" -> INTERACT
+      | "PAUSE" -> PAUSE
       | "JUMP" -> JUMP
       | "NAIL" -> NAIL
       (* directions *)

@@ -652,7 +652,12 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
   | None -> failwithf "could not find other ghost %s" (Show.ghost_id target_ghost_id)
   | Some new_ghost ->
     let old_ghost = game.ghost in
-    let new_ghosts = (old_ghost.id, old_ghost) :: List.remove_assoc new_ghost.id game.ghosts in
+    let new_ghosts =
+      (* CLEANUP there's probably a way for this to work by keeping all ghosts in game.ghosts, but swapping them out works for now
+         - this is causing a few weird issues, like the wrong ghost being unhidden on initial load, and double velocity updates being applied to the ghost
+      *)
+      (old_ghost.id, old_ghost) :: List.remove_assoc new_ghost.id game.ghosts
+    in
     let current_pos = old_ghost.entity.dest.pos in
 
     (* MAKE_CURRENT_GHOST uses this fn during interactions to update game.ghost, but shouldn't swap places *)
@@ -664,13 +669,6 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
       Entity.hide old_ghost.entity;
       old_ghost.entity.current_floor <- None);
 
-    (* TODO-8 maybe don't need game.ghosts to be a ghost list, just need to keep track of ghost_id, textures, dest
-       - maybe want to do this sooner rather than later, since having to sync every change here is dumb
-       - some of these fields are only mutable for this
-
-       - uncontrolled_ghost still needs to have an entity because it will still be frozen/hidden/etc
-       - this might be pretty simple just by using a new type
-    *)
     new_ghost.abilities <- old_ghost.abilities;
     new_ghost.health <- old_ghost.health;
     new_ghost.soul <- old_ghost.soul;
@@ -682,9 +680,9 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
     game.ghost <- new_ghost;
     game.ghosts <- new_ghosts
 
-(* TODO make a menu for selecting current ghost *)
 let cycle_current_ghost (state : state) (game : game) =
   let ghost_ids = available_ghost_ids game.ghosts in
+  tmp "got %d ghosts" (List.length game.ghosts);
   if List.length ghost_ids > 0 then (
     let sorted_ghost_ids : ghost_id list = List.filter (fun id -> id > game.ghost.id) ghost_ids |> List.sort compare in
     let new_ghost_id =
@@ -783,24 +781,26 @@ let update (game : game) (state : state) =
       game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x +. dv
     else if key_down DEBUG_LEFT then
       game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
-    else if key_pressed DEBUG_1 then
-      state.loaded_state <- MAIN_MENU main_menu
-    (* cycle_current_ghost state game *)
-    (* print "current weapons: %s" (game.ghost.weapons |> List.map fst |> join) *)
-    (* toggle_ability game.ghost "mantis_claw" *)
-    (* toggle_ability game.ghost "vengeful_spirit" *)
-    (* print "%s" (Show.shape_lines (Option.get game.ghost.entity.sprite.collision)) *)
+    else if key_pressed DEBUG_1 then (
+      tmp "cycling current ghost";
+      cycle_current_ghost state game
+      (* state.loaded_state <- MAIN_MENU main_menu *)
+      (* print "current weapons: %s" (game.ghost.weapons |> List.map fst |> join) *)
+      (* toggle_ability game.ghost "mantis_claw" *)
+      (* toggle_ability game.ghost "vengeful_spirit" *)
+      (* print "%s" (Show.shape_lines (Option.get game.ghost.entity.sprite.collision)) *))
     else if key_pressed DEBUG_2 then (
       (* toggle_ability game.ghost "monarch_wings" *)
       game.ghost.soul.current <- game.ghost.soul.max;
       toggle_ability game.ghost "desolate_dive")
-    else if key_pressed DEBUG_3 then
+    else if key_pressed DEBUG_3 then (
+      let weapon_name = "Devil's Drench XJ-11" in
+      tmp "acquiring weapon %s" weapon_name;
+      acquire_weapon (state, game) weapon_name
+      (* equip_weapon game.ghost "Orange Paintball Gun" *)
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
       (* () *)
-      toggle_ability game.ghost "howling_wraiths"
-    (* let weapon_name = "Devil's Drench XJ-11" in
-     * acquire_weapon state weapon_name;
-     * equip_weapon game.ghost weapon_name *)
+      (* toggle_ability game.ghost "howling_wraiths" *))
     else if key_pressed DEBUG_4 then
       print "ghost x: %0.1f, y: %0.1f" game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y
   in
@@ -1562,7 +1562,18 @@ let load_shared_textures (shared_texture_configs : (string * texture_config) lis
     focus_sparkles = build_shared_texture "focus-sparkles";
   }
 
-let init ghost_id in_party idle_texture action_config start_pos abilities weapons textures shared_textures =
+(* CLEANUP too many args *)
+let init
+    (ghost_id : ghost_id)
+    (in_party : bool)
+    (idle_texture : texture)
+    (action_config : (string * ghost_action_config) list)
+    (start_pos : vector)
+    (abilities : Json_t.ghost_abilities)
+    weapons
+    textures
+    shared_textures
+    max_health =
   let use_json_action_config action_name : ghost_action_config =
     match List.assoc_opt action_name action_config with
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
@@ -1605,7 +1616,7 @@ let init ghost_id in_party idle_texture action_config start_pos abilities weapon
         { pos = dest.pos; w = Config.ghost.width *. Config.scale.ghost; h = Config.ghost.height *. Config.scale.ghost };
     can_dash = true;
     can_flap = true;
-    health = { current = 5; max = 5 };
+    health = { current = max_health; max = max_health };
     soul =
       {
         current = Config.action.max_soul;

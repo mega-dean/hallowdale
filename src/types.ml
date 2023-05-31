@@ -388,6 +388,14 @@ type enemy_id =
   | DUNCAN
   | LOCKER_BOY
 
+type weapon = {
+  name : string;
+  tint : color;
+  scale_x : float;
+  scale_y : float;
+  cooldown_scale : float;
+}
+
 type main_menu_choice =
   | START_GAME
   | QUIT
@@ -403,14 +411,18 @@ type save_files_choice =
 (* TODO-9 probably need to do recursive types to support submenus *)
 type pause_menu_choice =
   | CONTINUE
-  (* CLEANUP add these
-     | CHANGE_GHOST
-     | CHANGE_WEAPON
-  *)
+  (* TODO | CHANGE_GHOST *)
+  | CHANGE_WEAPON
   | QUIT_TO_MAIN_MENU
 
+type change_weapon_menu_choice =
+  | EQUIP_WEAPON of string
+  | BACK
+
 type menu_choice =
-  | PAUSE of pause_menu_choice
+  | PAUSE_MENU' of pause_menu_choice
+  | CHANGE_WEAPON_MENU of change_weapon_menu_choice
+    (* CLEANUP the apostrophe prevents the weird merlin error "files A and B make inconsistent assumptions about Hallowdale.Types" *)
   | MAIN_MENU of main_menu_choice
   | SAVE_FILES of save_files_choice
 
@@ -419,14 +431,32 @@ type menu = {
   mutable current_choice_idx : int;
 }
 
-(* CLEANUP maybe move these *)
-let main_menu : menu = { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
+(* CLEANUP move these into new file menu.ml *)
+let main_menu () : menu = { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
 
-let save_files_menu : menu =
+let pause_menu () : menu =
+  {
+    choices = [ PAUSE_MENU' CONTINUE; PAUSE_MENU' CHANGE_WEAPON; PAUSE_MENU' QUIT_TO_MAIN_MENU ];
+    current_choice_idx = 0;
+  }
+
+let save_files_menu () : menu =
   {
     choices = [ SAVE_FILES SLOT_1; SAVE_FILES SLOT_2; SAVE_FILES SLOT_3; SAVE_FILES SLOT_4; SAVE_FILES BACK ];
     current_choice_idx = 0;
   }
+
+let change_weapon_menu (weapon_names : string list) : menu =
+  let weapon_choices = List.map (fun name -> CHANGE_WEAPON_MENU (EQUIP_WEAPON name)) weapon_names in
+  { choices = weapon_choices @ [ CHANGE_WEAPON_MENU BACK ]; current_choice_idx = 0 }
+
+(* CLEANUP maybe this should just be a save_file list *)
+type save_slots = {
+  slot_1 : Json_t.save_file;
+  slot_2 : Json_t.save_file;
+  slot_3 : Json_t.save_file;
+  slot_4 : Json_t.save_file;
+}
 
 module Interaction = struct
   type general_step =
@@ -532,10 +562,8 @@ module Interaction = struct
     | FOCUS_ABILITY of ability_text
     | ABILITY of ability_text
     | DIALOGUE of string * text
-    | (* CLEANUP probably call this PAUSE_MENU, since main menu will be handled separately
-         (and everything here will be a pause menu or submenu) *)
-      MENU of
-        menu
+    | (* CLEANUP add a separate variand PAUSE_MENU, since it won't need save slots like the main menu *)
+      MENU of menu
 
   type t = {
     mutable name : string option;
@@ -722,19 +750,6 @@ type frame_inputs = {
   pause : frame_input;
 }
 
-(* spells and abilities *)
-type abilities = {
-  (* movement *)
-  mutable crystal_heart : bool;
-  mutable mantis_claw : bool;
-  mutable monarch_wings : bool;
-  mutable mothwing_cloak : bool;
-  (* spells *)
-  mutable vengeful_spirit : bool;
-  mutable desolate_dive : bool;
-  mutable howling_wraiths : bool;
-}
-
 type x_alignment =
   | LEFT
   | RIGHT
@@ -771,14 +786,6 @@ type ghost_child = {
   sprite : sprite;
 }
 
-type weapon = {
-  name : string;
-  tint : color;
-  scale_x : float;
-  scale_y : float;
-  cooldown_scale : float;
-}
-
 type invincibility_kind =
   (* TODO add something like | NO_FLASHING *)
   | DIVE_IFRAMES
@@ -790,7 +797,7 @@ type ghost = {
   mutable textures : ghost_textures;
   shared_textures : shared_textures;
   history : ghost_action_history;
-  mutable abilities : abilities;
+  mutable abilities : Json_t.ghost_abilities;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
   mutable in_party : bool;
@@ -1011,17 +1018,17 @@ type idx_config =
 (* this progress is permanently saved so eg. removed_idxs_by_layer is for doors that are permanently removed, but
    not for jugs (which respawn when the room is re-entered, and are tracked by layer.tile_groups / .destroyed_tiles)
 *)
-type room_progress = {
-  mutable removed_idxs_by_layer : (string * int list) list;
-  mutable finished_interactions : string list;
-  mutable revealed_shadow_layers : string list;
-}
+(* type room_progress = {
+ *   mutable removed_idxs_by_layer : (string * int list) list;
+ *   mutable finished_interactions : string list;
+ *   mutable revealed_shadow_layers : string list;
+ * } *)
 
 type room = {
   id : room_id;
   area : area;
   json : Json_t.room;
-  progress : room_progress;
+  progress : Json_t.room_progress;
   mutable idx_configs : (int * idx_config) list;
   camera_bounds : bounds;
   cache : room_cache;
@@ -1076,14 +1083,14 @@ type debug = {
   mutable rects : (color * rect) list;
 }
 
-(* FIXME-3 serialize into save file with atd *)
 type game = {
   mutable ghost : ghost;
   mutable ghosts : (ghost_id * ghost) list;
   mutable room : room;
   interaction : Interaction.t;
   (* string is room uuid *)
-  mutable progress : (string * room_progress) list;
+  mutable progress : (string * Json_t.room_progress) list;
+  mutable save_file_slot : int;
 }
 
 type camera = {
@@ -1094,8 +1101,8 @@ type camera = {
 
 (* CLEANUP better name for this *)
 type loaded_state =
-  | MAIN_MENU of menu
-  | (* TODO maybe this doesn't need to be separate from MAIN_MENU *) SAVE_FILES of menu
+  | MAIN_MENU of menu * save_slots
+  | (* CLEANUP maybe this doesn't need to be separate from MAIN_MENU *) SAVE_FILES of menu * save_slots
   | IN_PROGRESS of game
 
 type state = {
@@ -1104,9 +1111,7 @@ type state = {
   mutable screen_faded : bool;
   mutable camera : camera;
   mutable frame : frame_info;
-  (* FIXME-2 add pausing
-     mutable pause_menu : Interaction.menu option;
-  *)
+  mutable pause_menu : menu option;
   frame_inputs : frame_inputs;
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
@@ -1116,3 +1121,8 @@ type state = {
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
 let clone_time (t : time) : time = { at = t.at }
+
+(* TODO probably need to do more than this to work for Windows *)
+let convert_path path_with_slashes =
+  let filename_parts = String.split_on_char '/' path_with_slashes in
+  List.fold_left Filename.concat "" filename_parts

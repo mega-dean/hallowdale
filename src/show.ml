@@ -231,10 +231,17 @@ let save_files_choice (choice : save_files_choice) =
 let pause_menu_choice (choice : pause_menu_choice) =
   match choice with
   | CONTINUE -> "CONTINUE"
+  | CHANGE_WEAPON -> "CHANGE_WEAPON"
   | QUIT_TO_MAIN_MENU -> "QUIT_TO_MAIN_MENU"
+
+let change_weapon_menu_choice (choice : change_weapon_menu_choice) =
+  match choice with
+  | EQUIP_WEAPON weapon_name -> fmt "EQUIP WEAPON %s" weapon_name
+  | BACK -> "BACK"
 
 let menu_choice (choice : menu_choice) =
   match choice with
   | MAIN_MENU choice -> main_menu_choice choice
   | SAVE_FILES choice -> save_files_choice choice
-  | PAUSE choice -> pause_menu_choice choice
+  | PAUSE_MENU' choice -> pause_menu_choice choice
+  | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice choice

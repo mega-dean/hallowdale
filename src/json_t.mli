@@ -61,16 +61,30 @@ type texture_config = {
 }
 
 type room_progress = {
-  removed_idxs_by_layer: (string * int list) list;
-  finished_interactions: string list;
-  revealed_shadow_layers: string list
+  mutable removed_idxs_by_layer: (string * int list) list;
+  mutable finished_interactions: string list;
+  mutable revealed_shadow_layers: string list
+}
+
+type ghost_abilities = {
+  mutable crystal_heart: bool;
+  mutable mantis_claw: bool;
+  mutable monarch_wings: bool;
+  mutable mothwing_cloak: bool;
+  mutable vengeful_spirit: bool;
+  mutable desolate_dive: bool;
+  mutable howling_wraiths: bool
 }
 
 type save_file = {
+  ghost_id: string;
   ghost_x: float;
   ghost_y: float;
+  ghosts_in_party: string list;
   room_name: string;
-  abilities: string list;
+  abilities: ghost_abilities;
+  weapons: string list;
+  current_weapon: string;
   progress: (string * room_progress) list
 }
 

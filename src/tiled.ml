@@ -3,11 +3,6 @@ open Types.Utils
 
 [@@@ocaml.warning "-26-27-32"]
 
-(* TODO probably need to do more than this to work for Windows *)
-let convert_path path_with_slashes =
-  let filename_parts = String.split_on_char '/' path_with_slashes in
-  List.fold_left Filename.concat "" filename_parts
-
 let read_whole_file (filename : string) : string =
   let filename' = convert_path filename in
   let ch = open_in_bin filename' in

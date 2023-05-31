@@ -481,7 +481,8 @@ let tick (state : state) =
       (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 160)
   in
 
-  let draw_interaction_text camera_x camera_y (interaction_text : Interaction.text_kind option) =
+  (* CLEANUP rename this *)
+  let maybe_draw_menu camera_x camera_y (interaction_text : Interaction.text_kind option) =
     let draw_text_bg_box (config : text_config) =
       let w = Config.window.width - (2 * config.margin_x) in
       let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
@@ -664,17 +665,18 @@ let tick (state : state) =
         }
       in
       draw_text_bg_box config;
+      itmp "showing choices:\n%s" (List.map Show.menu_choice menu.choices |> join);
       List.iteri (display_paragraph config 0) (List.map Show.menu_choice menu.choices);
       display_paragraph config 0 menu.current_choice_idx "->                                           "
   in
 
   match state.loaded_state with
-  | SAVE_FILES menu
-  | MAIN_MENU menu ->
+  | SAVE_FILES (menu, save_slots)
+  | MAIN_MENU (menu, save_slots) ->
     Raylib.begin_drawing ();
     Raylib.clear_background (Color.create 50 50 50 255);
     Raylib.begin_mode_2d state.camera.raylib;
-    draw_interaction_text camera_x camera_y (Some (MENU menu));
+    maybe_draw_menu camera_x camera_y (Some (MENU menu));
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
@@ -783,13 +785,14 @@ let tick (state : state) =
           let get_child_dest child_w child_h = Entity.get_child_pos ghost.entity child.relative_pos child_w child_h in
           let draw_child_sprite (sprite : sprite) tint =
             sprite.dest.pos <- get_child_dest sprite.dest.w sprite.dest.h;
-            draw_sprite ~debug:true sprite
+            draw_sprite ~debug:true ~tint sprite
             (* Draw.image sprite.texture.image (src_Rect sprite) (sprite.dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 tint *)
           in
           match child.kind with
           | NAIL slash ->
             if state.debug.enabled then
               debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
+            let tint = ghost.current_weapon.tint in
             draw_child_sprite slash.sprite ghost.current_weapon.tint
           | FOCUS
           | WRAITHS
@@ -856,7 +859,8 @@ let tick (state : state) =
         Draw.image energon_pod_image empty_src (empty_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite;
         Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
-      let draw_head idx =
+      let draw_head i idx =
+        tmp " --------- drawing a head %d" i;
         let image = game.ghost.shared_textures.health.image in
         let w, h = (Raylib.Texture.width image / 2 |> Int.to_float, Raylib.Texture.height image |> Int.to_float) in
         let dest_w, dest_h = (w *. Config.scale.health, h *. Config.scale.health) in
@@ -874,7 +878,8 @@ let tick (state : state) =
         Draw.image image src dest (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
       draw_soul game.ghost.soul;
-      List.iter draw_head (Utils.rangef game.ghost.health.max)
+      tmp "rendering max health: %d" game.ghost.health.max;
+      List.iteri draw_head (Utils.rangef game.ghost.health.max)
     in
 
     Raylib.begin_drawing ();
@@ -894,7 +899,12 @@ let tick (state : state) =
     if state.screen_faded then
       (* this is slightly larger than the window to add some padding for when the camera is moving *)
       draw_screen_fade camera_x camera_y;
-    draw_interaction_text camera_x camera_y game.interaction.text;
+    (let interaction_text =
+       match state.pause_menu with
+       | None -> game.interaction.text
+       | Some pause_menu -> Some (MENU pause_menu)
+     in
+     maybe_draw_menu camera_x camera_y interaction_text);
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     if state.debug.enabled then
       draw_debug_info ();

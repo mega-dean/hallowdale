@@ -166,16 +166,31 @@ type npcs_file = {
 }
 
 type room_progress = {
-  removed_idxs_by_layer : (string * int list) list;
-  finished_interactions : string list;
-  revealed_shadow_layers : string list;
+  removed_idxs_by_layer <ocaml mutable> : (string * int list) list;
+  finished_interactions <ocaml mutable> : string list;
+  revealed_shadow_layers <ocaml mutable> : string list;
+}
+
+type ghost_abilities = {
+  (* movement *)
+  crystal_heart <ocaml mutable> : bool;
+  mantis_claw <ocaml mutable> : bool;
+  monarch_wings <ocaml mutable> : bool;
+  mothwing_cloak <ocaml mutable> : bool;
+  (* spells *)
+  vengeful_spirit <ocaml mutable> : bool;
+  desolate_dive <ocaml mutable> : bool;
+  howling_wraiths <ocaml mutable> : bool;
 }
 
 type save_file = {
+  ghost_id : string;
   ghost_x : float;
   ghost_y : float;
+  ghosts_in_party : string list;
   room_name : string;
-  abilities : string list;
+  abilities : ghost_abilities;
+  weapons : string list;
+  current_weapon : string;
   progress : (string * room_progress) list;
 }
-

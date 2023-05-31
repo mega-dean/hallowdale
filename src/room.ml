@@ -2,7 +2,7 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let get_pickup_indicators (room_progress : room_progress) (texture : texture) (triggers : (string * rect) list) :
+let get_pickup_indicators (room_progress : Json_t.room_progress) (texture : texture) (triggers : (string * rect) list) :
     sprite list =
   let show_obj ((name, dest') : string * rect) : sprite option =
     if List.mem name room_progress.finished_interactions then
@@ -32,7 +32,7 @@ let update_pickup_indicators ((state, game) : state * game) =
 (* CLEANUP maybe get rid of this type *)
 type room_params = {
   file_name : string;
-  progress : (string * room_progress) list;
+  progress : (* CLEANUP this should just pass in the room_progress *) (string * Json_t.room_progress) list;
   exits : rect list;
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
@@ -43,7 +43,7 @@ let init (params : room_params) : room =
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
   let (area_id, room_id) : area_id * room_id = Tiled.parse_room_filename "init_room" params.file_name in
   let room_key = Tiled.Room.get_uuid' area_id room_id in
-  let new_room_progress () =
+  let new_room_progress () : Json_t.room_progress =
     (* room_progress gets created here, but isn't saved into state.progress.rooms until the room is being unloaded at an exit *)
     { finished_interactions = []; revealed_shadow_layers = []; removed_idxs_by_layer = [] }
   in

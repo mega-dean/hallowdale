@@ -70,16 +70,30 @@ type texture_config = Json_t.texture_config = {
 }
 
 type room_progress = Json_t.room_progress = {
-  removed_idxs_by_layer: (string * int list) list;
-  finished_interactions: string list;
-  revealed_shadow_layers: string list
+  mutable removed_idxs_by_layer: (string * int list) list;
+  mutable finished_interactions: string list;
+  mutable revealed_shadow_layers: string list
+}
+
+type ghost_abilities = Json_t.ghost_abilities = {
+  mutable crystal_heart: bool;
+  mutable mantis_claw: bool;
+  mutable monarch_wings: bool;
+  mutable mothwing_cloak: bool;
+  mutable vengeful_spirit: bool;
+  mutable desolate_dive: bool;
+  mutable howling_wraiths: bool
 }
 
 type save_file = Json_t.save_file = {
+  ghost_id: string;
   ghost_x: float;
   ghost_y: float;
+  ghosts_in_party: string list;
   room_name: string;
-  abilities: string list;
+  abilities: ghost_abilities;
+  weapons: string list;
+  current_weapon: string;
   progress: (string * room_progress) list
 }
 
@@ -411,6 +425,26 @@ val read_room_progress :
 val room_progress_of_string :
   string -> room_progress
   (** Deserialize JSON data of type {!type:room_progress}. *)
+
+val write_ghost_abilities :
+  Buffer.t -> ghost_abilities -> unit
+  (** Output a JSON value of type {!type:ghost_abilities}. *)
+
+val string_of_ghost_abilities :
+  ?len:int -> ghost_abilities -> string
+  (** Serialize a value of type {!type:ghost_abilities}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_ghost_abilities :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> ghost_abilities
+  (** Input JSON data of type {!type:ghost_abilities}. *)
+
+val ghost_abilities_of_string :
+  string -> ghost_abilities
+  (** Deserialize JSON data of type {!type:ghost_abilities}. *)
 
 val write_save_file :
   Buffer.t -> save_file -> unit
