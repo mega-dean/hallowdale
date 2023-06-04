@@ -3,32 +3,6 @@ open Types.Utils
 
 [@@@ocaml.warning "-26-27-32"]
 
-let read_whole_file (filename : string) : string =
-  let filename' = convert_path filename in
-  let ch = open_in_bin filename' in
-  let s = really_input_string ch (in_channel_length ch) in
-  close_in ch;
-  s
-
-let try_read_file (filename : string) : string option =
-  if Sys.file_exists filename then
-    Some (read_whole_file filename)
-  else
-    None
-
-(* TODO probably move all this to state.ml *)
-let read_config_file file_name (convert : string -> 'a) : 'a =
-  let full_path = fmt "../config/%s.json" file_name in
-  read_whole_file full_path |> convert
-
-let load_lore_config () = read_config_file "lore" Json_j.lore_file_of_string
-let load_weapons_config () = read_config_file "weapons" Json_j.weapons_file_of_string
-
-let read_keybinds () =
-  try read_config_file "keybinds" Json_j.keybinds_file_of_string with
-  (* TODO handle missing files in read_config_file and pass in the default value *)
-  | Sys_error _ -> []
-
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
   match file_name with
@@ -386,7 +360,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
           (* kinda weird that this path ends up including "/tilesets/../tilesets/" *)
           fmt "../assets/tiled/tilesets/%s" source.source
         in
-        Some (read_whole_file full_path |> Json_j.tileset_of_string))
+        Some (File.read full_path |> Json_j.tileset_of_string))
     in
 
     match parse_tileset source' with
@@ -416,7 +390,7 @@ let create_camera_at v (shake : float) =
 
 let init_world (path : string) : (room_id * room_location) list =
   let full_path = fmt "../assets/tiled/rooms/%s.world" path in
-  let json_world : Json_t.world = read_whole_file full_path |> Json_j.world_of_string in
+  let json_world : Json_t.world = File.read full_path |> Json_j.world_of_string in
   let filenames_in_world_file : str_set ref = ref StrSet.empty in
   let get_room_location (global_map : Json_t.global_map) : room_id * room_location =
     let filename = Str.first_chars global_map.file_name (String.length global_map.file_name - 5) in
@@ -437,7 +411,7 @@ let init_world (path : string) : (room_id * room_location) list =
     if Str.last_chars s 5 = ".json" && not (String.equal s "template.json") then
       files_in_rooms_dir := StrSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
   in
-  Sys.readdir (convert_path "../assets/tiled/rooms") |> Array.iter add_to_set;
+  Sys.readdir (File.convert_path "../assets/tiled/rooms") |> Array.iter add_to_set;
   let filenames_without_files : str_set = StrSet.diff !filenames_in_world_file !files_in_rooms_dir in
   let files_without_filenames : str_set = StrSet.diff !files_in_rooms_dir !filenames_in_world_file in
   if not (StrSet.is_empty filenames_without_files) then

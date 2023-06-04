@@ -466,23 +466,21 @@ module Tests = struct
       ==== |}]
 end
 
-let text_box_width (config : text_config) = Config.window.width - (2 * config.margin_x)
-
 let tick (state : state) =
   let camera_x, camera_y =
     ( Raylib.Vector2.x (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_x,
       Raylib.Vector2.y (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_y )
   in
+  let text_box_width (config : text_config) = Config.window.width - (2 * config.margin_x) in
 
-  let draw_screen_fade camera_x camera_y =
+  let draw_screen_fade alpha =
     Raylib.draw_rectangle
       (camera_x -. 5. |> Float.to_int)
       (camera_y -. 5. |> Float.to_int)
-      (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 160)
+      (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 alpha)
   in
 
-  (* CLEANUP rename this *)
-  let maybe_draw_menu camera_x camera_y (interaction_text : Interaction.text_kind option) =
+  let maybe_draw_text (interaction_text : Interaction.text_kind option) =
     let draw_text_bg_box (config : text_config) =
       let w = Config.window.width - (2 * config.margin_x) in
       let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
@@ -529,15 +527,12 @@ let tick (state : state) =
       List.iteri (display_line config y_offset') lines
     in
 
-    let get_text_box_width margin_x = Config.window.width - (2 * margin_x) in
-
     match interaction_text with
     | None -> ()
     | Some (ABILITY ability_text) ->
       let margin_x = 50 in
       let config : text_config =
         {
-          text_box_width = get_text_box_width margin_x;
           margin_x;
           margin_y = 20;
           margin_y_bottom = 20;
@@ -548,7 +543,7 @@ let tick (state : state) =
         }
       in
 
-      draw_screen_fade camera_x camera_y;
+      draw_screen_fade 160;
       draw_text_bg_box config;
       draw_outline ~offset_y:config.outline_offset_y ability_text;
 
@@ -557,7 +552,6 @@ let tick (state : state) =
       let margin_x = 50 in
       let config : text_config =
         {
-          text_box_width = get_text_box_width margin_x;
           margin_x;
           margin_y = 20;
           margin_y_bottom = 20;
@@ -568,7 +562,7 @@ let tick (state : state) =
         }
       in
 
-      draw_screen_fade camera_x camera_y;
+      draw_screen_fade 160;
       draw_text_bg_box config;
       draw_outline ability_text;
 
@@ -580,7 +574,6 @@ let tick (state : state) =
       let margin_x = 150 in
       let config : text_config =
         {
-          text_box_width = get_text_box_width margin_x;
           margin_x;
           margin_y = 50;
           margin_y_bottom =
@@ -628,7 +621,6 @@ let tick (state : state) =
       let margin_x = 150 in
       let config : text_config =
         {
-          text_box_width = get_text_box_width margin_x;
           margin_x;
           margin_y = 50;
           margin_y_bottom;
@@ -650,14 +642,24 @@ let tick (state : state) =
           [ "{{green}} max health increased by one" ])
       else
         List.iteri (display_paragraph config 0) text'.content
-    | Some (MENU menu) ->
+    | Some (MENU (menu, save_slots)) ->
       let margin_x = 50 in
+      let margin_y =
+        match List.nth menu.choices 0 with
+        (* TODO probably need these to be based on font size *)
+        | PAUSE_MENU _ -> 220
+        | CHANGE_WEAPON_MENU _ -> 50
+        | CHANGE_GHOST_MENU _ -> 50
+        | MAIN_MENU _ -> 360
+        | SAVE_FILES _ -> 200
+      in
+
+      let margin_y_bottom = margin_y in
       let config : text_config =
         {
-          text_box_width = get_text_box_width margin_x;
           margin_x;
-          margin_y = 20;
-          margin_y_bottom = 20;
+          margin_y;
+          margin_y_bottom;
           outline_offset_y = Config.window.height / 4;
           padding_x = 50;
           padding_y = 50;
@@ -665,22 +667,45 @@ let tick (state : state) =
         }
       in
       draw_text_bg_box config;
-      itmp "showing choices:\n%s" (List.map Show.menu_choice menu.choices |> join);
-      List.iteri (display_paragraph config 0) (List.map Show.menu_choice menu.choices);
-      display_paragraph config 0 menu.current_choice_idx "->                                           "
+      let is_new_game (_, b) = b in
+
+      (match save_slots with
+      | Some save_slots' ->
+        itmp "save_slots': %b %b %b %b" (is_new_game save_slots'.slot_1) (is_new_game save_slots'.slot_2)
+          (is_new_game save_slots'.slot_3) (is_new_game save_slots'.slot_4);
+        let show_save_slot idx ((slot, is_new_game) : Json_t.save_file * bool) =
+          fmt "slot %d: %s" idx (if is_new_game then "New Game" else "Continue")
+        in
+        let save_slot_choices =
+          List.mapi show_save_slot [ save_slots'.slot_1; save_slots'.slot_2; save_slots'.slot_3; save_slots'.slot_4 ]
+          @ [ "Back" ]
+        in
+        List.iteri (display_paragraph config 0) save_slot_choices
+      | None -> List.iteri (display_paragraph config 0) (List.map Show.menu_choice menu.choices));
+      (* TODO better cursor for current item *)
+      display_paragraph config 0 menu.current_choice_idx "*                                           *"
   in
 
-  match state.loaded_state with
-  | SAVE_FILES (menu, save_slots)
-  | MAIN_MENU (menu, save_slots) ->
+  let show_main_menu menu save_slots =
     Raylib.begin_drawing ();
-    Raylib.clear_background (Color.create 50 50 50 255);
+    (* TODO bg image for main menu *)
+    Raylib.clear_background (Color.create 0 0 0 255);
     Raylib.begin_mode_2d state.camera.raylib;
-    maybe_draw_menu camera_x camera_y (Some (MENU menu));
+    let w, h = get_scaled_texture_size state.global.textures.main_menu in
+    let x' = ((Config.window.width |> Int.to_float) -. w) /. 2. in
+    let x, y = (camera_x +. x', camera_y +. 50.) in
+    let dest = { pos = { x; y }; w; h } in
+    draw_texture state.global.textures.main_menu dest 0;
+    maybe_draw_text (Some (MENU (menu, save_slots)));
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
     state
+  in
+
+  match state.game_context with
+  | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
+  | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
   | IN_PROGRESS game ->
     let draw_object_trigger_indicators () =
       List.iter
@@ -768,7 +793,7 @@ let tick (state : state) =
 
     let draw_ghost (ghost : ghost) =
       let tint =
-        match Ghost.get_invincibility_kind (state, game) with
+        match Ghost.get_invincibility_kind state game with
         | None -> Color.create 255 255 255 255
         | Some invincibility_kind -> (
           let d = state.frame.time -. game.ghost.history.take_damage.started.at in
@@ -824,11 +849,11 @@ let tick (state : state) =
         }
       in
       draw_sprite shine_sprite;
-      draw_entity ~tint ghost.entity;
+      draw_entity ~tint ~debug:true ghost.entity;
       draw_child ghost.child
     in
 
-    let draw_hud camera_x camera_y =
+    let draw_hud () =
       let padding = 8. in
       let energon_pod_image = game.ghost.shared_textures.energon_pod.image in
       let pod_src_w, pod_src_h =
@@ -860,7 +885,6 @@ let tick (state : state) =
         Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
       let draw_head i idx =
-        tmp " --------- drawing a head %d" i;
         let image = game.ghost.shared_textures.health.image in
         let w, h = (Raylib.Texture.width image / 2 |> Int.to_float, Raylib.Texture.height image |> Int.to_float) in
         let dest_w, dest_h = (w *. Config.scale.health, h *. Config.scale.health) in
@@ -878,7 +902,6 @@ let tick (state : state) =
         Draw.image image src dest (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
       draw_soul game.ghost.soul;
-      tmp "rendering max health: %d" game.ghost.health.max;
       List.iteri draw_head (Utils.rangef game.ghost.health.max)
     in
 
@@ -895,21 +918,21 @@ let tick (state : state) =
     draw_enemies game.room.enemies;
     draw_object_trigger_indicators ();
     draw_fg_tiles game.room camera_x camera_y;
-    draw_hud camera_x camera_y;
-    if state.screen_faded then
+    draw_hud ();
+    (match state.screen_fade with
+    | None -> ()
+    | Some alpha ->
       (* this is slightly larger than the window to add some padding for when the camera is moving *)
-      draw_screen_fade camera_x camera_y;
+      draw_screen_fade alpha);
     (let interaction_text =
        match state.pause_menu with
        | None -> game.interaction.text
-       | Some pause_menu -> Some (MENU pause_menu)
+       | Some pause_menu -> Some (MENU (pause_menu, None))
      in
-     maybe_draw_menu camera_x camera_y interaction_text);
+     maybe_draw_text interaction_text);
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     if state.debug.enabled then
       draw_debug_info ();
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
     state
-
-let stub_camera = Tiled.create_camera_at (Raylib.Vector2.create 0. 0.) 0.

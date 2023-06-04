@@ -36,10 +36,10 @@ module Utils = struct
     match List.find_opt matches (List.mapi (fun i x -> (i, x)) xs) with
     | None -> failwith "find_idx"
     | Some (idx, _) -> idx
-end
 
-module Bound = struct
-  let int (min : int) (n : int) (max : int) : int = Int.max min (Int.min n max)
+  let filter_somes xs =
+    (* TODO seems like there is probably a better way to do List.filter_mapi, but this works *)
+    xs |> List.filter Option.is_some |> List.map Option.get
 end
 
 module StrSet = Set.Make (String)
@@ -176,8 +176,8 @@ let get_src (t : texture) : rect =
   | LOOPED animation ->
     (get_frame animation).src
 
-let get_scaled_texture_size ?(scale = Config.scale.room) (t : texture) =
-  let src = get_src t in
+let get_scaled_texture_size ?(scale = Config.scale.room) (texture : texture) =
+  let src = get_src texture in
   (src.w *. scale, src.h *. scale)
 
 (* knockback in a single direction *)
@@ -408,10 +408,9 @@ type save_files_choice =
   (* TODO add buttons for DELETE_SLOT_N *)
   | BACK
 
-(* TODO-9 probably need to do recursive types to support submenus *)
 type pause_menu_choice =
   | CONTINUE
-  (* TODO | CHANGE_GHOST *)
+  | CHANGE_GHOST
   | CHANGE_WEAPON
   | QUIT_TO_MAIN_MENU
 
@@ -419,10 +418,14 @@ type change_weapon_menu_choice =
   | EQUIP_WEAPON of string
   | BACK
 
+type change_ghost_menu_choice =
+  | USE_GHOST of ghost_id
+  | BACK
+
 type menu_choice =
-  | PAUSE_MENU' of pause_menu_choice
+  | PAUSE_MENU of pause_menu_choice
   | CHANGE_WEAPON_MENU of change_weapon_menu_choice
-    (* CLEANUP the apostrophe prevents the weird merlin error "files A and B make inconsistent assumptions about Hallowdale.Types" *)
+  | CHANGE_GHOST_MENU of change_ghost_menu_choice
   | MAIN_MENU of main_menu_choice
   | SAVE_FILES of save_files_choice
 
@@ -431,31 +434,12 @@ type menu = {
   mutable current_choice_idx : int;
 }
 
-(* CLEANUP move these into new file menu.ml *)
-let main_menu () : menu = { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
-
-let pause_menu () : menu =
-  {
-    choices = [ PAUSE_MENU' CONTINUE; PAUSE_MENU' CHANGE_WEAPON; PAUSE_MENU' QUIT_TO_MAIN_MENU ];
-    current_choice_idx = 0;
-  }
-
-let save_files_menu () : menu =
-  {
-    choices = [ SAVE_FILES SLOT_1; SAVE_FILES SLOT_2; SAVE_FILES SLOT_3; SAVE_FILES SLOT_4; SAVE_FILES BACK ];
-    current_choice_idx = 0;
-  }
-
-let change_weapon_menu (weapon_names : string list) : menu =
-  let weapon_choices = List.map (fun name -> CHANGE_WEAPON_MENU (EQUIP_WEAPON name)) weapon_names in
-  { choices = weapon_choices @ [ CHANGE_WEAPON_MENU BACK ]; current_choice_idx = 0 }
-
-(* CLEANUP maybe this should just be a save_file list *)
+(* bool is true for new games *)
 type save_slots = {
-  slot_1 : Json_t.save_file;
-  slot_2 : Json_t.save_file;
-  slot_3 : Json_t.save_file;
-  slot_4 : Json_t.save_file;
+  slot_1 : Json_t.save_file * bool;
+  slot_2 : Json_t.save_file * bool;
+  slot_3 : Json_t.save_file * bool;
+  slot_4 : Json_t.save_file * bool;
 }
 
 module Interaction = struct
@@ -471,6 +455,8 @@ module Interaction = struct
     | ABILITY_TEXT of rect * string list
     | DIALOGUE of string * string
     | PURPLE_PEN_TEXT of string list
+    | PUSH_RECT of float * float * float * float
+    (* | POP_RECT *)
     (* camera *)
     | SET_FIXED_CAMERA of int * int
     | SET_GHOST_CAMERA
@@ -526,8 +512,6 @@ module Interaction = struct
     | NPC of npc_id * npc_step
 
   type text_config = {
-    (* CLEANUP remove this *)
-    text_box_width : int;
     padding_x : int;
     padding_y : int;
     margin_x : int;
@@ -562,14 +546,15 @@ module Interaction = struct
     | FOCUS_ABILITY of ability_text
     | ABILITY of ability_text
     | DIALOGUE of string * text
-    | (* CLEANUP add a separate variand PAUSE_MENU, since it won't need save slots like the main menu *)
-      MENU of menu
+    | MENU of menu * save_slots option
 
   type t = {
     mutable name : string option;
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
+    (* these are only used for revealing the opening poem for new games *)
+    mutable black_rects : rect list;
   }
 end
 
@@ -791,10 +776,18 @@ type invincibility_kind =
   | DIVE_IFRAMES
   | TOOK_DAMAGE
 
+(* this is very similar to Json_t.ghosts_file, but it eg. parses ghost names into ghost_id for the key of .textures *)
+type ghosts_file = {
+  textures : (ghost_id * texture_config list) list;
+  actions : (string * ghost_action_config) list;
+  shared_textures : (string * texture_config) list;
+}
+
 type ghost = {
   entity : entity;
   current : current_status;
   mutable textures : ghost_textures;
+  (* TODO probably don't need .shared_textures on every ghost *)
   shared_textures : shared_textures;
   history : ghost_action_history;
   mutable abilities : Json_t.ghost_abilities;
@@ -1010,20 +1003,10 @@ type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
 
-(* TODO-1 levers to unlock doors - use a new trigger type *)
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death
    - on duncan-killed, move current_interaction into finished_interactions
 *)
-(* this progress is permanently saved so eg. removed_idxs_by_layer is for doors that are permanently removed, but
-   not for jugs (which respawn when the room is re-entered, and are tracked by layer.tile_groups / .destroyed_tiles)
-*)
-(* type room_progress = {
- *   mutable removed_idxs_by_layer : (string * int list) list;
- *   mutable finished_interactions : string list;
- *   mutable revealed_shadow_layers : string list;
- * } *)
-
 type room = {
   id : room_id;
   area : area;
@@ -1060,6 +1043,7 @@ type texture_cache = {
   damage : texture;
   ability_outlines : texture;
   pickup_indicator : texture;
+  main_menu : texture;
 }
 
 (* these are all things that are eager-loaded from json config files *)
@@ -1099,16 +1083,15 @@ type camera = {
   mutable shake : float;
 }
 
-(* CLEANUP better name for this *)
-type loaded_state =
+type game_context =
   | MAIN_MENU of menu * save_slots
-  | (* CLEANUP maybe this doesn't need to be separate from MAIN_MENU *) SAVE_FILES of menu * save_slots
+  | SAVE_FILES of menu * save_slots
   | IN_PROGRESS of game
 
 type state = {
-  mutable loaded_state : loaded_state;
+  mutable game_context : game_context;
   world : world;
-  mutable screen_faded : bool;
+  mutable screen_fade : int option; (* out of 255 *)
   mutable camera : camera;
   mutable frame : frame_info;
   mutable pause_menu : menu option;
@@ -1121,8 +1104,3 @@ type state = {
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
 let clone_time (t : time) : time = { at = t.at }
-
-(* TODO probably need to do more than this to work for Windows *)
-let convert_path path_with_slashes =
-  let filename_parts = String.split_on_char '/' path_with_slashes in
-  List.fold_left Filename.concat "" filename_parts

@@ -25,14 +25,17 @@ let get_pickup_indicators (room_progress : Json_t.room_progress) (texture : text
   in
   List.filter_map show_obj triggers
 
-let update_pickup_indicators ((state, game) : state * game) =
+let update_pickup_indicators (state : state) (game : game) =
   game.room.pickup_indicators <-
     get_pickup_indicators game.room.progress state.global.textures.pickup_indicator game.room.triggers.item_pickups
 
-(* CLEANUP maybe get rid of this type *)
+let save_progress (game : game) =
+  let room_uuid = Tiled.Room.get_uuid game.room in
+  game.progress <- Utils.assoc_replace room_uuid game.room.progress game.progress
+
 type room_params = {
   file_name : string;
-  progress : (* CLEANUP this should just pass in the room_progress *) (string * Json_t.room_progress) list;
+  progress : (string * Json_t.room_progress) list;
   exits : rect list;
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
@@ -55,7 +58,7 @@ let init (params : room_params) : room =
   let parse_room (path : string) : Json_t.room =
     let full_path = fmt "../assets/tiled/rooms/%s" path in
     (* TODO cache these instead of reloading the tileset between every room *)
-    Tiled.read_whole_file full_path |> Json_j.room_of_string
+    File.read full_path |> Json_j.room_of_string
   in
 
   let json_room = parse_room (fmt "%s.json" params.file_name) in
@@ -95,6 +98,7 @@ let init (params : room_params) : room =
           (coll_rect.x, coll_rect.y)
       in
       match name_prefix with
+      (* FIXME add "lever" for unlocking doors *)
       | "camera" -> camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
       | "door-health" -> idx_configs := (tile_idx (), DOOR_HITS (coll_rect.h |> Float.to_int)) :: !idx_configs
       | "purple-pen" -> idx_configs := (tile_idx (), PURPLE_PEN coll_rect.name) :: !idx_configs
@@ -327,8 +331,7 @@ let init (params : room_params) : room =
             let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
             let collisions = List.filter in_this_column tileset.json.collisions in
             let fragments = List.mapi build_fragment collisions in
-            (* TODO seems like there is probably a better way to do List.filter_mapi, but this works *)
-            fragments |> List.filter Option.is_some |> List.map Option.get
+            fragments |> Utils.filter_somes
         in
         if List.length fragments = 0 then
           failwithf "found 0 fragments for jug %s with tile_x %d - configure these with Tiled collision editor"
@@ -338,10 +341,7 @@ let init (params : room_params) : room =
       in
 
       let metadata : jug_config list =
-        let configs : Json_t.jug_metadata_file =
-          let full_path = "../config/jugs.json" in
-          Tiled.read_whole_file full_path |> Json_j.jug_metadata_file_of_string
-        in
+        let configs : Json_t.jug_metadata_file = File.read_config "jugs" Json_j.jug_metadata_file_of_string in
         let build (metadata : Json_t.jug_metadata) : jug_config =
           { jug_name = metadata.name; tile_x = metadata.x; w = metadata.w; h = metadata.h }
         in
@@ -400,3 +400,80 @@ let init (params : room_params) : room =
     pickup_indicators = get_pickup_indicators room_progress params.pickup_indicator_texture !pickup_triggers;
     cache;
   }
+
+let handle_transitions (state : state) (game : game) =
+  let get_global_pos (current : vector) (room_location : room_location) : vector =
+    { x = current.x +. room_location.global_x; y = current.y +. room_location.global_y }
+  in
+  let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
+    let room_location = List.assoc room_id world in
+    { x = global.x -. room_location.global_x; y = global.y -. room_location.global_y }
+  in
+  let colliding exit_rect =
+    (* TODO this might not be working sometimes with the new collision detection *)
+    Collision.with_entity game.ghost.entity exit_rect
+  in
+  match List.find_map colliding game.room.exits with
+  | None -> false
+  | Some collision ->
+    if collision.rect.w < 10. || collision.rect.h < 10. then
+      (* don't trigger the exit immediately when the ghost hits the edge of the screen *)
+      false
+    else (
+      let cr = collision.rect in
+      let current_room_location = List.assoc game.room.id state.world in
+      let ghost_pos = game.ghost.entity.dest.pos in
+      let global_ghost_pos = get_global_pos ghost_pos current_room_location in
+      let (path, target_room_id) : string * room_id =
+        let global_x, global_y =
+          ( cr.pos.x +. (cr.w /. 2.) +. current_room_location.global_x,
+            cr.pos.y +. (cr.h /. 2.) +. current_room_location.global_y )
+        in
+        Tiled.Room.locate state.world global_x global_y
+      in
+      let room_location = List.assoc target_room_id state.world in
+      let exits = Tiled.Room.get_exits room_location in
+      let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
+      let start_pos : vector =
+        tmp "got room exit direction: %s" (Show.direction collision.direction);
+
+        (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
+        match collision.direction with
+        | LEFT ->
+          game.ghost.entity.sprite.facing_right <- true;
+          { start_pos' with x = start_pos'.x +. game.ghost.entity.dest.w }
+        | RIGHT ->
+          game.ghost.entity.sprite.facing_right <- false;
+          { start_pos' with x = start_pos'.x -. game.ghost.entity.dest.w }
+        | UP -> { start_pos' with y = start_pos'.y +. game.ghost.entity.dest.h }
+        | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.entity.dest.h }
+      in
+
+      save_progress game;
+
+      let new_room =
+        init
+          {
+            file_name = path;
+            progress = game.progress;
+            exits;
+            enemy_configs = state.global.enemy_configs;
+            npc_configs = state.global.npc_configs;
+            pickup_indicator_texture = state.global.textures.pickup_indicator;
+          }
+      in
+      game.ghost.entity.current_floor <- None;
+      game.ghost.current.wall <- None;
+      game.ghost.spawned_vengeful_spirits <- [];
+      game.ghost.entity.dest.pos <- start_pos;
+      (* all rooms are using the same tilesets now, but still unload them here (and re-load them
+         in load_room) every time because the tilesets could be in a different order per room
+         - not really sure about ^this comment, I don't know if different tileset order would break the
+           tile lookup code now, so just unload/reload to be safe ¯\_(ツ)_/¯
+      *)
+      (* TODO probably need to unload things like enemy textures *)
+      Tiled.Room.unload_tilesets game.room;
+      game.room <- new_room;
+      game.room.layers <- Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
+      state.camera.raylib <- Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.;
+      true)

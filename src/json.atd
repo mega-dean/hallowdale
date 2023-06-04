@@ -165,6 +165,9 @@ type npcs_file = {
   shared_textures : (string * texture_config) list;
 }
 
+(* this progress is permanently saved so eg. removed_idxs_by_layer is for doors that are permanently removed, but
+   not for jugs (which respawn when the room is re-entered, and are tracked by layer.tile_groups / .destroyed_tiles)
+*)
 type room_progress = {
   removed_idxs_by_layer <ocaml mutable> : (string * int list) list;
   finished_interactions <ocaml mutable> : string list;

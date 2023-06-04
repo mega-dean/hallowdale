@@ -12,9 +12,52 @@ let parse_name name : ghost_id =
   | "TROY" -> TROY
   | _ -> failwithf "bad ghost name '%s'" name
 
+let read_config () : ghosts_file =
+  let ghost_file : Json_t.ghosts_file = File.read_config "ghosts" Json_j.ghosts_file_of_string in
+  let parse_texture_config character_name ((pose_name, ghost_pose) : string * Json_t.texture_config) : texture_config =
+    {
+      asset_dir = GHOSTS;
+      character_name;
+      pose_name;
+      count = ghost_pose.count;
+      duration = { seconds = ghost_pose.duration };
+      x_offset = ghost_pose.x_offset |> Int.to_float;
+      y_offset = ghost_pose.y_offset |> Int.to_float;
+    }
+  in
+  let parse_ghost_texture ((ghost_id_str, ghost_poses) : string * (string * Json_t.texture_config) list) :
+      ghost_id * texture_config list =
+    let parse_name name : ghost_id =
+      match name with
+      | "ABED" -> ABED
+      | "ANNIE" -> ANNIE
+      | "BRITTA" -> BRITTA
+      | "JEFF" -> JEFF
+      | "TROY" -> TROY
+      | _ -> failwithf "bad ghost name '%s'" name
+    in
+    let texture_configs : texture_config list = List.map (parse_texture_config ghost_id_str) ghost_poses in
+    (parse_name ghost_id_str, texture_configs)
+  in
+  let textures = List.map parse_ghost_texture ghost_file.individual_textures in
+  let shared_textures : (string * texture_config) list =
+    let parse_texture_config' (s, tc) : string * texture_config = (s, parse_texture_config "shared" (s, tc)) in
+    List.map parse_texture_config' ghost_file.shared_textures
+  in
+  let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
+    ( name,
+      {
+        duration = { seconds = json_ghost_action.duration };
+        cooldown = { seconds = json_ghost_action.cooldown };
+        input_buffer = { seconds = json_ghost_action.input_buffer };
+      } )
+  in
+  let actions : (string * ghost_action_config) list = List.map parse_ghost_action ghost_file.actions in
+  { actions; textures; shared_textures }
+
 let available_ghost_ids ghosts : ghost_id list = ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
 
-let maybe_begin_interaction ((state, game) : state * game) name =
+let maybe_begin_interaction (state : state) (game : game) name =
   let name_prefix, _ = Utils.separate name '_' in
   let begin_interaction ?(increase_health = false) () =
     game.interaction.name <- Some name;
@@ -152,34 +195,36 @@ let make_slash (ghost : ghost) (direction : direction) relative_pos (sprite : sp
   (* TODO move these to config *)
   let sideways_points =
     [
-      { x = 0.; y = 0. };
-      { x = 111.; y = 8. };
-      { x = 158.; y = 16. };
-      { x = 184.; y = 26. };
-      { x = 196.; y = 37. };
-      { x = 195.; y = 49. };
-      { x = 178.; y = 64. };
-      { x = 136.; y = 77. };
-      { x = 60.; y = 86. };
-      { x = 1.; y = 87. };
+      { x = 0. *. ghost.current_weapon.scale_x; y = 0. };
+      { x = 111. *. ghost.current_weapon.scale_x; y = 8. };
+      { x = 158. *. ghost.current_weapon.scale_x; y = 16. };
+      { x = 184. *. ghost.current_weapon.scale_x; y = 26. };
+      { x = 196. *. ghost.current_weapon.scale_x; y = 37. };
+      { x = 195. *. ghost.current_weapon.scale_x; y = 49. };
+      { x = 178. *. ghost.current_weapon.scale_x; y = 64. };
+      { x = 136. *. ghost.current_weapon.scale_x; y = 77. };
+      { x = 60. *. ghost.current_weapon.scale_x; y = 86. };
+      { x = 1. *. ghost.current_weapon.scale_x; y = 87. };
     ]
   in
   let up_points =
     [
-      { x = 0.; y = 189. };
-      { x = 4.; y = 110. };
-      { x = 12.; y = 63. };
-      { x = 25.; y = 25. };
-      { x = 35.; y = 8. };
-      { x = 45.; y = 0. };
-      { x = 60.; y = 1. };
-      { x = 73.; y = 14. };
-      { x = 87.; y = 46. };
-      { x = 97.; y = 86. };
-      { x = 103.; y = 189. };
+      { x = 0.; y = 189. *. ghost.current_weapon.scale_y };
+      { x = 4.; y = 110. *. ghost.current_weapon.scale_y };
+      { x = 12.; y = 63. *. ghost.current_weapon.scale_y };
+      { x = 25.; y = 25. *. ghost.current_weapon.scale_y };
+      { x = 35.; y = 8. *. ghost.current_weapon.scale_y };
+      { x = 45.; y = 0. *. ghost.current_weapon.scale_y };
+      { x = 60.; y = 1. *. ghost.current_weapon.scale_y };
+      { x = 73.; y = 14. *. ghost.current_weapon.scale_y };
+      { x = 87.; y = 46. *. ghost.current_weapon.scale_y };
+      { x = 97.; y = 86. *. ghost.current_weapon.scale_y };
+      { x = 103.; y = 189. *. ghost.current_weapon.scale_y };
     ]
   in
-  let down_points = List.map (fun (point : vector) -> { point with y = 189. -. point.y }) up_points in
+  let down_points =
+    List.map (fun (point : vector) -> { point with y = (189. -. point.y) *. ghost.current_weapon.scale_y }) up_points
+  in
   let make_scaled_shape ?(scale = Config.scale.slash) points =
     let scale_point point = { x = point.x *. scale; y = point.y *. scale } in
     let scaled_points = List.map scale_point points in
@@ -303,7 +348,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         layer.spawned_fragments <- List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
         let idx = List.nth tile_group.tile_idxs 0 in
         (match List.assoc_opt idx game.room.idx_configs with
-        | Some (PURPLE_PEN name) -> maybe_begin_interaction (state, game) name
+        | Some (PURPLE_PEN name) -> maybe_begin_interaction state game name
         | _ -> ());
         layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
         if layer.config.permanently_removable then (
@@ -542,7 +587,7 @@ let make_ghost_child (ghost : ghost) kind relative_pos texture w h =
   let sprite = Sprite.create name texture { pos = Entity.get_child_pos ghost.entity relative_pos w h; w; h } in
   Some { kind; relative_pos; sprite }
 
-let start_action ?(debug = false) ((state, game) : state * game) (action_kind : ghost_action_kind) =
+let start_action ?(debug = false) (state : state) (game : game) (action_kind : ghost_action_kind) =
   let cooldown_scale = ref 1.0 in
   let action : ghost_action =
     match action_kind with
@@ -604,7 +649,7 @@ let start_action ?(debug = false) ((state, game) : state * game) (action_kind : 
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
   set_pose game.ghost (PERFORMING action_kind) state.frame.time
 
-let maybe_despawn_child ((state, game) : state * game) sprite =
+let maybe_despawn_child (state : state) (game : game) sprite =
   match Sprite.advance_or_despawn state.frame.time sprite.texture sprite with
   | None -> game.ghost.child <- None
   | Some slash_sprite -> Sprite.advance_animation state.frame.time sprite.texture sprite
@@ -642,7 +687,7 @@ let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : flo
   | DIVE_COOLDOWN -> check_action ghost.history.dive_cooldown
   | _ -> failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
 
-let is_casting ((state, game) : state * game) =
+let is_casting (state : state) (game : game) =
   is_doing game.ghost (CAST VENGEFUL_SPIRIT) state.frame.time
   || game.ghost.current.is_diving
   || is_doing game.ghost (CAST HOWLING_WRAITHS) state.frame.time
@@ -652,12 +697,7 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
   | None -> failwithf "could not find other ghost %s" (Show.ghost_id target_ghost_id)
   | Some new_ghost ->
     let old_ghost = game.ghost in
-    let new_ghosts =
-      (* CLEANUP there's probably a way for this to work by keeping all ghosts in game.ghosts, but swapping them out works for now
-         - this is causing a few weird issues, like the wrong ghost being unhidden on initial load, and double velocity updates being applied to the ghost
-      *)
-      (old_ghost.id, old_ghost) :: List.remove_assoc new_ghost.id game.ghosts
-    in
+    let new_ghosts = (old_ghost.id, old_ghost) :: List.remove_assoc new_ghost.id game.ghosts in
     let current_pos = old_ghost.entity.dest.pos in
 
     (* MAKE_CURRENT_GHOST uses this fn during interactions to update game.ghost, but shouldn't swap places *)
@@ -711,7 +751,7 @@ let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
 let toggle_ability ghost ability_name = change_ability ~debug:true ghost ability_name
 
-let acquire_weapon ((state, game) : state * game) weapon_name =
+let acquire_weapon (state : state) (game : game) weapon_name =
   match List.assoc_opt weapon_name state.global.weapons with
   | Some weapon_config ->
     let current_weapon_names = List.map fst game.ghost.weapons in
@@ -733,7 +773,7 @@ let equip_weapon (ghost : ghost) weapon_name =
          cooldown_scale = 2. -. weapon_config.swing_speed;
        })
 
-let get_invincibility_kind ((state, game) : state * game) : invincibility_kind option =
+let get_invincibility_kind (state : state) (game : game) : invincibility_kind option =
   if not (past_cooldown game.ghost.history.take_damage state.frame.time) then
     Some TOOK_DAMAGE
   else if game.ghost.current.is_diving || not (past_cooldown game.ghost.history.dive_cooldown state.frame.time) then
@@ -741,7 +781,7 @@ let get_invincibility_kind ((state, game) : state * game) : invincibility_kind o
   else
     None
 
-let is_vulnerable ((state, game) : state * game) : bool = Option.is_none (get_invincibility_kind (state, game))
+let is_vulnerable (state : state) (game : game) : bool = Option.is_none (get_invincibility_kind state game)
 
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
@@ -783,10 +823,10 @@ let update (game : game) (state : state) =
       game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
     else if key_pressed DEBUG_1 then (
       tmp "cycling current ghost";
-      cycle_current_ghost state game
+      (* cycle_current_ghost state game *)
       (* state.loaded_state <- MAIN_MENU main_menu *)
       (* print "current weapons: %s" (game.ghost.weapons |> List.map fst |> join) *)
-      (* toggle_ability game.ghost "mantis_claw" *)
+      toggle_ability game.ghost "mantis_claw"
       (* toggle_ability game.ghost "vengeful_spirit" *)
       (* print "%s" (Show.shape_lines (Option.get game.ghost.entity.sprite.collision)) *))
     else if key_pressed DEBUG_2 then (
@@ -796,7 +836,7 @@ let update (game : game) (state : state) =
     else if key_pressed DEBUG_3 then (
       let weapon_name = "Devil's Drench XJ-11" in
       tmp "acquiring weapon %s" weapon_name;
-      acquire_weapon (state, game) weapon_name
+      acquire_weapon state game weapon_name
       (* equip_weapon game.ghost "Orange Paintball Gun" *)
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
       (* () *)
@@ -805,87 +845,10 @@ let update (game : game) (state : state) =
       print "ghost x: %0.1f, y: %0.1f" game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y
   in
 
-  let get_global_pos (current : vector) (room_location : room_location) : vector =
-    { x = current.x +. room_location.global_x; y = current.y +. room_location.global_y }
-  in
-  let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
-    let room_location = List.assoc room_id world in
-    { x = global.x -. room_location.global_x; y = global.y -. room_location.global_y }
-  in
-
   (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
      - also bound velocity to prevent falling through floors with high vy through horizontal doors
   *)
-  let handle_room_exits () =
-    let colliding exit_rect =
-      (* TODO this might not be working sometimes with the new collision detection *)
-      Collision.with_entity game.ghost.entity exit_rect
-    in
-    match List.find_map colliding game.room.exits with
-    | None -> false
-    | Some collision ->
-      if collision.rect.w < 10. || collision.rect.h < 10. then
-        (* don't trigger the exit immediately when the ghost hits the edge of the screen *)
-        false
-      else (
-        let cr = collision.rect in
-        let current_room_location = List.assoc game.room.id state.world in
-        let ghost_pos = game.ghost.entity.dest.pos in
-        let global_ghost_pos = get_global_pos ghost_pos current_room_location in
-        let (path, target_room_id) : string * room_id =
-          let global_x, global_y =
-            ( cr.pos.x +. (cr.w /. 2.) +. current_room_location.global_x,
-              cr.pos.y +. (cr.h /. 2.) +. current_room_location.global_y )
-          in
-          Tiled.Room.locate state.world global_x global_y
-        in
-        let room_location = List.assoc target_room_id state.world in
-        let exits = Tiled.Room.get_exits room_location in
-        let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
-        let start_pos : vector =
-          tmp "got room exit direction: %s" (Show.direction collision.direction);
-
-          (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
-          match collision.direction with
-          | LEFT ->
-            game.ghost.entity.sprite.facing_right <- true;
-            { start_pos' with x = start_pos'.x +. game.ghost.entity.dest.w }
-          | RIGHT ->
-            game.ghost.entity.sprite.facing_right <- false;
-            { start_pos' with x = start_pos'.x -. game.ghost.entity.dest.w }
-          | UP -> { start_pos' with y = start_pos'.y +. game.ghost.entity.dest.h }
-          | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.entity.dest.h }
-        in
-
-        let room_uuid = Tiled.Room.get_uuid game.room in
-        game.progress <- Utils.assoc_replace room_uuid game.room.progress game.progress;
-        let room =
-          Room.init
-            {
-              file_name = path;
-              progress = game.progress;
-              exits;
-              enemy_configs = state.global.enemy_configs;
-              npc_configs = state.global.npc_configs;
-              pickup_indicator_texture = state.global.textures.pickup_indicator;
-            }
-        in
-        game.ghost.entity.current_floor <- None;
-        game.ghost.current.wall <- None;
-        game.ghost.spawned_vengeful_spirits <- [];
-        game.ghost.entity.dest.pos <- start_pos;
-        (* all rooms are using the same tilesets now, but still unload them here (and re-load them
-           in load_room) every time because the tilesets could be in a different order per room
-           - not really sure about ^this comment, I don't know if different tileset order would break the
-             tile lookup code now, so just unload/reload to be safe ¯\_(ツ)_/¯
-        *)
-        (* TODO probably need to unload things like enemy textures *)
-        Tiled.Room.unload_tilesets game.room;
-        game.room <- room;
-        game.room.layers <- Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
-        state.camera.raylib <- Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.;
-        true)
-  in
+  let handle_room_exits () = Room.handle_transitions state game in
 
   let handle_interactions () =
     (* the ghost can only collide with one trigger at a time *)
@@ -896,10 +859,10 @@ let update (game : game) (state : state) =
       | Some (name, _rect) ->
         (* TODO maybe want to also check `Entity.on_ground game.ghost.entity` *)
         if key_pressed INTERACT then
-          maybe_begin_interaction (state, game) name);
+          maybe_begin_interaction state game name);
       (match find_trigger_collision game.ghost game.room.triggers.cutscene with
       | None -> ()
-      | Some (name, _rect) -> maybe_begin_interaction (state, game) name);
+      | Some (name, _rect) -> maybe_begin_interaction state game name);
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
@@ -941,8 +904,10 @@ let update (game : game) (state : state) =
               match get_current_slash game.ghost with
               | Some slash -> game.ghost.child <- None
               | None -> ())
-          | FADE_SCREEN_OUT -> state.screen_faded <- true
-          | FADE_SCREEN_IN -> state.screen_faded <- false
+          | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
+          | FADE_SCREEN_IN -> state.screen_fade <- None
+          | PUSH_RECT (x, y, w, h) ->
+            game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
           | TEXT paragraphs ->
             let text : Interaction.text = { content = paragraphs; increases_health = false } in
             game.interaction.speaker_name <- None;
@@ -957,9 +922,7 @@ let update (game : game) (state : state) =
             let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (tile_x, tile_y) in
             let x, y = (tx *. Config.scale.room, ty *. Config.scale.room) in
             state.camera.subject <- FIXED { x; y }
-          | SET_GHOST_CAMERA ->
-            game.ghost.entity.update_pos <- true;
-            state.camera.subject <- GHOST
+          | SET_GHOST_CAMERA -> state.camera.subject <- GHOST
           | WAIT time -> new_wait := time -. state.frame.dt
           | HIDE_BOSS_DOORS ->
             (match List.find_opt (fun (l : layer) -> l.name = "hidden-boss-doors") game.room.layers with
@@ -1002,8 +965,7 @@ let update (game : game) (state : state) =
             game.interaction.speaker_name <- Some speaker;
             game.interaction.text <- Some (DIALOGUE (speaker, text))
           | PURPLE_PEN_TEXT lines ->
-            game.ghost.entity.update_pos <- false;
-            game.ghost.entity.v <- Zero.vector ();
+            Entity.freeze game.ghost.entity;
             let text : Interaction.text = { content = lines; increases_health = false } in
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
@@ -1023,7 +985,7 @@ let update (game : game) (state : state) =
         in
 
         let add_item (item_kind : Interaction.item_kind) =
-          Room.update_pickup_indicators (state, game);
+          Room.update_pickup_indicators state game;
           match item_kind with
           | ABILITY ability_name -> enable_ability game.ghost ability_name
           | DREAMER (item_name, dreamer_item_text) ->
@@ -1037,7 +999,7 @@ let update (game : game) (state : state) =
             let text : Interaction.text =
               { content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]; increases_health = false }
             in
-            acquire_weapon (state, game) weapon_name;
+            acquire_weapon state game weapon_name;
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
         in
@@ -1194,13 +1156,13 @@ let update (game : game) (state : state) =
       && game.ghost.soul.current >= Config.action.soul_per_cast
       && past_cooldown game.ghost.history.cast_vs state.frame.time
       && (not (is_doing game.ghost (ATTACK RIGHT) state.frame.time))
-      && not (is_casting (state, game))
+      && not (is_casting state game)
     in
 
     let this_frame =
       if trying_cast then (
         let cast_spell spell_kind =
-          start_action ~debug:true (state, game) (CAST spell_kind);
+          start_action ~debug:true state game (CAST spell_kind);
           true
         in
         let can_howl () =
@@ -1237,7 +1199,7 @@ let update (game : game) (state : state) =
             if Option.is_some game.ghost.entity.current_floor then (
               state.camera.shake <- 1.;
               game.ghost.current.is_diving <- false;
-              start_action (state, game) DIVE_COOLDOWN;
+              start_action state game DIVE_COOLDOWN;
               game.ghost.child <-
                 (let dest = game.ghost.entity.dest in
                  let relative_pos = ALIGNED (CENTER, BOTTOM) in
@@ -1269,7 +1231,7 @@ let update (game : game) (state : state) =
       game.ghost.abilities.mothwing_cloak
       && key_pressed_or_buffered DASH
       && (not (is_doing game.ghost (ATTACK RIGHT) state.frame.time))
-      && (not (is_casting (state, game)))
+      && (not (is_casting state game))
       && Option.is_none game.ghost.entity.x_recoil
       && game.ghost.can_dash
       && past_cooldown game.ghost.history.dash state.frame.time
@@ -1280,7 +1242,7 @@ let update (game : game) (state : state) =
         (* TODO "dash in currently-facing direction" almost always works, but not when walljumping,
            so this should probably be `DASHING of direction` and check LEFT/RIGHT keys
         *)
-        start_action (state, game) DASH;
+        start_action state game DASH;
         stop_wall_sliding := true;
         true)
       else if still_dashing () then (
@@ -1330,7 +1292,7 @@ let update (game : game) (state : state) =
     let this_frame =
       if starting_wall_kick () then (
         stop_wall_sliding := true;
-        start_action (state, game) WALL_KICK;
+        start_action state game WALL_KICK;
         true)
       else if continuing_wall_kick () then (
         stop_wall_sliding := true;
@@ -1385,18 +1347,18 @@ let update (game : game) (state : state) =
           (* don't really care about socd for up/down *)
           if game.ghost.entity.sprite.facing_right then RIGHT else LEFT
       in
-      start_action (state, game) (ATTACK direction))
+      start_action state game (ATTACK direction))
     else (
       match get_current_slash game.ghost with
       | None -> ()
       | Some slash ->
         continue_action game (ATTACK slash.direction) state.frame.time;
-        maybe_despawn_child (state, game) slash.sprite)
+        maybe_despawn_child state game slash.sprite)
   in
 
   let handle_focusing () : handled_action =
-    (* TODO-4 add a delay before deducting soul *)
-    (* TODO-5 add charge_action that can happen before start_action
+    (* TODO-5 add a delay before deducting soul *)
+    (* TODO-6 add charge_action that can happen before start_action
        - also used for c-dash, dive, wings, nail arts, etc. so it needs to be a reusable way to handle this
     *)
     let starting_focus () =
@@ -1408,7 +1370,7 @@ let update (game : game) (state : state) =
     let still_focusing () = is_doing game.ghost FOCUS state.frame.time && state.frame_inputs.focus.down in
     let this_frame =
       if starting_focus () then (
-        start_action (state, game) FOCUS;
+        start_action state game FOCUS;
         true)
       else if still_focusing () then (
         continue_action game FOCUS state.frame.time;
@@ -1508,10 +1470,10 @@ let update (game : game) (state : state) =
 
   (match get_particle_child_sprite game.ghost with
   | None -> ()
-  | Some dive_sprite -> maybe_despawn_child (state, game) dive_sprite);
-  if is_vulnerable (state, game) then (
+  | Some dive_sprite -> maybe_despawn_child state game dive_sprite);
+  if is_vulnerable state game then (
     match get_enemy_collision game.ghost game.room with
-    | Some direction -> start_action (state, game) (TAKE_DAMAGE direction)
+    | Some direction -> start_action state game (TAKE_DAMAGE direction)
     | None -> ());
   let collisions = Entity.get_floor_collisions game.room game.ghost.entity in
   state.debug.rects <- List.map (fun c -> (Raylib.Color.green, snd c)) collisions;
@@ -1562,24 +1524,21 @@ let load_shared_textures (shared_texture_configs : (string * texture_config) lis
     focus_sparkles = build_shared_texture "focus-sparkles";
   }
 
-(* CLEANUP too many args *)
 let init
     (ghost_id : ghost_id)
+    (textures : ghost_textures)
     (in_party : bool)
-    (idle_texture : texture)
     (action_config : (string * ghost_action_config) list)
     (start_pos : vector)
-    (abilities : Json_t.ghost_abilities)
-    weapons
-    textures
-    shared_textures
-    max_health =
+    (save_file : Json_t.save_file)
+    weapons_configs
+    shared_textures =
   let use_json_action_config action_name : ghost_action_config =
     match List.assoc_opt action_name action_config with
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
     | Some config -> config
   in
-  let dest = Sprite.make_dest start_pos.x start_pos.y idle_texture in
+  let dest = Sprite.make_dest start_pos.x start_pos.y textures.idle in
   let make_action (config_name : string) : ghost_action =
     {
       doing_until = { at = -1000. };
@@ -1587,6 +1546,24 @@ let init
       config = use_json_action_config config_name;
       started = { at = -1000. };
     }
+  in
+
+  let load_weapon name = (name, List.assoc name weapons_configs) in
+  let weapons = List.map load_weapon save_file.weapons in
+
+  let max_health =
+    let finished_interaction_names =
+      match List.assoc_opt save_file.room_name save_file.progress with
+      | None -> []
+      | Some progress -> progress.finished_interactions
+    in
+    tmp "got finished_interaction_names: %s" (finished_interaction_names |> join);
+    let health_increases =
+      List.filter (String.starts_with ~prefix:"health_") finished_interaction_names |> List.length
+    in
+    tmp "got health_increases: %d" health_increases;
+    let base_health = 5 in
+    base_health + health_increases
   in
 
   {
@@ -1612,8 +1589,12 @@ let init
     shared_textures;
     entity =
       Entity.create_for_sprite
-        (Sprite.create (fmt "ghost-%s" (Show.ghost_id ghost_id)) ~collision:(Some DEST) idle_texture dest)
-        { pos = dest.pos; w = Config.ghost.width *. Config.scale.ghost; h = Config.ghost.height *. Config.scale.ghost };
+        (Sprite.create (fmt "ghost-%s" (Show.ghost_id ghost_id)) ~collision:(Some DEST) textures.idle dest)
+        {
+          pos = clone_vector dest.pos;
+          w = Config.ghost.width *. Config.scale.ghost;
+          h = Config.ghost.height *. Config.scale.ghost;
+        };
     can_dash = true;
     can_flap = true;
     health = { current = max_health; max = max_health };
@@ -1626,7 +1607,7 @@ let init
         last_decremented = { at = 0. };
       };
     spawned_vengeful_spirits = [];
-    abilities;
+    abilities = save_file.abilities;
     weapons;
     current_weapon =
       (* TODO should read these from weapons.json (but do this after adding save files) *)

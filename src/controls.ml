@@ -1,3 +1,5 @@
+open Types
+
 (* TODO prefix these with K or KEY_ so the names don't collide with type direction *)
 type key_action =
   (* actions *)
@@ -11,10 +13,7 @@ type key_action =
   | NAIL
   | PAUSE
   (* directions *)
-  | UP
-  | DOWN
-  | LEFT
-  | RIGHT
+  | ARROW of direction
   (* debug *)
   | DEBUG_UP
   | DEBUG_DOWN
@@ -39,10 +38,7 @@ let show_key_action k =
   | NAIL -> "NAIL"
   | PAUSE -> "PAUSE"
   (* directions *)
-  | UP -> "UP"
-  | DOWN -> "DOWN"
-  | LEFT -> "LEFT"
-  | RIGHT -> "RIGHT"
+  | ARROW direction -> fmt "ARROW (%s)" (Show.direction direction)
   (* debug *)
   | DEBUG_1 -> "DEBUG_1"
   | DEBUG_2 -> "DEBUG_2"
@@ -55,7 +51,11 @@ let show_key_action k =
   | DEBUG_RIGHT -> "DEBUG_RIGHT"
 
 let override_keybinds : (key_action * Raylib.Key.t) list =
-  let keybinds_json : (string * string) list = Tiled.read_keybinds () in
+  let keybinds_json : (string * string) list =
+    try File.read_config "keybinds" Json_j.keybinds_file_of_string with
+    (* TODO handle missing files in read_config and pass in the default value *)
+    | Sys_error _ -> []
+  in
   let override (action_name, key_name) =
     let action =
       match action_name with
@@ -70,10 +70,10 @@ let override_keybinds : (key_action * Raylib.Key.t) list =
       | "JUMP" -> JUMP
       | "NAIL" -> NAIL
       (* directions *)
-      | "UP" -> UP
-      | "DOWN" -> DOWN
-      | "LEFT" -> LEFT
-      | "RIGHT" -> RIGHT
+      | "UP" -> ARROW UP
+      | "DOWN" -> ARROW DOWN
+      | "LEFT" -> ARROW LEFT
+      | "RIGHT" -> ARROW RIGHT
       (* debug *)
       | "DEBUG_1" -> DEBUG_1
       | "DEBUG_2" -> DEBUG_2
@@ -84,7 +84,7 @@ let override_keybinds : (key_action * Raylib.Key.t) list =
       | "DEBUG_DOWN" -> DEBUG_DOWN
       | "DEBUG_LEFT" -> DEBUG_LEFT
       | "DEBUG_RIGHT" -> DEBUG_RIGHT
-      | _ -> Types.failwithf "bad override action_name: %s" action_name
+      | _ -> failwithf "bad override action_name: %s" action_name
     in
     let key =
       match key_name with
@@ -138,7 +138,7 @@ let override_keybinds : (key_action * Raylib.Key.t) list =
       (* TODO map other keys *)
       | _ ->
         (* TODO print out all valid key names *)
-        Types.failwithf "bad override key_name: %s" key_name
+        failwithf "bad override key_name: %s" key_name
     in
     (action, key)
   in
@@ -157,10 +157,10 @@ let default_keybinds : (key_action * Raylib.Key.t) list =
     (INTERACT, Raylib.Key.Left_shift);
     (PAUSE, Raylib.Key.Space);
     (* directions *)
-    (UP, Raylib.Key.Up);
-    (DOWN, Raylib.Key.Down);
-    (LEFT, Raylib.Key.Left);
-    (RIGHT, Raylib.Key.Right);
+    (ARROW UP, Raylib.Key.Up);
+    (ARROW DOWN, Raylib.Key.Down);
+    (ARROW LEFT, Raylib.Key.Left);
+    (ARROW RIGHT, Raylib.Key.Right);
     (* debug *)
     (DEBUG_1, Raylib.Key.One);
     (DEBUG_2, Raylib.Key.Two);

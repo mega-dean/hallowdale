@@ -256,7 +256,7 @@ let create_from_textures ?(collision = None) (texture_configs : texture_config l
       List.nth texture_configs 0
     in
     let get_filenames asset_dir char_name =
-      Sys.readdir (convert_path (fmt "../assets/%s/%s" asset_dir char_name)) |> Array.to_list
+      Sys.readdir (File.convert_path (fmt "../assets/%s/%s" asset_dir char_name)) |> Array.to_list
     in
     let config_names = texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name) in
     let png_names = get_filenames (Show.asset_dir tc.asset_dir) tc.character_name in

@@ -99,12 +99,19 @@
         }]
     ],
 
+    // "shared" npc textures is basically a junk drawer for things that don't belong anywhere else
     "shared_textures": [
         [ "pickup-indicator",
             {
                 "count": 30,
                 "duration": 0.06
             }
+        ],
+        [ "main-menu",
+          {
+              "count": 1,
+              "duration": 0.0
+          }
         ]
     ]
 }

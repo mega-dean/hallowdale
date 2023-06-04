@@ -77,9 +77,29 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
       [ CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); CURRENT_GHOST (ADD_ITEM (WEAPON interaction_name)) ]
     | _ -> (
       match full_interaction_name with
-      | "opening-poem" ->
+      | "info_opening-poem" ->
         [
-          (* TODO show this one line at a time on startup *)
+          (* TODO add STEP SHOW_RECT and STEP HIDE_RECT to uncover the lines of the poem one-at-a-time
+             - probably add something like `black_rects : rect list` to Interaction.t
+             - this doesn't work because render doesn't have access to game.interaction.black_rects
+          *)
+          STEP (TEXT [ "Give me some rope, tie me to dream." ]);
+          STEP (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
+          STEP
+            (TEXT
+               [
+                 "Give me some rope, tie me to dream.";
+                 "Give me the hope to run out of steam.";
+                 "Somebody said it could be here.";
+               ]);
+          STEP
+            (TEXT
+               [
+                 "Give me some rope, tie me to dream.";
+                 "Give me the hope to run out of steam.";
+                 "Somebody said it could be here.";
+                 "We could be roped up, tied up, dead in a year.";
+               ]);
           STEP
             (TEXT
                [
@@ -89,6 +109,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
                  "We could be roped up, tied up, dead in a year.";
                  " - excerpt from \"At Least It Was Here\" by The 88";
                ]);
+          STEP (WAIT 1.);
+          STEP FADE_SCREEN_IN;
         ]
       | "ability_scootenanny" ->
         get_ability_steps "mothwing_cloak" 0. 2. [ "Taken the"; "Scootenanny Chair." ]
@@ -477,9 +499,7 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             GHOST (BRITTA, ENTITY HIDE);
             GHOST (BRITTA, REMOVE_FROM_PARTY);
           ]
-      | "ability_monkey-gas" -> [
-          STEP (TEXT [ "... hello chat ..." ]);
-        ]
+      | "ability_monkey-gas" -> [ STEP (TEXT [ "... hello chat ..." ]) ]
       | other -> failwithf "unrecognized interaction name: %s" other)
   in
   (* SET_GHOST_CAMERA to reset the camera if it changed *)
