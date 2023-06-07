@@ -19,7 +19,11 @@ let init () : state =
   let npc_configs = parse_texture_configs Npc.parse_name npcs_file.npcs in
 
   let build_shared_npc_texture name =
-    let config = List.assoc name npcs_file.shared_textures in
+    let config =
+      match List.assoc_opt name npcs_file.shared_textures with
+      | Some c -> c
+      | None -> failwithf "missing config for '%s' in config/npcs.json" name
+    in
     Sprite.build_texture_from_config
       {
         asset_dir = NPCS;
@@ -32,6 +36,7 @@ let init () : state =
       }
   in
 
+  let door_lever = build_shared_npc_texture "door-lever" in
   let pickup_indicator = build_shared_npc_texture "pickup-indicator" in
   let main_menu = build_shared_npc_texture "main-menu" in
 
@@ -68,7 +73,7 @@ let init () : state =
       weapons = File.read_config "weapons" Json_j.weapons_file_of_string;
       enemy_configs;
       npc_configs;
-      textures = { ability_outlines; damage; pickup_indicator; main_menu };
+      textures = { ability_outlines; damage; pickup_indicator; main_menu; door_lever };
     }
   in
 
@@ -358,11 +363,12 @@ let tick (state : state) =
   if Controls.key_pressed DEBUG_4 then
     if state.debug.enabled then (
       state.debug.enabled <- false;
-      print "disabled debug at %d\n\\------------------\n" state.frame.idx)
+      print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
     else (
       state.debug.enabled <- true;
-      print "\n/-----------------\nenabled debug at %d" state.frame.idx);
+      print "\n/---------------------\\\n enabled debug at %d" state.frame.idx);
 
+  state.debug.rects <- [];
   match state.game_context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->

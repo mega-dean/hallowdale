@@ -87,9 +87,12 @@ module Tileset = struct
 end
 
 module Tile = struct
-  let tile_idx ~tile_w ~tile_h ~width (x, y) : int =
-    let tile_x, tile_y = (x /. tile_w |> Float.to_int, y /. tile_h |> Float.to_int) in
+  let tile_idx_from_coords ~width (x, y) : int =
+    let tile_x, tile_y = (x |> Float.to_int, y |> Float.to_int) in
     tile_x + (tile_y * width)
+
+  let tile_idx ~tile_w ~tile_h ~width (x, y) : int =
+    tile_idx_from_coords ~width (x /. tile_w, y /. tile_h)
 
   let tile_coords ~tile_w ~tile_h (x, y) : float * float = ((x |> Int.to_float) *. tile_w, (y |> Int.to_float) *. tile_h)
 
@@ -126,6 +129,9 @@ module Room = struct
 
   let get_uuid' area_id room_id : string = fmt "%s_%s" (Show.area_id area_id) (Show.room_id room_id)
   let get_uuid (room : room) : string = get_uuid' room.area.id room.id
+
+  let tile_idx (room : Json_t.room) (x, y) =
+    Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
 
   let locate (world : world) global_x global_y : string * room_id =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =

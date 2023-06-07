@@ -991,6 +991,7 @@ type triggers = {
   item_pickups : (string * rect) list;
   shadows : (string * rect) list;
   cutscene : (string * rect) list;
+  levers : (string * rect) list;
 }
 
 type camera_state = {
@@ -1002,6 +1003,7 @@ type camera_state = {
 type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
+(* | DOOR_LEVER of int *)
 
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death
@@ -1044,6 +1046,7 @@ type texture_cache = {
   ability_outlines : texture;
   pickup_indicator : texture;
   main_menu : texture;
+  door_lever : texture;
 }
 
 (* these are all things that are eager-loaded from json config files *)

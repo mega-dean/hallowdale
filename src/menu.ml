@@ -55,26 +55,14 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU CONTINUE ->
         state.pause_menu <- None;
         game.interaction.text <- None
-      | PAUSE_MENU CHANGE_WEAPON ->
-        tmp "opening CHANGE_WEAPON";
-        state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
+      | PAUSE_MENU CHANGE_WEAPON -> state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
       | PAUSE_MENU CHANGE_GHOST ->
-        tmp "opening CHANGE_GHOST";
         state.pause_menu <- Some (change_ghost_menu ([ (game.ghost.id, game.ghost) ] @ game.ghosts))
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
         state.pause_menu <- None;
         (* TODO unload textures *)
+        Room.save_progress game;
         let save_file : Json_t.save_file =
-          itmp "saving file with finished interactions: %s" (game.room.progress.finished_interactions |> join);
-          itmp "saving file with %d removed idxs" (List.length game.room.progress.removed_idxs_by_layer);
-          let ghosts_in_party = Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id in
-          itmp "saving ghosts_in_party: %s" (ghosts_in_party |> join);
-          itmp "saving ghost at: %s" (Show.vector game.ghost.entity.dest.pos);
-
-          Room.save_progress game;
-
-          tmp "got progress keys: %s" (List.map fst game.progress |> join);
-
           {
             ghost_id = Show.ghost_id game.ghost.id;
             ghosts_in_party =
@@ -92,23 +80,19 @@ let update_pause_menu (game : game) (state : state) : state =
         in
         let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
         let contents = Json_j.string_of_save_file save_file in
-        tmp "saving contents in %d:\n%s" game.save_file_slot contents;
         let written = File.write save_file_path contents in
         if written then
           state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ())
         else
           failwith "error when trying to save"
-      | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) ->
-        tmp "equipping weapon %s" weapon_name;
-        Ghost.equip_weapon game.ghost weapon_name
+      | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Ghost.equip_weapon game.ghost weapon_name
+      | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
+        if game.ghost.id <> ghost_id then
+          Ghost.swap_current_ghost state game ghost_id
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
         state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts)))
-      | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
-        tmp "switching to ghost %s" (Show.ghost_id ghost_id);
-        if game.ghost.id <> ghost_id then
-          Ghost.swap_current_ghost state game ghost_id
-      | c -> tmp "menu choice: %s" (Show.menu_choice c)));
+      | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
 
 let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : state =
@@ -123,10 +107,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       | 4 -> save_slots.slot_4
       | _ -> failwithf "bad save file idx: %d" save_file_idx
     in
-    let game =
-      itmp "calling Game.init with slot %d" save_file_idx;
-      Game.init save_file state.global state.world save_file_idx
-    in
+    let game = Game.init save_file state.global state.world save_file_idx in
     state.camera.raylib <-
       (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
          TODO can maybe improve this, since it can still be off if the camera is bounded

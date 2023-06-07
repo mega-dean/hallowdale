@@ -107,6 +107,12 @@
                 "duration": 0.06
             }
         ],
+        [ "door-lever",
+          {
+              "count": 1,
+              "duration": 0.0
+          }
+        ],
         [ "main-menu",
           {
               "count": 1,

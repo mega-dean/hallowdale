@@ -187,6 +187,10 @@ let ghost_child_kind (d : ghost_child_kind) : string =
   | WRAITHS -> "WRAITHS"
 
 let time (t : time) = fmt "%f" t.at
+let tile_group (tile_group : tile_group) : string = fmt "[%s]" (int_list tile_group.tile_idxs |> join)
+
+let layer_tile_groups (layer : layer) : string =
+  fmt "tile_groups:\n%s" (List.map tile_group layer.tile_groups |> join ~sep:"\n")
 
 let jug_config (config : jug_config) : string =
   fmt "%s === w %d, h %d, tile x %d" config.jug_name config.w config.h config.tile_x
@@ -217,38 +221,62 @@ let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
 
 let main_menu_choice (choice : main_menu_choice) =
   match choice with
-  | START_GAME -> "START_GAME"
-  | QUIT -> "QUIT"
+  | START_GAME -> "Start Game"
+  | QUIT -> "Quit"
 
 let save_files_choice (choice : save_files_choice) =
   match choice with
-  | SLOT_1 -> "SLOT_1"
-  | SLOT_2 -> "SLOT_2"
-  | SLOT_3 -> "SLOT_3"
-  | SLOT_4 -> "SLOT_4"
-  | BACK -> "BACK"
+  | SLOT_1 -> "1:"
+  | SLOT_2 -> "2:"
+  | SLOT_3 -> "3:"
+  | SLOT_4 -> "4:"
+  | BACK -> "Back"
 
 let pause_menu_choice (choice : pause_menu_choice) =
   match choice with
-  | CONTINUE -> "CONTINUE"
-  | CHANGE_GHOST -> "CHANGE_GHOST"
-  | CHANGE_WEAPON -> "CHANGE_WEAPON"
-  | QUIT_TO_MAIN_MENU -> "QUIT_TO_MAIN_MENU"
+  | CONTINUE -> "Continue"
+  | CHANGE_GHOST -> "Change Ghost"
+  | CHANGE_WEAPON -> "Change Weapon"
+  | QUIT_TO_MAIN_MENU -> "Save and Quit"
 
-let change_weapon_menu_choice (choice : change_weapon_menu_choice) =
+let change_weapon_menu_choice (game : game option) (choice : change_weapon_menu_choice) =
+  match game with
+  | None -> failwith "need to have a game to show weapons menu"
+  | Some game' -> (
+    match choice with
+    | EQUIP_WEAPON weapon_name ->
+      if game'.ghost.current_weapon.name = weapon_name then
+        fmt "{{blue}} %s" weapon_name
+      else
+        weapon_name
+    | BACK -> "Back")
+
+let menu_ghost_id (game : game option) id =
+  match game with
+  | None -> failwith "need to have a game to show weapons menu"
+  | Some game' -> (
+    let show name =
+      if id = game'.ghost.id then
+        fmt "{{blue}} %s" name
+      else
+        name
+    in
+    match id with
+    | ABED -> show "Abed"
+    | ANNIE -> show "Annie"
+    | BRITTA -> show "Britta"
+    | JEFF -> show "Jeff"
+    | TROY -> show "Troy")
+
+let change_ghost_menu_choice (game : game option) (choice : change_ghost_menu_choice) =
   match choice with
-  | EQUIP_WEAPON weapon_name -> fmt "EQUIP WEAPON %s" weapon_name
-  | BACK -> "BACK"
+  | USE_GHOST id -> menu_ghost_id game id
+  | BACK -> "Back"
 
-let change_ghost_menu_choice (choice : change_ghost_menu_choice) =
-  match choice with
-  | USE_GHOST id -> fmt "USE GHOST %s" (ghost_id id)
-  | BACK -> "BACK"
-
-let menu_choice (choice : menu_choice) =
+let menu_choice (game : game option) (choice : menu_choice) =
   match choice with
   | MAIN_MENU choice -> main_menu_choice choice
   | SAVE_FILES choice -> save_files_choice choice
   | PAUSE_MENU choice -> pause_menu_choice choice
-  | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice choice
-  | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice choice
+  | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice game choice
+  | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice game choice

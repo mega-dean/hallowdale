@@ -64,6 +64,7 @@ let init (params : room_params) : room =
   let json_room = parse_room (fmt "%s.json" params.file_name) in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : (string * rect) list ref = ref [] in
+  let lever_triggers : (string * rect) list ref = ref [] in
   let shadow_triggers : (string * rect) list ref = ref [] in
   let lore_triggers : (string * rect) list ref = ref [] in
   let pickup_triggers : (string * rect) list ref = ref [] in
@@ -94,14 +95,19 @@ let init (params : room_params) : room =
       let tile_idx () =
         (* this fn finds the tile_idx that the trigger object's top-left corner is in, so trigger objects that are
            used like this (purple-pen, door-health) don't need to be placed exactly at that tile's coordinates *)
-        Tiled.Tile.tile_idx ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h ~width:json_room.w_in_tiles
-          (coll_rect.x, coll_rect.y)
+        Tiled.Room.tile_idx json_room (coll_rect.x, coll_rect.y)
       in
+      let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
       match name_prefix with
-      (* FIXME add "lever" for unlocking doors *)
       | "camera" -> camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
-      | "door-health" -> idx_configs := (tile_idx (), DOOR_HITS (coll_rect.h |> Float.to_int)) :: !idx_configs
-      | "purple-pen" -> idx_configs := (tile_idx (), PURPLE_PEN coll_rect.name) :: !idx_configs
+      | "lever" -> lever_triggers := get_object_rect ~floor:true name coll_rect :: !lever_triggers
+      | "door-health" ->
+        let door_health =
+          (* this uses the object height, eg most breakable walls take 4 hits to destroy, so the door-health rects are 4 pixels high *)
+          coll_rect.h |> Float.to_int
+        in
+        add_idx_config (DOOR_HITS door_health)
+      | "purple-pen" -> add_idx_config (PURPLE_PEN coll_rect.name)
       | "hide" -> shadow_triggers := get_object_rect name coll_rect :: !shadow_triggers
       | "info"
       | "health" ->
@@ -198,6 +204,7 @@ let init (params : room_params) : room =
               match layer_name with
               | "floors" -> [ "collides" ]
               | "boss-doors" -> [ "collides" ]
+              | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
               | "bg-iso"
               | "bg-iso-lava"
@@ -212,6 +219,7 @@ let init (params : room_params) : room =
               | "bg-jugs" -> [ "bg"; "destroyable"; "pogo" ]
               | json_name -> failwithf "unknown layer name: %s" json_name
             in
+
             let build_config config_parts =
               let has name = List.mem name config_parts in
               let depth_configs = ref 0 in
@@ -393,6 +401,7 @@ let init (params : room_params) : room =
         item_pickups = !pickup_triggers;
         cutscene = !cutscene_triggers;
         shadows = !shadow_triggers;
+        levers = !lever_triggers;
       };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
@@ -435,9 +444,10 @@ let handle_transitions (state : state) (game : game) =
       let exits = Tiled.Room.get_exits room_location in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
-        tmp "got room exit direction: %s" (Show.direction collision.direction);
-
-        (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
+        (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen
+           - TODO I think this is broken when exiting a room below (falling)
+           - the ghost can pretty easily fall through the floor at the mama-mahogany cutscene that happens right after room transition
+        *)
         match collision.direction with
         | LEFT ->
           game.ghost.entity.sprite.facing_right <- true;

@@ -38,10 +38,7 @@ let load_all_save_slots () : save_slots =
           current_weapon = "Old Nail";
         },
         true )
-    | Some save_file ->
-      let s = Json_j.save_file_of_string save_file in
-      itmp "loading save file with current_weapon: %s" s.current_weapon;
-      (s, false)
+    | Some save_file -> (Json_j.save_file_of_string save_file, false)
   in
   { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
 
@@ -97,7 +94,6 @@ let init (save_file : Json_t.save_file) (global : global_cache) (world : world) 
   britta.entity.update_pos <- true;
 
   let all_ghosts =
-    tmp "making ghosts with in_party: %s" (save_file.ghosts_in_party |> join);
     (* TODO could check config keys to decide when to fall back to britta so poses can be added without recompiling *)
     let make_uncontrolled_ghost name config =
       let in_party = List.mem (Show.ghost_id name) save_file.ghosts_in_party in

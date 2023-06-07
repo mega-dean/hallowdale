@@ -335,70 +335,100 @@ let resolve_slash_collisions (state : state) (game : game) =
             in
             List.iter check_projectile_pogo enemy.spawned_projectiles))
     in
-    let resolve_layer (layer : layer) =
-      let new_tile_groups : tile_group list ref = ref [] in
-      let spawn_fragment (collision : collision) (e : entity) =
-        let new_fragment = Entity.clone e in
-        new_fragment.dest.pos <- { x = collision.rect.pos.x; y = collision.rect.pos.y };
-        new_fragment.v <- { x = Random.float 501. -. 200.; y = Random.float 1000. -. 1000. };
-        new_fragment.update_pos <- true;
-        new_fragment
-      in
-      let destroy_object (tile_group : tile_group) (collision : collision) =
-        layer.spawned_fragments <- List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
-        let idx = List.nth tile_group.tile_idxs 0 in
-        (match List.assoc_opt idx game.room.idx_configs with
-        | Some (PURPLE_PEN name) -> maybe_begin_interaction state game name
-        | _ -> ());
-        layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
-        if layer.config.permanently_removable then (
-          (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
-             - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
-          *)
-          let existing =
-            match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
-            | None -> []
-            | Some idxs -> idxs
-          in
-          game.room.progress.removed_idxs_by_layer <-
-            Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) game.room.progress.removed_idxs_by_layer);
-        (* collision direction is opposite of slash direction *)
-        tmp "got collision with direction %s, with layer %s pogoable %b" (Show.direction collision.direction) layer.name
-          layer.config.pogoable;
-        if collision.direction = DOWN && layer.config.pogoable then
-          pogo game.ghost;
-        match tile_group.stub_sprite with
-        | None -> ()
-        | Some sprite ->
-          layer.spawned_stub_sprites <- (sprite, tile_group.transformation_bits) :: layer.spawned_stub_sprites
-      in
-      let resolve_tile_group (tile_group : tile_group) =
-        match Collision.with_slash' slash tile_group.dest with
-        | None -> new_tile_groups := tile_group :: !new_tile_groups
-        | Some coll -> (
-          match tile_group.door_health with
-          | None -> destroy_object tile_group coll
-          | Some door_health ->
-            if door_health.last_hit_at < game.ghost.history.nail.started.at then (
-              door_health.last_hit_at <- state.frame.time;
-              if door_health.hits > 1 then (
-                let get_random_fragment_idx () = Random.int (List.length tile_group.fragments - 1) in
-                let make_random_fragment _n = List.nth tile_group.fragments (get_random_fragment_idx ()) in
-                let random_fragments = List.init (Random.int 3) make_random_fragment in
-                layer.spawned_fragments <- List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
-                door_health.hits <- door_health.hits - 1;
-                new_tile_groups := tile_group :: !new_tile_groups)
+
+    let destroy_tile_group layer tile_group = layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles in
+
+    let resolve_destroyable_layer (layer : layer) =
+      if layer.config.destroyable then (
+        let new_tile_groups : tile_group list ref = ref [] in
+        let spawn_fragment (collision : collision) (e : entity) =
+          let new_fragment = Entity.clone e in
+          new_fragment.dest.pos <- { x = collision.rect.pos.x; y = collision.rect.pos.y };
+          new_fragment.v <- { x = Random.float 501. -. 200.; y = Random.float 1000. -. 1000. };
+          new_fragment.update_pos <- true;
+          new_fragment
+        in
+        let destroy_object (tile_group : tile_group) (collision : collision) =
+          layer.spawned_fragments <- List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
+          let idx = List.nth tile_group.tile_idxs 0 in
+          (match List.assoc_opt idx game.room.idx_configs with
+          | Some (PURPLE_PEN name) -> maybe_begin_interaction state game name
+          | _ -> ());
+          destroy_tile_group layer tile_group;
+          if layer.config.permanently_removable then (
+            (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
+               - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
+            *)
+            let existing =
+              match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
+              | None -> []
+              | Some idxs -> idxs
+            in
+            game.room.progress.removed_idxs_by_layer <-
+              Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) game.room.progress.removed_idxs_by_layer);
+          if collision.direction = DOWN && layer.config.pogoable then
+            pogo game.ghost;
+          match tile_group.stub_sprite with
+          | None -> ()
+          | Some sprite ->
+            layer.spawned_stub_sprites <- (sprite, tile_group.transformation_bits) :: layer.spawned_stub_sprites
+        in
+        let resolve_tile_group (tile_group : tile_group) =
+          match Collision.with_slash' slash tile_group.dest with
+          | None -> new_tile_groups := tile_group :: !new_tile_groups
+          | Some coll -> (
+            match tile_group.door_health with
+            | None -> destroy_object tile_group coll
+            | Some door_health ->
+              if door_health.last_hit_at < game.ghost.history.nail.started.at then (
+                door_health.last_hit_at <- state.frame.time;
+                if door_health.hits > 1 then (
+                  let get_random_fragment_idx () = Random.int (List.length tile_group.fragments - 1) in
+                  let make_random_fragment _n = List.nth tile_group.fragments (get_random_fragment_idx ()) in
+                  let random_fragments = List.init (Random.int 3) make_random_fragment in
+                  layer.spawned_fragments <- List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
+                  door_health.hits <- door_health.hits - 1;
+                  new_tile_groups := tile_group :: !new_tile_groups)
+                else
+                  destroy_object tile_group coll)
               else
-                destroy_object tile_group coll)
-            else
-              new_tile_groups := tile_group :: !new_tile_groups;
-            ())
-      in
-      List.iter resolve_tile_group layer.tile_groups;
-      layer.tile_groups <- !new_tile_groups
+                new_tile_groups := tile_group :: !new_tile_groups;
+              ())
+        in
+        List.iter resolve_tile_group layer.tile_groups;
+        layer.tile_groups <- !new_tile_groups)
     in
-    let layers = List.filter (fun (l : layer) -> l.config.destroyable) game.room.layers in
-    List.iter resolve_layer layers;
+
+    let resolve_lever (door_coords, lever_dest) =
+      let layer = List.find (fun (l : layer) -> l.name = "lever-doors") game.room.layers in
+      let new_tile_groups : tile_group list ref = ref [] in
+      let x', y' = Utils.separate door_coords '-' in
+      let door_tile_idx =
+        Tiled.Tile.tile_idx_from_coords ~width:game.room.json.w_in_tiles (x' |> float_of_string, y' |> float_of_string)
+      in
+      match Collision.with_slash' slash lever_dest with
+      (* TODO don't really need to check slash collisions after a lever's door has already been opened *)
+      | None -> ()
+      | Some collision -> (
+        let has_tile_idx tile_group = List.mem door_tile_idx tile_group.tile_idxs in
+        match List.find_opt has_tile_idx layer.tile_groups with
+        | None -> ()
+        | Some tile_group ->
+          layer.tile_groups <- List.filter (fun (t : tile_group) -> t.dest <> tile_group.dest) layer.tile_groups;
+          destroy_tile_group layer tile_group;
+          if layer.config.permanently_removable then (
+            let existing =
+              match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
+              | None -> []
+              | Some idxs -> idxs
+            in
+            game.room.progress.removed_idxs_by_layer <-
+              Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) game.room.progress.removed_idxs_by_layer)
+        )
+    in
+
+    List.iter resolve_lever game.room.triggers.levers;
+    List.iter resolve_destroyable_layer game.room.layers;
     List.iter resolve_enemy game.room.enemies
 
 (* state updates for current pose, texture animation, and sprite *)
@@ -720,18 +750,6 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
     game.ghost <- new_ghost;
     game.ghosts <- new_ghosts
 
-let cycle_current_ghost (state : state) (game : game) =
-  let ghost_ids = available_ghost_ids game.ghosts in
-  tmp "got %d ghosts" (List.length game.ghosts);
-  if List.length ghost_ids > 0 then (
-    let sorted_ghost_ids : ghost_id list = List.filter (fun id -> id > game.ghost.id) ghost_ids |> List.sort compare in
-    let new_ghost_id =
-      match List.nth_opt sorted_ghost_ids 0 with
-      | Some id -> id
-      | None -> List.nth (ghost_ids |> List.sort compare) 0
-    in
-    swap_current_ghost state game new_ghost_id)
-
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   let new_val v =
     if debug then
@@ -821,21 +839,18 @@ let update (game : game) (state : state) =
       game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x +. dv
     else if key_down DEBUG_LEFT then
       game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
-    else if key_pressed DEBUG_1 then (
-      tmp "cycling current ghost";
-      (* cycle_current_ghost state game *)
+    else if key_pressed DEBUG_1 then
       (* state.loaded_state <- MAIN_MENU main_menu *)
       (* print "current weapons: %s" (game.ghost.weapons |> List.map fst |> join) *)
       toggle_ability game.ghost "mantis_claw"
-      (* toggle_ability game.ghost "vengeful_spirit" *)
-      (* print "%s" (Show.shape_lines (Option.get game.ghost.entity.sprite.collision)) *))
+    (* toggle_ability game.ghost "vengeful_spirit" *)
+    (* print "%s" (Show.shape_lines (Option.get game.ghost.entity.sprite.collision)) *)
     else if key_pressed DEBUG_2 then (
       (* toggle_ability game.ghost "monarch_wings" *)
       game.ghost.soul.current <- game.ghost.soul.max;
       toggle_ability game.ghost "desolate_dive")
     else if key_pressed DEBUG_3 then (
       let weapon_name = "Devil's Drench XJ-11" in
-      tmp "acquiring weapon %s" weapon_name;
       acquire_weapon state game weapon_name
       (* equip_weapon game.ghost "Orange Paintball Gun" *)
       (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
@@ -1476,7 +1491,7 @@ let update (game : game) (state : state) =
     | Some direction -> start_action state game (TAKE_DAMAGE direction)
     | None -> ());
   let collisions = Entity.get_floor_collisions game.room game.ghost.entity in
-  state.debug.rects <- List.map (fun c -> (Raylib.Color.green, snd c)) collisions;
+  state.debug.rects <- List.map (fun c -> (Raylib.Color.green, snd c)) collisions @ state.debug.rects;
   apply_collisions game.ghost.entity collisions;
   handle_wall_sliding collisions;
   maybe_unset_current_floor game.ghost;
@@ -1557,11 +1572,9 @@ let init
       | None -> []
       | Some progress -> progress.finished_interactions
     in
-    tmp "got finished_interaction_names: %s" (finished_interaction_names |> join);
     let health_increases =
       List.filter (String.starts_with ~prefix:"health_") finished_interaction_names |> List.length
     in
-    tmp "got health_increases: %d" health_increases;
     let base_health = 5 in
     base_health + health_increases
   in

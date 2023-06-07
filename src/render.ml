@@ -480,7 +480,7 @@ let tick (state : state) =
       (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 alpha)
   in
 
-  let maybe_draw_text (interaction_text : Interaction.text_kind option) =
+  let maybe_draw_text (game : game option) (interaction_text : Interaction.text_kind option) =
     let draw_text_bg_box (config : text_config) =
       let w = Config.window.width - (2 * config.margin_x) in
       let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
@@ -671,17 +671,15 @@ let tick (state : state) =
 
       (match save_slots with
       | Some save_slots' ->
-        itmp "save_slots': %b %b %b %b" (is_new_game save_slots'.slot_1) (is_new_game save_slots'.slot_2)
-          (is_new_game save_slots'.slot_3) (is_new_game save_slots'.slot_4);
         let show_save_slot idx ((slot, is_new_game) : Json_t.save_file * bool) =
-          fmt "slot %d: %s" idx (if is_new_game then "New Game" else "Continue")
+          fmt "save %d: %s" idx (if is_new_game then "New Game" else "Continue")
         in
         let save_slot_choices =
           List.mapi show_save_slot [ save_slots'.slot_1; save_slots'.slot_2; save_slots'.slot_3; save_slots'.slot_4 ]
-          @ [ "Back" ]
+          @ [ Show.save_files_choice BACK ]
         in
         List.iteri (display_paragraph config 0) save_slot_choices
-      | None -> List.iteri (display_paragraph config 0) (List.map Show.menu_choice menu.choices));
+      | None -> List.iteri (display_paragraph config 0) (List.map (Show.menu_choice game) menu.choices));
       (* TODO better cursor for current item *)
       display_paragraph config 0 menu.current_choice_idx "*                                           *"
   in
@@ -696,7 +694,7 @@ let tick (state : state) =
     let x, y = (camera_x +. x', camera_y +. 50.) in
     let dest = { pos = { x; y }; w; h } in
     draw_texture state.global.textures.main_menu dest 0;
-    maybe_draw_text (Some (MENU (menu, save_slots)));
+    maybe_draw_text None (Some (MENU (menu, save_slots)));
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
@@ -713,7 +711,14 @@ let tick (state : state) =
           if state.debug.enabled then
             debug_rect_outline sprite.dest;
           draw_sprite sprite)
-        game.room.pickup_indicators
+        game.room.pickup_indicators;
+
+      List.iter
+        (fun (name, dest) ->
+          if state.debug.enabled then
+            debug_rect_outline dest;
+          draw_texture state.global.textures.door_lever dest 0)
+        game.room.triggers.levers
     in
 
     let draw_debug_info () =
@@ -929,7 +934,7 @@ let tick (state : state) =
        | None -> game.interaction.text
        | Some pause_menu -> Some (MENU (pause_menu, None))
      in
-     maybe_draw_text interaction_text);
+     maybe_draw_text (Some game) interaction_text);
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     if state.debug.enabled then
       draw_debug_info ();
