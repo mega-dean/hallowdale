@@ -3,6 +3,8 @@
 
 An homage to Hollow Knight.
 
+![main menu screenshot](./assets/main-menu-screenshot.png)
+
 ### Project goals
 
 - doable
