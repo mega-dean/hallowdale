@@ -40,6 +40,7 @@ type room_params = {
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;
+  lever_texture : texture;
 }
 
 let init (params : room_params) : room =
@@ -64,7 +65,7 @@ let init (params : room_params) : room =
   let json_room = parse_room (fmt "%s.json" params.file_name) in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : (string * rect) list ref = ref [] in
-  let lever_triggers : (string * rect) list ref = ref [] in
+  let lever_triggers : (string * sprite) list ref = ref [] in
   let shadow_triggers : (string * rect) list ref = ref [] in
   let lore_triggers : (string * rect) list ref = ref [] in
   let pickup_triggers : (string * rect) list ref = ref [] in
@@ -100,7 +101,17 @@ let init (params : room_params) : room =
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
       match name_prefix with
       | "camera" -> camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
-      | "lever" -> lever_triggers := get_object_rect ~floor:true name coll_rect :: !lever_triggers
+      | "lever" ->
+        let lever_sprite () : sprite =
+          {
+            ident = fmt "Sprite %s" name;
+            dest = get_object_rect ~floor:true name coll_rect |> snd;
+            texture = params.lever_texture;
+            collision = (* TODO collision shape for levers *) None;
+            facing_right = true;
+          }
+        in
+        lever_triggers := (name, lever_sprite ()) :: !lever_triggers
       | "door-health" ->
         let door_health =
           (* this uses the object height, eg most breakable walls take 4 hits to destroy, so the door-health rects are 4 pixels high *)
@@ -470,6 +481,7 @@ let handle_transitions (state : state) (game : game) =
             enemy_configs = state.global.enemy_configs;
             npc_configs = state.global.npc_configs;
             pickup_indicator_texture = state.global.textures.pickup_indicator;
+            lever_texture = state.global.textures.door_lever;
           }
       in
       game.ghost.entity.current_floor <- None;

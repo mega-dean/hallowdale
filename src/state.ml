@@ -18,13 +18,13 @@ let init () : state =
   let npcs_file = File.read_config "npcs" Json_j.npcs_file_of_string in
   let npc_configs = parse_texture_configs Npc.parse_name npcs_file.npcs in
 
-  let build_shared_npc_texture name =
+  let build_shared_npc_texture ?(once = false) name =
     let config =
       match List.assoc_opt name npcs_file.shared_textures with
       | Some c -> c
       | None -> failwithf "missing config for '%s' in config/npcs.json" name
     in
-    Sprite.build_texture_from_config
+    Sprite.build_texture_from_config ~once
       {
         asset_dir = NPCS;
         character_name = "shared";
@@ -36,6 +36,7 @@ let init () : state =
       }
   in
 
+  let door_lever_struck = build_shared_npc_texture ~once:true "door-lever-struck" in
   let door_lever = build_shared_npc_texture "door-lever" in
   let pickup_indicator = build_shared_npc_texture "pickup-indicator" in
   let main_menu = build_shared_npc_texture "main-menu" in
@@ -73,7 +74,7 @@ let init () : state =
       weapons = File.read_config "weapons" Json_j.weapons_file_of_string;
       enemy_configs;
       npc_configs;
-      textures = { ability_outlines; damage; pickup_indicator; main_menu; door_lever };
+      textures = { ability_outlines; damage; pickup_indicator; main_menu; door_lever; door_lever_struck };
     }
   in
 
@@ -188,10 +189,17 @@ let update_camera (game : game) (state : state) =
     state.camera.shake <- state.camera.shake -. state.frame.dt;
   state
 
-let update_fragments (game : game) (state : state) =
+(* this is for inanimate objects like jug fragments or door levers *)
+let update_environment (game : game) (state : state) =
   let update_fragment (f : entity) = Entity.update_pos game.room f state.frame.dt in
   let all_spawned_fragments = List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten in
   List.iter update_fragment all_spawned_fragments;
+  let update_lever (door_coords, lever_sprite) =
+    match Sprite.advance_or_despawn state.frame.time lever_sprite.texture lever_sprite with
+    | None -> lever_sprite.texture <- state.global.textures.door_lever
+    | Some lever_sprite -> ()
+  in
+  List.iter update_lever game.room.triggers.levers;
   state
 
 (* return value is "keep spawned" *)
@@ -384,7 +392,7 @@ let tick (state : state) =
         |> update_spawned_vengeful_spirits game
         |> update_enemies game
         |> update_npcs game
-        |> update_fragments game
+        |> update_environment game
         |> update_camera game
       in
       st')

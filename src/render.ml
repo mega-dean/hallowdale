@@ -714,10 +714,10 @@ let tick (state : state) =
         game.room.pickup_indicators;
 
       List.iter
-        (fun (name, dest) ->
+        (fun ((_door_coords, sprite) : string * sprite) ->
           if state.debug.enabled then
-            debug_rect_outline dest;
-          draw_texture state.global.textures.door_lever dest 0)
+            debug_rect_outline sprite.dest;
+          draw_sprite sprite)
         game.room.triggers.levers
     in
 

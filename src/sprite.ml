@@ -6,6 +6,7 @@ let make_dest x y (t : texture) : rect =
   let w =
     match t.animation_src with
     | STILL _ -> Raylib.Texture.width t.image |> Int.to_float
+    | ONCE animation
     | PARTICLE animation
     | LOOPED animation -> (
       try abs (Raylib.Texture.width t.image / List.length animation.frames) |> Int.to_float with
@@ -23,12 +24,17 @@ let get_current_frame_idx (animation_src : animation_src) : int =
   | STILL _ ->
     (* TODO maybe just return -1 if crashing is too inconvenient *)
     failwith "can't get current_idx of STILL animation"
+  | ONCE animation
   | PARTICLE animation
   | LOOPED animation ->
     animation.frame_idx
 
 let advance_animation (current_clock : float) next_texture (sprite : sprite) : unit =
-  let advance_animation' animation =
+  match sprite.texture.animation_src with
+  | STILL _ -> ()
+  | ONCE animation
+  | PARTICLE animation
+  | LOOPED animation ->
     let current_animation_idx = animation.frame_idx mod List.length animation.frames in
     let animation_frame =
       if List.length animation.frames = 0 then
@@ -40,16 +46,11 @@ let advance_animation (current_clock : float) next_texture (sprite : sprite) : u
     if should_advance_frame () then (
       match next_texture.animation_src with
       | STILL _ -> ()
+      | ONCE next_animation
       | PARTICLE next_animation
       | LOOPED next_animation ->
         next_animation.frame_idx <- current_animation_idx + 1;
         next_animation.frame_started.at <- current_clock)
-  in
-  match sprite.texture.animation_src with
-  | STILL _ -> ()
-  | PARTICLE animation
-  | LOOPED animation ->
-    advance_animation' animation
 
 type particle_animation = { should_despawn : bool }
 
@@ -57,12 +58,14 @@ type particle_animation = { should_despawn : bool }
 let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : sprite option =
   let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) : particle_animation =
     match sprite.texture.animation_src with
+    | STILL _ -> { should_despawn = false }
+    | LOOPED animation
+    | ONCE animation
     | PARTICLE animation ->
       let start_idx = get_current_frame_idx sprite.texture.animation_src in
       advance_animation current_clock next_texture sprite;
       let should_despawn = animation.frame_idx = List.length animation.frames in
       { should_despawn }
-    | _ -> failwith "advance_particle_animation on non-PARTICLE animation"
   in
   let particle = advance_particle_animation current_clock next_texture sprite in
   if particle.should_despawn then None else Some sprite
@@ -73,6 +76,7 @@ let get_path (texture_config : texture_config) : string =
 let build_texture'
     ?(scale = Config.scale.ghost)
     ?(particle = false)
+    ?(once = false)
     ?(animation_src_rect = None)
     (texture_config : texture_config)
     (image : image) : texture =
@@ -94,7 +98,9 @@ let build_texture'
           List.map make_frame (Utils.rangef frame_count)
         in
         let frames = make_frames count ~w ~h ~duration:texture_config.duration.seconds in
-        if particle then
+        if once then
+          ONCE { frame_idx = 0; frames; frame_started = { at = 0. } }
+        else if particle then
           PARTICLE { frame_idx = 0; frames; frame_started = { at = 0. } }
         else (
           let frame_started =
@@ -110,11 +116,14 @@ let build_texture'
     animation_src;
   }
 
-let build_texture_from_config ?(scale = Config.scale.ghost) ?(particle = false) (texture_config : texture_config) :
-    texture =
+let build_texture_from_config
+    ?(scale = Config.scale.ghost)
+    ?(particle = false)
+    ?(once = false)
+    (texture_config : texture_config) : texture =
   let path = get_path texture_config in
   let image = Types.load_image path in
-  build_texture' ~scale ~particle texture_config image
+  build_texture' ~scale ~particle ~once texture_config image
 
 let build_texture_from_image ?(scale = Config.scale.ghost) ?(particle = false) (image : image) animation_src_rect :
     texture =
@@ -130,7 +139,6 @@ let build_texture_from_image ?(scale = Config.scale.ghost) ?(particle = false) (
       y_offset = 0.;
     }
   in
-
   build_texture' ~scale ~particle ~animation_src_rect texture_config image
 
 let clone (orig : sprite) : sprite =
@@ -175,8 +183,10 @@ let spawn_particle
     (dest : rect)
     frame_time : sprite =
   (match texture.animation_src with
-  | STILL _ -> failwith "tried to spawn particle with STILL"
-  | LOOPED animation -> failwith "tried to spawn particle with LOOPED"
+  | STILL _
+  | LOOPED _
+  | ONCE _ ->
+    failwithf "tried to spawn particle with %s" (Show.animation_src texture.animation_src)
   | PARTICLE animation ->
     animation.frame_idx <- 0;
     animation.frame_started.at <- frame_time);

@@ -21,6 +21,7 @@ let animation_src (anim_src : animation_src) =
   | STILL r -> fmt "STILL (at %s)" (rect r)
   | PARTICLE a -> fmt "PARTICLE (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
   | LOOPED a -> fmt "LOOPED (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
+  | ONCE a -> fmt "ONCE (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
 
 let asset_dir (asset_dir : asset_dir) =
   match asset_dir with

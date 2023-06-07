@@ -187,9 +187,9 @@ let adjust_sprite_dest (e : entity) =
   else
     e.sprite.dest.pos.x <- e.dest.pos.x -. (e.sprite.dest.w -. e.dest.w -. e.sprite.texture.coll_offset.x)
 
-let update_sprite_texture (e : entity) (texture : texture) =
-  e.sprite.texture <- texture;
-  e.sprite.dest <- Sprite.make_dest e.sprite.dest.pos.x e.sprite.dest.pos.y texture
+let update_sprite_texture (entity : entity) (texture : texture) =
+  entity.sprite.texture <- texture;
+  entity.sprite.dest <- Sprite.make_dest entity.sprite.dest.pos.x entity.sprite.dest.pos.y texture
 
 let clone (orig : entity) : entity =
   let dest_clone = { pos = { x = orig.dest.pos.x; y = orig.dest.pos.y }; w = orig.dest.w; h = orig.dest.h } in

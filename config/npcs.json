@@ -113,6 +113,12 @@
               "duration": 0.0
           }
         ],
+        [ "door-lever-struck",
+          {
+              "count": 3,
+              "duration": 0.1
+          }
+        ],
         [ "main-menu",
           {
               "count": 1,

@@ -172,11 +172,11 @@ let make_slash (ghost : ghost) (direction : direction) relative_pos (sprite : sp
   in
   let count =
     match slash_texture.animation_src with
-    (* TODO slashes should use PARTICLE, and probably just raise error otherwise *)
-    | STILL _ -> 1
-    | PARTICLE animation
-    | LOOPED animation ->
-      List.length animation.frames
+    | STILL _
+    | ONCE _
+    | LOOPED _ ->
+      failwith "invalid slash texture animation_src - should be PARTICLE"
+    | PARTICLE animation -> List.length animation.frames
   in
   let src_w = Raylib.Texture.width slash_texture.image / count |> Int.to_float in
   let src_h = Raylib.Texture.height slash_texture.image |> Int.to_float in
@@ -336,7 +336,20 @@ let resolve_slash_collisions (state : state) (game : game) =
             List.iter check_projectile_pogo enemy.spawned_projectiles))
     in
 
-    let destroy_tile_group layer tile_group = layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles in
+    let destroy_tile_group layer tile_group =
+      layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
+      if layer.config.permanently_removable then (
+        (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
+           - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
+        *)
+        let existing =
+          match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
+          | None -> []
+          | Some idxs -> idxs
+        in
+        game.room.progress.removed_idxs_by_layer <-
+          Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) game.room.progress.removed_idxs_by_layer)
+    in
 
     let resolve_destroyable_layer (layer : layer) =
       if layer.config.destroyable then (
@@ -355,17 +368,6 @@ let resolve_slash_collisions (state : state) (game : game) =
           | Some (PURPLE_PEN name) -> maybe_begin_interaction state game name
           | _ -> ());
           destroy_tile_group layer tile_group;
-          if layer.config.permanently_removable then (
-            (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
-               - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
-            *)
-            let existing =
-              match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
-              | None -> []
-              | Some idxs -> idxs
-            in
-            game.room.progress.removed_idxs_by_layer <-
-              Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) game.room.progress.removed_idxs_by_layer);
           if collision.direction = DOWN && layer.config.pogoable then
             pogo game.ghost;
           match tile_group.stub_sprite with
@@ -399,32 +401,24 @@ let resolve_slash_collisions (state : state) (game : game) =
         layer.tile_groups <- !new_tile_groups)
     in
 
-    let resolve_lever (door_coords, lever_dest) =
+    let resolve_lever ((door_coords, lever_sprite) : string * sprite) =
       let layer = List.find (fun (l : layer) -> l.name = "lever-doors") game.room.layers in
       let new_tile_groups : tile_group list ref = ref [] in
       let x', y' = Utils.separate door_coords '-' in
       let door_tile_idx =
         Tiled.Tile.tile_idx_from_coords ~width:game.room.json.w_in_tiles (x' |> float_of_string, y' |> float_of_string)
       in
-      match Collision.with_slash' slash lever_dest with
+      match Collision.with_slash' slash lever_sprite.dest with
       (* TODO don't really need to check slash collisions after a lever's door has already been opened *)
       | None -> ()
       | Some collision -> (
+        lever_sprite.texture <- state.global.textures.door_lever_struck;
         let has_tile_idx tile_group = List.mem door_tile_idx tile_group.tile_idxs in
         match List.find_opt has_tile_idx layer.tile_groups with
         | None -> ()
         | Some tile_group ->
           layer.tile_groups <- List.filter (fun (t : tile_group) -> t.dest <> tile_group.dest) layer.tile_groups;
-          destroy_tile_group layer tile_group;
-          if layer.config.permanently_removable then (
-            let existing =
-              match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
-              | None -> []
-              | Some idxs -> idxs
-            in
-            game.room.progress.removed_idxs_by_layer <-
-              Utils.assoc_replace layer.name (tile_group.tile_idxs @ existing) game.room.progress.removed_idxs_by_layer)
-        )
+          destroy_tile_group layer tile_group)
     in
 
     List.iter resolve_lever game.room.triggers.levers;
@@ -779,7 +773,8 @@ let acquire_weapon (state : state) (game : game) weapon_name =
 
 let equip_weapon (ghost : ghost) weapon_name =
   match List.assoc_opt weapon_name ghost.weapons with
-  | None -> print "can't equip %s, not in ghost.weapons" weapon_name
+  | None ->
+    print "can't equip %s, not in ghost.weapons: %s" weapon_name (List.map (fun (name, w) -> name) ghost.weapons |> join)
   | Some weapon_config ->
     ghost.current_weapon <-
       (let config = weapon_config.tint in

@@ -125,6 +125,7 @@ type animation_src =
   | STILL of rect
   | LOOPED of animation
   | PARTICLE of animation
+  | ONCE of animation
 
 let get_frame (a : animation) : animation_frame = List.nth a.frames (a.frame_idx mod List.length a.frames)
 let make_single_frame ~w ~h : rect = { w; h; pos = { x = 0.; y = 0. } }
@@ -165,6 +166,7 @@ type texture = {
 let animation_loop_duration (t : texture) : float =
   match t.animation_src with
   | STILL _ -> failwith "can't get animation_loop_duration for STILL"
+  | ONCE animation
   | PARTICLE animation
   | LOOPED animation ->
     (get_frame animation).duration.seconds *. (List.length animation.frames |> Int.to_float)
@@ -172,6 +174,7 @@ let animation_loop_duration (t : texture) : float =
 let get_src (t : texture) : rect =
   match t.animation_src with
   | STILL frame_src -> frame_src
+  | ONCE (animation)
   | PARTICLE animation
   | LOOPED animation ->
     (get_frame animation).src
@@ -991,7 +994,7 @@ type triggers = {
   item_pickups : (string * rect) list;
   shadows : (string * rect) list;
   cutscene : (string * rect) list;
-  levers : (string * rect) list;
+  levers : (string * sprite) list;
 }
 
 type camera_state = {
@@ -1047,6 +1050,7 @@ type texture_cache = {
   pickup_indicator : texture;
   main_menu : texture;
   door_lever : texture;
+  door_lever_struck : texture;
 }
 
 (* these are all things that are eager-loaded from json config files *)
