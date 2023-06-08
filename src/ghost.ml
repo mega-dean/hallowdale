@@ -327,6 +327,7 @@ let resolve_slash_collisions (state : state) (game : game) =
               game.ghost.soul.current <-
                 Utils.bound_int 0 (game.ghost.soul.current + Config.action.soul_gained_per_nail) game.ghost.soul.max);
           if slash.direction = DOWN && game.ghost.entity.y_recoil = None then (
+            (* TODO this isn't working (can't pogo LB projectiles) *)
             let check_projectile_pogo (projectile : projectile) =
               if projectile.pogoable then (
                 match Collision.with_slash slash projectile.entity.sprite with
@@ -465,6 +466,25 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       (* handle_attacking is called after handle_walking, so this allows the ghost to walk backwards while attacking *)
       set_facing_right direction;
       ghost.textures.nail
+    | C_DASH_WALL_COOLDOWN ->
+      ghost.entity.sprite.facing_right <- not ghost.entity.sprite.facing_right;
+      update_vx 0.;
+      ghost.entity.v.y <- 0.;
+      ghost.textures.wall_slide
+    | C_DASH_COOLDOWN ->
+      (* TODO this should decelerate *)
+      update_vx 1.;
+      ghost.entity.v.y <- 0.;
+      (* TODO new image/texture for this *)
+      ghost.textures.cast
+    | C_DASH ->
+      ghost.entity.v.y <- 0.;
+      update_vx 3.;
+      ghost.textures.dash
+    | C_DASH_CHARGE ->
+      update_vx 0.;
+      ghost.entity.v.y <- 0.;
+      ghost.textures.focus
     | DASH ->
       ghost.can_dash <- false;
       ghost.entity.v.y <- 0.;
@@ -629,6 +649,17 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.child <- Some { kind = NAIL slash; relative_pos; sprite = slash.sprite };
       cooldown_scale := game.ghost.current_weapon.cooldown_scale;
       game.ghost.history.nail
+    | C_DASH_WALL_COOLDOWN
+    | C_DASH_COOLDOWN ->
+      game.ghost.current.is_c_dashing <- false;
+      game.ghost.history.c_dash_cooldown
+    | C_DASH ->
+      (* state.camera.shake <- 1.; *)
+      game.ghost.current.is_c_dashing <- true;
+      game.ghost.history.c_dash
+    | C_DASH_CHARGE ->
+      game.ghost.current.is_charging_c_dash <- true;
+      game.ghost.history.charge_c_dash
     | DASH -> game.ghost.history.dash
     | CAST spell_kind -> (
       game.ghost.soul.current <- game.ghost.soul.current - Config.action.soul_per_cast;
@@ -637,6 +668,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         spawn_vengeful_spirit state game;
         game.ghost.history.cast_vs
       | DESOLATE_DIVE ->
+        (* TODO probably should set is_diving in this fn (like how c-dash does it) *)
         let w, h =
           (* TODO these are temporarily scaled so the dive.png image can be reused *)
           (game.ghost.entity.dest.w *. 5., game.ghost.entity.dest.h *. 5.)
@@ -695,7 +727,19 @@ let continue_action (game : game) (action_kind : ghost_action_kind) (frame_time 
        game.ghost.soul.current <- game.ghost.soul.current - 1;
        game.ghost.soul.last_decremented <- { at = frame_time }));
     ()
-  | _ -> ());
+  | FLAP
+  | WALL_KICK
+  | JUMP
+  | TAKE_DAMAGE _
+  | CAST _
+  | DIVE_COOLDOWN
+  | DASH
+  | C_DASH_CHARGE
+  | C_DASH
+  | C_DASH_COOLDOWN
+  | C_DASH_WALL_COOLDOWN
+  | ATTACK _ ->
+    ());
   set_pose game.ghost (PERFORMING action_kind) frame_time
 
 let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : float) : bool =
@@ -708,9 +752,18 @@ let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : flo
     | VENGEFUL_SPIRIT -> check_action ghost.history.cast_vs
     | HOWLING_WRAITHS -> check_action ghost.history.cast_wraiths
     | DESOLATE_DIVE -> ghost.current.is_diving)
+  | C_DASH_CHARGE -> ghost.current.is_charging_c_dash
+  | C_DASH -> ghost.current.is_c_dashing
+  | C_DASH_WALL_COOLDOWN
+  | C_DASH_COOLDOWN ->
+    check_action ghost.history.c_dash_cooldown
   | DASH -> check_action ghost.history.dash
   | DIVE_COOLDOWN -> check_action ghost.history.dive_cooldown
-  | _ -> failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
+  | FLAP
+  | WALL_KICK
+  | JUMP
+  | TAKE_DAMAGE _ ->
+    failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
 
 let is_casting (state : state) (game : game) =
   is_doing game.ghost (CAST VENGEFUL_SPIRIT) state.frame.time
@@ -809,6 +862,7 @@ let update (game : game) (state : state) =
       | JUMP -> (state.frame_inputs.jump, game.ghost.history.jump.config.input_buffer.seconds)
       | DASH -> (state.frame_inputs.dash, game.ghost.history.dash.config.input_buffer.seconds)
       | CAST -> (state.frame_inputs.cast, game.ghost.history.cast_vs.config.input_buffer.seconds)
+      | C_DASH -> (state.frame_inputs.c_dash, game.ghost.history.c_dash.config.input_buffer.seconds)
       | _ -> failwithf "bad key in key_pressed_or_buffered': %s" (show_key_action key_action)
     in
     let input_buffered () =
@@ -845,15 +899,6 @@ let update (game : game) (state : state) =
       (* toggle_ability game.ghost "monarch_wings" *)
       game.ghost.soul.current <- game.ghost.soul.max;
       toggle_ability game.ghost "desolate_dive")
-    else if key_pressed DEBUG_3 then (
-      let weapon_name = "Devil's Drench XJ-11" in
-      acquire_weapon state game weapon_name
-      (* equip_weapon game.ghost "Orange Paintball Gun" *)
-      (* maybe_begin_interaction state "boss-killed_LOCKER_BOY" *)
-      (* () *)
-      (* toggle_ability game.ghost "howling_wraiths" *))
-    else if key_pressed DEBUG_4 then
-      print "ghost x: %0.1f, y: %0.1f" game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y
   in
 
   (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
@@ -869,7 +914,7 @@ let update (game : game) (state : state) =
       | None -> ()
       | Some (name, _rect) ->
         (* TODO maybe want to also check `Entity.on_ground game.ghost.entity` *)
-        if key_pressed INTERACT then
+        if state.frame_inputs.interact.pressed then
           maybe_begin_interaction state game name);
       (match find_trigger_collision game.ghost game.room.triggers.cutscene with
       | None -> ()
@@ -884,7 +929,7 @@ let update (game : game) (state : state) =
     in
     match game.interaction.text with
     | Some _text ->
-      if key_pressed INTERACT then (
+      if state.frame_inputs.interact.pressed then (
         (* press interact key to advance dialogue by one, with a short pause to
            prevent double-pressing and skipping a message *)
         game.interaction.text <- None;
@@ -1236,6 +1281,56 @@ let update (game : game) (state : state) =
     { this_frame }
   in
 
+  let handle_c_dashing () : handled_action =
+    let starting_charge () =
+      (* attack direction is arbitrary *)
+      game.ghost.abilities.crystal_heart
+      && key_pressed_or_buffered C_DASH
+      && (Entity.on_ground game.ghost.entity
+         || (* TODO maybe make a fn for this - after moving to Entity *) Option.is_some game.ghost.current.wall)
+      && (not (is_doing game.ghost (ATTACK RIGHT) state.frame.time))
+      && (not (is_casting state game))
+      && past_cooldown game.ghost.history.charge_c_dash state.frame.time
+    in
+    let starting_c_dash () = is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.released in
+    let still_charging () = is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.down in
+    let still_c_dashing () = is_doing game.ghost C_DASH state.frame.time in
+    let still_cooling_down () = is_doing game.ghost C_DASH_COOLDOWN state.frame.time in
+    let this_frame =
+      if starting_charge () then (
+        start_action state game C_DASH_CHARGE;
+        true)
+      else if still_charging () then (
+        continue_action game C_DASH_CHARGE state.frame.time;
+        true)
+      else if still_cooling_down () then (
+        continue_action game C_DASH_COOLDOWN state.frame.time;
+        true)
+      else if still_c_dashing () then (
+        let end_c_dash () =
+          (* this only handles cancelling the dash in mid-air - wall collisions are handled below *)
+          state.frame_inputs.jump.pressed || state.frame_inputs.c_dash.pressed
+        in
+        if end_c_dash () then
+          start_action state game C_DASH_COOLDOWN
+        else
+          continue_action game C_DASH state.frame.time;
+        true)
+      else if starting_c_dash () then (
+        game.ghost.current.is_charging_c_dash <- false;
+        let down_since = state.frame.time -. game.ghost.history.charge_c_dash.started.at in
+        if down_since > game.ghost.history.charge_c_dash.config.duration.seconds then (
+          stop_wall_sliding := true;
+          start_action state game C_DASH;
+          true)
+        else
+          false)
+      else
+        false
+    in
+    { this_frame }
+  in
+
   let handle_dashing () : handled_action =
     let starting_dash () =
       (* attack direction is arbitrary *)
@@ -1321,7 +1416,7 @@ let update (game : game) (state : state) =
       (* TODO key_pressed_or_buffered detects the same keypress as the initial jump *)
       if game.ghost.abilities.monarch_wings && game.ghost.can_flap && key_pressed JUMP then (
         game.ghost.can_flap <- false;
-        (* TODO this should be a delayed action like focus/c-dash so the ghost dips a little before using wings again *)
+        (* TODO delay this to add the dip before flapping *)
         set_pose' (PERFORMING FLAP)
         (* TODO continue flapping
            else if (is_doing state FLAPPING) then
@@ -1368,10 +1463,6 @@ let update (game : game) (state : state) =
   in
 
   let handle_focusing () : handled_action =
-    (* TODO-5 add a delay before deducting soul *)
-    (* TODO-6 add charge_action that can happen before start_action
-       - also used for c-dash, dive, wings, nail arts, etc. so it needs to be a reusable way to handle this
-    *)
     let starting_focus () =
       state.frame_inputs.focus.pressed
       && Entity.on_ground game.ghost.entity
@@ -1426,6 +1517,39 @@ let update (game : game) (state : state) =
           List.iter check_collision collisions))
   in
 
+  let check_cooldowns cooldowns =
+    let in_cooldown action_kind : bool =
+      let cooling_down = is_doing game.ghost action_kind state.frame.time in
+      if cooling_down then (
+        continue_action game action_kind state.frame.time;
+        true)
+      else
+        false
+    in
+    let cooling_down = ref false in
+    let check cooldown =
+      if not !cooling_down then
+        if is_doing game.ghost cooldown state.frame.time then (
+          continue_action game cooldown state.frame.time;
+          cooling_down := true)
+    in
+    List.iter check cooldowns;
+    !cooling_down
+  in
+
+  let reveal_shadows () =
+    let colliding (_label, trigger_rect) = Option.is_some (Collision.with_entity game.ghost.entity trigger_rect) in
+    match List.find_opt colliding game.room.triggers.shadows with
+    | None -> ()
+    | Some (layer_name, _rect) -> (
+      match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
+      | None -> failwithf "Ghost.update: could not find layer '%s' to reveal" layer_name
+      | Some layer ->
+        if not (List.mem layer_name game.room.progress.revealed_shadow_layers) then
+          game.room.progress.revealed_shadow_layers <- layer_name :: game.room.progress.revealed_shadow_layers;
+        layer.hidden <- true)
+  in
+
   handle_debug_keys ();
 
   Entity.apply_v state.frame.dt game.ghost.entity;
@@ -1449,35 +1573,28 @@ let update (game : game) (state : state) =
   if not exiting then (
     let interacting = handle_interactions () in
     if interacting then
+      (* TODO this isn't working, ghost hangs in the air at cutscene start
+         - probably from the SET_GHOST_CAMERA stuff
+      *)
       Entity.update_pos game.room game.ghost.entity state.frame.dt
     else (
-      let colliding (_label, trigger_rect) = Option.is_some (Collision.with_entity game.ghost.entity trigger_rect) in
-      (match List.find_opt colliding game.room.triggers.shadows with
-      | None -> ()
-      | Some (layer_name, _rect) -> (
-        match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
-        | None -> failwithf "Ghost.update: could not find layer '%s' to reveal" layer_name
-        | Some layer ->
-          if not (List.mem layer_name game.room.progress.revealed_shadow_layers) then
-            game.room.progress.revealed_shadow_layers <- layer_name :: game.room.progress.revealed_shadow_layers;
-          layer.hidden <- true));
-      (* TODO-3 add c-dashing *)
-      let in_dive_cooldown = (not game.ghost.current.is_diving) && is_doing game.ghost DIVE_COOLDOWN state.frame.time in
-      if in_dive_cooldown then
-        continue_action game DIVE_COOLDOWN state.frame.time
-      else (
+      reveal_shadows ();
+      let cooling_down = check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN ] in
+      if not cooling_down then (
         let focusing = handle_focusing () in
         if not focusing.this_frame then (
-          let dashing = handle_dashing () in
-          if not dashing.this_frame then (
-            let casting = handle_casting () in
-            if not casting.this_frame then (
-              let wall_kicking = handle_wall_kicking () in
-              if not wall_kicking.this_frame then (
-                handle_walking ();
-                handle_jumping new_vy);
-              handle_attacking ();
-              resolve_slash_collisions state game))))));
+          let c_dashing = handle_c_dashing () in
+          if not c_dashing.this_frame then (
+            let dashing = handle_dashing () in
+            if not dashing.this_frame then (
+              let casting = handle_casting () in
+              if not casting.this_frame then (
+                let wall_kicking = handle_wall_kicking () in
+                if not wall_kicking.this_frame then (
+                  handle_walking ();
+                  handle_jumping new_vy);
+                handle_attacking ();
+                resolve_slash_collisions state game)))))));
 
   (match get_particle_child_sprite game.ghost with
   | None -> ()
@@ -1490,6 +1607,17 @@ let update (game : game) (state : state) =
   state.debug.rects <- List.map (fun c -> (Raylib.Color.green, snd c)) collisions @ state.debug.rects;
   apply_collisions game.ghost.entity collisions;
   handle_wall_sliding collisions;
+  let wall_collision =
+    List.find_opt (fun ((c, _) : collision * 'a) -> List.mem c.direction [ LEFT; RIGHT ]) collisions
+  in
+  (match wall_collision with
+  | None -> ()
+  | Some (_, wall_rect) ->
+    if game.ghost.current.is_c_dashing then (
+      state.camera.shake <- 1.;
+      game.ghost.current.is_c_dashing <- false;
+      game.ghost.current.wall <- Some wall_rect;
+      start_action state game C_DASH_WALL_COOLDOWN));
   maybe_unset_current_floor game.ghost;
   Sprite.advance_animation state.frame.time game.ghost.entity.sprite.texture game.ghost.entity.sprite;
   state
@@ -1578,22 +1706,25 @@ let init
   {
     id = ghost_id;
     in_party;
-    current = { wall = None; is_diving = false };
+    current = { wall = None; is_diving = false; is_c_dashing = false; is_charging_c_dash = false };
     textures;
     child = None;
     history =
       {
-        focus = make_action "focus";
-        dash = make_action "dash";
-        cast_vs = make_action "cast-vs";
         cast_dive = make_action "cast-dive";
-        dive_cooldown = make_action "dive-cooldown";
+        cast_vs = make_action "cast-vs";
         cast_wraiths = make_action "cast-wraiths";
-        take_damage = make_action "take-damage";
-        nail = make_action "nail";
-        jump = make_action "jump";
-        wall_kick = make_action "wall-kick";
+        charge_c_dash = make_action "charge-c-dash";
+        c_dash = make_action "c-dash";
+        c_dash_cooldown = make_action "c-dash-cooldown";
+        dash = make_action "dash";
+        dive_cooldown = make_action "dive-cooldown";
         flap = make_action "flap";
+        focus = make_action "focus";
+        jump = make_action "jump";
+        nail = make_action "nail";
+        take_damage = make_action "take-damage";
+        wall_kick = make_action "wall-kick";
       };
     shared_textures;
     entity =

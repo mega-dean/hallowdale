@@ -16,7 +16,7 @@ let rec loop (state : Hallowdale.Types.state) =
 let () =
   Raylib.set_config_flags [ Raylib.ConfigFlags.Window_maximized ];
   Raylib.init_window Hallowdale.Config.window.width Hallowdale.Config.window.height "hallowdale";
-  Raylib.set_window_position 200 200;
+  Raylib.set_window_position 640 400;
   Raylib.set_target_fps Hallowdale.Config.window.fps;
   Random.self_init ();
   Hallowdale.State.init () |> loop

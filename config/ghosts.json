@@ -215,11 +215,23 @@
             "cooldown": 0.6,
             "input_buffer": 0.45
         }],
+
+        ["charge-c-dash", {
+            "duration": 0.8,
+            "cooldown": 0.0,
+            "input_buffer": 0.0
+        }],
         ["c-dash", {
             "duration": 3.333333,
-            "cooldown": 0.6,
-            "input_buffer": 0.45
+            "cooldown": 0.0,
+            "input_buffer": 0.4
         }],
+        ["c-dash-cooldown", {
+            "duration": 0.7,
+            "cooldown": 0.0,
+            "input_buffer": 0.0
+        }],
+
         ["take-damage", {
             "duration": 0.333333,
             "cooldown": 1.3,

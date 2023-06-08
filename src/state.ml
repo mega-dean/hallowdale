@@ -3,7 +3,7 @@ open Controls
 
 [@@@ocaml.warning "-26-27-32"]
 
-(* this function initializes state and sets loaded_state to MAIN_MENU *)
+(* this function initializes state and sets game_context to MAIN_MENU *)
 let init () : state =
   let world = Tiled.init_world "Deepnest_East" in
   let parse_texture_configs parse_name coll =
@@ -96,12 +96,14 @@ let init () : state =
         left = { pressed = false; down = false; released = false; down_since = None };
         right = { pressed = false; down = false; released = false; down_since = None };
         cast = { pressed = false; down = false; released = false; down_since = None };
+        c_dash = { pressed = false; down = false; released = false; down_since = None };
         d_nail = { pressed = false; down = false; released = false; down_since = None };
         dash = { pressed = false; down = false; released = false; down_since = None };
         focus = { pressed = false; down = false; released = false; down_since = None };
         jump = { pressed = false; down = false; released = false; down_since = None };
         nail = { pressed = false; down = false; released = false; down_since = None };
         pause = { pressed = false; down = false; released = false; down_since = None };
+        interact = { pressed = false; down = false; released = false; down_since = None };
       };
     debug = { enabled = false; show_frame_inputs = true; rects = [] };
     global;
@@ -352,12 +354,14 @@ let update_frame_inputs (state : state) : state =
   update_frame_input (ARROW LEFT) state.frame_inputs.left;
   update_frame_input (ARROW RIGHT) state.frame_inputs.right;
   update_frame_input CAST state.frame_inputs.cast;
+  update_frame_input C_DASH state.frame_inputs.c_dash;
   update_frame_input DASH state.frame_inputs.dash;
   update_frame_input D_NAIL state.frame_inputs.d_nail;
   update_frame_input FOCUS state.frame_inputs.focus;
   update_frame_input JUMP state.frame_inputs.jump;
   update_frame_input NAIL state.frame_inputs.nail;
   update_frame_input PAUSE state.frame_inputs.pause;
+  update_frame_input INTERACT state.frame_inputs.interact;
   state
 
 let update_menu_choice (menu : menu) frame_inputs =
@@ -368,6 +372,13 @@ let update_menu_choice (menu : menu) frame_inputs =
 
 let tick (state : state) =
   (* TODO-4 add sound effects and music *)
+  if Controls.key_pressed DEBUG_3 then
+    if state.debug.show_frame_inputs then (
+      state.debug.show_frame_inputs <- false;
+      print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
+    else (
+      state.debug.show_frame_inputs <- true;
+      print "\n/---------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
   if Controls.key_pressed DEBUG_4 then
     if state.debug.enabled then (
       state.debug.enabled <- false;

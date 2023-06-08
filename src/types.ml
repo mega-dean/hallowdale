@@ -325,6 +325,11 @@ type ghost_action_kind =
   | CAST of spell_kind
   | DIVE_COOLDOWN
   | DASH
+  | (* TODO maybe do this like CAST, ie C_DASH of [CHARGE,DASH,COOLDOWN] *)
+    C_DASH_CHARGE
+  | C_DASH
+  | C_DASH_COOLDOWN
+  | C_DASH_WALL_COOLDOWN
   | ATTACK of direction
   | FOCUS
 
@@ -679,11 +684,15 @@ type ghost_action = {
 (* this keeps track of the last time the ghost performed these actions *)
 type ghost_action_history = {
   cast_vs : ghost_action;
-  (* cast_dive uses "landing on a floor" *)
+  (* cast_dive ends when landing on a floor, not based on duration *)
   cast_dive : ghost_action;
   dive_cooldown : ghost_action;
   cast_wraiths : ghost_action;
   dash : ghost_action;
+  charge_c_dash : ghost_action;
+  (* c_dash ends when hitting a wall or pressing a button, not based on duration *)
+  c_dash : ghost_action;
+  c_dash_cooldown : ghost_action;
   flap : ghost_action;
   jump : ghost_action;
   wall_kick : ghost_action;
@@ -702,12 +711,15 @@ type ghost_action_history = {
 type current_status = {
   (* TODO just move this to entity and get rid of this type, since some enemies will need this, and the others can leave it always None *)
   mutable wall : rect option;
-  (* can't remove this:
-     - `is_doing (CAST DIVE)` doesn't work because the dive config.duration is very large
-     - dive doesn't use config.duration because it ends when hitting the floor
-     - so this field is just updated whenever a dive starts/ends
+  (* these fields are here for things that can't use Ghost.is_doing to check their status
+     with config.duration (like normal actions can):
+     - dive ends when hitting the floor
+     - c-dash ends when hitting a wall, or when pressing a button to end it
+     - c-dash charge ends when a button is released
   *)
   mutable is_diving : bool;
+  mutable is_c_dashing : bool;
+  mutable is_charging_c_dash : bool;
 }
 
 type frame_input = {
@@ -717,11 +729,7 @@ type frame_input = {
   mutable down_since : time option;
 }
 
-(* - this is updated every frame based on which keys are pressed, and should be used for inputs that:
-   -- need to be buffered
-   -- need socd (only left-right currently)
-   - other inputs (eg. INTERACT) are checked directly with key_pressed
-*)
+(* this is updated every frame based on which keys are pressed *)
 type frame_inputs = {
   (* directions *)
   up : frame_input;
@@ -730,12 +738,14 @@ type frame_inputs = {
   right : frame_input;
   (* actions *)
   cast : frame_input;
+  c_dash : frame_input;
   d_nail : frame_input;
   dash : frame_input;
   focus : frame_input;
   jump : frame_input;
   nail : frame_input;
   pause : frame_input;
+  interact : frame_input;
 }
 
 type x_alignment =
@@ -761,8 +771,11 @@ type relative_position =
 *)
 type ghost_child_kind =
   | NAIL of slash
+  (* FIXME add these
+     | C_DASH_WHOOSH
+     | C_DASH_CHARGE_CRYSTALS
+  *)
   (* | DASH_WHOOSH of sprite *)
-  (* | C_DASH_WHOOSH of sprite *)
   | WRAITHS
   | DIVE
   | DIVE_COOLDOWN

@@ -64,6 +64,10 @@ let ghost_action_kind id =
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
+  | C_DASH_COOLDOWN -> "C_DASH_COOLDOWN"
+  | C_DASH_WALL_COOLDOWN -> "C_DASH_WALL_COOLDOWN"
+  | C_DASH_CHARGE -> "C_DASH_CHARGE"
+  | C_DASH -> "C_DASH"
   | DASH -> "DASH"
   | FOCUS -> "FOCUS"
   | JUMP -> "JUMP"

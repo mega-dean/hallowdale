@@ -645,15 +645,14 @@ let tick (state : state) =
       else
         List.iteri (display_paragraph config 0) text'.content
     | Some (MENU (menu, save_slots)) ->
-      let margin_x = 50 in
-      let margin_y =
+      let margin_x, margin_y =
         match List.nth menu.choices 0 with
         (* TODO probably need these to be based on font size *)
-        | PAUSE_MENU _ -> 220
-        | CHANGE_WEAPON_MENU _ -> 50
-        | CHANGE_GHOST_MENU _ -> 50
-        | MAIN_MENU _ -> 360
-        | SAVE_FILES _ -> 200
+        | PAUSE_MENU _ -> (250, 220)
+        | CHANGE_WEAPON_MENU _ -> (150, 50)
+        | CHANGE_GHOST_MENU _ -> (150, 50)
+        | MAIN_MENU _ -> (50, 360)
+        | SAVE_FILES _ -> (50, 200)
       in
 
       let margin_y_bottom = margin_y in
@@ -674,7 +673,7 @@ let tick (state : state) =
       (match save_slots with
       | Some save_slots' ->
         let show_save_slot idx ((slot, is_new_game) : Json_t.save_file * bool) =
-          fmt "save %d: %s" idx (if is_new_game then "New Game" else "Continue")
+          fmt "save %d: %s" (idx + 1) (if is_new_game then "New Game" else "Continue")
         in
         let save_slot_choices =
           List.mapi show_save_slot [ save_slots'.slot_1; save_slots'.slot_2; save_slots'.slot_3; save_slots'.slot_4 ]
@@ -713,8 +712,10 @@ let tick (state : state) =
           if state.debug.enabled then
             debug_rect_outline sprite.dest;
           draw_sprite sprite)
-        game.room.pickup_indicators;
+        game.room.pickup_indicators
+    in
 
+    let draw_levers () =
       List.iter
         (fun ((door_coords, sprite) : string * sprite) ->
           if state.debug.enabled then (
@@ -735,10 +736,6 @@ let tick (state : state) =
         game.room.triggers.levers
     in
 
-    (* FIXME draw frame inputs
-       - maybe don't put this in draw_debug_info though
-       - maybe add separate debug levels now
-    *)
     let draw_debug_info () =
       let draw_ghost_debug () =
         let s = game.ghost.entity.sprite in
@@ -753,9 +750,12 @@ let tick (state : state) =
             (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
             (s.dest.w |> Float.to_int) 4 Color.green;
         draw_velocity game.ghost.entity;
-        match game.ghost.entity.current_floor with
+        (match game.ghost.entity.current_floor with
         | None -> ()
-        | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor
+        | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor);
+        match game.ghost.current.wall with
+        | None -> ()
+        | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall
       in
       List.iter
         (fun (l : layer) -> List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
@@ -805,16 +805,19 @@ let tick (state : state) =
       debug_rect ~r:20 ~g:20 ~b:20 ~a:200
         { pos = { x = inputs_container.x -. padding; y = inputs_container.y -. padding }; w = 1000.; h = 1000. };
 
+      draw_input_at "interact" state.frame_inputs.interact (((button +. padding) *. 5.) -. (button /. 2.)) padding;
       draw_input_at "" state.frame_inputs.up ((button +. padding) *. 6.) padding;
+      draw_input_at "pause" state.frame_inputs.pause (((button +. padding) *. 7.) +. (button /. 2.)) padding;
+
       draw_input_at "" state.frame_inputs.left ((button +. padding) *. 5.) ((2. *. padding) +. button);
       draw_input_at "" state.frame_inputs.down ((button +. padding) *. 6.) ((2. *. padding) +. button);
       draw_input_at "" state.frame_inputs.right ((button +. padding) *. 7.) ((2. *. padding) +. button);
+
       List.iteri (draw_input' 0.)
         [
           ("focus", state.frame_inputs.focus);
-          (* TODO this should be c-dash *)
-          ("pause", state.frame_inputs.pause);
-          ("d_nail", state.frame_inputs.d_nail);
+          ("c-dash", state.frame_inputs.c_dash);
+          ("d-nail", state.frame_inputs.d_nail);
           ("cast", state.frame_inputs.cast);
         ];
       List.iteri (draw_input' 1.)
@@ -992,6 +995,7 @@ let tick (state : state) =
     Raylib.begin_mode_2d state.camera.raylib;
     draw_bg_tiles game.room camera_x camera_y;
     draw_solid_tiles game.room camera_x camera_y;
+    draw_levers ();
     draw_npcs game.room.npcs;
     draw_ghosts game.ghosts;
     draw_ghost game.ghost;
