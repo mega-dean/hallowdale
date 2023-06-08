@@ -102,12 +102,25 @@ let init (params : room_params) : room =
       match name_prefix with
       | "camera" -> camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
       | "lever" ->
+        let direction, _ = Utils.separate name '-' in
+        if not @@ List.mem direction [ "up"; "down" ] then (* TODO horizontal levers *)
+          failwithf "unsupported lever direction: %s" direction;
         let lever_sprite () : sprite =
+          let shape =
+            make_shape
+              [
+                (* TODO move to config *)
+                { x = 12.; y = 0. };
+                { x = 34.; y = 0. };
+                { x = 34.; y = 87. };
+                { x = 12.; y = 87. };
+              ]
+          in
           {
             ident = fmt "Sprite %s" name;
             dest = get_object_rect ~floor:true name coll_rect |> snd;
             texture = params.lever_texture;
-            collision = (* TODO collision shape for levers *) None;
+            collision = Some (SHAPE shape);
             facing_right = true;
           }
         in

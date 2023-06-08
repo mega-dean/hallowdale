@@ -29,8 +29,32 @@ let src_Rect (s : sprite) : Raylib.Rectangle.t =
   in
   Raylib.Rectangle.create src.pos.x src.pos.y w src.h
 
+let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
+  let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
+  let points = get_points adjusted_shape in
+  let draw_edge point_idx (point : vector) =
+    (* TODO duplicated in make_shape
+       - could add a fn that operates on every pair of points in a shape, but probably not worth it yet
+    *)
+    let next_point = List.nth points ((point_idx + 1) mod List.length points) in
+    Draw.line_ex (Raylib.Vector2.create point.x point.y) (Raylib.Vector2.create next_point.x next_point.y) size color
+  in
+  let points' = List.map Show.vector points |> join in
+  List.iteri draw_edge points
+
+let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
+  Draw.rect_lines (rect |> to_Rect) size color
+
+let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
+  Draw.rect (rect.pos.x |> Float.to_int)
+    (rect.pos.y -. 2. |> Float.to_int)
+    (rect.w |> Float.to_int) (rect.h |> Float.to_int) (Color.create r g b a)
+
+let debug_xy x y = Draw.circle (x |> Float.to_int) (y |> Float.to_int) 4. Color.green
+let debug_v (v : Raylib.Vector2.t) = Draw.circle_v v 4. Color.green
+
 (* TODO probably want to rename to be less similar to draw_texture_pro *)
-let draw_texture ?(_debug = false) ?(tint = Color.raywhite) (t : texture) (dest : rect) transformation_bits =
+let draw_texture ?(debug = false) ?(tint = Color.raywhite) (t : texture) (dest : rect) transformation_bits =
   let src, rotation =
     let r = get_src t in
     match transformation_bits with
@@ -55,31 +79,9 @@ let draw_texture ?(_debug = false) ?(tint = Color.raywhite) (t : texture) (dest 
     | 270. -> { dest with pos = { dest.pos with y = dest.pos.y +. tile_size } } |> to_Rect
     | _ -> dest |> to_Rect
   in
+  if debug then
+    debug_rect_outline dest;
   Draw.image t.image (src |> to_Rect) dest' (Raylib.Vector2.create 0. 0.) rotation tint
-
-let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
-  let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
-  let points = get_points adjusted_shape in
-  let draw_edge point_idx (point : vector) =
-    (* TODO duplicated in make_shape
-       - could add a fn that operates on every pair of points in a shape, but probably not worth it yet
-    *)
-    let next_point = List.nth points ((point_idx + 1) mod List.length points) in
-    Draw.line_ex (Raylib.Vector2.create point.x point.y) (Raylib.Vector2.create next_point.x next_point.y) size color
-  in
-  let points' = List.map Show.vector points |> join in
-  List.iteri draw_edge points
-
-let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
-  Draw.rect_lines (rect |> to_Rect) size color
-
-let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
-  Draw.rect (rect.pos.x |> Float.to_int)
-    (rect.pos.y -. 2. |> Float.to_int)
-    (rect.w |> Float.to_int) (rect.h |> Float.to_int) (Color.create r g b a)
-
-let debug_xy x y = Draw.circle (x |> Float.to_int) (y |> Float.to_int) 4. Color.green
-let debug_v (v : Raylib.Vector2.t) = Draw.circle_v v 4. Color.green
 
 (* this function should only be used by sprites that don't have an entity
    - when an entity is present, use draw_entity because it corrects the sprite position before rendering
@@ -714,13 +716,29 @@ let tick (state : state) =
         game.room.pickup_indicators;
 
       List.iter
-        (fun ((_door_coords, sprite) : string * sprite) ->
-          if state.debug.enabled then
-            debug_rect_outline sprite.dest;
-          draw_sprite sprite)
+        (fun ((door_coords, sprite) : string * sprite) ->
+          if state.debug.enabled then (
+            match sprite.collision with
+            | Some (SHAPE shape) -> debug_shape_outline sprite shape
+            | _ -> ());
+          let transformation_bits =
+            let direction, _ = Utils.separate door_coords '-' in
+            match direction with
+            | "up" -> 0
+            | "down" -> 2
+            | "left"
+            | "right" ->
+              failwithf "horizontal levers aren't supported" direction
+            | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction
+          in
+          draw_texture sprite.texture sprite.dest transformation_bits)
         game.room.triggers.levers
     in
 
+    (* FIXME draw frame inputs
+       - maybe don't put this in draw_debug_info though
+       - maybe add separate debug levels now
+    *)
     let draw_debug_info () =
       let draw_ghost_debug () =
         let s = game.ghost.entity.sprite in
@@ -744,6 +762,63 @@ let tick (state : state) =
         game.room.layers;
       List.iter (fun (_color, rect) -> debug_rect rect) state.debug.rects;
       draw_ghost_debug ()
+    in
+
+    let draw_frame_inputs () =
+      let button = 40. in
+      let padding = 10. in
+      let inputs_container =
+        {
+          x = camera_x +. (Config.window.width |> Int.to_float) -. ((8. *. button) +. (10. *. padding));
+          y = camera_y +. (Config.window.height |> Int.to_float) -. ((2. *. button) +. (3. *. padding));
+        }
+      in
+      let draw_input (frame_input : frame_input) label dest =
+        Raylib.draw_text label
+          (dest.pos.x +. 5. |> Float.to_int)
+          (dest.pos.y +. (button /. 4.) |> Float.to_int)
+          12 Color.raywhite;
+
+        debug_rect_outline dest;
+        if frame_input.down then
+          debug_rect ~r:0 ~g:200 ~b:200 dest
+      in
+      let draw_input' row_idx idx (label, input) =
+        draw_input input label
+          {
+            pos =
+              {
+                x =
+                  inputs_container.x
+                  +. ((idx |> Int.to_float) *. (button +. padding))
+                  +. ((button +. padding) /. 2. *. row_idx);
+                y = inputs_container.y +. (row_idx *. (button +. padding));
+              };
+            w = button;
+            h = button;
+          }
+      in
+      let draw_input_at label input x y =
+        draw_input input label
+          { pos = { x = inputs_container.x +. x; y = inputs_container.y +. y }; w = button; h = button }
+      in
+      debug_rect ~r:20 ~g:20 ~b:20 ~a:200
+        { pos = { x = inputs_container.x -. padding; y = inputs_container.y -. padding }; w = 1000.; h = 1000. };
+
+      draw_input_at "" state.frame_inputs.up ((button +. padding) *. 6.) padding;
+      draw_input_at "" state.frame_inputs.left ((button +. padding) *. 5.) ((2. *. padding) +. button);
+      draw_input_at "" state.frame_inputs.down ((button +. padding) *. 6.) ((2. *. padding) +. button);
+      draw_input_at "" state.frame_inputs.right ((button +. padding) *. 7.) ((2. *. padding) +. button);
+      List.iteri (draw_input' 0.)
+        [
+          ("focus", state.frame_inputs.focus);
+          (* TODO this should be c-dash *)
+          ("pause", state.frame_inputs.pause);
+          ("d_nail", state.frame_inputs.d_nail);
+          ("cast", state.frame_inputs.cast);
+        ];
+      List.iteri (draw_input' 1.)
+        [ ("jump", state.frame_inputs.jump); ("nail", state.frame_inputs.nail); ("dash", state.frame_inputs.dash) ]
     in
 
     let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
@@ -938,6 +1013,8 @@ let tick (state : state) =
     Raylib.draw_fps ((camera_x |> Float.to_int) + Config.window.width - 100) (camera_y |> Float.to_int);
     if state.debug.enabled then
       draw_debug_info ();
+    if state.debug.show_frame_inputs then
+      draw_frame_inputs ();
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
     state

@@ -174,7 +174,7 @@ let animation_loop_duration (t : texture) : float =
 let get_src (t : texture) : rect =
   match t.animation_src with
   | STILL frame_src -> frame_src
-  | ONCE (animation)
+  | ONCE animation
   | PARTICLE animation
   | LOOPED animation ->
     (get_frame animation).src
@@ -1071,6 +1071,7 @@ type frame_info = {
 
 type debug = {
   mutable enabled : bool;
+  mutable show_frame_inputs : bool;
   mutable rects : (color * rect) list;
 }
 

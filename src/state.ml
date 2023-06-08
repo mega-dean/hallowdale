@@ -103,7 +103,7 @@ let init () : state =
         nail = { pressed = false; down = false; released = false; down_since = None };
         pause = { pressed = false; down = false; released = false; down_since = None };
       };
-    debug = { enabled = false; rects = [] };
+    debug = { enabled = false; show_frame_inputs = true; rects = [] };
     global;
   }
 

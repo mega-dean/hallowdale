@@ -404,11 +404,12 @@ let resolve_slash_collisions (state : state) (game : game) =
     let resolve_lever ((door_coords, lever_sprite) : string * sprite) =
       let layer = List.find (fun (l : layer) -> l.name = "lever-doors") game.room.layers in
       let new_tile_groups : tile_group list ref = ref [] in
-      let x', y' = Utils.separate door_coords '-' in
+      let _direction, coords = Utils.separate door_coords '-' in
+      let x', y' = Utils.separate coords '-' in
       let door_tile_idx =
         Tiled.Tile.tile_idx_from_coords ~width:game.room.json.w_in_tiles (x' |> float_of_string, y' |> float_of_string)
       in
-      match Collision.with_slash' slash lever_sprite.dest with
+      match Collision.with_slash slash lever_sprite with
       (* TODO don't really need to check slash collisions after a lever's door has already been opened *)
       | None -> ()
       | Some collision -> (
