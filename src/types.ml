@@ -78,7 +78,8 @@ type rect = {
   mutable h : float;
 }
 
-let get_center (rect : rect) = { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
+let get_center (rect : rect) =
+  { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
 
 type bounds = {
   min : vector;
@@ -113,7 +114,8 @@ type animation_frame = {
 }
 
 (* a list of animation_frames, and info about the currently-rendered frame
-   - every frame in the animation has to have the same offsets from the collision rect (texture.coll_offsets')
+   - every frame in the animation has to have the same offsets from the
+     collision rect (texture.coll_offsets')
 *)
 type animation = {
   frames : animation_frame list;
@@ -127,7 +129,9 @@ type animation_src =
   | PARTICLE of animation
   | ONCE of animation
 
-let get_frame (a : animation) : animation_frame = List.nth a.frames (a.frame_idx mod List.length a.frames)
+let get_frame (a : animation) : animation_frame =
+  List.nth a.frames (a.frame_idx mod List.length a.frames)
+
 let make_single_frame ~w ~h : rect = { w; h; pos = { x = 0.; y = 0. } }
 
 type asset_dir =
@@ -138,7 +142,8 @@ type asset_dir =
 (* used to load textures to populate npc_texture_cache or ghost_textures *)
 type texture_config = {
   asset_dir : asset_dir;
-  (* this is either the npc name or the ghost name, capitalized like a variant name, eg. BRITTA or LOCKER_BOY *)
+  (* this is either the npc name or the ghost name, capitalized like a variant name
+     eg. BRITTA or LOCKER_BOY *)
   character_name : string;
   (* this is the name of the specific pose being loaded, corresponding to a .png file *)
   pose_name : string;
@@ -286,7 +291,9 @@ type entity = {
   mutable y_recoil : recoil option;
 }
 
-let of_Rect (r : Raylib.Rectangle.t) : rect = Raylib.Rectangle.{ w = width r; h = height r; pos = { x = x r; y = y r } }
+let of_Rect (r : Raylib.Rectangle.t) : rect =
+  Raylib.Rectangle.{ w = width r; h = height r; pos = { x = x r; y = y r } }
+
 let to_Rect (r : rect) : Raylib.Rectangle.t = Raylib.Rectangle.create r.pos.x r.pos.y r.w r.h
 
 (* A rect representing the overlap between a source entity and a target entity, and the direction
@@ -310,6 +317,13 @@ type shared_textures = {
   howling_wraiths : texture;
   energon_pod : texture;
   focus_sparkles : texture;
+  c_dash_crystals : texture;
+  (* TODO this is temporary, eventually combine it with c_dash_crystals and rotate *)
+  c_dash_wall_crystals : texture;
+  (* TODO these might be temporary, could try to just reuse the last frame of c_dash_crystals *)
+  c_dash_crystals_full : texture;
+  c_dash_wall_crystals_full : texture;
+  c_dash_whoosh : texture;
 }
 
 type spell_kind =
@@ -771,10 +785,9 @@ type relative_position =
 *)
 type ghost_child_kind =
   | NAIL of slash
-  (* FIXME add these
-     | C_DASH_WHOOSH
-     | C_DASH_CHARGE_CRYSTALS
-  *)
+  | C_DASH_CHARGE_CRYSTALS
+  | C_DASH_WALL_CHARGE_CRYSTALS
+  | C_DASH_WHOOSH
   (* | DASH_WHOOSH of sprite *)
   | WRAITHS
   | DIVE
@@ -1076,17 +1089,17 @@ type global_cache = {
   npc_configs : (npc_id * Json_t.npc_config) list;
 }
 
-type frame_info = {
-  mutable idx : int;
-  mutable dt : float;
-  mutable time : float;
-}
-
 type debug = {
   mutable enabled : bool;
   mutable show_frame_inputs : bool;
   mutable rects : (color * rect) list;
 }
+
+(* TODO-5 add something like this to game *)
+type game_debug_state =
+  | RUNNING
+  | STEPPING
+  | STOPPED
 
 type game = {
   mutable ghost : ghost;
@@ -1108,6 +1121,12 @@ type game_context =
   | MAIN_MENU of menu * save_slots
   | SAVE_FILES of menu * save_slots
   | IN_PROGRESS of game
+
+type frame_info = {
+  mutable idx : int;
+  mutable dt : float;
+  mutable time : float;
+}
 
 type state = {
   mutable game_context : game_context;

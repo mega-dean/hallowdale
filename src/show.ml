@@ -186,6 +186,9 @@ let damage_kind (d : damage_kind) : string =
 let ghost_child_kind (d : ghost_child_kind) : string =
   match d with
   | DIVE -> "DIVE"
+  | C_DASH_CHARGE_CRYSTALS -> "C_DASH_CHARGE_CRYSTALS"
+  | C_DASH_WALL_CHARGE_CRYSTALS -> "C_DASH_WALL_CHARGE_CRYSTALS"
+  | C_DASH_WHOOSH -> "C_DASH_WHOOSH"
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
   | FOCUS -> "FOCUS"
   | NAIL _ -> "NAIL"

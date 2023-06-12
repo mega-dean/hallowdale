@@ -172,7 +172,7 @@
         }],
         ["desolate-dive", {
             "count": 6,
-            "duration": 0.066666
+            "duration": 1.066666
         }],
         ["howling-wraiths", {
             "count": 9,
@@ -181,6 +181,29 @@
         ["focus-sparkles", {
             "count": 24,
             "duration": 0.023333
+        }],
+        ["c-dash-crystals", {
+            "count": 6,
+            // - this is (c-dash duration / (crystals frame count - 1)) = 0.8 / (6 - 1)
+            // - the (- 1) is because the first frame gets skipped by Sprite.advance_animation
+            // - this isn't perfect though, so it's still off by a few frames
+            "duration": 0.16
+        }],
+        ["c-dash-crystals-full", {
+            "count": 1,
+            "duration": 0.0
+        }],
+        ["c-dash-wall-crystals", {
+            "count": 6,
+            "duration": 0.16
+        }],
+        ["c-dash-wall-crystals-full", {
+            "count": 1,
+            "duration": 0.0
+        }],
+        ["c-dash-whoosh", {
+            "count": 2,
+            "duration": 0.1
         }]
     ],
 
@@ -218,7 +241,7 @@
 
         ["charge-c-dash", {
             "duration": 0.8,
-            "cooldown": 0.0,
+            "cooldown": 0.8,
             "input_buffer": 0.0
         }],
         ["c-dash", {

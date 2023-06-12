@@ -29,7 +29,15 @@ let get_current_frame_idx (animation_src : animation_src) : int =
   | LOOPED animation ->
     animation.frame_idx
 
-let advance_animation (current_clock : float) next_texture (sprite : sprite) : unit =
+let reset_texture (texture : texture) : unit =
+  match texture.animation_src with
+  | STILL _ -> ()
+  | ONCE animation
+  | PARTICLE animation
+  | LOOPED animation ->
+    animation.frame_idx <- 0
+
+let advance_animation (current_clock : float) next_texture (sprite : sprite) =
   match sprite.texture.animation_src with
   | STILL _ -> ()
   | ONCE animation
@@ -42,7 +50,9 @@ let advance_animation (current_clock : float) next_texture (sprite : sprite) : u
       else
         List.nth animation.frames current_animation_idx
     in
-    let should_advance_frame () = current_clock -. animation.frame_started.at > animation_frame.duration.seconds in
+    let should_advance_frame () =
+      current_clock -. animation.frame_started.at > animation_frame.duration.seconds
+    in
     if should_advance_frame () then (
       match next_texture.animation_src with
       | STILL _ -> ()
@@ -56,7 +66,8 @@ type particle_animation = { should_despawn : bool }
 
 (* this always advances the animation, and returns None when the animation  *)
 let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : sprite option =
-  let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) : particle_animation =
+  let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) :
+      particle_animation =
     match sprite.texture.animation_src with
     | STILL _ -> { should_despawn = false }
     | LOOPED animation
@@ -71,7 +82,9 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
   if particle.should_despawn then None else Some sprite
 
 let get_path (texture_config : texture_config) : string =
-  fmt "%s/%s/%s" (Show.asset_dir texture_config.asset_dir) texture_config.character_name texture_config.pose_name
+  fmt "%s/%s/%s"
+    (Show.asset_dir texture_config.asset_dir)
+    texture_config.character_name texture_config.pose_name
 
 let build_texture'
     ?(scale = Config.scale.ghost)
@@ -93,7 +106,10 @@ let build_texture'
         let make_frames frame_count ~w ~h ~duration =
           (* creates an animation_frame list with all the same duration *)
           let make_frame (frame_idx : float) : animation_frame =
-            { src = { w; h; pos = { y = 0.; x = frame_idx *. w } }; duration = { seconds = duration } }
+            {
+              src = { w; h; pos = { y = 0.; x = frame_idx *. w } };
+              duration = { seconds = duration };
+            }
           in
           List.map make_frame (Utils.rangef frame_count)
         in
@@ -125,8 +141,11 @@ let build_texture_from_config
   let image = Types.load_image path in
   build_texture' ~scale ~particle ~once texture_config image
 
-let build_texture_from_image ?(scale = Config.scale.ghost) ?(particle = false) (image : image) animation_src_rect :
-    texture =
+let build_texture_from_image
+    ?(scale = Config.scale.ghost)
+    ?(particle = false)
+    (image : image)
+    animation_src_rect : texture =
   let texture_config =
     {
       (* texture location isn't used because image has already been loaded *)
@@ -142,10 +161,17 @@ let build_texture_from_image ?(scale = Config.scale.ghost) ?(particle = false) (
   build_texture' ~scale ~particle ~animation_src_rect texture_config image
 
 let clone (orig : sprite) : sprite =
-  let dest_clone = { pos = { x = orig.dest.pos.x; y = orig.dest.pos.y }; w = orig.dest.w; h = orig.dest.h } in
+  let dest_clone =
+    { pos = { x = orig.dest.pos.x; y = orig.dest.pos.y }; w = orig.dest.w; h = orig.dest.h }
+  in
   { orig with dest = dest_clone }
 
-let create (name : string) (texture : texture) ?(facing_right = true) ?(collision = None) (dest : rect) : sprite =
+let create
+    (name : string)
+    (texture : texture)
+    ?(facing_right = true)
+    ?(collision = None)
+    (dest : rect) : sprite =
   let validate_shape_is_inside_sprite_dest () =
     match collision with
     | Some (SHAPE shape) ->
@@ -158,15 +184,17 @@ let create (name : string) (texture : texture) ?(facing_right = true) ?(collisio
       let sprite_min_x, sprite_max_x = (dest.pos.x, dest.pos.x +. dest.w) in
       let sprite_min_y, sprite_max_y = (dest.pos.y, dest.pos.y +. dest.h) in
       if first xs < sprite_min_x then
-        failwithf "collision shape min x %f is too small, needs to be bigger than sprite dest %f" (first xs)
-          sprite_min_x;
+        failwithf "collision shape min x %f is too small, needs to be bigger than sprite dest %f"
+          (first xs) sprite_min_x;
       if last xs > sprite_max_x then
-        failwithf "collision shape max x %f is too big, needs to be smaller than sprite dest %f" (last xs) sprite_max_x;
+        failwithf "collision shape max x %f is too big, needs to be smaller than sprite dest %f"
+          (last xs) sprite_max_x;
       if first ys < sprite_min_y then
-        failwithf "collision shape min y %f is too small, needs to be bigger than sprite dest %f" (first ys)
-          sprite_min_y;
+        failwithf "collision shape min y %f is too small, needs to be bigger than sprite dest %f"
+          (first ys) sprite_min_y;
       if last ys > sprite_max_y then
-        failwithf "collision shape max y %f is too big, needs to be smaller than sprite dest %f" (last ys) sprite_max_y
+        failwithf "collision shape max y %f is too big, needs to be smaller than sprite dest %f"
+          (last ys) sprite_max_y
     | None
     | Some _ ->
       ()

@@ -11,7 +11,9 @@ let init () : state =
     List.map parse coll
   in
 
-  let enemies_file : Json_t.enemies_file = File.read_config "enemies" Json_j.enemies_file_of_string in
+  let enemies_file : Json_t.enemies_file =
+    File.read_config "enemies" Json_j.enemies_file_of_string
+  in
   let enemy_configs = parse_texture_configs Enemy.parse_name enemies_file.enemies in
   let shared_enemy_configs = enemies_file.shared_textures in
 
@@ -74,7 +76,8 @@ let init () : state =
       weapons = File.read_config "weapons" Json_j.weapons_file_of_string;
       enemy_configs;
       npc_configs;
-      textures = { ability_outlines; damage; pickup_indicator; main_menu; door_lever; door_lever_struck };
+      textures =
+        { ability_outlines; damage; pickup_indicator; main_menu; door_lever; door_lever_struck };
     }
   in
 
@@ -110,7 +113,9 @@ let init () : state =
   }
 
 let update_camera (game : game) (state : state) =
-  let trigger_config : (string * rect) option = Ghost.find_trigger_collision game.ghost game.room.triggers.camera in
+  let trigger_config : (string * rect) option =
+    Ghost.find_trigger_collision game.ghost game.room.triggers.camera
+  in
   let subject =
     match state.camera.subject with
     | GHOST ->
@@ -194,7 +199,9 @@ let update_camera (game : game) (state : state) =
 (* this is for inanimate objects like jug fragments or door levers *)
 let update_environment (game : game) (state : state) =
   let update_fragment (f : entity) = Entity.update_pos game.room f state.frame.dt in
-  let all_spawned_fragments = List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten in
+  let all_spawned_fragments =
+    List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
+  in
   List.iter update_fragment all_spawned_fragments;
   let update_lever (door_coords, lever_sprite) =
     match Sprite.advance_or_despawn state.frame.time lever_sprite.texture lever_sprite with
@@ -209,7 +216,8 @@ let update_projectile p (frame_info : frame_info) : bool =
   let despawn_projectile =
     match p.despawn with
     | X_BOUNDS (min_x, max_x) ->
-      p.entity.dest.pos.x < min_x -. Config.window.center_x || p.entity.dest.pos.x > max_x +. Config.window.center_x
+      p.entity.dest.pos.x < min_x -. Config.window.center_x
+      || p.entity.dest.pos.x > max_x +. Config.window.center_x
     | TIME_LEFT d -> frame_info.time -. p.spawned.at > d.seconds
   in
   if despawn_projectile then
@@ -221,7 +229,11 @@ let update_projectile p (frame_info : frame_info) : bool =
 
 let update_enemies (game : game) (state : state) =
   let behavior_params : enemy_behavior_params =
-    { ghost_pos = game.ghost.entity.dest.pos; room_bounds = game.room.camera_bounds; time = state.frame.time }
+    {
+      ghost_pos = game.ghost.entity.dest.pos;
+      room_bounds = game.room.camera_bounds;
+      time = state.frame.time;
+    }
   in
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
@@ -245,7 +257,9 @@ let update_enemies (game : game) (state : state) =
     if (not (interacting ())) && enemy.status.choose_behavior then
       enemy.choose_behavior ~self:enemy behavior_params;
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
-    let advance_or_despawn (sprite : sprite) = Sprite.advance_or_despawn state.frame.time sprite.texture sprite in
+    let advance_or_despawn (sprite : sprite) =
+      Sprite.advance_or_despawn state.frame.time sprite.texture sprite
+    in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
     (match Ghost.get_spell_sprite game.ghost with
     | None -> ()
@@ -262,8 +276,10 @@ let update_enemies (game : game) (state : state) =
           else
             HOWLING_WRAITHS
         in
-        ignore (Enemy.maybe_take_damage state enemy action damage_kind (Ghost.get_damage game.ghost damage_kind) c.rect)
-      ));
+        ignore
+          (Enemy.maybe_take_damage state enemy action damage_kind
+             (Ghost.get_damage game.ghost damage_kind)
+             c.rect)));
 
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
@@ -272,7 +288,9 @@ let update_enemies (game : game) (state : state) =
         if enemy.on_killed.multiple_enemies then (
           let all_bosses_dead =
             let living_bosses =
-              List.filter (fun (enemy_id, e) -> enemy_id = enemy.id && not (Enemy.is_dead e)) game.room.enemies
+              List.filter
+                (fun (enemy_id, e) -> enemy_id = enemy.id && not (Enemy.is_dead e))
+                game.room.enemies
             in
             List.length living_bosses = 0
           in
@@ -290,7 +308,9 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time npc.entity.sprite.texture npc.entity.sprite
   in
 
-  let update_pickup_indicators (sprite : sprite) = Sprite.advance_animation state.frame.time sprite.texture sprite in
+  let update_pickup_indicators (sprite : sprite) =
+    Sprite.advance_animation state.frame.time sprite.texture sprite
+  in
 
   let update_ghost (_id, ghost) =
     Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
@@ -331,7 +351,8 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
     if keep_spawned then
       damage_enemies projectile.spawned projectile.entity.sprite
     else
-      game.ghost.spawned_vengeful_spirits <- List.filter (fun p -> p <> projectile) game.ghost.spawned_vengeful_spirits
+      game.ghost.spawned_vengeful_spirits <-
+        List.filter (fun p -> p <> projectile) game.ghost.spawned_vengeful_spirits
   in
 
   List.iter update_vengeful_spirit game.ghost.spawned_vengeful_spirits;

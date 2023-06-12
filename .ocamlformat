@@ -1,4 +1,4 @@
-margin=120
+margin=100
 let-module=compact
 let-binding-spacing=compact
 type-decl=sparse
