@@ -94,8 +94,8 @@
         {
             "fileName": "beenz_outlands-b.json",
             "height": 840,
-            "width": 384,
-            "x": 7104,
+            "width": 456,
+            "x": 7032,
             "y": 3384
         },
         {
@@ -352,7 +352,7 @@
         },
         {
             "fileName": "infected_c.json",
-            "height": 720,
+            "height": 816,
             "width": 2880,
             "x": 3576,
             "y": -1800

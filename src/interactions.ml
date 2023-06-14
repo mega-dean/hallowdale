@@ -129,7 +129,7 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             "Press (B) while in the air";
             "to double bounce.";
             "At the apex of each bounce, there is a moment outside of time, outside of words, outside of everything - \
-             a perfect moment. A silent moment. I call it the World's Whisper.";
+             a perfect moment. A silent moment. I call it the {{blue}} World's Whisper.";
           ]
         @ [ STEP (HIDE_LAYER "bg-iso2") ]
       | "ability_claw" ->

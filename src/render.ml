@@ -996,6 +996,7 @@ let tick (state : state) =
       in
       List.iter draw_vengeful_spirit ghost.spawned_vengeful_spirits;
       if state.debug.enabled then (
+        (* FIXME move this to render last, so it is on top of everything else *)
         debug_rect_outline ~size:2. ~color:Color.green ghost.entity.sprite.dest;
         debug_rect_outline ~size:3. ~color:Color.yellow ghost.entity.dest);
       let shine_sprite : sprite =

@@ -478,7 +478,11 @@ let resolve_slash_collisions (state : state) (game : game) =
     in
 
     let resolve_lever ((door_coords, lever_sprite) : string * sprite) =
-      let layer = List.find (fun (l : layer) -> l.name = "lever-doors") game.room.layers in
+      let layer =
+        match List.find_opt (fun (l : layer) -> l.name = "lever-doors") game.room.layers with
+        | None -> failwithf "could not find lever door for %s" door_coords
+        | Some l -> l
+      in
       let new_tile_groups : tile_group list ref = ref [] in
       let _direction, coords = Utils.separate door_coords '-' in
       let x', y' = Utils.separate coords '-' in
