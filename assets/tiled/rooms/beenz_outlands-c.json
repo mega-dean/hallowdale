@@ -190,7 +190,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":62,
          "id":6,
-         "name":"doors",
+         "name":"lever-doors",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -417,7 +417,7 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":8,
+ "nextlayerid":9,
  "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",

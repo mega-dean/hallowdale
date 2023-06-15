@@ -1,6 +1,6 @@
 [
     ["Old Nail", {
-        "pickup_text": "",
+        "pickup_text": "A traditional weapon of Hallowdale.",
         "damage": 5,
         "scale_x": 1.0,
         "scale_y": 1.0,
@@ -26,7 +26,7 @@
         }
     }],
     ["Bush Scissors", {
-        "pickup_text": "This is a place of peace and balance.",
+        "pickup_text": "This is a place of {{green}} peace {{white}} and {{green}} balance.",
         "damage": 2,
         "scale_x": 0.9,
         "scale_y": 0.9,
@@ -65,7 +65,7 @@
         }
     }],
     ["Pickle Magnet", {
-        "pickup_text": "This pickle's a magnet. I'll wipe her out, man.",
+        "pickup_text": "This pickle's a magnet! I'll wipe her out, man!",
         "damage": 3,
         "scale_x": 0.8,
         "scale_y": 0.8,

@@ -63,5 +63,26 @@
         "name": "big-door",
         "x": 15,
         "h": 5
+    },
+    {
+        "name": "tp-statue-1",
+        "x": 16,
+        "h": 1
+    },
+    {
+        "name": "tp-statue-2",
+        "x": 17,
+        "h": 1
+    },
+    {
+        "name": "tp-statue-3",
+        "x": 18,
+        "h": 1
+    },
+    {
+        "name": "tp-lawn-mower",
+        "x": 19,
+        "h": 1,
+        "w": 2
     }
 ]

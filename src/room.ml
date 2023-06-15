@@ -2,8 +2,10 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let get_pickup_indicators (room_progress : Json_t.room_progress) (texture : texture) (triggers : (string * rect) list) :
-    sprite list =
+let get_pickup_indicators
+    (room_progress : Json_t.room_progress)
+    (texture : texture)
+    (triggers : (string * rect) list) : sprite list =
   let show_obj ((name, dest') : string * rect) : sprite option =
     if List.mem name room_progress.finished_interactions then
       None
@@ -16,7 +18,11 @@ let get_pickup_indicators (room_progress : Json_t.room_progress) (texture : text
         let parent_w, parent_h = (dest'.w, dest'.h) in
         let parent_x, parent_y = (dest'.pos.x, dest'.pos.y) in
         {
-          pos = { x = parent_x +. ((parent_w -. child_w) /. 2.); y = parent_y +. ((parent_h -. child_h) /. 2.) };
+          pos =
+            {
+              x = parent_x +. ((parent_w -. child_w) /. 2.);
+              y = parent_y +. ((parent_h -. child_h) /. 2.);
+            };
           w = child_w;
           h = child_h;
         }
@@ -27,7 +33,8 @@ let get_pickup_indicators (room_progress : Json_t.room_progress) (texture : text
 
 let update_pickup_indicators (state : state) (game : game) =
   game.room.pickup_indicators <-
-    get_pickup_indicators game.room.progress state.global.textures.pickup_indicator game.room.triggers.item_pickups
+    get_pickup_indicators game.room.progress state.global.textures.pickup_indicator
+      game.room.triggers.item_pickups
 
 let save_progress (game : game) =
   let room_uuid = Tiled.Room.get_uuid game.room in
@@ -45,7 +52,9 @@ type room_params = {
 
 let init (params : room_params) : room =
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
-  let (area_id, room_id) : area_id * room_id = Tiled.parse_room_filename "init_room" params.file_name in
+  let (area_id, room_id) : area_id * room_id =
+    Tiled.parse_room_filename "init_room" params.file_name
+  in
   let room_key = Tiled.Room.get_uuid' area_id room_id in
   let new_room_progress () : Json_t.room_progress =
     (* room_progress gets created here, but isn't saved into state.progress.rooms until the room is being unloaded at an exit *)
@@ -100,7 +109,8 @@ let init (params : room_params) : room =
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
       match name_prefix with
-      | "camera" -> camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
+      | "camera" ->
+        camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
       | "lever" ->
         let direction, _ = Utils.separate name '-' in
         if not @@ List.mem direction [ "up"; "down" ] then (* TODO horizontal levers *)
@@ -118,7 +128,12 @@ let init (params : room_params) : room =
           in
           {
             ident = fmt "Sprite %s" name;
-            dest = get_object_rect ~floor:true name coll_rect |> snd;
+            dest =
+              (* CLEANUP don't use object rect, use size based on lever texture if possible (or just hardcode)
+                 - use Sprite.make_dest
+                 - probably need to adjust the collision shape
+              *)
+              get_object_rect ~floor:true name coll_rect |> snd;
             texture = params.lever_texture;
             collision = Some (SHAPE shape);
             facing_right = true;
@@ -141,27 +156,38 @@ let init (params : room_params) : room =
       | "dreamer" ->
         pickup_triggers := get_object_rect coll_rect.name coll_rect :: !pickup_triggers
       | "npc" ->
-        let npc_id, dest = get_object_rect (Npc.parse_name (fmt "Tiled rect npc_%s" name) name) coll_rect in
+        let npc_id, dest =
+          get_object_rect (Npc.parse_name (fmt "Tiled rect npc_%s" name) name) coll_rect
+        in
         npc_rects := (npc_id, dest, true) :: !npc_rects
       | "mirrored-npc" ->
-        let npc_id, dest = get_object_rect (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name) name) coll_rect in
+        let npc_id, dest =
+          get_object_rect (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name) name) coll_rect
+        in
         npc_rects := (npc_id, dest, false) :: !npc_rects
       | "hidden-npc" ->
         let npc_id, dest =
-          get_object_rect ~hidden:true (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name) name) coll_rect
+          get_object_rect ~hidden:true
+            (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name) name)
+            coll_rect
         in
         npc_rects := (npc_id, dest, true) :: !npc_rects
       | "enemy" ->
         enemy_rects :=
-          get_object_rect (Enemy.parse_name (fmt "Tiled rect enemy_%s" name) name) coll_rect :: !enemy_rects
+          get_object_rect (Enemy.parse_name (fmt "Tiled rect enemy_%s" name) name) coll_rect
+          :: !enemy_rects
       | "hidden-enemy" ->
         enemy_rects :=
-          get_object_rect ~hidden:true (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name) name) coll_rect
+          get_object_rect ~hidden:true
+            (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name) name)
+            coll_rect
           :: !enemy_rects
-      | "cutscene" -> cutscene_triggers := get_object_rect coll_rect.name coll_rect :: !cutscene_triggers
+      | "cutscene" ->
+        cutscene_triggers := get_object_rect coll_rect.name coll_rect :: !cutscene_triggers
       | _ ->
         failwithf
-          "init_room invalid interaction name '%s' - needs to start with 'camera_', 'health_', 'cutscene_', etc."
+          "init_room invalid interaction name '%s' - needs to start with 'camera_', 'health_', \
+           'cutscene_', etc."
           coll_rect.name
     in
     match jl with
@@ -218,7 +244,8 @@ let init (params : room_params) : room =
                 let r = Str.regexp "[0-9]$" in
                 try
                   let number_idx = Str.search_forward r full_name 0 in
-                  (Str.first_chars full_name number_idx, int_of_string (Str.matched_string full_name))
+                  ( Str.first_chars full_name number_idx,
+                    int_of_string (Str.matched_string full_name) )
                 with
                 | Not_found -> (full_name, 1)
               in
@@ -226,10 +253,12 @@ let init (params : room_params) : room =
             in
             let configs =
               match layer_name with
+              (* FIXME-7 add hazards *)
               | "floors" -> [ "collides" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
+              | "bg"
               | "bg-iso"
               | "bg-iso-lava"
               | "bg-iso-walls"
@@ -239,9 +268,9 @@ let init (params : room_params) : room =
               | "shadow" ->
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
-              | "fg-jugs" -> [ "fg"; "destroyable"; "pogo" ]
-              | "bg-jugs" -> [ "bg"; "destroyable"; "pogo" ]
-              | json_name -> failwithf "unknown layer name: %s" json_name
+              | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
+              | "bg-jugs" -> [ "bg"; "destroyable"; "pogoable" ]
+              | unknown -> failwithf "unknown layer name '%s' in room %s" unknown params.file_name
             in
 
             let build_config config_parts =
@@ -251,13 +280,15 @@ let init (params : room_params) : room =
               if has "fg" then incr depth_configs;
               if has "collides" then incr depth_configs;
               if !depth_configs <> 1 then
-                failwithf "bad layer config for %s: needs to have exactly one of 'bg', 'fg', or 'collides'" layer_name
+                failwithf
+                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', or 'collides'"
+                  layer_name
               else
                 {
                   render = { bg = has "bg"; fg = has "fg" };
                   collides_with_ghost = has "collides";
                   damages_ghost = has "damages";
-                  pogoable = has "pogo";
+                  pogoable = has "pogoable";
                   destroyable = has "destroyable";
                   permanently_removable = has "permanently_removable";
                   shaded = has "shaded";
@@ -290,7 +321,8 @@ let init (params : room_params) : room =
           (* TODO error message looks weird when the already-parsed layer name has a number
              - duplicate "shadow4" layers says "append numbers to disambiguate, eg shadow42"
           *)
-          failwithf "already parsed layer '%s' - append numbers to disambiguate, eg %s2" json.name json.name
+          failwithf "already parsed layer '%s' - append numbers to disambiguate, eg %s2" json.name
+            json.name
         else
           layer_names := json.name :: !layer_names;
         if List.mem json.name [ "world-map"; "camera-reference" ] then
@@ -321,7 +353,8 @@ let init (params : room_params) : room =
         let x', y' = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
         let x, y = (x', y' +. y_offset) in
         let texture =
-          Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img (Some { pos = { x; y }; w; h })
+          Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
+            (Some { pos = { x; y }; w; h })
         in
         let sprite =
           Sprite.create
@@ -330,7 +363,8 @@ let init (params : room_params) : room =
             { pos = { x; y }; w = w *. Config.scale.room; h = h *. Config.scale.room }
         in
         let entity =
-          Entity.create_for_sprite sprite ~inanimate:true { pos = Zero.vector (); w = sprite.dest.w; h = sprite.dest.h }
+          Entity.create_for_sprite sprite ~inanimate:true
+            { pos = Zero.vector (); w = sprite.dest.w; h = sprite.dest.h }
         in
         entity
       in
@@ -351,7 +385,8 @@ let init (params : room_params) : room =
               | None -> failwithf "expected one collision rect object, got 0 for gid %d" id
               | Some coll_rect -> (coll_rect.w, coll_rect.h)
             in
-            let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option =
+            let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option
+                =
               let w, h = get_coll_wh (jug_firstgid + collision.id) in
               (* this check only supports the left column of wide jugs *)
               if collision.id mod tileset.json.columns = tile_x then (
@@ -366,14 +401,19 @@ let init (params : room_params) : room =
             fragments |> Utils.filter_somes
         in
         if List.length fragments = 0 then
-          failwithf "found 0 fragments for jug %s with tile_x %d - configure these with Tiled collision editor"
+          failwithf
+            "found 0 fragments for jug %s with tile_x %d - configure these with Tiled collision \
+             editor"
             config.jug_name config.tile_x;
         (* x is the 0-indexed tile coordinate on the jugs.png image, but we need to add jug_firstgid to adjust the cache key *)
-        (config.tile_x + jug_firstgid, { stub = make_stub (config.w |> Int.to_float) config.tile_x config.h; fragments })
+        ( config.tile_x + jug_firstgid,
+          { stub = make_stub (config.w |> Int.to_float) config.tile_x config.h; fragments } )
       in
 
       let metadata : jug_config list =
-        let configs : Json_t.jug_metadata_file = File.read_config "jugs" Json_j.jug_metadata_file_of_string in
+        let configs : Json_t.jug_metadata_file =
+          File.read_config "jugs" Json_j.jug_metadata_file_of_string
+        in
         let build (metadata : Json_t.jug_metadata) : jug_config =
           { jug_name = metadata.name; tile_x = metadata.x; w = metadata.w; h = metadata.h }
         in
@@ -407,7 +447,12 @@ let init (params : room_params) : room =
     {
       id = area_id;
       tint;
-      bg_color = Raylib.Color.create (Raylib.Color.r tint / 7) (Raylib.Color.g tint / 7) (Raylib.Color.b tint / 7) 255;
+      bg_color =
+        Raylib.Color.create
+          (Raylib.Color.r tint / 7)
+          (Raylib.Color.g tint / 7)
+          (Raylib.Color.b tint / 7)
+          255;
     }
   in
   {
@@ -430,7 +475,8 @@ let init (params : room_params) : room =
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
     npcs;
-    pickup_indicators = get_pickup_indicators room_progress params.pickup_indicator_texture !pickup_triggers;
+    pickup_indicators =
+      get_pickup_indicators room_progress params.pickup_indicator_texture !pickup_triggers;
     cache;
   }
 
@@ -509,6 +555,8 @@ let handle_transitions (state : state) (game : game) =
       (* TODO probably need to unload things like enemy textures *)
       Tiled.Room.unload_tilesets game.room;
       game.room <- new_room;
-      game.room.layers <- Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
-      state.camera.raylib <- Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.;
+      game.room.layers <-
+        Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
+      state.camera.raylib <-
+        Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.;
       true)

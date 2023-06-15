@@ -31,7 +31,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           CURRENT_GHOST (ADD_ITEM (ABILITY ability_name));
           STEP
             (ABILITY_TEXT
-               (ability_text_outline outline_x outline_y, top_lines @ [ "-----------------------------" ] @ bottom_lines));
+               ( ability_text_outline outline_x outline_y,
+                 top_lines @ [ "-----------------------------" ] @ bottom_lines ));
         ]
     in
 
@@ -67,14 +68,24 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
     match interaction_prefix with
     | "purple-pen" ->
       remove_nail := false;
-      [ STEP (PURPLE_PEN_TEXT [ "Found a purple pen with a note:"; fmt "{{purple}} %s" (get_lore ()) ]) ]
+      [
+        STEP
+          (PURPLE_PEN_TEXT [ "Found a purple pen with a note:"; fmt "{{purple}} %s" (get_lore ()) ]);
+      ]
     | "health" ->
-      [ CURRENT_GHOST (SET_POSE READING); CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
+      [
+        CURRENT_GHOST (SET_POSE READING);
+        CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ()));
+      ]
     | "dreamer" ->
-      fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_ITEM (DREAMER (interaction_name, get_lore ()))) ]
+      fade_screen_with_dramatic_pause
+        [ CURRENT_GHOST (ADD_ITEM (DREAMER (interaction_name, get_lore ()))) ]
     | "weapon" ->
       (* TODO center this text *)
-      [ CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); CURRENT_GHOST (ADD_ITEM (WEAPON interaction_name)) ]
+      [
+        CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+        CURRENT_GHOST (ADD_ITEM (WEAPON interaction_name));
+      ]
     | _ -> (
       match full_interaction_name with
       | "info_opening-poem" ->
@@ -84,7 +95,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
              - this doesn't work because render doesn't have access to game.interaction.black_rects
           *)
           STEP (TEXT [ "Give me some rope, tie me to dream." ]);
-          STEP (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
+          STEP
+            (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
           STEP
             (TEXT
                [
@@ -113,7 +125,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           STEP FADE_SCREEN_IN;
         ]
       | "ability_scootenanny" ->
-        get_ability_steps "mothwing_cloak" 0. 2. [ "Taken the"; "Scootenanny Chair." ]
+        get_ability_steps "mothwing_cloak" 0. 2.
+          [ "Taken the"; "Scootenanny Chair." ]
           [
             "Press [ZR]";
             "to scootenanny forwards.";
@@ -124,17 +137,17 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
         *)
         @ [ STEP (HIDE_LAYER "bg-iso2") ]
       | "ability_double-bouncies" ->
-        get_ability_steps "monarch_wings" 0. 4. [ "Consumed the"; "Double Bouncies." ]
+        get_ability_steps "monarch_wings" 0. 4.
+          [ "Consumed the"; "Double Bouncies." ]
           [
             "Press (B) while in the air";
             "to double bounce.";
-            "At the apex of each bounce, there is a moment outside of time, outside of words, outside of everything - \
-             a perfect moment. A silent moment. I call it the {{blue}} World's Whisper.";
+            "At the apex of each bounce, there is a moment outside of time, outside of words, \
+             outside of everything - a perfect moment. A silent moment. I call it the {{blue}} \
+             World's Whisper.";
           ]
-        @ [ STEP (HIDE_LAYER "bg-iso2") ]
       | "ability_claw" ->
-        get_ability_steps "mantis_claw" 0. 4. [ "Consumed the"; "Mantis Claw." ] [ "TODO claw" ]
-        @ [ STEP (HIDE_LAYER "bg-iso2") ]
+        get_ability_steps "mantis_claw" 0. 4. [ "Taken the"; "Mantis Claw." ] [ "TODO claw" ]
       | "ability_starburns-dash" ->
         get_ability_steps "crystal_heart" 0. 5.
           [ "Consumed the"; "Starburns Crystal." ]
@@ -143,7 +156,6 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             "to concentrate the force.";
             "Yeah, he uses some kind of crystal instead of deodorant.";
           ]
-        @ [ STEP (HIDE_LAYER "bg-iso2") ]
       | "info_focus" ->
         [
           CURRENT_GHOST (SET_POSE READING);
@@ -155,8 +167,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
                    "Human Beings, these words are for you alone.";
                    "";
                    "";
-                   "Your great strength marks you already accepted. Focus your life vapor and you shall achieve feats \
-                    of which others can only dream.";
+                   "Your great strength marks you already accepted. Focus your life vapor and you \
+                    shall achieve feats of which others can only dream.";
                  ],
                  ability_text_outline 0. 0.,
                  [
@@ -179,11 +191,17 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
                  *)
                  "Human Beings, these words are for you alone.";
                  "";
-                 "Beyond this point you enter the land of Dean and Creator. Step across this threshold and obey our \
-                  laws.";
+                 "Beyond this point you enter the land of Dean and Creator. Step across this \
+                  threshold and obey our laws.";
                ]);
           STEP (WAIT 0.4);
-          STEP (TEXT [ "Bear witness to the last and only civilisation, the eternal Kingdom."; ""; "Hallowdale" ]);
+          STEP
+            (TEXT
+               [
+                 "Bear witness to the last and only civilisation, the eternal Kingdom.";
+                 "";
+                 "Hallowdale";
+               ]);
         ]
       | "cutscene_fight-duncan" ->
         [
@@ -200,21 +218,25 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           STEP
             (DIALOGUE
                ( "Duncan",
-                 "You stay back, Britta! I'm not afraid to push a girl into make-believe lava! In fact, it's been my \
-                  primary strategy." ));
-          STEP (DIALOGUE ("Britta", "I'm staying in the game so I can talk to Abed. I'm worried about him."));
+                 "You stay back, Britta! I'm not afraid to push a girl into make-believe lava! In \
+                  fact, it's been my primary strategy." ));
+          STEP
+            (DIALOGUE
+               ("Britta", "I'm staying in the game so I can talk to Abed. I'm worried about him."));
           STEP
             (DIALOGUE
                ( "Duncan",
-                 "Well I'm worried about his money. My self-published novels aren't going to publish themselves." ));
+                 "Well I'm worried about his money. My self-published novels aren't going to \
+                  publish themselves." ));
           STEP
             (DIALOGUE
                ( "Britta",
-                 "Don't regress to primal behavior just because it's allowed - we're Human Beings, not the editors of \
-                  Teen Vogue." ));
+                 "Don't regress to primal behavior just because it's allowed - we're Human Beings, \
+                  not the editors of Teen Vogue." ));
           STEP (WAIT 0.7);
           STEP (DIALOGUE ("Britta", "They're setting a terrible example for today's young women."));
-          STEP (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
+          STEP
+            (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
           STEP UNHIDE_BOSS_DOORS;
           ENEMY (DUNCAN, SET_ACTION "interaction-jumping");
           ENEMY (DUNCAN, ENTITY UNFREEZE);
@@ -246,7 +268,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
         ]
-        @ get_ability_steps "vengeful_spirit" 0. 1. [ "Consumed the"; "Vengeful Cushion" ]
+        @ get_ability_steps "vengeful_spirit" 0. 1.
+            [ "Consumed the"; "Vengeful Cushion" ]
             [
               "Tap (A)";
               "to unleash the Cushion.";
@@ -258,14 +281,20 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             CURRENT_GHOST FILL_LIFE_VAPOR;
             STEP (WAIT 0.2);
             STEP (DIALOGUE ("Duncan", "Real nice, Winger."));
-            STEP (DIALOGUE ("Duncan", "This is why the English never win any sports - because everyone else cheats!"));
+            STEP
+              (DIALOGUE
+                 ( "Duncan",
+                   "This is why the English never win any sports - because everyone else cheats!" ));
             ENEMY (DUNCAN, ENTITY UNFREEZE);
             ENEMY (DUNCAN, WALK_TO 1);
             STEP (WAIT 0.2);
             STEP (DIALOGUE ("Annie", "Britta, there you are."));
             GHOST (JEFF, SET_POSE CRAWLING);
             STEP
-              (DIALOGUE ("Jeff", "Sweet, sweet portable chairs. {{gold}} Plastic gold, {{white}} four-legged diamonds!"));
+              (DIALOGUE
+                 ( "Jeff",
+                   "Sweet, sweet portable chairs. {{gold}} Plastic gold, {{white}} four-legged \
+                    diamonds!" ));
             GHOST (JEFF, SET_POSE IDLE);
             STEP (DIALOGUE ("Jeff", "You claimin' this?"));
             GHOST (JEFF, SET_POSE (PERFORMING (ATTACK RIGHT)));
@@ -277,9 +306,11 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             STEP
               (DIALOGUE
                  ( "Annie",
-                   "Let's get real, Britta. Once the last of the chairs are gone, a sofa-hopper like you won't last 20 \
-                    minutes." ));
-            STEP (DIALOGUE ("Annie", "You want to join this alliance? Or you want to join the {{red}} lava?"));
+                   "Let's get real, Britta. Once the last of the chairs are gone, a sofa-hopper \
+                    like you won't last 20 minutes." ));
+            STEP
+              (DIALOGUE
+                 ("Annie", "You want to join this alliance? Or you want to join the {{red}} lava?"));
             STEP (DIALOGUE ("Britta", "Fine, but I'm not learning the new names for anything."));
             STEP (WAIT 0.4);
             (* TODO select current ghost in a menu *)
@@ -367,8 +398,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           STEP
             (DIALOGUE
                ( "Chang",
-                 "We're getting your chairs, your food, and the names of your same-sex celebrity crushes. Everyone has \
-                  one. Don't lie." ));
+                 "We're getting your chairs, your food, and the names of your same-sex celebrity \
+                  crushes. Everyone has one. Don't lie." ));
           STEP (DIALOGUE ("Chang", "Then you're free to go..."));
           NPC (CHANG, SET_POSE "attack");
           STEP (DIALOGUE ("Chang", "... into {{red}} lava!"));
@@ -392,13 +423,13 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           STEP
             (DIALOGUE
                ( "Chang",
-                 "You're in no position to make threats, floor-strider. Our truce ended when you {{red}} banished \
-                  {{white}} us from the Payphone Bench." ));
+                 "You're in no position to make threats, floor-strider. Our truce ended when you \
+                  {{red}} banished {{white}} us from the Payphone Bench." ));
           STEP
             (DIALOGUE
                ( "Troy",
-                 "You used that bench to upset the balance. By the {{orange}} Vapors of Magmarath, {{white}} we will \
-                  restore it." ));
+                 "You used that bench to upset the balance. By the {{orange}} Vapors of Magmarath, \
+                  {{white}} we will restore it." ));
           STEP (DIALOGUE ("Britta", "You have gods?"));
           NPC (CHANG, SET_POSE "idle-with-locker-boys");
           STEP (DIALOGUE ("Chang", "Locker Boys!"));
@@ -435,13 +466,18 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             STEP (SET_FIXED_CAMERA (16, 8));
             STEP (WAIT 1.1);
             STEP (DIALOGUE ("Hickey", "I'm criminology professor Buzz Hickey."));
-            STEP (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
+            STEP
+              (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
             NPC (HICKEY, SET_POSE "walking");
             GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
             STEP (WAIT 1.1);
             STEP (SET_FIXED_CAMERA (56, 16));
             STEP (WAIT 1.1);
-            STEP (DIALOGUE ("Abed", "Jeff, Annie, get to {{purple}} Shirley Island! {{white}} We'll meet you there!"));
+            STEP
+              (DIALOGUE
+                 ( "Abed",
+                   "Jeff, Annie, get to {{purple}} Shirley Island! {{white}} We'll meet you there!"
+                 ));
             GHOST (ANNIE, WALK_TO 53);
             GHOST (JEFF, WALK_TO 53);
             STEP (WAIT 0.7);
@@ -455,14 +491,16 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             STEP
               (DIALOGUE
                  ( "Britta",
-                   "Abed, before troy {{red}} dies in lava, {{white}} you can save yourself {{blue}} emotionally \
-                    {{white}} by honestly experiencing the pain of him leaving Hallowdale." ));
+                   "Abed, before troy {{red}} dies in lava, {{white}} you can save yourself \
+                    {{blue}} emotionally {{white}} by honestly experiencing the pain of him \
+                    leaving Hallowdale." ));
             STEP (WAIT 0.4);
             GHOST (ABED, ENTITY (SET_FACING RIGHT));
             STEP (WAIT 0.9);
             GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.4);
-            STEP (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
+            STEP
+              (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
           ]
         @ jump_ghost BRITTA RIGHT 140.
         @ [
@@ -477,7 +515,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             GHOST (TROY, MAKE_CURRENT_GHOST);
             STEP SET_GHOST_CAMERA;
             GHOST (ABED, ENTITY (SET_FACING LEFT));
-            STEP (DIALOGUE ("Abed", "The third step is {{blue}} survival. {{white}} Good luck, Britta."));
+            STEP
+              (DIALOGUE ("Abed", "The third step is {{blue}} survival. {{white}} Good luck, Britta."));
             STEP (SET_FIXED_CAMERA (56, 16));
             STEP (DIALOGUE ("Britta", "Seriously!?"));
             GHOST (BRITTA, ENTITY (SET_FACING LEFT));
@@ -491,15 +530,23 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             STEP
               (DIALOGUE
                  ( "Troy",
-                   "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing us down and \
-                    complaining a lot." ));
+                   "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing \
+                    us down and complaining a lot." ));
             GHOST (TROY, ENTITY (SET_FACING LEFT));
             GHOST (ABED, WALK_TO 39);
             GHOST (ABED, ENTITY HIDE);
             GHOST (BRITTA, ENTITY HIDE);
             GHOST (BRITTA, REMOVE_FROM_PARTY);
           ]
-      | "ability_monkey-gas" -> [ STEP (TEXT [ "... hello chat ..." ]) ]
+      | "ability_monkey-gas" ->
+        (* CLEANUP outline for monkey knockout gas *)
+        get_ability_steps "howling_wraiths" 0. 6.
+          [ "Consumed the"; "Monkey Knockout Gas." ]
+          [
+            "Tap (A) while holding UP";
+            "to unleash the Knockout Gas.";
+            "Some kind of gas that knocks out monkeys.";
+          ]
       | other -> failwithf "unrecognized interaction name: %s" other)
   in
   (* SET_GHOST_CAMERA to reset the camera if it changed *)

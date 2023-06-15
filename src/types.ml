@@ -706,6 +706,7 @@ type ghost_action_history = {
   charge_c_dash : ghost_action;
   (* c_dash ends when hitting a wall or pressing a button, not based on duration *)
   c_dash : ghost_action;
+  (* this is used for C_DASH_WALL_COOLDOWN too *)
   c_dash_cooldown : ghost_action;
   flap : ghost_action;
   jump : ghost_action;

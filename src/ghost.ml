@@ -271,45 +271,32 @@ let get_spell_sprite (ghost : ghost) : (sprite * time) option =
     | _ -> None)
 
 let get_current_slash (ghost : ghost) : slash option =
-  let get_slash (child : ghost_child) : slash option =
-    match child.kind with
-    | NAIL slash -> Some slash
-    | _ -> None
-  in
-  Option.bind ghost.child get_slash
+  Option.bind ghost.child (fun child ->
+      match child.kind with
+      | NAIL slash -> Some slash
+      | _ -> None)
 
 let get_dive_sprite (ghost : ghost) : sprite option =
-  let get_sprite (child : ghost_child) : sprite option =
-    match child.kind with
-    | DIVE
-    | DIVE_COOLDOWN ->
-      Some child.sprite
-    | _ -> None
-  in
-  Option.bind ghost.child get_sprite
+  Option.bind ghost.child (fun child ->
+      match child.kind with
+      | DIVE
+      | DIVE_COOLDOWN ->
+        Some child.sprite
+      | _ -> None)
 
 let get_particle_child_sprite (ghost : ghost) : sprite option =
-  let get_sprite (child : ghost_child) : sprite option =
-    match child.kind with
-    | DIVE_COOLDOWN
-    | WRAITHS ->
-      Some child.sprite
-    | _ -> None
-  in
-  Option.bind ghost.child get_sprite
-
-let get_current_attack_direction (ghost : ghost) : direction option =
-  match get_current_slash ghost with
-  | None -> None
-  | Some slash -> Some slash.direction
+  Option.bind ghost.child (fun child ->
+      match child.kind with
+      | DIVE_COOLDOWN
+      | WRAITHS ->
+        Some child.sprite
+      | _ -> None)
 
 let get_focus_sparkles ghost : sprite option =
-  let get_sprite (child : ghost_child) : sprite option =
-    match child.kind with
-    | FOCUS -> Some child.sprite
-    | _ -> None
-  in
-  Option.bind ghost.child get_sprite
+  Option.bind ghost.child (fun child ->
+      match child.kind with
+      | FOCUS -> Some child.sprite
+      | _ -> None)
 
 let make_ghost_child (ghost : ghost) kind relative_pos texture w h =
   let name = Show.ghost_child_kind kind in
@@ -318,7 +305,7 @@ let make_ghost_child (ghost : ghost) kind relative_pos texture w h =
   in
   Some { kind; relative_pos; sprite }
 
-let get_c_dash_child ?(full = false) (ghost : ghost) : ghost_child option =
+let make_c_dash_child ?(full = false) (ghost : ghost) : ghost_child option =
   let texture =
     match (ghost.current.wall, full) with
     | None, true -> ghost.shared_textures.c_dash_crystals_full
@@ -337,9 +324,8 @@ let get_c_dash_child ?(full = false) (ghost : ghost) : ghost_child option =
     | None -> C_DASH_CHARGE_CRYSTALS
     | Some _ -> C_DASH_WALL_CHARGE_CRYSTALS
   in
-
-  Sprite.reset_texture texture;
   let w, h = get_scaled_texture_size texture in
+  Sprite.reset_texture texture;
   make_ghost_child ghost child_kind alignment texture w h
 
 let advance_child frame_time ghost child_kind : unit =
@@ -349,7 +335,7 @@ let advance_child frame_time ghost child_kind : unit =
     match child.sprite.texture.animation_src with
     | ONCE _ -> (
       match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
-      | None -> ghost.child <- get_c_dash_child ~full:true ghost
+      | None -> ghost.child <- make_c_dash_child ~full:true ghost
       | Some sprite -> ( (* already advanced *) ))
     | _ -> Sprite.advance_animation frame_time child.sprite.texture child.sprite)
 
@@ -420,6 +406,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             game.room.progress.removed_idxs_by_layer)
     in
 
+    (* FIXME-6 handle pogoable layers here *)
     let resolve_destroyable_layer (layer : layer) =
       if layer.config.destroyable then (
         let new_tile_groups : tile_group list ref = ref [] in
@@ -480,7 +467,9 @@ let resolve_slash_collisions (state : state) (game : game) =
     let resolve_lever ((door_coords, lever_sprite) : string * sprite) =
       let layer =
         match List.find_opt (fun (l : layer) -> l.name = "lever-doors") game.room.layers with
-        | None -> failwithf "could not find lever door for %s" door_coords
+        | None ->
+          failwithf "room %s has levers '%s', but no lever-doors layer" (Show.room_id game.room.id)
+            door_coords
         | Some l -> l
       in
       let new_tile_groups : tile_group list ref = ref [] in
@@ -497,7 +486,11 @@ let resolve_slash_collisions (state : state) (game : game) =
         lever_sprite.texture <- state.global.textures.door_lever_struck;
         let has_tile_idx tile_group = List.mem door_tile_idx tile_group.tile_idxs in
         match List.find_opt has_tile_idx layer.tile_groups with
-        | None -> ()
+        | None ->
+          (* CLEANUP maybe check that the lever has actually been destroyed, to validate the door_coords are correct
+             - ideally this would happen on room load though
+          *)
+          itmp "already destroyed"
         | Some tile_group ->
           layer.tile_groups <-
             List.filter (fun (t : tile_group) -> t.dest <> tile_group.dest) layer.tile_groups;
@@ -549,12 +542,18 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       set_facing_right direction;
       ghost.textures.nail
     | C_DASH_WALL_COOLDOWN ->
+      tmp "C_DASH_WALL_COOLDOWN";
       ghost.entity.sprite.facing_right <- not ghost.entity.sprite.facing_right;
       update_vx 0.;
       ghost.entity.v.y <- 0.;
       ghost.textures.wall_slide
     | C_DASH_COOLDOWN ->
-      update_vx (3. -. (4. *. (frame_time -. ghost.history.c_dash_cooldown.started.at)));
+      tmp "C_DASH_COOLDOWN";
+      (* FIXME maybe check is_none ghost.current_wall
+         - probably a better way to do it though
+      *)
+      if Option.is_none ghost.current.wall then
+        update_vx (3. -. (4. *. (frame_time -. ghost.history.c_dash_cooldown.started.at)));
       ghost.entity.v.y <- 0.;
       (* TODO new image/texture for this *)
       ghost.textures.cast
@@ -733,6 +732,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | C_DASH_COOLDOWN ->
       game.ghost.current.is_c_dashing <- false;
       game.ghost.child <- None;
+      (* FIXME this may be the problem  - might need to use separate history for cooldown vs. wall cooldown *)
       game.ghost.history.c_dash_cooldown
     | C_DASH ->
       (* state.camera.shake <- 1.; *)
@@ -751,7 +751,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.history.c_dash
     | C_DASH_CHARGE ->
       game.ghost.current.is_charging_c_dash <- true;
-      game.ghost.child <- get_c_dash_child game.ghost;
+      game.ghost.child <- make_c_dash_child game.ghost;
       game.ghost.history.charge_c_dash
     | DASH -> game.ghost.history.dash
     | CAST spell_kind -> (
@@ -944,12 +944,10 @@ let equip_weapon (ghost : ghost) weapon_name =
        })
 
 let get_invincibility_kind (state : state) (game : game) : invincibility_kind option =
+  let in_dive_cooldown () = not (past_cooldown game.ghost.history.dive_cooldown state.frame.time) in
   if not (past_cooldown game.ghost.history.take_damage state.frame.time) then
     Some TOOK_DAMAGE
-  else if
-    game.ghost.current.is_diving
-    || not (past_cooldown game.ghost.history.dive_cooldown state.frame.time)
-  then
+  else if game.ghost.current.is_diving || in_dive_cooldown () then
     Some DIVE_IFRAMES
   else
     None
@@ -1434,7 +1432,10 @@ let update (game : game) (state : state) =
       is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.down
     in
     let still_c_dashing () = is_doing game.ghost C_DASH state.frame.time in
-    let still_cooling_down () = is_doing game.ghost C_DASH_COOLDOWN state.frame.time in
+    let still_cooling_down () =
+      (* this doesn't need to check C_DASH_WALL_COOLDOWN because they use the same .history *)
+      is_doing game.ghost C_DASH_COOLDOWN state.frame.time
+    in
 
     let maybe_end_c_dash () =
       let end_c_dash () =
@@ -1470,7 +1471,12 @@ let update (game : game) (state : state) =
         continue_action game C_DASH_CHARGE state.frame.time;
         true)
       else if still_cooling_down () then (
-        continue_action game C_DASH_COOLDOWN state.frame.time;
+        let action_kind =
+          match game.ghost.current.wall with
+          | None -> C_DASH_COOLDOWN
+          | Some _ -> C_DASH_WALL_COOLDOWN
+        in
+        continue_action game action_kind state.frame.time;
         true)
       else if still_c_dashing () then (
         (* this function should still return true if the ghost is ending the c-dash this frame
@@ -1770,6 +1776,7 @@ let update (game : game) (state : state) =
     match get_enemy_collision game.ghost game.room with
     | Some direction -> start_action state game (TAKE_DAMAGE direction)
     | None -> ());
+  (* FIXME-5 also check for hazard collisions (or maybe add separate fn) *)
   let collisions = Entity.get_floor_collisions game.room game.ghost.entity in
   state.debug.rects <-
     List.map (fun c -> (Raylib.Color.green, snd c)) collisions @ state.debug.rects;
@@ -1784,8 +1791,13 @@ let update (game : game) (state : state) =
     if game.ghost.current.is_c_dashing then (
       state.camera.shake <- 1.;
       game.ghost.current.is_c_dashing <- false;
-      game.ghost.current.wall <- Some wall_rect;
+      (* FIXME-8 check for mantis claw *)
+      (* FIXME-8 probably also need to check `high_enough_to_slide_on wall` here too *)
+      if game.ghost.abilities.mantis_claw then
+        game.ghost.current.wall <- Some wall_rect;
       game.ghost.child <- None;
+      game.ghost.entity.v.x <- 0.;
+      (* game.ghost.entity.v.y <- 0.; *)
       start_action state game C_DASH_WALL_COOLDOWN));
   maybe_unset_current_floor game.ghost;
   Sprite.advance_animation state.frame.time game.ghost.entity.sprite.texture

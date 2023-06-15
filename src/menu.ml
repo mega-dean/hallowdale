@@ -2,7 +2,8 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let main_menu () : menu = { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
+let main_menu () : menu =
+  { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
 
 let pause_menu ghost_count : menu =
   {
@@ -19,13 +20,18 @@ let pause_menu ghost_count : menu =
 
 let save_files_menu () : menu =
   {
-    choices = [ SAVE_FILES SLOT_1; SAVE_FILES SLOT_2; SAVE_FILES SLOT_3; SAVE_FILES SLOT_4; SAVE_FILES BACK ];
+    choices =
+      [
+        SAVE_FILES SLOT_1; SAVE_FILES SLOT_2; SAVE_FILES SLOT_3; SAVE_FILES SLOT_4; SAVE_FILES BACK;
+      ];
     current_choice_idx = 0;
   }
 
 let change_ghost_menu (ghosts : (ghost_id * ghost) list) : menu =
   let ghost_choices =
-    List.filter_map (fun (id, ghost) -> if ghost.in_party then Some (CHANGE_GHOST_MENU (USE_GHOST id)) else None) ghosts
+    List.filter_map
+      (fun (id, ghost) -> if ghost.in_party then Some (CHANGE_GHOST_MENU (USE_GHOST id)) else None)
+      ghosts
   in
   { choices = ghost_choices @ [ CHANGE_GHOST_MENU BACK ]; current_choice_idx = 0 }
 
@@ -42,7 +48,8 @@ let update_menu_choice (menu : menu) frame_inputs =
 let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
-    | None -> state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts)))
+    | None ->
+      state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts)))
     | Some _ -> state.pause_menu <- None);
 
   (match state.pause_menu with
@@ -55,7 +62,8 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU CONTINUE ->
         state.pause_menu <- None;
         game.interaction.text <- None
-      | PAUSE_MENU CHANGE_WEAPON -> state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
+      | PAUSE_MENU CHANGE_WEAPON ->
+        state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
       | PAUSE_MENU CHANGE_GHOST ->
         state.pause_menu <- Some (change_ghost_menu ([ (game.ghost.id, game.ghost) ] @ game.ghosts))
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
@@ -112,7 +120,9 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
          TODO can maybe improve this, since it can still be off if the camera is bounded
       *)
-      Tiled.create_camera_at (Raylib.Vector2.create game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y) 0.;
+      Tiled.create_camera_at
+        (Raylib.Vector2.create game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y)
+        0.;
     if is_new_game then (
       Entity.freeze game.ghost.entity;
       state.screen_fade <- Some 255;

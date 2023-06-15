@@ -89,7 +89,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":20,
          "id":5,
-         "name":"doors",
+         "name":"lever-doors",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,

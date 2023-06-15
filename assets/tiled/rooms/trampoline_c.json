@@ -47,13 +47,24 @@
                 {
                  "height":28.5,
                  "id":4,
+                 "name":"lever_up-4-8",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14.833,
+                 "x":160.250166666667,
+                 "y":282.416666666667
+                }, 
+                {
+                 "height":28.5,
+                 "id":5,
                  "name":"lever_up-42-2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":14.833,
-                 "x":1095.5835,
-                 "y":139.083333333333
+                 "x":1101.25016666667,
+                 "y":135.75
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -78,8 +89,8 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":15,
-         "id":5,
-         "name":"doors",
+         "id":7,
+         "name":"lever-doors",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -139,8 +150,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":7,
- "nextobjectid":5,
+ "nextlayerid":8,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

@@ -418,13 +418,10 @@ let tick (state : state) =
     match state'.pause_menu with
     | Some menu -> state'
     | None ->
-      let st' =
-        state'
-        |> Ghost.update game
-        |> update_spawned_vengeful_spirits game
-        |> update_enemies game
-        |> update_npcs game
-        |> update_environment game
-        |> update_camera game
-      in
-      st')
+      state'
+      |> Ghost.update game
+      |> update_spawned_vengeful_spirits game
+      |> update_enemies game
+      |> update_npcs game
+      |> update_environment game
+      |> update_camera game)
