@@ -254,6 +254,11 @@
             "cooldown": 0.0,
             "input_buffer": 0.0
         }],
+        // ["c-dash-wall-cooldown", {
+        //     "duration": 0.7,
+        //     "cooldown": 0.0,
+        //     "input_buffer": 0.0
+        // }],
 
         ["take-damage", {
             "duration": 0.333333,
@@ -270,17 +275,17 @@
             "cooldown": 1.7,
             "input_buffer": 0.2
         }],
-        ["dive-cooldown", {
-            "duration": 1.3, // this is how long the ghost is stuck in the intimidation stance
-            "cooldown": 2.3, // this is how long the i-frames last after diving
-            "input_buffer": 0.2
-        }],
         ["cast-wraiths", {
             // - when duration is less than PARTICLE duration (count * duration), the sprite lingers on the screen
             // - this is a little longer than that (0.6 to 0.63) because when they are too close
             //   and wraiths are buffered, the next sprite is never spawned (or maybe it spawns/despawns right away, idk)
             "duration": 0.63,
             "cooldown": 0.3,
+            "input_buffer": 0.2
+        }],
+        ["dive-cooldown", {
+            "duration": 1.3, // this is how long the ghost is stuck in the intimidation stance
+            "cooldown": 2.3, // this is how long the i-frames last after diving
             "input_buffer": 0.2
         }],
         ["focus", {

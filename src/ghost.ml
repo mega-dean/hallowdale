@@ -542,18 +542,11 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       set_facing_right direction;
       ghost.textures.nail
     | C_DASH_WALL_COOLDOWN ->
-      tmp "C_DASH_WALL_COOLDOWN";
-      ghost.entity.sprite.facing_right <- not ghost.entity.sprite.facing_right;
       update_vx 0.;
       ghost.entity.v.y <- 0.;
       ghost.textures.wall_slide
     | C_DASH_COOLDOWN ->
-      tmp "C_DASH_COOLDOWN";
-      (* FIXME maybe check is_none ghost.current_wall
-         - probably a better way to do it though
-      *)
-      if Option.is_none ghost.current.wall then
-        update_vx (3. -. (4. *. (frame_time -. ghost.history.c_dash_cooldown.started.at)));
+      update_vx (3. -. (4. *. (frame_time -. ghost.history.c_dash_cooldown.started.at)));
       ghost.entity.v.y <- 0.;
       (* TODO new image/texture for this *)
       ghost.textures.cast
@@ -728,11 +721,14 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.child <- Some { kind = NAIL slash; relative_pos; sprite = slash.sprite };
       cooldown_scale := game.ghost.current_weapon.cooldown_scale;
       game.ghost.history.nail
-    | C_DASH_WALL_COOLDOWN
+    | C_DASH_WALL_COOLDOWN ->
+      game.ghost.entity.sprite.facing_right <- not game.ghost.entity.sprite.facing_right;
+      game.ghost.current.is_c_dashing <- false;
+      game.ghost.child <- None;
+      game.ghost.history.c_dash_wall_cooldown
     | C_DASH_COOLDOWN ->
       game.ghost.current.is_c_dashing <- false;
       game.ghost.child <- None;
-      (* FIXME this may be the problem  - might need to use separate history for cooldown vs. wall cooldown *)
       game.ghost.history.c_dash_cooldown
     | C_DASH ->
       (* state.camera.shake <- 1.; *)
@@ -856,9 +852,8 @@ let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : flo
     | DESOLATE_DIVE -> ghost.current.is_diving)
   | C_DASH_CHARGE -> ghost.current.is_charging_c_dash
   | C_DASH -> ghost.current.is_c_dashing
-  | C_DASH_WALL_COOLDOWN
-  | C_DASH_COOLDOWN ->
-    check_action ghost.history.c_dash_cooldown
+  | C_DASH_WALL_COOLDOWN -> check_action ghost.history.c_dash_wall_cooldown
+  | C_DASH_COOLDOWN -> check_action ghost.history.c_dash_cooldown
   | DASH -> check_action ghost.history.dash
   | DIVE_COOLDOWN -> check_action ghost.history.dive_cooldown
   | FLAP
@@ -1432,10 +1427,7 @@ let update (game : game) (state : state) =
       is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.down
     in
     let still_c_dashing () = is_doing game.ghost C_DASH state.frame.time in
-    let still_cooling_down () =
-      (* this doesn't need to check C_DASH_WALL_COOLDOWN because they use the same .history *)
-      is_doing game.ghost C_DASH_COOLDOWN state.frame.time
-    in
+    let still_cooling_down () = is_doing game.ghost C_DASH_COOLDOWN state.frame.time in
 
     let maybe_end_c_dash () =
       let end_c_dash () =
@@ -1688,14 +1680,6 @@ let update (game : game) (state : state) =
   in
 
   let check_cooldowns cooldowns =
-    let in_cooldown action_kind : bool =
-      let cooling_down = is_doing game.ghost action_kind state.frame.time in
-      if cooling_down then (
-        continue_action game action_kind state.frame.time;
-        true)
-      else
-        false
-    in
     let cooling_down = ref false in
     let check cooldown =
       if not !cooling_down then
@@ -1752,7 +1736,7 @@ let update (game : game) (state : state) =
       Entity.update_pos game.room game.ghost.entity state.frame.dt
     else (
       reveal_shadows ();
-      let cooling_down = check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN ] in
+      let cooling_down = check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ] in
       if not cooling_down then (
         let focusing = handle_focusing () in
         if not focusing.this_frame then (
@@ -1789,15 +1773,9 @@ let update (game : game) (state : state) =
   | None -> ()
   | Some (_, wall_rect) ->
     if game.ghost.current.is_c_dashing then (
-      state.camera.shake <- 1.;
-      game.ghost.current.is_c_dashing <- false;
-      (* FIXME-8 check for mantis claw *)
-      (* FIXME-8 probably also need to check `high_enough_to_slide_on wall` here too *)
       if game.ghost.abilities.mantis_claw then
         game.ghost.current.wall <- Some wall_rect;
-      game.ghost.child <- None;
-      game.ghost.entity.v.x <- 0.;
-      (* game.ghost.entity.v.y <- 0.; *)
+      state.camera.shake <- 1.;
       start_action state game C_DASH_WALL_COOLDOWN));
   maybe_unset_current_floor game.ghost;
   Sprite.advance_animation state.frame.time game.ghost.entity.sprite.texture
@@ -1906,6 +1884,7 @@ let init
         charge_c_dash = make_action "charge-c-dash";
         c_dash = make_action "c-dash";
         c_dash_cooldown = make_action "c-dash-cooldown";
+        c_dash_wall_cooldown = make_action "c-dash-cooldown";
         dash = make_action "dash";
         dive_cooldown = make_action "dive-cooldown";
         flap = make_action "flap";
