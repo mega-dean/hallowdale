@@ -13,8 +13,14 @@ let int_list xs = List.map string_of_int xs
 let sprite_name (s : sprite) = s.ident
 let entity_name (e : entity) = sprite_name e.sprite
 let shape (shape : shape) = fmt "shape with %d edges" (List.length shape.edges)
-let shape_points (shape : shape) = fmt "shape with points: %s" (List.map vector (get_points shape) |> join)
-let shape_lines (shape : shape) = fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> join ~sep:"\n")
+
+let shape_lines (shape : shape) =
+  fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> join ~sep:"\n")
+
+let shape_points shape : string =
+  List.map fst shape.edges
+  |> List.map (fun v -> fmt "{ x = %f; y = %f };" v.x v.y)
+  |> join ~sep:"\n"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
@@ -61,6 +67,7 @@ let spell_kind (kind : spell_kind) =
 let ghost_action_kind id =
   match id with
   | TAKE_DAMAGE d -> fmt "TAKE_DAMAGE (%s)" (direction d)
+  | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
@@ -85,7 +92,9 @@ let ghost_pose pose =
   | WALKING d -> fmt "WALKING (%s)" (direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"
 
-let ghost_location (g : ghost) = print "ghost at %0.1f, %0.1f" g.entity.sprite.dest.pos.x g.entity.sprite.dest.pos.y
+let ghost_location (g : ghost) =
+  print "ghost at %0.1f, %0.1f" g.entity.sprite.dest.pos.x g.entity.sprite.dest.pos.y
+
 let ghost_name (g : ghost) = fmt "ghost:%s" (entity_name g.entity)
 
 let area_id id =
@@ -195,7 +204,9 @@ let ghost_child_kind (d : ghost_child_kind) : string =
   | WRAITHS -> "WRAITHS"
 
 let time (t : time) = fmt "%f" t.at
-let tile_group (tile_group : tile_group) : string = fmt "[%s]" (int_list tile_group.tile_idxs |> join)
+
+let tile_group (tile_group : tile_group) : string =
+  fmt "[%s]" (int_list tile_group.tile_idxs |> join)
 
 let layer_tile_groups (layer : layer) : string =
   fmt "tile_groups:\n%s" (List.map tile_group layer.tile_groups |> join ~sep:"\n")

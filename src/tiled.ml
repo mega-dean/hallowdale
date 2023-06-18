@@ -313,7 +313,7 @@ module Room = struct
     in
     let set_tile_groups (layer : layer) =
       let rects =
-        if (layer.config.collides_with_ghost || layer.config.destroyable) && not layer.hidden then
+        if (layer.config.collides_with_ghost || layer.config.destroyable || layer.config.damages_ghost) && not layer.hidden then
           get_rectangle_tile_groups layer.json layer.name
         else
           []

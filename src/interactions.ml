@@ -539,7 +539,6 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             GHOST (BRITTA, REMOVE_FROM_PARTY);
           ]
       | "ability_monkey-gas" ->
-        (* CLEANUP outline for monkey knockout gas *)
         get_ability_steps "howling_wraiths" 0. 6.
           [ "Consumed the"; "Monkey Knockout Gas." ]
           [

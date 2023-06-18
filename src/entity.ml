@@ -2,7 +2,8 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let above_floor (e : entity) floor = floor.pos.x < e.dest.pos.x +. e.dest.w && floor.pos.x +. floor.w > e.dest.pos.x
+let above_floor (e : entity) floor =
+  floor.pos.x < e.dest.pos.x +. e.dest.w && floor.pos.x +. floor.w > e.dest.pos.x
 
 (* same thing because it only considers p.x *)
 let below_floor s floor = above_floor s floor
@@ -83,19 +84,26 @@ let apply_v ?(debug = None) dt (e : entity) =
     else
       e.x_recoil <- None
 
-let get_floor_collisions (room : room) (e : entity) : (collision * rect) list =
+let get_tile_collisions (layers : layer list) (entity : entity) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (layer : layer) =
     let check_tile_group (tile_group : tile_group) =
-      match Collision.with_entity e tile_group.dest with
+      match Collision.with_entity entity tile_group.dest with
       | None -> ()
       | Some coll -> collisions := (coll, tile_group.dest) :: !collisions
     in
     List.iter check_tile_group layer.tile_groups
   in
-  let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
   List.iter check_collision layers;
   !collisions
+
+let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
+  let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
+  get_tile_collisions layers entity
+
+let get_damage_collisions (room : room) (entity : entity) : (collision * rect) list =
+  let layers = List.filter (fun (l : layer) -> l.config.damages_ghost) room.layers in
+  get_tile_collisions layers entity
 
 let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * rect) list) : unit =
   let adjust_position ((coll, floor) : collision * rect) =
@@ -145,7 +153,9 @@ let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) =
     get_floor_collisions room entity |> apply_collisions entity)
 
 let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
-  let to_the_left () = { y = parent.dest.pos.y; x = parent.dest.pos.x -. child_w +. (parent.dest.w /. 2.) } in
+  let to_the_left () =
+    { y = parent.dest.pos.y; x = parent.dest.pos.x -. child_w +. (parent.dest.w /. 2.) }
+  in
   let to_the_right () = { y = parent.dest.pos.y; x = parent.dest.pos.x +. (parent.dest.w /. 2.) } in
   match relative_pos with
   | IN_FRONT ->
@@ -185,16 +195,26 @@ let adjust_sprite_dest (e : entity) =
   if e.sprite.facing_right then
     e.sprite.dest.pos.x <- e.dest.pos.x -. e.sprite.texture.coll_offset.x
   else
-    e.sprite.dest.pos.x <- e.dest.pos.x -. (e.sprite.dest.w -. e.dest.w -. e.sprite.texture.coll_offset.x)
+    e.sprite.dest.pos.x <-
+      e.dest.pos.x -. (e.sprite.dest.w -. e.dest.w -. e.sprite.texture.coll_offset.x)
 
 let update_sprite_texture (entity : entity) (texture : texture) =
   entity.sprite.texture <- texture;
   entity.sprite.dest <- Sprite.make_dest entity.sprite.dest.pos.x entity.sprite.dest.pos.y texture
 
 let clone (orig : entity) : entity =
-  let dest_clone = { pos = { x = orig.dest.pos.x; y = orig.dest.pos.y }; w = orig.dest.w; h = orig.dest.h } in
+  let dest_clone =
+    { pos = { x = orig.dest.pos.x; y = orig.dest.pos.y }; w = orig.dest.w; h = orig.dest.h }
+  in
   let v_clone = { x = orig.v.x; y = orig.v.y } in
-  { orig with dest = dest_clone; v = v_clone; sprite = Sprite.clone orig.sprite; x_recoil = None; y_recoil = None }
+  {
+    orig with
+    dest = dest_clone;
+    v = v_clone;
+    sprite = Sprite.clone orig.sprite;
+    x_recoil = None;
+    y_recoil = None;
+  }
 
 let create
     (path : string)
@@ -220,7 +240,8 @@ let create
     y_recoil = None;
   }
 
-let create_for_sprite (sprite : sprite) ?(inanimate = false) ?(v = Zero.vector ()) (dest : rect) : entity =
+let create_for_sprite (sprite : sprite) ?(inanimate = false) ?(v = Zero.vector ()) (dest : rect) :
+    entity =
   {
     dest;
     sprite;
@@ -232,7 +253,8 @@ let create_for_sprite (sprite : sprite) ?(inanimate = false) ?(v = Zero.vector (
     y_recoil = None;
   }
 
-let to_texture_config asset_dir character_name ((pose_name, json) : string * Json_t.texture_config) : texture_config =
+let to_texture_config asset_dir character_name ((pose_name, json) : string * Json_t.texture_config)
+    : texture_config =
   {
     count = json.count;
     duration = { seconds = json.duration };
@@ -246,8 +268,10 @@ let to_texture_config asset_dir character_name ((pose_name, json) : string * Jso
 let load_pose (texture_config : texture_config) : string * texture =
   (texture_config.pose_name, Sprite.build_texture_from_config texture_config)
 
-let create_from_textures ?(collision = None) (texture_configs : texture_config list) (entity_dest : rect) :
-    entity * (string * texture) list =
+let create_from_textures
+    ?(collision = None)
+    (texture_configs : texture_config list)
+    (entity_dest : rect) : entity * (string * texture) list =
   (* let animation_src = get_src sprite.texture in *)
   let textures = List.map load_pose texture_configs in
   let validate_configs_are_complete () =
@@ -258,12 +282,15 @@ let create_from_textures ?(collision = None) (texture_configs : texture_config l
     let get_filenames asset_dir char_name =
       Sys.readdir (File.convert_path (fmt "../assets/%s/%s" asset_dir char_name)) |> Array.to_list
     in
-    let config_names = texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name) in
+    let config_names =
+      texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name)
+    in
     let png_names = get_filenames (Show.asset_dir tc.asset_dir) tc.character_name in
 
     let validate_png_name png_name =
       if not (List.mem png_name config_names) then
-        failwithf "found %s image '%s' that has no corresponding config in enemies.json" tc.character_name png_name
+        failwithf "found %s image '%s' that has no corresponding config in enemies.json"
+          tc.character_name png_name
     in
 
     let validate_config_name config_name =
@@ -272,7 +299,8 @@ let create_from_textures ?(collision = None) (texture_configs : texture_config l
           (* strip .png from the end *)
           Str.first_chars config_name (String.length config_name - 4)
         in
-        failwithf "found %s texture_config for '%s' that has no corresponding %s.png" tc.character_name short short)
+        failwithf "found %s texture_config for '%s' that has no corresponding %s.png"
+          tc.character_name short short)
     in
     List.iter validate_png_name png_names;
     List.iter validate_config_name config_names

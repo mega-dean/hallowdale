@@ -54,23 +54,45 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
   (* return value is true when _not_ overlapping *)
   let edge_has_separating_axis ((point, line) : vector * line) : line option =
     let normal = get_normal line in
-    let sort (points : vector list) = List.sort (fun p1 p2 -> compare p1.x p2.x) points in
-    let projected_from_s1 : vector list = List.map (project_point_onto_line normal) (get_points s1) |> sort in
-    let projected_from_s2 : vector list = List.map (project_point_onto_line normal) (get_points s2) |> sort in
     let first xs = List.nth xs 0 in
     let last xs = List.nth xs (List.length xs - 1) in
-    let has_separating_axis =
-      if (first projected_from_s1).x > (first projected_from_s2).x then
-        (first projected_from_s1).x > (last projected_from_s2).x
-      else if (first projected_from_s1).x < (first projected_from_s2).x then
-        (last projected_from_s1).x < (first projected_from_s2).x
-      else
-        false
+    let get_projected sort_fn =
+      ( List.map (project_point_onto_line normal) (get_points s1) |> sort_fn,
+        List.map (project_point_onto_line normal) (get_points s2) |> sort_fn )
     in
-    if has_separating_axis then Some normal else None
+
+    let compare_points' get_coord =
+      let sort (points : vector list) =
+        List.sort (fun p1 p2 -> compare (get_coord p1) (get_coord p2)) points
+      in
+      let projected_from_s1, projected_from_s2 =
+        ( List.map (project_point_onto_line normal) (get_points s1) |> sort,
+          List.map (project_point_onto_line normal) (get_points s2) |> sort )
+      in
+      let has_separating_axis () =
+        if get_coord (first projected_from_s1) > get_coord (first projected_from_s2) then
+          get_coord (first projected_from_s1) > get_coord (last projected_from_s2)
+        else if get_coord (first projected_from_s1) < get_coord (first projected_from_s2) then
+          get_coord (last projected_from_s1) < get_coord (first projected_from_s2)
+        else
+          false
+      in
+      if has_separating_axis () then
+        Some normal
+      else
+        None
+    in
+
+    if vertical normal then
+      compare_points' (fun v -> v.y)
+    else (
+      compare_points' (fun v -> v.x)
+    )
   in
   (* this returns the normal that is the separating axis *)
-  let edge_with_separating_axis (shape : shape) : line option = List.find_map edge_has_separating_axis shape.edges in
+  let edge_with_separating_axis (shape : shape) : line option =
+    List.find_map edge_has_separating_axis shape.edges
+  in
   Option.is_none (List.find_map edge_with_separating_axis [ s1; s2 ])
 
 (* direction here means "the direction that the entity is (probably) colliding from" *)
@@ -158,6 +180,10 @@ let between_entities (entity1 : entity) (entity2 : entity) : bool =
 let with_slash' (slash : slash) (rect : rect) : collision option =
   let target_collision_shape = shape_of_rect rect in
   let slash_shape = get_slash_shape slash in
+  let min_slash_y =
+    let points' = List.map fst slash_shape.edges |> List.map (fun v -> v.y) in
+    List.sort Float.compare points' |> List.rev |> List.hd
+  in
   if between_shapes slash_shape target_collision_shape then
     Some { rect; direction = slash.direction }
   else

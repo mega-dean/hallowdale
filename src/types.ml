@@ -202,6 +202,9 @@ type line = {
   c : float;
 }
 
+let horizontal (line : line) = line.a = 0.
+let vertical (line : line) = line.b = 0.
+
 type shape = { edges : (vector * line) list }
 
 type collision_shape =
@@ -231,6 +234,12 @@ let get_lines (shape : shape) = List.map snd shape.edges
 
 let shape_of_rect (rect : rect) : shape =
   make_shape
+    (* [
+     *   { x = rect.pos.x +. 1.; y = rect.pos.y };
+     *   { x = rect.pos.x +. rect.w; y = rect.pos.y +. 1. };
+     *   { x = rect.pos.x +. rect.w +. 1.; y = rect.pos.y +. rect.h };
+     *   { x = rect.pos.x; y = rect.pos.y +. rect.h +. 1. };
+     * ] *)
     [
       { x = rect.pos.x; y = rect.pos.y };
       { x = rect.pos.x +. rect.w; y = rect.pos.y };
@@ -335,6 +344,7 @@ type ghost_action_kind =
   | FLAP
   | WALL_KICK
   | JUMP
+  | TAKE_DAMAGE_AND_RESPAWN
   | TAKE_DAMAGE of direction
   | CAST of spell_kind
   | DIVE_COOLDOWN
@@ -712,6 +722,7 @@ type ghost_action_history = {
   jump : ghost_action;
   wall_kick : ghost_action;
   take_damage : ghost_action;
+  take_damage_and_respawn : ghost_action;
   (* checking is_doing for nail/focus uses the ghost.child sprite, not
      the duration/doing_until/blocked_until like the other actions
   *)
@@ -735,6 +746,10 @@ type current_status = {
   mutable is_diving : bool;
   mutable is_c_dashing : bool;
   mutable is_charging_c_dash : bool;
+  (* this is here because hazard damage needs to run start_action twice *)
+  mutable is_taking_hazard_damage : bool;
+  mutable can_dash : bool;
+  mutable can_flap : bool;
 }
 
 type frame_input = {
@@ -815,7 +830,7 @@ type ghosts_file = {
 
 type ghost = {
   entity : entity;
-  current : current_status;
+  mutable current : current_status;
   mutable textures : ghost_textures;
   (* TODO probably don't need .shared_textures on every ghost *)
   shared_textures : shared_textures;
@@ -828,8 +843,6 @@ type ghost = {
   mutable child : ghost_child option;
   mutable health : health;
   mutable soul : soul;
-  mutable can_dash : bool;
-  mutable can_flap : bool;
   mutable spawned_vengeful_spirits : projectile list;
 }
 
@@ -1050,6 +1063,7 @@ type room = {
   triggers : triggers;
   enemies : (enemy_id * enemy) list;
   exits : rect list;
+  respawn_pos : vector;
   mutable npcs : npc list;
   mutable layers : layer list;
   mutable pickup_indicators : sprite list;

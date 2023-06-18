@@ -48,9 +48,11 @@ type room_params = {
   npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;
   lever_texture : texture;
+  respawn_pos : vector;
 }
 
 let init (params : room_params) : room =
+  tmp "initting room with respawn_pos %s" (Show.vector params.respawn_pos);
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
   let (area_id, room_id) : area_id * room_id =
     Tiled.parse_room_filename "init_room" params.file_name
@@ -253,8 +255,11 @@ let init (params : room_params) : room =
             in
             let configs =
               match layer_name with
-              (* FIXME-7 add hazards *)
               | "floors" -> [ "collides" ]
+              | "spikes" -> [ "damages"; "pogoable" ]
+              (* FIXME add this
+                 | "acid" -> [ "damages" ]
+              *)
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
@@ -278,10 +283,11 @@ let init (params : room_params) : room =
               let depth_configs = ref 0 in
               if has "bg" then incr depth_configs;
               if has "fg" then incr depth_configs;
+              if has "damages" then incr depth_configs;
               if has "collides" then incr depth_configs;
               if !depth_configs <> 1 then
                 failwithf
-                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', or 'collides'"
+                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', 'damages', or 'collides'"
                   layer_name
               else
                 {
@@ -463,6 +469,7 @@ let init (params : room_params) : room =
     idx_configs = !idx_configs;
     camera_bounds = create_camera_bounds json_room;
     exits = params.exits;
+    respawn_pos = clone_vector params.respawn_pos;
     triggers =
       {
         camera = !camera_triggers;
@@ -541,6 +548,7 @@ let handle_transitions (state : state) (game : game) =
             npc_configs = state.global.npc_configs;
             pickup_indicator_texture = state.global.textures.pickup_indicator;
             lever_texture = state.global.textures.door_lever;
+            respawn_pos = start_pos;
           }
       in
       game.ghost.entity.current_floor <- None;

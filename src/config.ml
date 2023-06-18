@@ -53,7 +53,8 @@ let window : window_config =
     (* TODO could make a separate utils.ml file so this can use printing fns, but this whole config
        file might go away as things are moved into json configs
     *)
-    failwith (Printf.sprintf "got invalid fps %d, needs to be at least 60 to avoid dropping inputs" fps);
+    failwith
+      (Printf.sprintf "got invalid fps %d, needs to be at least 60 to avoid dropping inputs" fps);
   { width; height; center_x = Float.of_int width /. 2.; center_y = Float.of_int height /. 2.; fps }
 
 type ghost_config = {

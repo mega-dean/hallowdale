@@ -254,15 +254,15 @@
             "cooldown": 0.0,
             "input_buffer": 0.0
         }],
-        // ["c-dash-wall-cooldown", {
-        //     "duration": 0.7,
-        //     "cooldown": 0.0,
-        //     "input_buffer": 0.0
-        // }],
 
         ["take-damage", {
             "duration": 0.333333,
             "cooldown": 1.3,
+            "input_buffer": -1.0
+        }],
+        ["take-damage-and-respawn", {
+            "duration": 0.8,
+            "cooldown": 0.8,
             "input_buffer": -1.0
         }],
         ["cast-vs", {

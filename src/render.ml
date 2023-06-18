@@ -48,10 +48,16 @@ let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite)
 let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
   Draw.rect_lines (rect |> to_Rect) size color
 
-let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
+let debug_rect' color (rect : rect) =
+  let color' =
+    Raylib.Color.create (Raylib.Color.r color) (Raylib.Color.g color) (Raylib.Color.b color) 100
+  in
   Draw.rect (rect.pos.x |> Float.to_int)
     (rect.pos.y -. 2. |> Float.to_int)
-    (rect.w |> Float.to_int) (rect.h |> Float.to_int) (Color.create r g b a)
+    (rect.w |> Float.to_int) (rect.h |> Float.to_int) color'
+
+let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
+  debug_rect' (Color.create r g b a) rect
 
 let debug_xy x y = Draw.circle (x |> Float.to_int) (y |> Float.to_int) 4. Color.green
 let debug_v (v : Raylib.Vector2.t) = Draw.circle_v v 4. Color.green
@@ -179,7 +185,9 @@ let draw_tiles room camera_x camera_y layers : unit =
 let draw_solid_tiles room camera_x camera_y : unit =
   List.iter
     (draw_tiled_layer room camera_x camera_y)
-    (List.filter (fun layer -> layer.config.collides_with_ghost) room.layers)
+    (List.filter
+       (fun layer -> layer.config.collides_with_ghost || layer.config.damages_ghost)
+       room.layers)
 
 let draw_bg_tiles room camera_x camera_y : unit =
   draw_tiles room camera_x camera_y
@@ -810,7 +818,7 @@ let tick (state : state) =
         (fun (l : layer) ->
           List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
         game.room.layers;
-      List.iter (fun (_color, rect) -> debug_rect rect) state.debug.rects;
+      List.iter (fun (_color, rect) -> debug_rect' _color rect) state.debug.rects;
       draw_ghost_debug ()
     in
 

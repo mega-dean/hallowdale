@@ -170,6 +170,7 @@ let init (save_file : Json_t.save_file) (global : global_cache) (world : world) 
         npc_configs = global.npc_configs;
         pickup_indicator_texture = global.textures.pickup_indicator;
         lever_texture = global.textures.door_lever;
+        respawn_pos = { x = save_file.ghost_x; y = save_file.ghost_y };
       }
   in
   room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;
