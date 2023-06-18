@@ -1110,12 +1110,6 @@ type debug = {
   mutable rects : (color * rect) list;
 }
 
-(* TODO-5 add something like this to game *)
-type game_debug_state =
-  | RUNNING
-  | STEPPING
-  | STOPPED
-
 type game = {
   mutable ghost : ghost;
   mutable ghosts : (ghost_id * ghost) list;
@@ -1124,6 +1118,7 @@ type game = {
   (* string is room uuid *)
   mutable progress : (string * Json_t.room_progress) list;
   mutable save_file_slot : int;
+  mutable debug_paused : bool;
 }
 
 type camera = {

@@ -95,15 +95,15 @@
          "name":"triggers",
          "objects":[
                 {
-                 "height":28.5,
+                 "height":27,
                  "id":4,
                  "name":"lever_up-14-2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":14.833,
-                 "x":288.401681818182,
-                 "y":138.931818181818
+                 "width":14.583,
+                 "x":287.151681818182,
+                 "y":140.931818181818
                 }],
          "opacity":1,
          "type":"objectgroup",

@@ -122,20 +122,19 @@ let init (params : room_params) : room =
             make_shape
               [
                 (* TODO move to config *)
-                { x = 12.; y = 0. };
-                { x = 34.; y = 0. };
-                { x = 34.; y = 87. };
-                { x = 12.; y = 87. };
+                { x = 10.; y = 0. };
+                { x = 28.; y = 0. };
+                { x = 28.; y = 83. };
+                { x = 10.; y = 83. };
               ]
           in
           {
             ident = fmt "Sprite %s" name;
             dest =
-              (* CLEANUP don't use object rect, use size based on lever texture if possible (or just hardcode)
-                 - use Sprite.make_dest
-                 - probably need to adjust the collision shape
-              *)
-              get_object_rect ~floor:true name coll_rect |> snd;
+              Sprite.make_dest
+                (coll_rect.x *. Config.scale.room)
+                (coll_rect.y *. Config.scale.room)
+                params.lever_texture;
             texture = params.lever_texture;
             collision = Some (SHAPE shape);
             facing_right = true;
@@ -257,9 +256,7 @@ let init (params : room_params) : room =
               match layer_name with
               | "floors" -> [ "collides" ]
               | "spikes" -> [ "damages"; "pogoable" ]
-              (* FIXME add this
-                 | "acid" -> [ "damages" ]
-              *)
+              | "acid" -> [ "damages" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
@@ -287,7 +284,8 @@ let init (params : room_params) : room =
               if has "collides" then incr depth_configs;
               if !depth_configs <> 1 then
                 failwithf
-                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', 'damages', or 'collides'"
+                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', 'damages', or \
+                   'collides'"
                   layer_name
               else
                 {

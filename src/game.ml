@@ -185,4 +185,5 @@ let init (save_file : Json_t.save_file) (global : global_cache) (world : world) 
     interaction = { steps = []; text = None; speaker_name = None; name = None; black_rects = [] };
     progress = save_file.progress;
     save_file_slot;
+    debug_paused = false;
   }

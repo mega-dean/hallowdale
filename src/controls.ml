@@ -178,6 +178,9 @@ let get_key k =
   | Some key -> key
   | None -> List.assoc k default_keybinds
 
+let holding_shift () =
+  Raylib.is_key_down Raylib.Key.Left_shift || Raylib.is_key_down Raylib.Key.Right_shift
+
 let key_up k = Raylib.is_key_up (get_key k)
 let key_down k = Raylib.is_key_down (get_key k)
 let key_pressed k = Raylib.is_key_pressed (get_key k)

@@ -469,12 +469,10 @@ let resolve_slash_collisions (state : state) (game : game) =
         let resolve_tile_group (tile_group : tile_group) =
           match Collision.with_slash' slash tile_group.dest with
           | None -> ()
-          | Some coll ->
-            (match coll.direction with
+          | Some coll -> (
+            match coll.direction with
             | DOWN -> pogo game.ghost
-            | _ -> ());
-            tmp " %d ====== got collision with rect: %s" state.frame.idx (Show.rect coll.rect);
-            ()
+            | _ -> ())
         in
         List.iter resolve_tile_group layer.tile_groups)
     in
@@ -676,9 +674,6 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
   Entity.update_sprite_texture ghost.entity next_texture
 
 let past_cooldown ?(debug = false) pose_frames frame_time : bool =
-  if debug then
-    tmp "checking %f < %f ---- %b" pose_frames.blocked_until.at frame_time
-      (pose_frames.blocked_until.at < frame_time);
   pose_frames.blocked_until.at < frame_time
 
 let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None) state game =
@@ -999,6 +994,34 @@ let reset (ghost : ghost) =
   ghost.child <- None;
   ghost.entity.current_floor <- None
 
+let handle_debug_keys (game : game) (state : state) =
+  let dv =
+    if state.debug.enabled then
+      Config.ghost.small_debug_v /. 3.
+    else
+      Config.ghost.debug_v
+  in
+  if key_down DEBUG_UP then
+    game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y -. dv
+  else if key_down DEBUG_DOWN then
+    game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y +. dv
+  else if key_down DEBUG_RIGHT then
+    game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x +. dv
+  else if key_down DEBUG_LEFT then
+    game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
+  else if holding_shift () then (
+    if key_pressed DEBUG_1 then
+      game.ghost.soul.current <- game.ghost.soul.max
+    else if key_pressed DEBUG_2 then
+      toggle_ability game.ghost "mantis_claw"
+    else if key_pressed DEBUG_3 then
+      toggle_ability game.ghost "vengeful_spirit"
+    else if key_pressed DEBUG_4 then
+      toggle_ability game.ghost "desolate_dive")
+  else if key_pressed DEBUG_1 then
+    game.debug_paused <- not game.debug_paused;
+  state
+
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
 
@@ -1024,34 +1047,6 @@ let update (game : game) (state : state) =
   let set_pose' (pose : ghost_pose) = set_pose game.ghost pose state.frame.time in
   let set_interaction_pose' (ghost : ghost) (pose : ghost_pose) =
     set_pose ghost pose state.frame.time
-  in
-  let handle_debug_keys () =
-    let dv =
-      if state.debug.enabled then
-        Config.ghost.small_debug_v /. 3.
-      else
-        Config.ghost.debug_v
-    in
-    if key_down DEBUG_UP then
-      game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y -. dv
-    else if key_down DEBUG_DOWN then
-      game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y +. dv
-    else if key_down DEBUG_RIGHT then
-      game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x +. dv
-    else if key_down DEBUG_LEFT then
-      game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
-    else if key_pressed DEBUG_1 then
-      (* state.loaded_state <- MAIN_MENU main_menu *)
-      (* print "current weapons: %s" (game.ghost.weapons |> List.map fst |> join) *)
-      toggle_ability game.ghost "mantis_claw"
-    (* tmp "resetting ghost to %s" (Show.vector game.room.respawn_pos);
-     * game.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos *)
-    (* toggle_ability game.ghost "vengeful_spirit" *)
-    (* print "%s" (Show.shape_lines (Option.get game.ghost.entity.sprite.collision)) *)
-    else if key_pressed DEBUG_2 then (
-      (* toggle_ability game.ghost "monarch_wings" *)
-      game.ghost.soul.current <- game.ghost.soul.max;
-      toggle_ability game.ghost "desolate_dive")
   in
 
   (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
@@ -1758,8 +1753,6 @@ let update (game : game) (state : state) =
         layer.hidden <- true)
   in
 
-  handle_debug_keys ();
-
   Entity.apply_v state.frame.dt game.ghost.entity;
 
   let new_vy =
@@ -1817,8 +1810,6 @@ let update (game : game) (state : state) =
   apply_collisions game.ghost.entity collisions;
   handle_wall_sliding collisions;
   let check_damage_collisions () =
-    itmp "checking damage collisions with game.ghost.current.is_taking_hazard_damage %b"
-      game.ghost.current.is_taking_hazard_damage;
     let collisions = Entity.get_damage_collisions game.room game.ghost.entity in
     state.debug.rects <-
       List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
@@ -1836,6 +1827,7 @@ let update (game : game) (state : state) =
     else (
       reset game.ghost;
       take_damage game.ghost;
+      state.camera.shake <- 1.;
       game.ghost.current.is_taking_hazard_damage <- true;
       start_action state game TAKE_DAMAGE_AND_RESPAWN)
   in

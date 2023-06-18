@@ -393,35 +393,52 @@ let update_menu_choice (menu : menu) frame_inputs =
 
 let tick (state : state) =
   (* TODO-4 add sound effects and music *)
-  if Controls.key_pressed DEBUG_3 then
-    if state.debug.show_frame_inputs then (
-      state.debug.show_frame_inputs <- false;
-      print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
-    else (
-      state.debug.show_frame_inputs <- true;
-      print "\n/---------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
-  if Controls.key_pressed DEBUG_4 then
-    if state.debug.enabled then (
-      state.debug.enabled <- false;
-      print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
-    else (
-      state.debug.enabled <- true;
-      print "\n/---------------------\\\n enabled debug at %d" state.frame.idx);
+  if not (holding_shift ()) then (
+    if Controls.key_pressed DEBUG_3 then
+      if state.debug.show_frame_inputs then (
+        state.debug.show_frame_inputs <- false;
+        print " disabled show_frame_inputs at %d\n\\----------------------/\n" state.frame.idx)
+      else (
+        state.debug.show_frame_inputs <- true;
+        print "\n/---------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
+    if Controls.key_pressed DEBUG_4 then
+      if state.debug.enabled then (
+        state.debug.enabled <- false;
+        print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
+      else (
+        state.debug.enabled <- true;
+        print "\n/---------------------\\\n enabled debug at %d" state.frame.idx));
 
   state.debug.rects <- [];
   match state.game_context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
-  | IN_PROGRESS game -> (
-    let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
-    match state'.pause_menu with
-    | Some menu -> state'
-    | None ->
-      state'
-      |> Ghost.update game
-      |> update_spawned_vengeful_spirits game
-      |> update_enemies game
-      |> update_npcs game
-      |> update_environment game
-      |> update_camera game)
+  | IN_PROGRESS game ->
+    if game.debug_paused then
+      if key_pressed DEBUG_2 then
+        state
+        |> update_frame_inputs
+        |> Menu.update_pause_menu game
+        |> Ghost.handle_debug_keys game
+        |> Ghost.update game
+        |> update_spawned_vengeful_spirits game
+        |> update_enemies game
+        |> update_npcs game
+        |> update_environment game
+        |> update_camera game
+      else
+        state |> update_frame_inputs |> Menu.update_pause_menu game |> Ghost.handle_debug_keys game
+    else (
+      let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
+      match state'.pause_menu with
+      | Some menu -> state'
+      | None ->
+        state'
+        |> Ghost.handle_debug_keys game
+        |> Ghost.update game
+        |> update_spawned_vengeful_spirits game
+        |> update_enemies game
+        |> update_npcs game
+        |> update_environment game
+        |> update_camera game)

@@ -810,10 +810,13 @@ let tick (state : state) =
         (match game.ghost.entity.current_floor with
         | None -> ()
         | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor);
-        match game.ghost.current.wall with
+        (match game.ghost.current.wall with
         | None -> ()
-        | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall
+        | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall);
+        debug_rect_outline ~size:2. ~color:Color.green game.ghost.entity.sprite.dest;
+        debug_rect_outline ~size:3. ~color:Color.yellow game.ghost.entity.dest
       in
+
       List.iter
         (fun (l : layer) ->
           List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
@@ -1003,10 +1006,6 @@ let tick (state : state) =
         draw_entity p.entity
       in
       List.iter draw_vengeful_spirit ghost.spawned_vengeful_spirits;
-      if state.debug.enabled then (
-        (* CLEANUP move this to render last, so it is on top of everything else *)
-        debug_rect_outline ~size:2. ~color:Color.green ghost.entity.sprite.dest;
-        debug_rect_outline ~size:3. ~color:Color.yellow ghost.entity.dest);
       let shine_sprite : sprite =
         (* TODO maybe have different shine for each area (this one might be too bright for basement or computer-wing) *)
         (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame *)
