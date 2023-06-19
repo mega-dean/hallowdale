@@ -13,6 +13,9 @@ let load_all_save_slots () : save_slots =
           ghosts_in_party = [ "BRITTA" ];
           ghost_x = 1500.;
           ghost_y = 100.;
+          (* there aren't any hazards in king's pass for new games, so respawn_pos doesn't matter *)
+          respawn_x = 0.;
+          respawn_y = 0.;
           room_name = "forgotten_deans-pass";
           abilities =
             {
@@ -42,7 +45,11 @@ let load_all_save_slots () : save_slots =
   in
   { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
 
-let init (save_file : Json_t.save_file) (global : global_cache) (world : world) (save_file_slot : int) : game =
+let init
+    (save_file : Json_t.save_file)
+    (global : global_cache)
+    (world : world)
+    (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
   let ghosts_file : ghosts_file = Ghost.read_config () in
@@ -51,7 +58,8 @@ let init (save_file : Json_t.save_file) (global : global_cache) (world : world) 
       match List.find_opt (fun (tc : texture_config) -> tc.pose_name = pose_name) configs with
       | None ->
         let ghost_name = (List.nth configs 0).character_name in
-        failwithf "could not find pose config in ghosts/config.json for '%s' for ghost %s" pose_name ghost_name
+        failwithf "could not find pose config in ghosts/config.json for '%s' for ghost %s" pose_name
+          ghost_name
       | Some v -> v
     in
     Sprite.build_texture_from_config config
@@ -84,8 +92,8 @@ let init (save_file : Json_t.save_file) (global : global_cache) (world : world) 
 
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
   let make_ghost id in_party textures : ghost =
-    Ghost.init id textures in_party ghosts_file.actions (clone_vector start_pos) save_file global.weapons
-      shared_ghost_textures
+    Ghost.init id textures in_party ghosts_file.actions (clone_vector start_pos) save_file
+      global.weapons shared_ghost_textures
   in
 
   let current_ghost_id = Ghost.parse_name save_file.ghost_id in
@@ -170,7 +178,7 @@ let init (save_file : Json_t.save_file) (global : global_cache) (world : world) 
         npc_configs = global.npc_configs;
         pickup_indicator_texture = global.textures.pickup_indicator;
         lever_texture = global.textures.door_lever;
-        respawn_pos = { x = save_file.ghost_x; y = save_file.ghost_y };
+        respawn_pos = { x = save_file.respawn_x; y = save_file.respawn_y };
       }
   in
   room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;

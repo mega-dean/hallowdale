@@ -52,7 +52,6 @@ type room_params = {
 }
 
 let init (params : room_params) : room =
-  tmp "initting room with respawn_pos %s" (Show.vector params.respawn_pos);
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
   let (area_id, room_id) : area_id * room_id =
     Tiled.parse_room_filename "init_room" params.file_name

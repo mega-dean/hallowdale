@@ -79,6 +79,8 @@ let update_pause_menu (game : game) (state : state) : state =
               [ game.ghost.id ] @ Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id;
             ghost_x = game.ghost.entity.dest.pos.x;
             ghost_y = game.ghost.entity.dest.pos.y;
+            respawn_x = game.room.respawn_pos.x;
+            respawn_y = game.room.respawn_pos.y;
             room_name = Tiled.Room.get_uuid' game.room.area.id game.room.id;
             abilities = game.ghost.abilities;
             progress = game.progress;
