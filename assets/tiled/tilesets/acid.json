@@ -1,0 +1,14 @@
+{ "columns":8,
+ "image":"acid.png",
+ "imageheight":48,
+ "imagewidth":192,
+ "margin":0,
+ "name":"acid",
+ "spacing":0,
+ "tilecount":16,
+ "tiledversion":"1.10.1",
+ "tileheight":24,
+ "tilewidth":24,
+ "type":"tileset",
+ "version":"1.10"
+}

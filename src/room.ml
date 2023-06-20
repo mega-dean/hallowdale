@@ -267,6 +267,11 @@ let init (params : room_params) : room =
                 [ "bg" ]
               | "fg"
               | "shadow" ->
+                (* FIXME maybe move this validation somewhere else
+                   - also this should only be done for a debug build, so maybe look into that
+                *)
+                if not (List.mem 0 json.data) then
+                  tmp "\n\n\n\nBAD SHADOW LAYER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n";
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]

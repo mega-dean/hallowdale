@@ -66,8 +66,8 @@
         {
             "fileName": "trampoline_dreamer.json",
             "height": 600,
-            "width": 720,
-            "x": 7776,
+            "width": 1056,
+            "x": 7680,
             "y": 1056
         },
         {
@@ -220,8 +220,8 @@
         {
             "fileName": "ac-repair_e.json",
             "height": 336,
-            "width": 720,
-            "x": 8496,
+            "width": 480,
+            "x": 8736,
             "y": 984
         },
         {
@@ -368,7 +368,7 @@
             "fileName": "trampoline_f.json",
             "height": 672,
             "width": 432,
-            "x": 7296,
+            "x": 7200,
             "y": 984
         },
         {

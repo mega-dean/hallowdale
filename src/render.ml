@@ -130,8 +130,10 @@ let draw_tiled_layer
     (room : room)
     camera_x
     camera_y
+    frame_idx
     ?(tint = Color.create 255 255 255 255)
     ?(parallax = None)
+    ?(animated = false)
     (layer : layer) : unit =
   let within_camera dest_x dest_y =
     let camera_min_x, camera_max_x =
@@ -154,7 +156,18 @@ let draw_tiled_layer
             layer.json.offset_y idx layer.json.w
         in
         if within_camera x y then (
-          let texture, transformations = Tiled.Room.look_up_tile room.json room.cache gid in
+          let texture, transformations =
+            let animation_offset =
+              if animated then
+                (* FIXME this should probably just use an animated sprite instead of this weird animation_offset for the tile gid
+                   - actually this works fine, so maybe just leave this for acid
+                *)
+                (4 * frame_idx) / Config.window.fps mod 8
+              else
+                0
+            in
+            Tiled.Room.look_up_tile ~animation_offset room.json room.cache gid
+          in
           let w, h = Tiled.Room.dest_wh room.json () in
           let dest = { pos = { x; y }; w; h } in
           draw_texture ~tint:tint' texture dest transformations))
@@ -168,7 +181,7 @@ let draw_tiled_layer
     List.iter draw_spawned_fragment layer.spawned_fragments;
     List.iter draw_stub layer.spawned_stub_sprites)
 
-let draw_tiles room camera_x camera_y layers : unit =
+let draw_tiles room camera_x camera_y frame_idx layers : unit =
   let draw_parallax_layer (layer : layer) =
     let parallax =
       (* TODO maybe just pass in the parallax values and do this calculation somewhere like Tiled.Tile.dest_xy *)
@@ -178,23 +191,31 @@ let draw_tiles room camera_x camera_y layers : unit =
           y = camera_y *. (1. -. layer.json.parallax_y);
         }
     in
-    draw_tiled_layer ~tint:room.area.tint ~parallax room camera_x camera_y layer
+    draw_tiled_layer ~tint:room.area.tint ~parallax room camera_x camera_y frame_idx layer
   in
   List.iter draw_parallax_layer layers
 
-let draw_solid_tiles room camera_x camera_y : unit =
+let draw_solid_tiles room camera_x camera_y frame_idx : unit =
   List.iter
-    (draw_tiled_layer room camera_x camera_y)
+    (draw_tiled_layer room camera_x camera_y frame_idx)
     (List.filter
-       (fun layer -> layer.config.collides_with_ghost || layer.config.damages_ghost)
+       (fun layer ->
+         layer.config.collides_with_ghost
+         || (layer.config.damages_ghost && (* CLEANUP  *) not (layer.name = "acid")))
        room.layers)
 
-let draw_bg_tiles room camera_x camera_y : unit =
-  draw_tiles room camera_x camera_y
+(* FIXME maybe something like draw_animated_tiles *)
+let draw_animated_tiles room camera_x camera_y frame_idx : unit =
+  List.iter
+    (draw_tiled_layer ~animated:true room camera_x camera_y frame_idx)
+    (List.filter (fun layer -> layer.name = "acid") room.layers)
+
+let draw_bg_tiles room camera_x camera_y frame_idx : unit =
+  draw_tiles room camera_x camera_y frame_idx
     (List.filter (fun (layer : layer) -> layer.config.render.bg) room.layers)
 
-let draw_fg_tiles room camera_x camera_y : unit =
-  draw_tiles room camera_x camera_y
+let draw_fg_tiles room camera_x camera_y frame_idx : unit =
+  draw_tiles room camera_x camera_y frame_idx
     (List.filter (fun (layer : layer) -> layer.config.render.fg) room.layers)
 
 (* - lines are broken up into line_segments based on colors - this is three line_segments:
@@ -1098,15 +1119,16 @@ let tick (state : state) =
     (* Raylib.clear_background (Color.create 0 255 0 255); *)
     Raylib.clear_background game.room.area.bg_color;
     Raylib.begin_mode_2d state.camera.raylib;
-    draw_bg_tiles game.room camera_x camera_y;
-    draw_solid_tiles game.room camera_x camera_y;
+    draw_bg_tiles game.room camera_x camera_y state.frame.idx;
+    draw_solid_tiles game.room camera_x camera_y state.frame.idx;
+    draw_animated_tiles game.room camera_x camera_y state.frame.idx;
     draw_levers ();
     draw_npcs game.room.npcs;
     draw_ghosts game.ghosts;
     draw_ghost game.ghost;
     draw_enemies game.room.enemies;
     draw_object_trigger_indicators ();
-    draw_fg_tiles game.room camera_x camera_y;
+    draw_fg_tiles game.room camera_x camera_y state.frame.idx;
     draw_hud ();
     (match state.screen_fade with
     | None -> ()

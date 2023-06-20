@@ -921,7 +921,7 @@
          "name":"shadow4",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -977,7 +977,7 @@
          "name":"shadow3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -1033,7 +1033,7 @@
          "name":"shadow2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -1089,7 +1089,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -1147,7 +1147,7 @@
          "parallaxx":0,
          "parallaxy":0,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0

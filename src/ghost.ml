@@ -1814,9 +1814,12 @@ let update (game : game) (state : state) =
     state.debug.rects <-
       List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
     if List.length collisions = 0 then (
-      if game.ghost.current.is_taking_hazard_damage then (
+      if game.ghost.current.is_taking_hazard_damage && Option.is_some game.ghost.entity.y_recoil
+      then (
         (* HACK this is just to get the ghost to continue colliding with the spikes, even if
-           they tried to pogo on the same frame they hit the spikes *)
+           they tried to pogo on the same frame they hit the spikes
+           - not really sure how else to check this, and it's working well enough
+        *)
         game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y +. 10.;
         game.ghost.entity.y_recoil <- None))
     else if is_doing game.ghost TAKE_DAMAGE_AND_RESPAWN state.frame.time then

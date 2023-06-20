@@ -94,14 +94,20 @@ module Tile = struct
   let tile_idx ~tile_w ~tile_h ~width (x, y) : int =
     tile_idx_from_coords ~width (x /. tile_w, y /. tile_h)
 
-  let tile_coords ~tile_w ~tile_h (x, y) : float * float = ((x |> Int.to_float) *. tile_w, (y |> Int.to_float) *. tile_h)
+  let tile_coords ~tile_w ~tile_h (x, y) : float * float =
+    ((x |> Int.to_float) *. tile_w, (y |> Int.to_float) *. tile_h)
 
   let tile_dest ~tile_w ~tile_h (x, y) : float * float =
-    ((x |> Int.to_float) *. tile_w *. Config.scale.room, (y |> Int.to_float) *. tile_h *. Config.scale.room)
+    ( (x |> Int.to_float) *. tile_w *. Config.scale.room,
+      (y |> Int.to_float) *. tile_h *. Config.scale.room )
 
   let tile_xy idx width : int * int = (idx mod width, idx / width)
-  let src_xy tile_w tile_h idx width : float * float = tile_coords ~tile_w ~tile_h (tile_xy idx width)
-  let scale_dest_size ?(scale = 1.) w h = (w *. Config.scale.room *. scale, h *. Config.scale.room *. scale)
+
+  let src_xy tile_w tile_h idx width : float * float =
+    tile_coords ~tile_w ~tile_h (tile_xy idx width)
+
+  let scale_dest_size ?(scale = 1.) w h =
+    (w *. Config.scale.room *. scale, h *. Config.scale.room *. scale)
 
   let dest_xy ?(parallax = None) offset_x offset_y tile_w tile_h idx width : float * float =
     let scale_dest_position x y =
@@ -169,16 +175,19 @@ module Room = struct
     Tile.tile_coords ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y)
 
   let src_wh (json_room : t) : float * float = (json_room.tile_w, json_room.tile_h)
-  let src_xy (json_room : t) idx width : float * float = Tile.src_xy json_room.tile_w json_room.tile_h idx width
+
+  let src_xy (json_room : t) idx width : float * float =
+    Tile.src_xy json_room.tile_w json_room.tile_h idx width
 
   (* TODO too many args, add labels *)
   let dest_xy (json_room : t) ?(parallax_opt = None) offset_x offset_y idx width : float * float =
-    Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width ~parallax:parallax_opt
+    Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width
+      ~parallax:parallax_opt
 
   let dest_wh (json_room : t) ?(scale = 1.) () : float * float =
     Tile.scale_dest_size json_room.tile_w json_room.tile_h ~scale
 
-  let look_up_tile (json_room : t) room_cache (gid' : int) : texture * int =
+  let look_up_tile (json_room : t) ?(animation_offset = 0) room_cache (gid' : int) : texture * int =
     (* TODO this is checking all layers for transformations, even though it's only being used for jugs *)
     let gid = Tile.raw_gid gid' in
     let bits = Tile.transformation_bits gid' in
@@ -200,7 +209,7 @@ module Room = struct
     | None -> failwithf "could not find gid %d in any tilesets" gid
     | Some tileset_source -> (
       let tileset = get_tileset tileset_source in
-      try (tileset.tiles.(gid - tileset_source.firstgid), bits) with
+      try (tileset.tiles.(gid - tileset_source.firstgid + animation_offset), bits) with
       | Invalid_argument _ ->
         failwithf "look_up_tile error: tileset '%s', gid %d, %d tiles, %d" tileset.json.name gid
           (Array.length tileset.tiles) tileset_source.firstgid)
@@ -209,8 +218,10 @@ module Room = struct
     let tile, _ = look_up_tile json_room room.cache gid in
     tile.coll_offset
 
-  let get_layer_tile_groups (room : room) (removed_idxs_by_layer : (string * int list) list) : layer list =
-    let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) : tile_group list =
+  let get_layer_tile_groups (room : room) (removed_idxs_by_layer : (string * int list) list) :
+      layer list =
+    let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) :
+        tile_group list =
       let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in
       let tile_groups : tile_group list ref =
         (* keeps track of gid indexes too so they can be not rendered after they are destroyed *)
@@ -224,7 +235,9 @@ module Room = struct
       in
       let partition_rects idx tile_gid =
         if not (List.mem idx removed_idxs) then (
-          let x, y = Tile.dest_xy json_layer.offset_x json_layer.offset_y tile_w tile_h idx json_layer.w in
+          let x, y =
+            Tile.dest_xy json_layer.offset_x json_layer.offset_y tile_w tile_h idx json_layer.w
+          in
           let get_rectangle_tile_group () : tile_group =
             let idxs = ref [ idx ] in
             let mark_idx_as_nonzero i' =
@@ -267,8 +280,12 @@ module Room = struct
             let rect =
               {
                 pos = { x = x +. left_offset; y = y +. top_offset };
-                w = ((w |> Int.to_float) *. (tile_w *. Config.scale.room)) -. (left_offset +. right_offset);
-                h = ((h |> Int.to_float) *. (tile_h *. Config.scale.room)) -. (top_offset +. bottom_offset);
+                w =
+                  ((w |> Int.to_float) *. (tile_w *. Config.scale.room))
+                  -. (left_offset +. right_offset);
+                h =
+                  ((h |> Int.to_float) *. (tile_h *. Config.scale.room))
+                  -. (top_offset +. bottom_offset);
               }
             in
             let stub_sprite, fragments =
@@ -281,10 +298,20 @@ module Room = struct
                   | Some stub ->
                     let y_offset = rect.h -. (tile_h *. Config.scale.room) in
                     let stub_dest =
-                      { pos = { x = rect.pos.x; y = rect.pos.y +. y_offset }; w = rect.w; h = rect.h -. y_offset }
+                      {
+                        pos = { x = rect.pos.x; y = rect.pos.y +. y_offset };
+                        w = rect.w;
+                        h = rect.h -. y_offset;
+                      }
                     in
                     Some
-                      { ident = "sprite stub"; texture = stub; dest = stub_dest; facing_right = true; collision = None }
+                      {
+                        ident = "sprite stub";
+                        texture = stub;
+                        dest = stub_dest;
+                        facing_right = true;
+                        collision = None;
+                      }
                 in
                 (sprite, destroy_resources.fragments)
             in
@@ -313,7 +340,12 @@ module Room = struct
     in
     let set_tile_groups (layer : layer) =
       let rects =
-        if (layer.config.collides_with_ghost || layer.config.destroyable || layer.config.damages_ghost) && not layer.hidden then
+        if
+          (layer.config.collides_with_ghost
+          || layer.config.destroyable
+          || layer.config.damages_ghost)
+          && not layer.hidden
+        then
           get_rectangle_tile_groups layer.json layer.name
         else
           []
@@ -324,7 +356,8 @@ module Room = struct
     List.map set_tile_groups room.layers
 end
 
-let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) : Json_t.coll_rect option =
+let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) :
+    Json_t.coll_rect option =
   let this_tile (collision : Json_t.collision) : bool = collision.id + firstgid = id in
   match List.find_opt this_tile json_tileset.collisions with
   | None -> None
@@ -336,14 +369,18 @@ let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : 
         (List.length collision.objectgroup.objects)
         firstgid id
 
-let load_tiles (room : Json_t.room) (json_tileset : Json_t.tileset) image (tileset_source : Json_t.tileset_source) :
-    texture array =
+let load_tiles
+    (room : Json_t.room)
+    (json_tileset : Json_t.tileset)
+    image
+    (tileset_source : Json_t.tileset_source) : texture array =
   let load_tile idx : texture =
     let x, y = Room.src_xy room idx json_tileset.columns in
     let get_coll_offsets id : vector =
       match get_object_collision json_tileset tileset_source.firstgid id with
       | None -> Zero.vector ()
-      | Some coll_rect -> { y = coll_rect.y *. Config.scale.room; x = coll_rect.x *. Config.scale.room }
+      | Some coll_rect ->
+        { y = coll_rect.y *. Config.scale.room; x = coll_rect.x *. Config.scale.room }
     in
     {
       ident = fmt "tile %d" idx;
@@ -378,7 +415,9 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
   List.filter_map load_tileset room.tileset_sources
 
 let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room }
-let scale_rect x y w h = { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
+
+let scale_rect x y w h =
+  { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
 
 let create_camera_at v (shake : float) =
   let rotation = 0. in
@@ -390,7 +429,8 @@ let create_camera_at v (shake : float) =
       let angle = Random.float (3.14159 /. 2.) in
       let x_offset = shake *. cos angle *. 10. in
       let y_offset = shake *. sin angle *. 10. in
-      Raylib.Vector2.(create (Config.window.center_x +. x_offset) (Config.window.center_y +. y_offset)))
+      Raylib.Vector2.(
+        create (Config.window.center_x +. x_offset) (Config.window.center_y +. y_offset)))
   in
   Raylib.Camera2D.create offset v rotation zoom
 
@@ -418,8 +458,12 @@ let init_world (path : string) : (room_id * room_location) list =
       files_in_rooms_dir := StrSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
   in
   Sys.readdir (File.convert_path "../assets/tiled/rooms") |> Array.iter add_to_set;
-  let filenames_without_files : str_set = StrSet.diff !filenames_in_world_file !files_in_rooms_dir in
-  let files_without_filenames : str_set = StrSet.diff !files_in_rooms_dir !filenames_in_world_file in
+  let filenames_without_files : str_set =
+    StrSet.diff !filenames_in_world_file !files_in_rooms_dir
+  in
+  let files_without_filenames : str_set =
+    StrSet.diff !files_in_rooms_dir !filenames_in_world_file
+  in
   if not (StrSet.is_empty filenames_without_files) then
     print "WARN: got filenames in .world that have no corresponding .json file:\n%s"
       (StrSet.elements filenames_without_files |> join ~sep:"\n");

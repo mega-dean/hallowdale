@@ -895,6 +895,7 @@ type layer_config = {
   destroyable : bool;
   permanently_removable : bool;
   shaded : bool;
+  (* FIXME animated : bool *)
 }
 
 (* a tilelayer in Tiled *)
