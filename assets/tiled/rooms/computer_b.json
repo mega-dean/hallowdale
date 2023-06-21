@@ -331,7 +331,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":30,
          "id":10,
-         "name":"acid",
+         "name":"hazard",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -380,7 +380,7 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":12,
+ "nextlayerid":13,
  "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",

@@ -110,6 +110,7 @@ let init (params : room_params) : room =
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
       match name_prefix with
+      (* FIXME-3 add monkey-block *)
       | "camera" ->
         camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
       | "lever" ->
@@ -255,7 +256,8 @@ let init (params : room_params) : room =
               match layer_name with
               | "floors" -> [ "collides" ]
               | "spikes" -> [ "damages"; "pogoable" ]
-              | "acid" -> [ "damages" ]
+              | "hazard" -> [ "damages" ]
+              | "acid" -> [ "animated"; "damages" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
@@ -267,11 +269,12 @@ let init (params : room_params) : room =
                 [ "bg" ]
               | "fg"
               | "shadow" ->
-                (* FIXME maybe move this validation somewhere else
-                   - also this should only be done for a debug build, so maybe look into that
-                *)
+                (* CLEANUP maybe move this validation somewhere else *)
                 if not (List.mem 0 json.data) then
-                  tmp "\n\n\n\nBAD SHADOW LAYER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n";
+                  tmp
+                    "\n\n\n\n\
+                    \ -------------------- BAD SHADOW LAYER in room %s -------------------- \n\n\n\n"
+                    params.file_name;
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
@@ -300,6 +303,7 @@ let init (params : room_params) : room =
                   destroyable = has "destroyable";
                   permanently_removable = has "permanently_removable";
                   shaded = has "shaded";
+                  animated = has "animated";
                 }
             in
             build_config configs
@@ -489,6 +493,15 @@ let init (params : room_params) : room =
     cache;
   }
 
+(* TODO-5 add warps, used for:
+   - teacher's lounge -> computer wing basement (only after reaching shirley island though)
+   -- this should also change what the bg looks like, which already happens for scootenanny chair but may not be reusable
+   - mmb elevator
+   - maybe mmb "escort to entrance" for insufficient beenz
+   - vents / fast travel
+   - white palace
+   - godhome
+*)
 let handle_transitions (state : state) (game : game) =
   let get_global_pos (current : vector) (room_location : room_location) : vector =
     { x = current.x +. room_location.global_x; y = current.y +. room_location.global_y }

@@ -392,7 +392,7 @@ let update_menu_choice (menu : menu) frame_inputs =
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
 
 let tick (state : state) =
-  (* TODO-4 add sound effects and music *)
+  (* TODO-5 add sound effects and music *)
   if not (holding_shift ()) then (
     if Controls.key_pressed DEBUG_3 then
       if state.debug.show_frame_inputs then (

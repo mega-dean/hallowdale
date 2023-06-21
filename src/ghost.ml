@@ -785,7 +785,10 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
             (ALIGNED (CENTER, BOTTOM))
             game.ghost.shared_textures.desolate_dive w h;
         game.ghost.history.cast_dive
-      | _ ->
+      | HOWLING_WRAITHS ->
+        (* FIXME-2 check for monkey-block collisions here (only need to check this collision
+           once on start_action, since the ghost won't move during casting)
+        *)
         game.ghost.child <-
           make_ghost_child game.ghost WRAITHS
             (ALIGNED (CENTER, BOTTOM))
@@ -966,6 +969,7 @@ let equip_weapon (ghost : ghost) weapon_name =
          cooldown_scale = 2. -. weapon_config.swing_speed;
        })
 
+(* FIXME-7 consider shade cloak *)
 let get_invincibility_kind (state : state) (game : game) : invincibility_kind option =
   let in_dive_cooldown () = not (past_cooldown game.ghost.history.dive_cooldown state.frame.time) in
   if not (past_cooldown game.ghost.history.take_damage state.frame.time) then
@@ -1552,6 +1556,7 @@ let update (game : game) (state : state) =
         stop_wall_sliding := true;
         true)
       else if still_dashing () then (
+        (* FIXME-6 handle shade cloak *)
         continue_action state game DASH;
         true)
       else
@@ -1619,7 +1624,7 @@ let update (game : game) (state : state) =
       (* TODO key_pressed_or_buffered detects the same keypress as the initial jump *)
       if game.ghost.abilities.monarch_wings && game.ghost.current.can_flap && key_pressed JUMP then (
         game.ghost.current.can_flap <- false;
-        (* TODO delay this to add the dip before flapping *)
+        (* FIXME-2 delay this to add the dip before flapping *)
         set_pose' (PERFORMING FLAP)
         (* TODO continue flapping
            else if (is_doing state FLAPPING) then

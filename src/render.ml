@@ -159,10 +159,10 @@ let draw_tiled_layer
           let texture, transformations =
             let animation_offset =
               if animated then
-                (* FIXME this should probably just use an animated sprite instead of this weird animation_offset for the tile gid
-                   - actually this works fine, so maybe just leave this for acid
+                (* TODO this should probably just use an animated sprite instead of
+                   this weird animation_offset for the tile gid
                 *)
-                (4 * frame_idx) / Config.window.fps mod 8
+                4 * frame_idx / Config.window.fps mod 8
               else
                 0
             in
@@ -201,14 +201,14 @@ let draw_solid_tiles room camera_x camera_y frame_idx : unit =
     (List.filter
        (fun layer ->
          layer.config.collides_with_ghost
-         || (layer.config.damages_ghost && (* CLEANUP  *) not (layer.name = "acid")))
+         || (layer.config.damages_ghost && not layer.config.animated))
        room.layers)
 
-(* FIXME maybe something like draw_animated_tiles *)
+(* CLEANUP maybe consolidate with draw_solid_tiles *)
 let draw_animated_tiles room camera_x camera_y frame_idx : unit =
   List.iter
     (draw_tiled_layer ~animated:true room camera_x camera_y frame_idx)
-    (List.filter (fun layer -> layer.name = "acid") room.layers)
+    (List.filter (fun layer -> layer.config.animated) room.layers)
 
 let draw_bg_tiles room camera_x camera_y frame_idx : unit =
   draw_tiles room camera_x camera_y frame_idx
@@ -1046,6 +1046,7 @@ let tick (state : state) =
       in
       draw_sprite shine_sprite;
       draw_child ghost.child;
+      (* FIXME-5 render with tint when shade cloak is active *)
       draw_entity ~tint ~debug:true ghost.entity
     in
 

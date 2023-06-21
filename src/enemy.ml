@@ -278,6 +278,7 @@ let create_from_rects
     (enemy_configs : (enemy_id * Json_t.enemy_config) list) : enemy list =
   (* TODO this is loading the same textures multiple times for eg. locker-boys *)
   let build id kind enemy_name (enemy_config : Json_t.enemy_config) entity_dest on_killed : enemy =
+    (* TODO-4 remove .choose_behavior from enemy and just match .kind every frame *)
     let choose_behavior =
       match id with
       | LOCKER_BOY ->

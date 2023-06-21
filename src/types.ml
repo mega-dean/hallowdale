@@ -415,6 +415,8 @@ type npc_id =
   | VICKI
   | GARRETT
 
+(* TODO-5 add more enemies *)
+(* TODO-5 add more bosses w/rewards *)
 type enemy_id =
   | PENGUIN
   | DUNCAN
@@ -713,6 +715,7 @@ type ghost_action_history = {
   dive_cooldown : ghost_action;
   cast_wraiths : ghost_action;
   dash : ghost_action;
+  (* FIXME-6 add shade cloak *)
   charge_c_dash : ghost_action;
   (* c_dash ends when hitting a wall or pressing a button, not based on duration *)
   c_dash : ghost_action;
@@ -895,7 +898,7 @@ type layer_config = {
   destroyable : bool;
   permanently_removable : bool;
   shaded : bool;
-  (* FIXME animated : bool *)
+  animated : bool;
 }
 
 (* a tilelayer in Tiled *)
