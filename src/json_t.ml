@@ -71,6 +71,7 @@ type ghost_abilities = {
   mutable mantis_claw: bool;
   mutable monarch_wings: bool;
   mutable mothwing_cloak: bool;
+  mutable shade_cloak: bool;
   mutable vengeful_spirit: bool;
   mutable desolate_dive: bool;
   mutable howling_wraiths: bool

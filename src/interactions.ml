@@ -546,6 +546,13 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             "to unleash the Knockout Gas.";
             "Some kind of gas that knocks out monkeys.";
           ]
+      | "ability_shade-cloak" ->
+        get_ability_steps "shade_cloak" 0. 7.
+          [ "Consumed the"; "Shade Cloak." ]
+          [
+            "Press [ZR] to scootenanny forwards, cloaked in shadow.";
+            "Use the cloak to scootenanny through enemies and their attacks without taking damage.";
+          ]
       | other -> failwithf "unrecognized interaction name: %s" other)
   in
   (* SET_GHOST_CAMERA to reset the camera if it changed *)

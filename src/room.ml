@@ -110,7 +110,6 @@ let init (params : room_params) : room =
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
       match name_prefix with
-      (* FIXME-3 add monkey-block *)
       | "camera" ->
         camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
       | "lever" ->
@@ -254,6 +253,7 @@ let init (params : room_params) : room =
             in
             let configs =
               match layer_name with
+              | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "floors" -> [ "collides" ]
               | "spikes" -> [ "damages"; "pogoable" ]
               | "hazard" -> [ "damages" ]
@@ -269,7 +269,7 @@ let init (params : room_params) : room =
                 [ "bg" ]
               | "fg"
               | "shadow" ->
-                (* CLEANUP maybe move this validation somewhere else *)
+                (* TODO maybe move this validation somewhere else *)
                 if not (List.mem 0 json.data) then
                   tmp
                     "\n\n\n\n\
@@ -304,6 +304,7 @@ let init (params : room_params) : room =
                   permanently_removable = has "permanently_removable";
                   shaded = has "shaded";
                   animated = has "animated";
+                  monkey = has "monkey";
                 }
             in
             build_config configs

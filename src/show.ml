@@ -64,6 +64,14 @@ let spell_kind (kind : spell_kind) =
   | DESOLATE_DIVE -> "DESOLATE_DIVE"
   | HOWLING_WRAITHS -> "HOWLING_WRAITHS"
 
+let ghost_action (action : ghost_action) =
+  fmt "started: %f, blocked_until: %f, doing_until: %f" action.started.at action.blocked_until.at
+    action.doing_until.at
+
+let ghost_action_config (config : ghost_action_config) =
+  fmt "duration: %f, cooldown: %f, input_buffer: %f" config.duration.seconds config.cooldown.seconds
+    config.input_buffer.seconds
+
 let ghost_action_kind id =
   match id with
   | TAKE_DAMAGE d -> fmt "TAKE_DAMAGE (%s)" (direction d)
@@ -75,6 +83,7 @@ let ghost_action_kind id =
   | C_DASH_WALL_COOLDOWN -> "C_DASH_WALL_COOLDOWN"
   | C_DASH_CHARGE -> "C_DASH_CHARGE"
   | C_DASH -> "C_DASH"
+  | SHADE_DASH -> "SHADE_DASH"
   | DASH -> "DASH"
   | FOCUS -> "FOCUS"
   | JUMP -> "JUMP"
@@ -198,6 +207,7 @@ let ghost_child_kind (d : ghost_child_kind) : string =
   | C_DASH_CHARGE_CRYSTALS -> "C_DASH_CHARGE_CRYSTALS"
   | C_DASH_WALL_CHARGE_CRYSTALS -> "C_DASH_WALL_CHARGE_CRYSTALS"
   | C_DASH_WHOOSH -> "C_DASH_WHOOSH"
+  | SHADE_DASH_WHOOSH -> "SHADE_DASH_WHOOSH"
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
   | FOCUS -> "FOCUS"
   | NAIL _ -> "NAIL"

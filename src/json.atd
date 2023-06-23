@@ -174,13 +174,13 @@ type room_progress = {
   revealed_shadow_layers <ocaml mutable> : string list;
 }
 
-(* FIXME-8 add shade cloak *)
 type ghost_abilities = {
   (* movement *)
   crystal_heart <ocaml mutable> : bool;
   mantis_claw <ocaml mutable> : bool;
   monarch_wings <ocaml mutable> : bool;
   mothwing_cloak <ocaml mutable> : bool;
+  shade_cloak <ocaml mutable> : bool;
   (* spells *)
   vengeful_spirit <ocaml mutable> : bool;
   desolate_dive <ocaml mutable> : bool;

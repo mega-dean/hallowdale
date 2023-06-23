@@ -127,7 +127,9 @@ type animation_src =
   | STILL of rect
   | LOOPED of animation
   | PARTICLE of animation
-  | ONCE of animation
+  | (* this is used for c-dash crystals, which animate once and then stay on-screen *)
+    ONCE of
+      animation
 
 let get_frame (a : animation) : animation_frame =
   List.nth a.frames (a.frame_idx mod List.length a.frames)
@@ -333,6 +335,7 @@ type shared_textures = {
   c_dash_crystals_full : texture;
   c_dash_wall_crystals_full : texture;
   c_dash_whoosh : texture;
+  shade_cloak_sparkles : texture;
 }
 
 type spell_kind =
@@ -348,6 +351,7 @@ type ghost_action_kind =
   | TAKE_DAMAGE of direction
   | CAST of spell_kind
   | DIVE_COOLDOWN
+  | SHADE_DASH
   | DASH
   | (* TODO maybe do this like CAST, ie C_DASH of [CHARGE,DASH,COOLDOWN] *)
     C_DASH_CHARGE
@@ -715,7 +719,7 @@ type ghost_action_history = {
   dive_cooldown : ghost_action;
   cast_wraiths : ghost_action;
   dash : ghost_action;
-  (* FIXME-6 add shade cloak *)
+  shade_dash : ghost_action;
   charge_c_dash : ghost_action;
   (* c_dash ends when hitting a wall or pressing a button, not based on duration *)
   c_dash : ghost_action;
@@ -807,7 +811,8 @@ type ghost_child_kind =
   | C_DASH_CHARGE_CRYSTALS
   | C_DASH_WALL_CHARGE_CRYSTALS
   | C_DASH_WHOOSH
-  (* | DASH_WHOOSH of sprite *)
+  | SHADE_DASH_WHOOSH
+  (* | DASH_WHOOSH *)
   | WRAITHS
   | DIVE
   | DIVE_COOLDOWN
@@ -817,12 +822,14 @@ type ghost_child = {
   kind : ghost_child_kind;
   relative_pos : relative_position;
   sprite : sprite;
+  in_front : bool;
 }
 
 type invincibility_kind =
   (* TODO add something like | NO_FLASHING *)
   | DIVE_IFRAMES
   | TOOK_DAMAGE
+  | SHADE_CLOAK
 
 (* this is very similar to Json_t.ghosts_file, but it eg. parses ghost names into ghost_id for the key of .textures *)
 type ghosts_file = {
@@ -843,10 +850,11 @@ type ghost = {
   mutable weapons : (string * Json_t.weapon) list;
   mutable in_party : bool;
   mutable id : ghost_id;
-  mutable child : ghost_child option;
   mutable health : health;
   mutable soul : soul;
   mutable spawned_vengeful_spirits : projectile list;
+  (* FIXME this needs to be a ghost_child list now (since shade cloak sparkles last a long time) *)
+  mutable child : ghost_child option;
 }
 
 (* a cache for image/tiles that have been loaded for a tileset *)
@@ -899,6 +907,7 @@ type layer_config = {
   permanently_removable : bool;
   shaded : bool;
   animated : bool;
+  monkey : bool;
 }
 
 (* a tilelayer in Tiled *)

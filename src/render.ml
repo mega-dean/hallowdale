@@ -989,7 +989,8 @@ let tick (state : state) =
           let a = get_flashing_tint d in
           match invincibility_kind with
           | TOOK_DAMAGE -> Color.create 255 255 255 a
-          | DIVE_IFRAMES -> Color.create a a a 255)
+          | DIVE_IFRAMES -> Color.create a a a 255
+          | SHADE_CLOAK -> Color.create 0 0 0 255)
       in
 
       let draw_child (child_opt : ghost_child option) =
@@ -1011,6 +1012,7 @@ let tick (state : state) =
             let tint = ghost.current_weapon.tint in
             draw_child_sprite slash.sprite ghost.current_weapon.tint
           | C_DASH_WHOOSH
+          | SHADE_DASH_WHOOSH
           | C_DASH_CHARGE_CRYSTALS
           | C_DASH_WALL_CHARGE_CRYSTALS
           | FOCUS
@@ -1045,9 +1047,15 @@ let tick (state : state) =
         }
       in
       draw_sprite shine_sprite;
-      draw_child ghost.child;
-      (* FIXME-5 render with tint when shade cloak is active *)
-      draw_entity ~tint ~debug:true ghost.entity
+      match ghost.child with
+      | None -> draw_entity ~tint ghost.entity
+      | Some child ->
+        if child.in_front then (
+          draw_entity ~tint ghost.entity;
+          draw_child ghost.child)
+        else (
+          draw_child ghost.child;
+          draw_entity ~tint ghost.entity)
     in
 
     let draw_hud () =

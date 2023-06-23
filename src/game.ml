@@ -19,10 +19,13 @@ let load_all_save_slots () : save_slots =
           room_name = "forgotten_deans-pass";
           abilities =
             {
-              mothwing_cloak = false;
-              mantis_claw = false;
-              crystal_heart = false;
-              monarch_wings = false;
+              (* movement *)
+              mothwing_cloak = true;
+              mantis_claw = true;
+              crystal_heart = true;
+              monarch_wings = true;
+              shade_cloak = true;
+              (* spells *)
               vengeful_spirit = false;
               desolate_dive = false;
               howling_wraiths = false;

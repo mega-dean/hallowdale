@@ -289,10 +289,8 @@ let get_dive_sprite (ghost : ghost) : sprite option =
 
 let get_particle_child_sprite (ghost : ghost) : sprite option =
   Option.bind ghost.child (fun child ->
-      match child.kind with
-      | DIVE_COOLDOWN
-      | WRAITHS ->
-        Some child.sprite
+      match child.sprite.texture.animation_src with
+      | PARTICLE _ -> Some child.sprite
       | _ -> None)
 
 let get_focus_sparkles ghost : sprite option =
@@ -301,12 +299,19 @@ let get_focus_sparkles ghost : sprite option =
       | FOCUS -> Some child.sprite
       | _ -> None)
 
-let make_ghost_child (ghost : ghost) kind relative_pos texture w h =
+(* dive sprites are using this fn with the placeholder image, but it can eventually be
+   combined with make_ghost_child'
+*)
+let make_ghost_child (ghost : ghost) ?(in_front = false) kind relative_pos texture w h =
   let name = Show.ghost_child_kind kind in
   let sprite =
     Sprite.create name texture { pos = Entity.get_child_pos ghost.entity relative_pos w h; w; h }
   in
-  Some { kind; relative_pos; sprite }
+  Some { kind; relative_pos; sprite; in_front }
+
+let make_ghost_child' (ghost : ghost) ?(in_front = false) kind relative_pos ?(scale = 1.) texture =
+  let w, h = get_scaled_texture_size ~scale texture in
+  make_ghost_child ghost ~in_front kind relative_pos texture w h
 
 let make_c_dash_child ?(full = false) (ghost : ghost) : ghost_child option =
   let texture =
@@ -327,11 +332,10 @@ let make_c_dash_child ?(full = false) (ghost : ghost) : ghost_child option =
     | None -> C_DASH_CHARGE_CRYSTALS
     | Some _ -> C_DASH_WALL_CHARGE_CRYSTALS
   in
-  let w, h = get_scaled_texture_size texture in
   Sprite.reset_texture texture;
-  make_ghost_child ghost child_kind alignment texture w h
+  make_ghost_child' ghost child_kind alignment ~scale:Config.scale.ghost texture
 
-let advance_child frame_time ghost child_kind : unit =
+let advance_child frame_time ghost : unit =
   match ghost.child with
   | None -> ()
   | Some child -> (
@@ -340,7 +344,13 @@ let advance_child frame_time ghost child_kind : unit =
       match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
       | None -> ghost.child <- make_c_dash_child ~full:true ghost
       | Some sprite -> ( (* already advanced *) ))
-    | _ -> Sprite.advance_animation frame_time child.sprite.texture child.sprite)
+    | PARTICLE _ -> (
+      match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
+      | None -> ghost.child <- None
+      | _ -> ( (* already advanced *) ))
+    | STILL _
+    | LOOPED _ ->
+      Sprite.advance_animation frame_time child.sprite.texture child.sprite)
 
 let get_damage (ghost : ghost) (damage_kind : damage_kind) =
   (* TODO check ghost.abilities.descending_dark/shade_soul *)
@@ -580,6 +590,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       update_vx 0.;
       ghost.entity.v.y <- 0.;
       ghost.textures.focus
+    | SHADE_DASH
     | DASH ->
       ghost.current.can_dash <- false;
       ghost.entity.v.y <- 0.;
@@ -622,7 +633,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.textures.jump
     | FLAP ->
       (* TODO separate config *)
-      ghost.entity.v.y <- Config.ghost.jump_vy *. 0.8;
+      itmp "flapping";
       ghost.textures.flap
   in
 
@@ -717,8 +728,37 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
       pogoable = true;
     }
   in
-
   game.ghost.spawned_vengeful_spirits <- projectile :: game.ghost.spawned_vengeful_spirits
+
+let check_monkey_block_collisions (state : state) (game : game) =
+  let layers = List.filter (fun l -> l.config.monkey) game.room.layers in
+  (* FIXME-2 use destroy_tile_group from resolve_slash_collisions  *)
+  ()
+
+let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind) =
+  let action =
+    match action_kind with
+    | FLAP ->
+      game.ghost.current.can_flap <- true;
+      game.ghost.history.flap
+    | WALL_KICK
+    | JUMP
+    | TAKE_DAMAGE_AND_RESPAWN
+    | TAKE_DAMAGE _
+    | CAST _
+    | DIVE_COOLDOWN
+    | SHADE_DASH
+    | DASH
+    | C_DASH_CHARGE
+    | C_DASH
+    | C_DASH_COOLDOWN
+    | C_DASH_WALL_COOLDOWN
+    | ATTACK _
+    | FOCUS ->
+      failwithf "cannot cancel action: %s" (Show.ghost_action_kind action_kind)
+  in
+  action.doing_until.at <- state.frame.time;
+  ()
 
 let start_action ?(debug = false) (state : state) (game : game) (action_kind : ghost_action_kind) =
   let cooldown_scale = ref 1.0 in
@@ -736,7 +776,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       let slash =
         make_slash game.ghost direction relative_pos game.ghost.entity.sprite state.frame.time
       in
-      game.ghost.child <- Some { kind = NAIL slash; relative_pos; sprite = slash.sprite };
+      game.ghost.child <-
+        Some { kind = NAIL slash; relative_pos; sprite = slash.sprite; in_front = true };
       cooldown_scale := game.ghost.current_weapon.cooldown_scale;
       game.ghost.history.nail
     | C_DASH_WALL_COOLDOWN ->
@@ -759,14 +800,15 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         else
           ALIGNED (LEFT, CENTER)
       in
-      let texture = game.ghost.shared_textures.c_dash_whoosh in
-      let w, h = get_scaled_texture_size ~scale:(Config.scale.room *. 2.) texture in
-      game.ghost.child <- make_ghost_child game.ghost C_DASH_WHOOSH alignment texture w h;
+      game.ghost.child <-
+        make_ghost_child' game.ghost C_DASH_WHOOSH alignment ~scale:6.
+          game.ghost.shared_textures.c_dash_whoosh;
       game.ghost.history.c_dash
     | C_DASH_CHARGE ->
       game.ghost.current.is_charging_c_dash <- true;
       game.ghost.child <- make_c_dash_child game.ghost;
       game.ghost.history.charge_c_dash
+    | SHADE_DASH -> game.ghost.history.shade_dash
     | DASH -> game.ghost.history.dash
     | CAST spell_kind -> (
       game.ghost.soul.current <- game.ghost.soul.current - Config.action.soul_per_cast;
@@ -786,21 +828,18 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
             game.ghost.shared_textures.desolate_dive w h;
         game.ghost.history.cast_dive
       | HOWLING_WRAITHS ->
-        (* FIXME-2 check for monkey-block collisions here (only need to check this collision
-           once on start_action, since the ghost won't move during casting)
-        *)
         game.ghost.child <-
-          make_ghost_child game.ghost WRAITHS
+          make_ghost_child' game.ghost WRAITHS
             (ALIGNED (CENTER, BOTTOM))
-            game.ghost.shared_textures.howling_wraiths (game.ghost.entity.dest.w *. 5.)
-            (game.ghost.entity.dest.h *. 5.);
+            ~scale:1.7 game.ghost.shared_textures.howling_wraiths;
+        check_monkey_block_collisions state game;
         game.ghost.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
       Entity.freeze game.ghost.entity;
       game.ghost.history.take_damage_and_respawn
     | TAKE_DAMAGE _ ->
       state.camera.shake <- 0.5;
-      (* TODO cancel focus, dash, c-dash, etc. *)
+      (* FIXME-5 cancel focus, dash, c-dash, etc.*)
       game.ghost.history.take_damage
     | DIVE_COOLDOWN -> game.ghost.history.dive_cooldown
     | FOCUS ->
@@ -813,7 +852,12 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       in
       game.ghost.child <-
         Some
-          { kind = FOCUS; relative_pos = ALIGNED (CENTER, CENTER); sprite = focus_sparkles_sprite };
+          {
+            kind = FOCUS;
+            relative_pos = ALIGNED (CENTER, CENTER);
+            sprite = focus_sparkles_sprite;
+            in_front = true;
+          };
       game.ghost.history.focus
     | JUMP -> game.ghost.history.jump
     | FLAP -> game.ghost.history.flap
@@ -837,25 +881,34 @@ let hazard_respawn (game : game) =
 let continue_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   (match action_kind with
   | FOCUS ->
-    (let decr_dt =
-       game.ghost.history.focus.config.duration.seconds
-       /. (Config.action.soul_per_cast + 0 |> Int.to_float)
-     in
-     (* TODO probably should be checking >= *)
-     if
-       game.ghost.soul.at_focus_start - game.ghost.soul.current > Config.action.soul_per_cast
-       && game.ghost.soul.health_at_focus_start = game.ghost.health.current
-     then
-       game.ghost.health.current <-
-         Utils.bound_int 0 game.ghost.health.max (game.ghost.health.current + 1)
-     else if state.frame.time -. game.ghost.soul.last_decremented.at > decr_dt then (
-       game.ghost.soul.current <- game.ghost.soul.current - 1;
-       game.ghost.soul.last_decremented <- { at = state.frame.time }));
-    ()
-  | C_DASH -> advance_child state.frame.time game.ghost C_DASH_WHOOSH
-  | C_DASH_CHARGE -> advance_child state.frame.time game.ghost C_DASH_CHARGE_CRYSTALS
+    let decr_dt =
+      game.ghost.history.focus.config.duration.seconds
+      /. (Config.action.soul_per_cast + 0 |> Int.to_float)
+    in
+    (* TODO probably should be checking >= *)
+    if
+      game.ghost.soul.at_focus_start - game.ghost.soul.current > Config.action.soul_per_cast
+      && game.ghost.soul.health_at_focus_start = game.ghost.health.current
+    then
+      game.ghost.health.current <-
+        Utils.bound_int 0 game.ghost.health.max (game.ghost.health.current + 1)
+    else if state.frame.time -. game.ghost.soul.last_decremented.at > decr_dt then (
+      game.ghost.soul.current <- game.ghost.soul.current - 1;
+      game.ghost.soul.last_decremented <- { at = state.frame.time })
+  | FLAP ->
+    let started = game.ghost.history.flap.started.at in
+    let duration = game.ghost.history.flap.config.duration.seconds in
+    (* TODO move to config
+       - need to multiply duration here instead of changing config value because `is_doing FLAP`
+         needs to be true for long enough to get here
+    *)
+    if state.frame.time -. started > duration *. 0.666666 then
+      game.ghost.entity.v.y <- Config.ghost.jump_vy *. 0.8
+  | C_DASH
+  | C_DASH_CHARGE
+  | SHADE_DASH ->
+    advance_child state.frame.time game.ghost
   | TAKE_DAMAGE_AND_RESPAWN
-  | FLAP
   | WALL_KICK
   | JUMP
   | TAKE_DAMAGE _
@@ -884,10 +937,11 @@ let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : flo
   | C_DASH -> ghost.current.is_c_dashing
   | C_DASH_WALL_COOLDOWN -> check_action ghost.history.c_dash_wall_cooldown
   | C_DASH_COOLDOWN -> check_action ghost.history.c_dash_cooldown
+  | SHADE_DASH -> check_action ghost.history.shade_dash
   | DASH -> check_action ghost.history.dash
   | DIVE_COOLDOWN -> check_action ghost.history.dive_cooldown
   | TAKE_DAMAGE_AND_RESPAWN -> check_action ghost.history.take_damage_and_respawn
-  | FLAP
+  | FLAP -> check_action ghost.history.flap
   | WALL_KICK
   | JUMP
   | TAKE_DAMAGE _ ->
@@ -937,6 +991,7 @@ let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
   | "howling_wraiths" -> ghost.abilities.howling_wraiths <- new_val ghost.abilities.howling_wraiths
   | "mothwing_cloak" -> ghost.abilities.mothwing_cloak <- new_val ghost.abilities.mothwing_cloak
+  | "shade_cloak" -> ghost.abilities.shade_cloak <- new_val ghost.abilities.shade_cloak
   | "mantis_claw" -> ghost.abilities.mantis_claw <- new_val ghost.abilities.mantis_claw
   | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
   | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
@@ -969,13 +1024,14 @@ let equip_weapon (ghost : ghost) weapon_name =
          cooldown_scale = 2. -. weapon_config.swing_speed;
        })
 
-(* FIXME-7 consider shade cloak *)
 let get_invincibility_kind (state : state) (game : game) : invincibility_kind option =
   let in_dive_cooldown () = not (past_cooldown game.ghost.history.dive_cooldown state.frame.time) in
   if not (past_cooldown game.ghost.history.take_damage state.frame.time) then
     Some TOOK_DAMAGE
   else if game.ghost.current.is_diving || in_dive_cooldown () then
     Some DIVE_IFRAMES
+  else if is_doing game.ghost SHADE_DASH state.frame.time then
+    Some SHADE_CLOAK
   else
     None
 
@@ -1030,7 +1086,9 @@ let handle_debug_keys (game : game) (state : state) =
 type handled_action = { this_frame : bool }
 
 let update (game : game) (state : state) =
+  (* FIXME-5 add other stop_ refs to allow actions to cancel other actions *)
   let stop_wall_sliding = ref false in
+
   let key_pressed_or_buffered key_action =
     let (input, buffer) : frame_input * float =
       match key_action with
@@ -1547,16 +1605,32 @@ let update (game : game) (state : state) =
       && past_cooldown game.ghost.history.dash state.frame.time
     in
     let still_dashing () = is_doing game.ghost DASH state.frame.time in
+    let still_shade_dashing () = is_doing game.ghost SHADE_DASH state.frame.time in
     let this_frame =
       if starting_dash () then (
         (* TODO "dash in currently-facing direction" almost always works, but not when walljumping,
            so this should probably be `DASHING of direction` and check LEFT/RIGHT keys
         *)
+        let can_shade_dash () =
+          game.ghost.abilities.shade_cloak
+          && past_cooldown game.ghost.history.shade_dash state.frame.time
+        in
+
+        tmp " ------------ starting dash %d ----- shade cloak: %b --------" state.frame.idx
+          (can_shade_dash ());
+        if can_shade_dash () then (
+          let texture = game.ghost.shared_textures.shade_cloak_sparkles in
+          game.ghost.child <-
+            make_ghost_child' game.ghost ~in_front:true ~scale:6. SHADE_DASH_WHOOSH
+              (ALIGNED (CENTER, CENTER))
+              texture;
+          start_action state game SHADE_DASH);
         start_action state game DASH;
         stop_wall_sliding := true;
         true)
       else if still_dashing () then (
-        (* FIXME-6 handle shade cloak *)
+        if still_shade_dashing () then
+          continue_action state game SHADE_DASH;
         continue_action state game DASH;
         true)
       else
@@ -1622,19 +1696,25 @@ let update (game : game) (state : state) =
     match game.ghost.entity.current_floor with
     | None ->
       (* TODO key_pressed_or_buffered detects the same keypress as the initial jump *)
-      if game.ghost.abilities.monarch_wings && game.ghost.current.can_flap && key_pressed JUMP then (
+      if
+        game.ghost.abilities.monarch_wings
+        && game.ghost.current.can_flap
+        && state.frame_inputs.jump.pressed
+      then (
         game.ghost.current.can_flap <- false;
-        (* FIXME-2 delay this to add the dip before flapping *)
-        set_pose' (PERFORMING FLAP)
-        (* TODO continue flapping
-           else if (is_doing state FLAPPING) then
-             set_pose' FLAPPING
-        *))
+        start_action state game FLAP)
+      else if is_doing game.ghost FLAP state.frame.time then (
+        set_pose' (AIRBORNE new_vy);
+        if state.frame_inputs.jump.down then
+          continue_action state game FLAP
+        else
+          cancel_action state game FLAP)
       else
         set_pose' (AIRBORNE new_vy)
     | Some floor ->
-      if key_pressed_or_buffered JUMP then
-        (* TODO `start_action state JUMP` also works, but JUMP doesn't use blocked_until/doing_until *)
+      if is_doing game.ghost FLAP state.frame.time then
+        cancel_action state game FLAP
+      else if key_pressed_or_buffered JUMP then
         set_pose' (PERFORMING JUMP)
       else if game.ghost.entity.v.y > 0. then (
         stop_wall_sliding := true;
@@ -1902,6 +1982,7 @@ let load_shared_textures (shared_texture_configs : (string * texture_config) lis
     c_dash_wall_crystals = build_shared_texture ~once:true "c-dash-wall-crystals";
     c_dash_wall_crystals_full = build_shared_texture "c-dash-wall-crystals-full";
     c_dash_whoosh = build_shared_texture "c-dash-whoosh";
+    shade_cloak_sparkles = build_shared_texture ~particle:true "shade-cloak-sparkles";
   }
 
 let init
@@ -1965,6 +2046,7 @@ let init
         focus = make_action "focus";
         jump = make_action "jump";
         nail = make_action "nail";
+        shade_dash = make_action "shade-dash";
         take_damage = make_action "take-damage";
         take_damage_and_respawn = make_action "take-damage-and-respawn";
         wall_kick = make_action "wall-kick";
@@ -1993,7 +2075,7 @@ let init
     abilities = save_file.abilities;
     weapons;
     current_weapon =
-      (* TODO should read these from weapons.json (but do this after adding save files) *)
+      (* CLEANUP should read these from weapons.json (but do this after adding save files) *)
       {
         name = "old-nail";
         tint = Raylib.Color.raywhite;
