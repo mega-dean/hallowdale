@@ -263,7 +263,7 @@ let update_enemies (game : game) (state : state) =
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
     (match Ghost.get_spell_sprite game.ghost with
     | None -> ()
-    | Some (sprite, action) -> (
+    | Some (sprite, action_started) -> (
       (* TODO use Collision.between_shapes *)
       match Collision.with_entity enemy.entity sprite.dest with
       | None -> ()
@@ -277,7 +277,7 @@ let update_enemies (game : game) (state : state) =
             HOWLING_WRAITHS
         in
         ignore
-          (Enemy.maybe_take_damage state enemy action damage_kind
+          (Enemy.maybe_take_damage state enemy action_started damage_kind
              (Ghost.get_damage game.ghost damage_kind)
              c.rect)));
 
@@ -392,7 +392,7 @@ let update_menu_choice (menu : menu) frame_inputs =
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
 
 let tick (state : state) =
-  (* TODO-5 add sound effects and music *)
+  (* TODO-3 add sound effects and music *)
   if not (holding_shift ()) then (
     if Controls.key_pressed DEBUG_3 then
       if state.debug.show_frame_inputs then (

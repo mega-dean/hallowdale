@@ -44,7 +44,9 @@ let load_pose (texture_config : texture_config) : string * texture =
 
 let set_pose (enemy : enemy) (pose_name : string) : unit =
   match List.assoc_opt pose_name enemy.textures with
-  | None -> failwithf "could not find pose '%s' configured in enemies.json for enemy %s" pose_name (Show.enemy enemy)
+  | None ->
+    failwithf "could not find pose '%s' configured in enemies.json for enemy %s" pose_name
+      (Show.enemy enemy)
   | Some texture -> Entity.update_sprite_texture enemy.entity texture
 
 let get_prop ?(default = None) key props : float =
@@ -53,11 +55,12 @@ let get_prop ?(default = None) key props : float =
   | None, Some d -> d
   | Some v, _ -> v
 
-let set_prop (e : enemy) key new_val = e.props <- Utils.assoc_replace key new_val e.props
+let set_prop (e : enemy) key new_val = e.props <- Utils.replace_assoc key new_val e.props
 
 let get_json_prop (e : enemy) key : float =
   match List.assoc_opt key e.json.props with
-  | None -> failwithf "could not find json prop '%s' in enemies.json for enemy %s" key (Show.enemy_id e.id)
+  | None ->
+    failwithf "could not find json prop '%s' in enemies.json for enemy %s" key (Show.enemy_id e.id)
   | Some v -> v
 
 let spawn_projectile
@@ -82,13 +85,14 @@ let spawn_projectile
   let entity =
     Entity.create
       (fmt "%s projectile ---------------------- " (Show.enemy_name e))
-      ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.) ~collision:(Some DEST)
-      projectile_texture dest
+      ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.)
+      ~collision:(Some DEST) projectile_texture dest
   in
 
   { entity; despawn; spawned = { at = spawn_time }; pogoable }
 
-let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current_time current_props =
+let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current_time current_props
+    =
   let get_prop' prop_name = get_prop prop_name current_props in
   let starting_action, current_duration =
     match current_duration_opt with
@@ -121,7 +125,9 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
       | "landed" ->
         pose_name := "idle";
         let range = get_json_prop enemy "projectile_range" in
-        let projectile_duration = X_BOUNDS (enemy.entity.dest.pos.x -. range, enemy.entity.dest.pos.x +. range) in
+        let projectile_duration =
+          X_BOUNDS (enemy.entity.dest.pos.x -. range, enemy.entity.dest.pos.x +. range)
+        in
         enemy.entity.v.x <- 0.;
         enemy.entity.sprite.facing_right <-
           (* TODO might help to use a prefix like is_ or bool_ for these props that are used as booleans *)
@@ -197,10 +203,15 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           enemy.entity.dest.pos.x <- x;
           enemy.entity.dest.pos.y <- y;
           let projectile_duration =
-            X_BOUNDS (get_json_prop enemy "wall_perch_left_x" -. 200., get_json_prop enemy "wall_perch_right_x" +. 200.)
+            X_BOUNDS
+              ( get_json_prop enemy "wall_perch_left_x" -. 200.,
+                get_json_prop enemy "wall_perch_right_x" +. 200. )
           in
           enemy.spawned_projectiles <-
-            [ spawn_projectile enemy ~scale:0.5 ~pogoable:true projectile_direction projectile_duration current_time ])
+            [
+              spawn_projectile enemy ~scale:0.5 ~pogoable:true projectile_direction
+                projectile_duration current_time;
+            ])
         else if current_duration > 2. then
           set_prop enemy "should_vanish" 1.
       | _ -> ())
@@ -210,11 +221,16 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
 let start_action (enemy : enemy) (pose_name : string) (current_time : float) current_props =
   set_action enemy pose_name current_time current_props
 
-let continue_action (enemy : enemy) (pose_name : string) current_duration_opt current_time current_props =
+let continue_action
+    (enemy : enemy)
+    (pose_name : string)
+    current_duration_opt
+    current_time
+    current_props =
   set_action enemy ~current_duration_opt pose_name current_time current_props
 
 let log_action (enemy : enemy) (action_name : string) (current : float) =
-  enemy.history <- (PERFORMED action_name, { at = current }) :: List.remove_assoc (PERFORMED action_name) enemy.history
+  enemy.history <- Utils.replace_assoc (PERFORMED action_name) { at = current } enemy.history
 
 let start_and_log_action (enemy : enemy) (action_name : string) (current : float) current_props =
   log_action enemy action_name current;
@@ -237,7 +253,12 @@ let maybe_take_damage
     | ENEMY ->
       enemy.entity.y_recoil <- Some { speed = 100.; time_left = { seconds = 1. }; reset_v = true };
       enemy.entity.x_recoil <-
-        Some { speed = (if Random.bool () then -100. else 100.); time_left = { seconds = 1. }; reset_v = true }
+        Some
+          {
+            speed = (if Random.bool () then -100. else 100.);
+            time_left = { seconds = 1. };
+            reset_v = true;
+          }
     | _ -> ());
     (match enemy.id with
     | LOCKER_BOY -> Entity.hide enemy.entity
@@ -250,7 +271,8 @@ let maybe_take_damage
 
   if ghost_action_started > took_damage_at enemy d then (
     enemy.history <-
-      (TOOK_DAMAGE d, { at = state.frame.time }) :: List.remove_assoc (TOOK_DAMAGE d : enemy_action) enemy.history;
+      (TOOK_DAMAGE d, { at = state.frame.time })
+      :: List.remove_assoc (TOOK_DAMAGE d : enemy_action) enemy.history;
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size damage_texture in
@@ -301,7 +323,8 @@ let create_from_rects
             | 1 ->
               let left = get_json_prop self "wall_perch_left_x" in
               let right = get_json_prop self "wall_perch_right_x" in
-              start_and_log_action self "dive" params.time [ ("random_dive_x", left +. Random.float (right -. left)) ]
+              start_and_log_action self "dive" params.time
+                [ ("random_dive_x", left +. Random.float (right -. left)) ]
             | 2 ->
               start_and_log_action self "dash" params.time
                 [ ("random_direction_right", if Random.bool () then 1. else 0.) ]
@@ -350,7 +373,9 @@ let create_from_rects
     let texture_configs : texture_config list =
       List.map (Entity.to_texture_config ENEMIES enemy_name) enemy_config.texture_configs
     in
-    let entity, textures = Entity.create_from_textures ~collision:(Some DEST) texture_configs entity_dest in
+    let entity, textures =
+      Entity.create_from_textures ~collision:(Some DEST) texture_configs entity_dest
+    in
 
     let json =
       match List.assoc_opt id enemy_configs with
@@ -393,13 +418,17 @@ let create_from_rects
       | _ -> failwithf "%s bad boss_kind '%s'" enemy_name enemy_config.kind
     in
     let on_killed =
-      { interaction_name = (if cutscene_name = "" then None else Some cutscene_name); multiple_enemies }
+      {
+        interaction_name = (if cutscene_name = "" then None else Some cutscene_name);
+        multiple_enemies;
+      }
     in
     if List.mem cutscene_name finished_interactions then
       None
     else (
       let w, h =
-        ((enemy_config.w |> Int.to_float) *. Config.scale.ghost, (enemy_config.h |> Int.to_float) *. Config.scale.ghost)
+        ( (enemy_config.w |> Int.to_float) *. Config.scale.ghost,
+          (enemy_config.h |> Int.to_float) *. Config.scale.ghost )
       in
       Some (build enemy_id enemy_kind enemy_name enemy_config { dest with w; h } on_killed))
   in

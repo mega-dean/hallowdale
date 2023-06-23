@@ -38,7 +38,7 @@ let update_pickup_indicators (state : state) (game : game) =
 
 let save_progress (game : game) =
   let room_uuid = Tiled.Room.get_uuid game.room in
-  game.progress <- Utils.assoc_replace room_uuid game.room.progress game.progress
+  game.progress <- Utils.replace_assoc room_uuid game.room.progress game.progress
 
 type room_params = {
   file_name : string;
@@ -494,14 +494,9 @@ let init (params : room_params) : room =
     cache;
   }
 
-(* TODO-5 add warps, used for:
-   - teacher's lounge -> computer wing basement (only after reaching shirley island though)
-   -- this should also change what the bg looks like, which already happens for scootenanny chair but may not be reusable
-   - mmb elevator
-   - maybe mmb "escort to entrance" for insufficient beenz
-   - vents / fast travel
-   - white palace
-   - godhome
+(* FIXME add warps
+   - most will just be destination->destination
+   - but teacher's lounge -> computer wing basement should only be accessible after reaching shirley island
 *)
 let handle_transitions (state : state) (game : game) =
   let get_global_pos (current : vector) (room_location : room_location) : vector =

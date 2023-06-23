@@ -186,7 +186,6 @@ let init
   in
   room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;
   let ghost = List.assoc current_ghost_id all_ghosts in
-  (* TODO this was using the wrong weapon name sometimes, not sure if it's still an issue *)
   Ghost.equip_weapon ghost save_file.current_weapon;
   let other_ghosts = List.filter (fun (ghost_id, _) -> ghost_id <> current_ghost_id) all_ghosts in
   {

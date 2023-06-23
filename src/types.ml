@@ -15,7 +15,7 @@ module Utils = struct
     List.iter add_x xs;
     !res
 
-  let assoc_replace (k : 'a) (v : 'b) (xs : ('a * 'b) list) : ('a * 'b) list =
+  let replace_assoc (k : 'a) (v : 'b) (xs : ('a * 'b) list) : ('a * 'b) list =
     match List.assoc_opt k xs with
     | None -> (k, v) :: xs
     | Some _ -> (k, v) :: List.remove_assoc k xs
@@ -811,7 +811,7 @@ type ghost_child_kind =
   | C_DASH_CHARGE_CRYSTALS
   | C_DASH_WALL_CHARGE_CRYSTALS
   | C_DASH_WHOOSH
-  | SHADE_DASH_WHOOSH
+  | SHADE_DASH_SPARKLES
   (* | DASH_WHOOSH *)
   | WRAITHS
   | DIVE
@@ -819,7 +819,6 @@ type ghost_child_kind =
   | FOCUS
 
 type ghost_child = {
-  kind : ghost_child_kind;
   relative_pos : relative_position;
   sprite : sprite;
   in_front : bool;
@@ -853,8 +852,7 @@ type ghost = {
   mutable health : health;
   mutable soul : soul;
   mutable spawned_vengeful_spirits : projectile list;
-  (* FIXME this needs to be a ghost_child list now (since shade cloak sparkles last a long time) *)
-  mutable child : ghost_child option;
+  mutable children : (ghost_child_kind * ghost_child) list;
 }
 
 (* a cache for image/tiles that have been loaded for a tileset *)

@@ -133,7 +133,6 @@ let draw_tiled_layer
     frame_idx
     ?(tint = Color.create 255 255 255 255)
     ?(parallax = None)
-    ?(animated = false)
     (layer : layer) : unit =
   let within_camera dest_x dest_y =
     let camera_min_x, camera_max_x =
@@ -158,7 +157,7 @@ let draw_tiled_layer
         if within_camera x y then (
           let texture, transformations =
             let animation_offset =
-              if animated then
+              if layer.config.animated then
                 (* TODO this should probably just use an animated sprite instead of
                    this weird animation_offset for the tile gid
                 *)
@@ -199,16 +198,8 @@ let draw_solid_tiles room camera_x camera_y frame_idx : unit =
   List.iter
     (draw_tiled_layer room camera_x camera_y frame_idx)
     (List.filter
-       (fun layer ->
-         layer.config.collides_with_ghost
-         || (layer.config.damages_ghost && not layer.config.animated))
+       (fun layer -> layer.config.collides_with_ghost || layer.config.damages_ghost)
        room.layers)
-
-(* CLEANUP maybe consolidate with draw_solid_tiles *)
-let draw_animated_tiles room camera_x camera_y frame_idx : unit =
-  List.iter
-    (draw_tiled_layer ~animated:true room camera_x camera_y frame_idx)
-    (List.filter (fun layer -> layer.config.animated) room.layers)
 
 let draw_bg_tiles room camera_x camera_y frame_idx : unit =
   draw_tiles room camera_x camera_y frame_idx
@@ -993,35 +984,32 @@ let tick (state : state) =
           | SHADE_CLOAK -> Color.create 0 0 0 255)
       in
 
-      let draw_child (child_opt : ghost_child option) =
-        match child_opt with
-        | None -> ()
-        | Some child -> (
-          let get_child_pos child_w child_h =
-            Entity.get_child_pos ghost.entity child.relative_pos child_w child_h
-          in
-          let draw_child_sprite (sprite : sprite) tint =
-            sprite.facing_right <- ghost.entity.sprite.facing_right;
-            sprite.dest.pos <- get_child_pos sprite.dest.w sprite.dest.h;
-            draw_sprite ~tint sprite
-          in
-          match child.kind with
-          | NAIL slash ->
-            if state.debug.enabled then
-              debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
-            let tint = ghost.current_weapon.tint in
-            draw_child_sprite slash.sprite ghost.current_weapon.tint
-          | C_DASH_WHOOSH
-          | SHADE_DASH_WHOOSH
-          | C_DASH_CHARGE_CRYSTALS
-          | C_DASH_WALL_CHARGE_CRYSTALS
-          | FOCUS
-          | WRAITHS
-          | DIVE_COOLDOWN
-          | DIVE ->
-            if state.debug.enabled then
-              debug_rect_outline ~size:2. ~color:Color.purple child.sprite.dest;
-            draw_child_sprite child.sprite Color.raywhite)
+      let draw_child ((child_kind, child) : ghost_child_kind * ghost_child) =
+        let get_child_pos child_w child_h =
+          Entity.get_child_pos ghost.entity child.relative_pos child_w child_h
+        in
+        let draw_child_sprite (sprite : sprite) tint =
+          sprite.facing_right <- ghost.entity.sprite.facing_right;
+          sprite.dest.pos <- get_child_pos sprite.dest.w sprite.dest.h;
+          draw_sprite ~tint sprite
+        in
+        match child_kind with
+        | NAIL slash ->
+          if state.debug.enabled then
+            debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
+          let tint = ghost.current_weapon.tint in
+          draw_child_sprite slash.sprite ghost.current_weapon.tint
+        | C_DASH_WHOOSH
+        | SHADE_DASH_SPARKLES
+        | C_DASH_CHARGE_CRYSTALS
+        | C_DASH_WALL_CHARGE_CRYSTALS
+        | FOCUS
+        | WRAITHS
+        | DIVE_COOLDOWN
+        | DIVE ->
+          if state.debug.enabled then
+            debug_rect_outline ~size:2. ~color:Color.purple child.sprite.dest;
+          draw_child_sprite child.sprite Color.raywhite
       in
       let draw_vengeful_spirit (p : projectile) =
         if state.debug.enabled then
@@ -1046,16 +1034,15 @@ let tick (state : state) =
           collision = None;
         }
       in
+      let children_in_front, children_behind =
+        List.partition (fun (_, child) -> child.in_front) ghost.children
+      in
+      itmp "got %d children_behind" (List.length children_behind);
+      itmp "got %d children_in_front" (List.length children_in_front);
       draw_sprite shine_sprite;
-      match ghost.child with
-      | None -> draw_entity ~tint ghost.entity
-      | Some child ->
-        if child.in_front then (
-          draw_entity ~tint ghost.entity;
-          draw_child ghost.child)
-        else (
-          draw_child ghost.child;
-          draw_entity ~tint ghost.entity)
+      List.iter draw_child children_behind;
+      draw_entity ~tint ghost.entity;
+      List.iter draw_child children_in_front
     in
 
     let draw_hud () =
@@ -1130,7 +1117,6 @@ let tick (state : state) =
     Raylib.begin_mode_2d state.camera.raylib;
     draw_bg_tiles game.room camera_x camera_y state.frame.idx;
     draw_solid_tiles game.room camera_x camera_y state.frame.idx;
-    draw_animated_tiles game.room camera_x camera_y state.frame.idx;
     draw_levers ();
     draw_npcs game.room.npcs;
     draw_ghosts game.ghosts;
