@@ -272,7 +272,7 @@ let init (params : room_params) : room =
               | "shadow" ->
                 (* TODO maybe move this validation somewhere else *)
                 if not (List.mem 0 json.data) then
-                  tmp
+                  print
                     "\n\n\n\n\
                     \ -------------------- BAD SHADOW LAYER in room %s -------------------- \n\n\n\n"
                     params.file_name;

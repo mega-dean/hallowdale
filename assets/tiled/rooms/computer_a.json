@@ -56,6 +56,28 @@
          "y":0
         }, 
         {
+         "draworder":"topdown",
+         "id":6,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":50,
+                 "id":6,
+                 "name":"warp_infected_teachers-lounge||22,32",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":54.66,
+                 "x":368.67,
+                 "y":237
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             332, 332, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 332, 332,
@@ -130,8 +152,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":5,
+ "nextlayerid":7,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

@@ -1037,8 +1037,6 @@ let tick (state : state) =
       let children_in_front, children_behind =
         List.partition (fun (_, child) -> child.in_front) ghost.children
       in
-      itmp "got %d children_behind" (List.length children_behind);
-      itmp "got %d children_in_front" (List.length children_in_front);
       draw_sprite shine_sprite;
       List.iter draw_child children_behind;
       draw_entity ~tint ghost.entity;

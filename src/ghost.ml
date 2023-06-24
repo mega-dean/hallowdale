@@ -657,10 +657,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.entity.v.y <- Config.ghost.wall_jump_vy;
       update_vx 1.;
       ghost.textures.jump
-    | FLAP ->
-      (* TODO separate config *)
-      itmp "flapping";
-      ghost.textures.flap
+    | FLAP -> ghost.textures.flap
   in
 
   let next_texture : texture =
@@ -1178,20 +1175,29 @@ let update (game : game) (state : state) =
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
           | WARP destination ->
-            let target_room_name, coords =
+            let target_room_name, rest =
               (* this can't be a character that is used in room names *)
               Utils.separate destination '|'
             in
-            let target_x', target_y' = Utils.separate coords ',' in
-            let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
-            let target_x, target_y =
-              Tiled.Tile.tile_dest ~tile_w:game.room.json.tile_w ~tile_h:game.room.json.tile_h
-                (tile_x, tile_y)
+            (* TODO this might be too much stuff to embed in the name, maybe worth
+               adding/parsing Custom Properties now
+            *)
+            let blocking_interaction_name, coords = Utils.separate rest '|' in
+            let blocked =
+              match blocking_interaction_name with
+              | "" -> false
+              | s -> not (List.mem (fmt "cutscene_%s" s) game.room.progress.finished_interactions)
             in
-            tmp "WARPing with room name %s, to (%s, %s)" target_room_name target_x' target_y';
-            let target_room_location = Tiled.Room.locate_by_name state.world target_room_name in
-            Room.change_current_room state game target_room_name target_room_location
-              { x = target_x; y = target_y }
+            if not blocked then (
+              let target_x', target_y' = Utils.separate coords ',' in
+              let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
+              let target_x, target_y =
+                Tiled.Tile.tile_dest ~tile_w:game.room.json.tile_w ~tile_h:game.room.json.tile_h
+                  (tile_x, tile_y)
+              in
+              let target_room_location = Tiled.Room.locate_by_name state.world target_room_name in
+              Room.change_current_room state game target_room_name target_room_location
+                { x = target_x; y = target_y })
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
           | TEXT paragraphs ->
@@ -1642,8 +1648,6 @@ let update (game : game) (state : state) =
           && past_cooldown game.ghost.history.shade_dash state.frame.time
         in
 
-        tmp " ------------ starting dash %d ----- shade cloak: %b --------" state.frame.idx
-          (can_shade_dash ());
         if can_shade_dash () then (
           let texture = game.ghost.shared_textures.shade_cloak_sparkles in
           let child =
@@ -1741,6 +1745,7 @@ let update (game : game) (state : state) =
         set_pose' (AIRBORNE new_vy)
     | Some floor ->
       if is_doing game.ghost FLAP state.frame.time then
+        (* TODO need a check like this for current_wall too (to prevent extra height from buffering jump off wallslide) *)
         cancel_action state game FLAP
       else if key_pressed_or_buffered JUMP then
         set_pose' (PERFORMING JUMP)

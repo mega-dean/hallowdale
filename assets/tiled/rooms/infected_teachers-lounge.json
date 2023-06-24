@@ -103,6 +103,28 @@
                  "width":12.66,
                  "x":573.003333333333,
                  "y":672.666666666667
+                }, 
+                {
+                 "height":50,
+                 "id":13,
+                 "name":"warp_computer_a|arrive-at-shirley-island|16,10",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":133.66,
+                 "x":477.503333333333,
+                 "y":755.666666666667
+                }, 
+                {
+                 "height":179.55,
+                 "id":14,
+                 "name":"cutscene_arrive-at-shirley-island",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":204.157,
+                 "x":439.254833333333,
+                 "y":440.891666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -154,7 +176,7 @@
          "parallaxx":0.2,
          "parallaxy":0.2,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -202,7 +224,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -250,7 +272,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -298,7 +320,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -346,7 +368,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -394,7 +416,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -442,7 +464,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -489,7 +511,7 @@
          "name":"hidden-boss-doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -631,7 +653,7 @@
          "opacity":1,
          "parallaxx":1.2,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
@@ -727,13 +749,13 @@
          "parallaxx":1.38777878078145e-16,
          "parallaxy":1.38777878078145e-16,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":28,
          "x":0,
          "y":0
         }],
  "nextlayerid":28,
- "nextobjectid":13,
+ "nextobjectid":15,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

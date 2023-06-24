@@ -68,17 +68,6 @@
                  "width":61.5,
                  "x":994.5,
                  "y":91
-                }, 
-                {
-                 "height":50,
-                 "id":7,
-                 "name":"warp_basement_abyss-climb|49,138",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":47.66,
-                 "x":991.17,
-                 "y":187
                 }],
          "opacity":1,
          "type":"objectgroup",

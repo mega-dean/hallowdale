@@ -66,7 +66,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
 
     (* TODO-2 add dialogue for Shirley Island npcs *)
     match interaction_prefix with
-    | "warp" -> [ STEP (WARP interaction_name) ]
+    | "warp" ->
+      [ STEP (WARP interaction_name) ]
     | "purple-pen" ->
       remove_nail := false;
       [
@@ -203,6 +204,9 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
                  "";
                  "Hallowdale";
                ]);
+        ]
+      | "cutscene_arrive-at-shirley-island" ->
+        [
         ]
       | "cutscene_fight-duncan" ->
         [
