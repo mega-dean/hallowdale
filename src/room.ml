@@ -148,6 +148,7 @@ let init (params : room_params) : room =
         add_idx_config (DOOR_HITS door_health)
       | "purple-pen" -> add_idx_config (PURPLE_PEN coll_rect.name)
       | "hide" -> shadow_triggers := get_object_rect name coll_rect :: !shadow_triggers
+      | "warp"
       | "info"
       | "health" ->
         lore_triggers := get_object_rect coll_rect.name coll_rect :: !lore_triggers
@@ -494,10 +495,44 @@ let init (params : room_params) : room =
     cache;
   }
 
-(* FIXME add warps
-   - most will just be destination->destination
-   - but teacher's lounge -> computer wing basement should only be accessible after reaching shirley island
-*)
+let change_current_room
+    (state : state)
+    (game : game)
+    (file_name : string)
+    (room_location : room_location)
+    (start_pos : vector) =
+  let exits = Tiled.Room.get_exits room_location in
+  save_progress game;
+
+  let new_room =
+    init
+      {
+        file_name;
+        progress = game.progress;
+        exits;
+        enemy_configs = state.global.enemy_configs;
+        npc_configs = state.global.npc_configs;
+        pickup_indicator_texture = state.global.textures.pickup_indicator;
+        lever_texture = state.global.textures.door_lever;
+        respawn_pos = start_pos;
+      }
+  in
+  game.ghost.entity.current_floor <- None;
+  game.ghost.current.wall <- None;
+  game.ghost.spawned_vengeful_spirits <- [];
+  game.ghost.entity.dest.pos <- start_pos;
+  (* all rooms are using the same tilesets now, but still unload them here (and re-load them
+     in load_room) every time because the tilesets could be in a different order per room
+     - not really sure about ^this comment, I don't know if different tileset order would break the
+       tile lookup code now, so just unload/reload to be safe ¯\_(ツ)_/¯
+  *)
+  (* TODO probably need to unload things like enemy textures *)
+  Tiled.Room.unload_tilesets game.room;
+  game.room <- new_room;
+  game.room.layers <-
+    Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
+  state.camera.raylib <- Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.
+
 let handle_transitions (state : state) (game : game) =
   let get_global_pos (current : vector) (room_location : room_location) : vector =
     { x = current.x +. room_location.global_x; y = current.y +. room_location.global_y }
@@ -526,10 +561,9 @@ let handle_transitions (state : state) (game : game) =
           ( cr.pos.x +. (cr.w /. 2.) +. current_room_location.global_x,
             cr.pos.y +. (cr.h /. 2.) +. current_room_location.global_y )
         in
-        Tiled.Room.locate state.world global_x global_y
+        Tiled.Room.locate_by_coords state.world global_x global_y
       in
       let room_location = List.assoc target_room_id state.world in
-      let exits = Tiled.Room.get_exits room_location in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
         (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen
@@ -547,35 +581,5 @@ let handle_transitions (state : state) (game : game) =
         | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.entity.dest.h }
       in
 
-      save_progress game;
-
-      let new_room =
-        init
-          {
-            file_name = path;
-            progress = game.progress;
-            exits;
-            enemy_configs = state.global.enemy_configs;
-            npc_configs = state.global.npc_configs;
-            pickup_indicator_texture = state.global.textures.pickup_indicator;
-            lever_texture = state.global.textures.door_lever;
-            respawn_pos = start_pos;
-          }
-      in
-      game.ghost.entity.current_floor <- None;
-      game.ghost.current.wall <- None;
-      game.ghost.spawned_vengeful_spirits <- [];
-      game.ghost.entity.dest.pos <- start_pos;
-      (* all rooms are using the same tilesets now, but still unload them here (and re-load them
-         in load_room) every time because the tilesets could be in a different order per room
-         - not really sure about ^this comment, I don't know if different tileset order would break the
-           tile lookup code now, so just unload/reload to be safe ¯\_(ツ)_/¯
-      *)
-      (* TODO probably need to unload things like enemy textures *)
-      Tiled.Room.unload_tilesets game.room;
-      game.room <- new_room;
-      game.room.layers <-
-        Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
-      state.camera.raylib <-
-        Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.;
+      change_current_room state game path room_location start_pos;
       true)

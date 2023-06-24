@@ -73,6 +73,7 @@ let maybe_begin_interaction (state : state) (game : game) name =
     game.interaction.steps <- Interactions.get_steps ~increase_health state game name
   in
   match name_prefix with
+  | "warp"
   | "info" ->
     (* these have no side effects and can be repeated *)
     begin_interaction ()
@@ -1176,6 +1177,21 @@ let update (game : game) (state : state) =
               | None -> ())
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
+          | WARP destination ->
+            let target_room_name, coords =
+              (* this can't be a character that is used in room names *)
+              Utils.separate destination '|'
+            in
+            let target_x', target_y' = Utils.separate coords ',' in
+            let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
+            let target_x, target_y =
+              Tiled.Tile.tile_dest ~tile_w:game.room.json.tile_w ~tile_h:game.room.json.tile_h
+                (tile_x, tile_y)
+            in
+            tmp "WARPing with room name %s, to (%s, %s)" target_room_name target_x' target_y';
+            let target_room_location = Tiled.Room.locate_by_name state.world target_room_name in
+            Room.change_current_room state game target_room_name target_room_location
+              { x = target_x; y = target_y }
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
           | TEXT paragraphs ->

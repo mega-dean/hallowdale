@@ -139,7 +139,7 @@ module Room = struct
   let tile_idx (room : Json_t.room) (x, y) =
     Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
 
-  let locate (world : world) global_x global_y : string * room_id =
+  let locate_by_coords (world : world) global_x global_y : string * room_id =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =
       room_location.global_x < global_x
       && global_x < room_location.global_x +. room_location.w
@@ -149,6 +149,10 @@ module Room = struct
     match List.find_opt in_location world with
     | None -> failwithf "no room found at %0.1f, %0.1f" global_x global_y
     | Some (room_id, room_location) -> (room_location.filename, room_id)
+
+  let locate_by_name (world : world) room_name : room_location =
+    let _area_id, room_id = parse_room_filename (fmt ".world file") room_name in
+    List.assoc room_id world
 
   let unload_tilesets (room : room) : unit =
     let unload_tileset (_path, tileset) = Raylib.unload_texture (Tileset.image tileset) in
