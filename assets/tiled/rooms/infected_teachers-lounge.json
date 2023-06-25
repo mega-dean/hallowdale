@@ -53,24 +53,7 @@
          "draworder":"topdown",
          "id":27,
          "name":"world-map-labels",
-         "objects":[
-                {
-                 "height":75.6403,
-                 "id":12,
-                 "name":"",
-                 "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"door to computer_a opens after reaching Shirley Island",
-                     "wrap":true
-                    },
-                 "type":"",
-                 "visible":true,
-                 "width":301.438,
-                 "x":311.281,
-                 "y":701.17985
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -107,24 +90,13 @@
                 {
                  "height":50,
                  "id":13,
-                 "name":"warp_computer_a|arrive-at-shirley-island|16,10",
+                 "name":"warp_computer_a|arrive-at-shirley-island@16,10",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":133.66,
                  "x":477.503333333333,
                  "y":755.666666666667
-                }, 
-                {
-                 "height":179.55,
-                 "id":14,
-                 "name":"cutscene_arrive-at-shirley-island",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":204.157,
-                 "x":439.254833333333,
-                 "y":440.891666666667
                 }],
          "opacity":1,
          "type":"objectgroup",

@@ -358,6 +358,7 @@ type ghost_action_kind =
   | C_DASH
   | C_DASH_COOLDOWN
   | C_DASH_WALL_COOLDOWN
+    (* FIXME add DREAM_NAIL *)
   | ATTACK of direction
   | FOCUS
 
@@ -735,6 +736,7 @@ type ghost_action_history = {
      the duration/doing_until/blocked_until like the other actions
   *)
   nail : ghost_action;
+  (* FIXME add dream_nail *)
   focus : ghost_action;
 }
 
@@ -931,6 +933,9 @@ type area_id =
   | INFECTED_CLASSROOMS
   | MEOW_MEOW_BEENZ
   | TRAMPOLINEPATH
+  (* TODO-6
+     | VENTWAYS
+  *)
   | FINAL (* only used for final boss fight *)
 
 type area = {
@@ -1020,6 +1025,9 @@ type room_id =
   | TP_E
   | TP_F
   | TP_G
+  (* TODO-6
+     | VENT_HUB
+  *)
   (* FINAL *)
   | BOSS
 

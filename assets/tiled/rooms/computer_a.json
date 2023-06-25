@@ -31,24 +31,7 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[
-                {
-                 "height":75.6403,
-                 "id":4,
-                 "name":"",
-                 "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"door to infected_teachers-lounge",
-                     "wrap":true
-                    },
-                 "type":"",
-                 "visible":true,
-                 "width":301.437666666667,
-                 "x":262.947833333333,
-                 "y":170.846516666667
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -63,7 +46,7 @@
                 {
                  "height":50,
                  "id":6,
-                 "name":"warp_infected_teachers-lounge||22,32",
+                 "name":"warp_infected_teachers-lounge|@22,32",
                  "rotation":0,
                  "type":"",
                  "visible":true,

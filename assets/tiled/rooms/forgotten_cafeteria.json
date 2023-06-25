@@ -53,7 +53,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -239,6 +239,17 @@
                  "width":14.833,
                  "x":1868.40168181818,
                  "y":1027.38636363636
+                }, 
+                {
+                 "height":95.05,
+                 "id":23,
+                 "name":"cutscene_arrive-at-shirley-island",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":204.157,
+                 "x":4.42150000000004,
+                 "y":3.72499999999997
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -357,7 +368,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
@@ -415,7 +426,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
@@ -585,7 +596,7 @@
          "name":"floors3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -641,7 +652,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -697,7 +708,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":90,
          "x":0,
          "y":0
@@ -921,7 +932,7 @@
          "name":"shadow4",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
@@ -977,7 +988,7 @@
          "name":"shadow3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
@@ -1033,7 +1044,7 @@
          "name":"shadow2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
@@ -1089,7 +1100,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
@@ -1147,13 +1158,13 @@
          "parallaxx":0,
          "parallaxy":0,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":90,
          "x":0,
          "y":0
         }],
  "nextlayerid":20,
- "nextobjectid":23,
+ "nextobjectid":24,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

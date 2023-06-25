@@ -66,8 +66,7 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
 
     (* TODO-2 add dialogue for Shirley Island npcs *)
     match interaction_prefix with
-    | "warp" ->
-      [ STEP (WARP interaction_name) ]
+    | "warp" -> [ STEP (WARP interaction_name) ]
     | "purple-pen" ->
       remove_nail := false;
       [
@@ -207,6 +206,15 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
         ]
       | "cutscene_arrive-at-shirley-island" ->
         [
+          STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
+          STEP (SET_FIXED_CAMERA (19, 29));
+          STEP (WAIT 3.);
+          STEP SET_GHOST_CAMERA;
+          STEP
+            (DIALOGUE
+               ( "Neil",
+                 "No furniture beyond this point. Leave your weapons at the door, and any spare \
+                  doors at the entrance" ));
         ]
       | "cutscene_fight-duncan" ->
         [
@@ -332,7 +340,6 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           ]
       | "cutscene_mama-mahogany" ->
         let other_ghost_1, other_ghost_2 = get_locker_boys_ghosts () in
-
         [
           GHOST (other_ghost_1, ENTITY (UNHIDE_AT (8, 7, 10., 5.)));
           GHOST (other_ghost_2, ENTITY (UNHIDE_AT (7, 7, 10., 5.)));

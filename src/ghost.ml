@@ -579,6 +579,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       if not allow_vertical then
         failwithf "bad direction in set_facing_right: %s" (Show.direction direction)
   in
+
   let handle_cast (spell_kind : spell_kind) =
     match spell_kind with
     | VENGEFUL_SPIRIT ->
@@ -871,7 +872,6 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.history.take_damage_and_respawn
     | TAKE_DAMAGE _ ->
       state.camera.shake <- 0.5;
-      (* TODO-6 cancel focus, dash, c-dash, etc.*)
       game.ghost.history.take_damage
     | DIVE_COOLDOWN -> game.ghost.history.dive_cooldown
     | FOCUS ->
@@ -1090,7 +1090,6 @@ let handle_debug_keys (game : game) (state : state) =
 type handled_action = { this_frame : bool }
 
 let update (game : game) (state : state) =
-  (* TODO-6 add other stop_ refs to allow actions to cancel other actions *)
   let stop_wall_sliding = ref false in
 
   let key_pressed_or_buffered key_action =
@@ -1182,7 +1181,7 @@ let update (game : game) (state : state) =
             (* TODO this might be too much stuff to embed in the name, maybe worth
                adding/parsing Custom Properties now
             *)
-            let blocking_interaction_name, coords = Utils.separate rest '|' in
+            let blocking_interaction_name, coords = Utils.separate rest '@' in
             let blocked =
               match blocking_interaction_name with
               | "" -> false
@@ -1795,7 +1794,9 @@ let update (game : game) (state : state) =
       state.frame_inputs.focus.pressed
       && Entity.on_ground game.ghost.entity
       && game.ghost.soul.current >= Config.action.soul_per_cast
-      && not (is_doing game.ghost (ATTACK RIGHT) state.frame.time)
+      &&
+      (* CLEANUP this has to check `not is_doing` for a lot of other actions (dash, c-dash, cast) *)
+      not (is_doing game.ghost (ATTACK RIGHT) state.frame.time)
     in
     let still_focusing () =
       is_doing game.ghost FOCUS state.frame.time && state.frame_inputs.focus.down
@@ -1958,6 +1959,8 @@ let update (game : game) (state : state) =
           check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
         in
         if not cooling_down then (
+          (* FIXME handle_dream_nail () *)
+          (* FIXME also check not dream_nailing *)
           let focusing = handle_focusing () in
           if not focusing.this_frame then (
             let c_dashing = handle_c_dashing () in

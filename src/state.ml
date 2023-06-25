@@ -315,14 +315,7 @@ let update_npcs (game : game) (state : state) =
   let update_ghost (_id, ghost) =
     Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
     if ghost.entity.update_pos then (
-      let debug =
-        if state.debug.enabled then
-          Some "npc update_ghost"
-        else
-          None
-      in
-
-      Entity.update_pos ~debug game.room ghost.entity state.frame.dt;
+      Entity.update_pos game.room ghost.entity state.frame.dt;
       Ghost.maybe_unset_current_floor ghost)
   in
 

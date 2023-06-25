@@ -666,6 +666,7 @@ let tick (state : state) =
           | "Jeff" -> "{{darkblue}}"
           | "Troy" -> "{{darkgreen}}"
           | "Abed" -> "{{darkpurple}}"
+          | "Neil" -> "{{purple}}"
           | "Chang"
           | "Hickey"
           | "Duncan" ->
