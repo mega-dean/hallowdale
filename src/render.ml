@@ -911,7 +911,7 @@ let tick (state : state) =
         [
           ("focus", state.frame_inputs.focus);
           ("c-dash", state.frame_inputs.c_dash);
-          ("d-nail", state.frame_inputs.d_nail);
+          ("d-nail", state.frame_inputs.dream_nail);
           ("cast", state.frame_inputs.cast);
         ];
       List.iteri (draw_input' 1.)
@@ -1000,6 +1000,7 @@ let tick (state : state) =
             debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
           let tint = ghost.current_weapon.tint in
           draw_child_sprite slash.sprite ghost.current_weapon.tint
+        | DREAM_NAIL
         | C_DASH_WHOOSH
         | SHADE_DASH_SPARKLES
         | C_DASH_CHARGE_CRYSTALS

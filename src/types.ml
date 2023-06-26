@@ -16,9 +16,7 @@ module Utils = struct
     !res
 
   let replace_assoc (k : 'a) (v : 'b) (xs : ('a * 'b) list) : ('a * 'b) list =
-    match List.assoc_opt k xs with
-    | None -> (k, v) :: xs
-    | Some _ -> (k, v) :: List.remove_assoc k xs
+    (k, v) :: List.remove_assoc k xs
 
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
@@ -317,6 +315,7 @@ type collision = {
 
 (* non-ghost-specific textures that will be needed for any ghost *)
 type shared_textures = {
+  (* TODO add separate dream_nail texture / collision shape *)
   slash : texture;
   upslash : texture;
   downslash : texture;
@@ -358,7 +357,8 @@ type ghost_action_kind =
   | C_DASH
   | C_DASH_COOLDOWN
   | C_DASH_WALL_COOLDOWN
-    (* FIXME add DREAM_NAIL *)
+  | DREAM_NAIL
+    (* dream_nail doesn't need a direction because it can't upslash/downslash, and it can use sprite.facing_right *)
   | ATTACK of direction
   | FOCUS
 
@@ -610,6 +610,7 @@ type enemy_on_killed = {
 
 type damage_kind =
   | NAIL
+  | DREAM_NAIL
   | VENGEFUL_SPIRIT
   | DESOLATE_DIVE
   | DESOLATE_DIVE_SHOCKWAVE
@@ -736,7 +737,7 @@ type ghost_action_history = {
      the duration/doing_until/blocked_until like the other actions
   *)
   nail : ghost_action;
-  (* FIXME add dream_nail *)
+  dream_nail : ghost_action;
   focus : ghost_action;
 }
 
@@ -779,7 +780,7 @@ type frame_inputs = {
   (* actions *)
   cast : frame_input;
   c_dash : frame_input;
-  d_nail : frame_input;
+  dream_nail : frame_input;
   dash : frame_input;
   focus : frame_input;
   jump : frame_input;
@@ -811,6 +812,7 @@ type relative_position =
 *)
 type ghost_child_kind =
   | NAIL of slash
+  | DREAM_NAIL
   | C_DASH_CHARGE_CRYSTALS
   | C_DASH_WALL_CHARGE_CRYSTALS
   | C_DASH_WHOOSH

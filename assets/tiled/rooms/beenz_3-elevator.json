@@ -103,6 +103,17 @@
                  "width":47.66,
                  "x":192.836666666667,
                  "y":261
+                }, 
+                {
+                 "height":30,
+                 "id":9,
+                 "name":"enemy_PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":12.66,
+                 "x":164.336666666667,
+                 "y":640.333333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -234,7 +245,7 @@
          "y":0
         }],
  "nextlayerid":7,
- "nextobjectid":9,
+ "nextobjectid":10,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

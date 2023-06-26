@@ -100,7 +100,7 @@ let init () : state =
         right = { pressed = false; down = false; released = false; down_since = None };
         cast = { pressed = false; down = false; released = false; down_since = None };
         c_dash = { pressed = false; down = false; released = false; down_since = None };
-        d_nail = { pressed = false; down = false; released = false; down_since = None };
+        dream_nail = { pressed = false; down = false; released = false; down_since = None };
         dash = { pressed = false; down = false; released = false; down_since = None };
         focus = { pressed = false; down = false; released = false; down_since = None };
         jump = { pressed = false; down = false; released = false; down_since = None };
@@ -370,7 +370,7 @@ let update_frame_inputs (state : state) : state =
   update_frame_input CAST state.frame_inputs.cast;
   update_frame_input C_DASH state.frame_inputs.c_dash;
   update_frame_input DASH state.frame_inputs.dash;
-  update_frame_input D_NAIL state.frame_inputs.d_nail;
+  update_frame_input D_NAIL state.frame_inputs.dream_nail;
   update_frame_input FOCUS state.frame_inputs.focus;
   update_frame_input JUMP state.frame_inputs.jump;
   update_frame_input NAIL state.frame_inputs.nail;

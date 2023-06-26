@@ -85,9 +85,8 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
 
     if vertical normal then
       compare_points' (fun v -> v.y)
-    else (
+    else
       compare_points' (fun v -> v.x)
-    )
   in
   (* this returns the normal that is the separating axis *)
   let edge_with_separating_axis (shape : shape) : line option =
@@ -193,6 +192,10 @@ let with_slash (slash : slash) (target_sprite : sprite) : collision option =
   let target_collision_shape = get_collision_shape target_sprite in
   let slash_shape = get_slash_shape slash in
   if between_shapes slash_shape target_collision_shape then
-    Some { rect = slash.sprite.dest; direction = slash.direction }
+    Some
+      {
+        rect = (* TODO should this be target_sprite.dest instead? *) slash.sprite.dest;
+        direction = slash.direction;
+      }
   else
     None

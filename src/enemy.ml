@@ -2,7 +2,8 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let is_dead (e : enemy) : bool = e.health.current <= 0
+let is_dead (enemy : enemy) : bool = enemy.health.current <= 0
+let is_alive (enemy : enemy) : bool = not (is_dead enemy)
 
 let parse_name context name : enemy_id =
   match name with
@@ -27,16 +28,21 @@ let action_started_at (e : enemy) (action_name : string) : time =
   | None -> Zero.time ()
   | Some time -> time
 
-let last_damage (e : enemy) : time =
+let last_damage (enemy : enemy) : time =
   let damage = ref 0. in
   let check_history ((action, time) : enemy_action * time) =
     match action with
-    | TOOK_DAMAGE _ ->
-      if time.at > !damage then
-        damage := time.at
+    | TOOK_DAMAGE damage_kind -> (
+      match damage_kind with
+      | DREAM_NAIL ->
+        (* TODO would be nice to have the enemies flash when they are hit with dream nail *)
+        ()
+      | _ ->
+        if time.at > !damage then
+          damage := time.at)
     | _ -> ()
   in
-  List.iter check_history e.history;
+  List.iter check_history enemy.history;
   { at = !damage }
 
 let load_pose (texture_config : texture_config) : string * texture =
@@ -245,7 +251,7 @@ let maybe_take_damage
     (state : state)
     (enemy : enemy)
     (ghost_action_started : time)
-    (d : damage_kind)
+    (damage_kind : damage_kind)
     (damage : int)
     (dest : rect) : bool =
   let kill_enemy () =
@@ -269,10 +275,11 @@ let maybe_take_damage
     enemy.status.check_damage_collisions <- false
   in
 
-  if ghost_action_started > took_damage_at enemy d then (
+  if ghost_action_started > took_damage_at enemy damage_kind then (
     enemy.history <-
-      (TOOK_DAMAGE d, { at = state.frame.time })
-      :: List.remove_assoc (TOOK_DAMAGE d : enemy_action) enemy.history;
+      Utils.replace_assoc
+        (TOOK_DAMAGE damage_kind : enemy_action)
+        { at = state.frame.time } enemy.history;
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size damage_texture in

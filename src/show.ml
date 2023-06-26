@@ -78,6 +78,7 @@ let ghost_action_kind id =
   | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
+  | DREAM_NAIL -> "DREAM_NAIL"
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
   | C_DASH_COOLDOWN -> "C_DASH_COOLDOWN"
   | C_DASH_WALL_COOLDOWN -> "C_DASH_WALL_COOLDOWN"
@@ -196,6 +197,7 @@ let room_id id =
 let damage_kind (d : damage_kind) : string =
   match d with
   | NAIL -> "NAIL"
+  | DREAM_NAIL -> "DREAM_NAIL"
   | VENGEFUL_SPIRIT -> "VENGEFUL_SPIRIT"
   | DESOLATE_DIVE -> "DESOLATE_DIVE"
   | DESOLATE_DIVE_SHOCKWAVE -> "DESOLATE_DIVE_SHOCKWAVE"
@@ -204,6 +206,7 @@ let damage_kind (d : damage_kind) : string =
 let ghost_child_kind (d : ghost_child_kind) : string =
   match d with
   | DIVE -> "DIVE"
+  | DREAM_NAIL -> "DREAM_NAIL"
   | C_DASH_CHARGE_CRYSTALS -> "C_DASH_CHARGE_CRYSTALS"
   | C_DASH_WALL_CHARGE_CRYSTALS -> "C_DASH_WALL_CHARGE_CRYSTALS"
   | C_DASH_WHOOSH -> "C_DASH_WHOOSH"

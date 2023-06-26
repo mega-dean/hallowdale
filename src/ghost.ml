@@ -282,6 +282,14 @@ let get_current_slash (ghost : ghost) : slash option =
   in
   List.find_map get_slash ghost.children
 
+let get_dream_nail (ghost : ghost) : rect option =
+  let get_rect ((child_kind, child) : ghost_child_kind * ghost_child) =
+    match child_kind with
+    | DREAM_NAIL -> Some child.sprite.dest
+    | _ -> None
+  in
+  List.find_map get_rect ghost.children
+
 let get_dive_sprite (ghost : ghost) : sprite option =
   let get_sprite ((child_kind, child) : ghost_child_kind * ghost_child) =
     match child_kind with
@@ -300,6 +308,7 @@ let get_focus_sparkles ghost : sprite option =
   in
   List.find_map get_sprite ghost.children
 
+(* TODO move into spawn_child - can't do this until make_ghost_child goes away *)
 let add_child (ghost : ghost) (kind : ghost_child_kind) (child : ghost_child) =
   ghost.children <- Utils.replace_assoc kind child ghost.children
 
@@ -309,16 +318,25 @@ let remove_child (ghost : ghost) (kind : ghost_child_kind) =
 (* dive sprites are using this fn with the placeholder image, but it can eventually be
    combined with make_ghost_child'
 *)
-let make_ghost_child (ghost : ghost) ?(in_front = false) kind relative_pos texture w h =
+let make_ghost_child ?(in_front = false) (ghost : ghost) kind relative_pos texture w h =
   let name = Show.ghost_child_kind kind in
   let sprite =
     Sprite.create name texture { pos = Entity.get_child_pos ghost.entity relative_pos w h; w; h }
   in
   { relative_pos; sprite; in_front }
 
-let make_ghost_child' (ghost : ghost) ?(in_front = false) kind relative_pos ?(scale = 1.) texture =
-  let w, h = get_scaled_texture_size ~scale texture in
-  make_ghost_child ghost ~in_front kind relative_pos texture w h
+let spawn_child
+    ?(in_front = false)
+    ?(scale = 1.)
+    (ghost : ghost)
+    (child_kind : ghost_child_kind)
+    alignment
+    texture =
+  let child =
+    let w, h = get_scaled_texture_size ~scale texture in
+    make_ghost_child ghost ~in_front child_kind alignment texture w h
+  in
+  add_child ghost child_kind child
 
 let make_c_dash_child ?(full = false) (ghost : ghost) : unit =
   let texture =
@@ -340,8 +358,7 @@ let make_c_dash_child ?(full = false) (ghost : ghost) : unit =
     | Some _ -> C_DASH_WALL_CHARGE_CRYSTALS
   in
   Sprite.reset_texture texture;
-  let child = make_ghost_child' ghost child_kind alignment ~scale:Config.scale.ghost texture in
-  add_child ghost child_kind child
+  spawn_child ghost child_kind alignment ~scale:Config.scale.ghost texture
 
 let maybe_despawn_child (ghost : ghost) (child_kind, child) = ()
 
@@ -367,6 +384,7 @@ let animate_and_despawn_children frame_time ghost : unit =
 let get_damage (ghost : ghost) (damage_kind : damage_kind) =
   (* TODO check ghost.abilities.descending_dark/shade_soul *)
   match damage_kind with
+  | DREAM_NAIL -> 0
   | NAIL ->
     ghost.weapons
     |> List.map snd
@@ -377,9 +395,43 @@ let get_damage (ghost : ghost) (damage_kind : damage_kind) =
   | DESOLATE_DIVE_SHOCKWAVE -> 20
   | HOWLING_WRAITHS -> (* TODO this should be 13 with multihits *) 26
 
+let check_dream_nail_collisions (state : state) (game : game) =
+  match get_dream_nail game.ghost with
+  | None -> ()
+  | Some dream_nail_dest ->
+    let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
+      if Enemy.is_alive enemy then ((* TODO use collision shape for dream nail *)
+        match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
+        | None -> tmp "no collision with enemy %s" (Show.enemy_id enemy.id)
+        | Some c ->
+          if game.ghost.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
+            tmp "got a collision";
+            (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
+            game.ghost.soul.current <-
+              Utils.bound_int 0
+                (game.ghost.soul.current + Config.action.soul_per_cast)
+                game.ghost.soul.max;
+            let recoil_vx =
+              (* TODO move to config *)
+              1800.
+            in
+            let recoil_speed =
+              if game.ghost.entity.sprite.facing_right then recoil_vx else -1. *. recoil_vx
+            in
+            enemy.entity.x_recoil <-
+              Some { speed = recoil_speed; time_left = { seconds = 0.1 }; reset_v = true };
+            enemy.history <-
+              Utils.replace_assoc
+                (TOOK_DAMAGE DREAM_NAIL : enemy_action)
+                { at = state.frame.time } enemy.history)
+          else
+            tmp "still colliding")
+    in
+    List.iter resolve_enemy game.room.enemies
+
 let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.ghost with
-  | None -> ()
+  | None -> check_dream_nail_collisions state game
   | Some slash ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if enemy.status.check_damage_collisions then (
@@ -600,6 +652,9 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       (* handle_attacking is called after handle_walking, so this allows the ghost to walk backwards while attacking *)
       set_facing_right direction;
       ghost.textures.nail
+    | DREAM_NAIL ->
+      update_vx 0.;
+      ghost.textures.nail
     | C_DASH_WALL_COOLDOWN ->
       update_vx 0.;
       ghost.entity.v.y <- 0.;
@@ -777,6 +832,7 @@ let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind
     | C_DASH
     | C_DASH_COOLDOWN
     | C_DASH_WALL_COOLDOWN
+    | DREAM_NAIL
     | ATTACK _
     | FOCUS ->
       failwithf "cannot cancel action: %s" (Show.ghost_action_kind action_kind)
@@ -807,10 +863,11 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           game.ghost.children;
       cooldown_scale := game.ghost.current_weapon.cooldown_scale;
       game.ghost.history.nail
+    | DREAM_NAIL -> game.ghost.history.dream_nail
     | C_DASH_WALL_COOLDOWN ->
       game.ghost.entity.sprite.facing_right <- not game.ghost.entity.sprite.facing_right;
       game.ghost.current.is_c_dashing <- false;
-      game.ghost.children <- List.remove_assoc C_DASH_WHOOSH game.ghost.children;
+      remove_child game.ghost C_DASH_WHOOSH;
       game.ghost.history.c_dash_wall_cooldown
     | C_DASH_COOLDOWN ->
       game.ghost.current.is_c_dashing <- false;
@@ -827,11 +884,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         else
           ALIGNED (LEFT, CENTER)
       in
-      let child =
-        make_ghost_child' game.ghost C_DASH_WHOOSH alignment ~scale:6.
-          game.ghost.shared_textures.c_dash_whoosh
-      in
-      add_child game.ghost C_DASH_WHOOSH child;
+      spawn_child game.ghost C_DASH_WHOOSH ~scale:6. alignment
+        game.ghost.shared_textures.c_dash_whoosh;
       game.ghost.history.c_dash
     | C_DASH_CHARGE ->
       game.ghost.current.is_charging_c_dash <- true;
@@ -859,12 +913,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         add_child game.ghost DIVE child;
         game.ghost.history.cast_dive
       | HOWLING_WRAITHS ->
-        let child =
-          make_ghost_child' game.ghost WRAITHS
-            (ALIGNED (CENTER, BOTTOM))
-            ~scale:1.7 game.ghost.shared_textures.howling_wraiths
-        in
-        add_child game.ghost WRAITHS child;
+        spawn_child game.ghost WRAITHS
+          (ALIGNED (CENTER, BOTTOM))
+          ~scale:1.7 game.ghost.shared_textures.howling_wraiths;
         check_monkey_block_collisions state game;
         game.ghost.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
@@ -878,12 +929,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.soul.at_focus_start <- game.ghost.soul.current;
       game.ghost.soul.health_at_focus_start <- game.ghost.health.current;
       game.ghost.soul.last_decremented <- { at = state.frame.time };
-      let child =
-        make_ghost_child' ~in_front:true ~scale:3. game.ghost FOCUS
-          (ALIGNED (CENTER, CENTER))
-          game.ghost.shared_textures.focus_sparkles
-      in
-      add_child game.ghost FOCUS child;
+      spawn_child game.ghost FOCUS ~in_front:true ~scale:3.
+        (ALIGNED (CENTER, CENTER))
+        game.ghost.shared_textures.focus_sparkles;
       game.ghost.history.focus
     | JUMP -> game.ghost.history.jump
     | FLAP -> game.ghost.history.flap
@@ -922,9 +970,22 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
     (* TODO move to config
        - need to multiply duration here instead of changing config value because `is_doing FLAP`
          needs to be true for long enough to get here
+       - maybe just subtract 0.1 like DREAM_NAIL does (not sure if flap duration is used elsewhere though)
     *)
     if state.frame.time -. started > duration *. 0.666666 then
       game.ghost.entity.v.y <- Config.ghost.jump_vy *. 0.8
+  | DREAM_NAIL ->
+    if
+      state.frame.time -. game.ghost.history.dream_nail.started.at
+      > game.ghost.history.dream_nail.config.duration.seconds -. 0.1
+    then (
+      let alignment =
+        if game.ghost.entity.sprite.facing_right then
+          ALIGNED (LEFT, CENTER)
+        else
+          ALIGNED (RIGHT, CENTER)
+      in
+      spawn_child game.ghost DREAM_NAIL alignment game.ghost.shared_textures.slash)
   | C_DASH
   | C_DASH_CHARGE
   | SHADE_DASH
@@ -962,10 +1023,14 @@ let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : flo
   | DIVE_COOLDOWN -> check_action ghost.history.dive_cooldown
   | TAKE_DAMAGE_AND_RESPAWN -> check_action ghost.history.take_damage_and_respawn
   | FLAP -> check_action ghost.history.flap
+  | DREAM_NAIL -> check_action ghost.history.dream_nail
   | WALL_KICK
   | JUMP
   | TAKE_DAMAGE _ ->
     failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
+
+let not_doing_any (ghost : ghost) (frame_time : float) (actions : ghost_action_kind list) : bool =
+  not (List.exists (fun action -> is_doing ghost action frame_time) actions)
 
 let is_casting (state : state) (game : game) =
   is_doing game.ghost (CAST VENGEFUL_SPIRIT) state.frame.time
@@ -1136,7 +1201,7 @@ let update (game : game) (state : state) =
       (* holding down d-nail will skip through interactions quickly, but still perform each step
          once so side-effects like gaining abilities still happen
       *)
-      state.frame_inputs.d_nail.down
+      state.frame_inputs.dream_nail.down
     in
     match game.interaction.text with
     | Some _text ->
@@ -1648,13 +1713,9 @@ let update (game : game) (state : state) =
         in
 
         if can_shade_dash () then (
-          let texture = game.ghost.shared_textures.shade_cloak_sparkles in
-          let child =
-            make_ghost_child' game.ghost ~in_front:true ~scale:6. SHADE_DASH_SPARKLES
-              (ALIGNED (CENTER, CENTER))
-              texture
-          in
-          add_child game.ghost SHADE_DASH_SPARKLES child;
+          spawn_child game.ghost SHADE_DASH_SPARKLES ~in_front:true ~scale:6.
+            (ALIGNED (CENTER, CENTER))
+            game.ghost.shared_textures.shade_cloak_sparkles;
           start_action state game SHADE_DASH);
         start_action state game DASH;
         stop_wall_sliding := true;
@@ -1786,17 +1847,36 @@ let update (game : game) (state : state) =
         | Some _ -> ()))
   in
 
-  (* TODO something isn't working here because the ghost can keep focusing for longer than the duration
-     - it does stop deducting soul though
-  *)
+  let handle_dream_nail () : handled_action =
+    let starting_dream_nail () =
+      state.frame_inputs.dream_nail.pressed
+      && Entity.on_ground game.ghost.entity
+      && not_doing_any game.ghost state.frame.time [ ATTACK RIGHT; DASH ]
+    in
+    (* arbitrary directions *)
+    let still_dream_nailing () =
+      is_doing game.ghost DREAM_NAIL state.frame.time && state.frame_inputs.dream_nail.down
+    in
+    let this_frame =
+      if starting_dream_nail () then (
+        start_action state game DREAM_NAIL;
+        true)
+      else if still_dream_nailing () then (
+        continue_action state game DREAM_NAIL;
+        true)
+      else
+        false
+    in
+    { this_frame }
+  in
+
   let handle_focusing () : handled_action =
     let starting_focus () =
       state.frame_inputs.focus.pressed
       && Entity.on_ground game.ghost.entity
       && game.ghost.soul.current >= Config.action.soul_per_cast
-      &&
-      (* CLEANUP this has to check `not is_doing` for a lot of other actions (dash, c-dash, cast) *)
-      not (is_doing game.ghost (ATTACK RIGHT) state.frame.time)
+      && not_doing_any game.ghost state.frame.time [ ATTACK RIGHT; DASH ]
+      && (not (is_casting state game))
     in
     let still_focusing () =
       is_doing game.ghost FOCUS state.frame.time && state.frame_inputs.focus.down
@@ -1959,22 +2039,22 @@ let update (game : game) (state : state) =
           check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
         in
         if not cooling_down then (
-          (* FIXME handle_dream_nail () *)
-          (* FIXME also check not dream_nailing *)
-          let focusing = handle_focusing () in
-          if not focusing.this_frame then (
-            let c_dashing = handle_c_dashing () in
-            if not c_dashing.this_frame then (
-              let dashing = handle_dashing () in
-              if not dashing.this_frame then (
-                let casting = handle_casting () in
-                if not casting.this_frame then (
-                  let wall_kicking = handle_wall_kicking () in
-                  if not wall_kicking.this_frame then (
-                    handle_walking ();
-                    handle_jumping new_vy);
-                  handle_attacking ();
-                  resolve_slash_collisions state game))))))));
+          let dream_nailing = handle_dream_nail () in
+          if not dream_nailing.this_frame then (
+            let focusing = handle_focusing () in
+            if not focusing.this_frame then (
+              let c_dashing = handle_c_dashing () in
+              if not c_dashing.this_frame then (
+                let dashing = handle_dashing () in
+                if not dashing.this_frame then (
+                  let casting = handle_casting () in
+                  if not casting.this_frame then (
+                    let wall_kicking = handle_wall_kicking () in
+                    if not wall_kicking.this_frame then (
+                      handle_walking ();
+                      handle_jumping new_vy);
+                    handle_attacking ();
+                    resolve_slash_collisions state game)))))))));
 
   animate_and_despawn_children state.frame.time game.ghost;
   handle_collisions ();
@@ -2087,6 +2167,7 @@ let init
         c_dash = make_action "c-dash";
         c_dash_cooldown = make_action "c-dash-cooldown";
         c_dash_wall_cooldown = make_action "c-dash-cooldown";
+        dream_nail = make_action "dream-nail";
         dash = make_action "dash";
         dive_cooldown = make_action "dive-cooldown";
         flap = make_action "flap";
