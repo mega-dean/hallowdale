@@ -154,15 +154,15 @@
                  "y":299.333333333333
                 }, 
                 {
-                 "height":28.5,
+                 "height":27.2272727272727,
                  "id":14,
-                 "name":"lever_up-47-1",
+                 "name":"lever_up-47,1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":14.833,
-                 "x":1189.91683333333,
-                 "y":139.416666666667
+                 "width":12.1057272727273,
+                 "x":1200.6441060606,
+                 "y":140.507575757576
                 }, 
                 {
                  "height":202,
@@ -177,7 +177,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 

@@ -78,6 +78,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "trampoline_e" -> (TRAMPOLINEPATH, TP_E)
   | "trampoline_f" -> (TRAMPOLINEPATH, TP_F)
   | "trampoline_g" -> (TRAMPOLINEPATH, TP_G)
+  | "ventways_hub" -> (VENTWAYS, VENT_HUB)
   | _ -> failwithf "bad file name '%s' (from %s)" file_name source
 
 module Tileset = struct

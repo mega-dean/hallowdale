@@ -21,6 +21,7 @@ module Utils = struct
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
   *)
+  (* CLEANUP rename to `split_at_first char str` *)
   let separate str c : string * string =
     let separator_idx =
       match String.index_from_opt str 0 c with
@@ -313,6 +314,7 @@ type collision = {
   direction : direction;
 }
 
+(* CLEANUP remove this type and use a (ghost_action * texture) list *)
 (* non-ghost-specific textures that will be needed for any ghost *)
 type shared_textures = {
   (* TODO add separate dream_nail texture / collision shape *)
@@ -845,6 +847,7 @@ type ghosts_file = {
 type ghost = {
   entity : entity;
   mutable current : current_status;
+  (* FIXME use separate textures for ghost head vs body *)
   mutable textures : ghost_textures;
   (* TODO probably don't need .shared_textures on every ghost *)
   shared_textures : shared_textures;
@@ -935,8 +938,9 @@ type area_id =
   | INFECTED_CLASSROOMS
   | MEOW_MEOW_BEENZ
   | TRAMPOLINEPATH
-  (* TODO-6
-     | VENTWAYS
+  | VENTWAYS
+  (* FIXME
+     | TEACHERS_ARCHIVES
   *)
   | FINAL (* only used for final boss fight *)
 
@@ -1027,8 +1031,11 @@ type room_id =
   | TP_E
   | TP_F
   | TP_G
-  (* TODO-6
-     | VENT_HUB
+  (* VENTWAYS *)
+  | VENT_HUB
+  (* FIXME
+     | ARCH_TOP
+     | ARCH_LIBRARY
   *)
   (* FINAL *)
   | BOSS

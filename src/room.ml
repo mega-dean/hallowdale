@@ -255,6 +255,9 @@ let init (params : room_params) : room =
             let configs =
               match layer_name with
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
+              (* FIXME
+                 | "water" -> [ "collides" ]
+              *)
               | "floors" -> [ "collides" ]
               | "spikes" -> [ "damages"; "pogoable" ]
               | "hazard" -> [ "damages" ]

@@ -215,7 +215,7 @@
         ["jump", {
             "duration": 0.0,
             "cooldown": 0.166666,
-            "input_buffer": 0.2
+            "input_buffer": 0.3 // this is longer than HK, but makes the code for flapping simpler
         }],
         ["wall-kick", {
             "duration": 0.166666,

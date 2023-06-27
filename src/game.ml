@@ -20,11 +20,11 @@ let load_all_save_slots () : save_slots =
           abilities =
             {
               (* movement *)
-              mothwing_cloak = true;
-              mantis_claw = true;
-              crystal_heart = true;
-              monarch_wings = true;
-              shade_cloak = true;
+              mothwing_cloak = false;
+              mantis_claw = false;
+              crystal_heart = false;
+              monarch_wings = false;
+              shade_cloak = false;
               (* spells *)
               vengeful_spirit = false;
               desolate_dive = false;

@@ -118,6 +118,7 @@ let area_id id =
   | INFECTED_CLASSROOMS -> "infected"
   | MEOW_MEOW_BEENZ -> "beenz"
   | TRAMPOLINEPATH -> "trampoline"
+  | VENTWAYS -> "ventways"
 
 let room_id id =
   match id with
@@ -193,6 +194,7 @@ let room_id id =
   | TP_E -> "e"
   | TP_F -> "f"
   | TP_G -> "g"
+  | VENT_HUB -> "hub"
 
 let damage_kind (d : damage_kind) : string =
   match d with

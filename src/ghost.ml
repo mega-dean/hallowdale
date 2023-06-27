@@ -965,14 +965,11 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       game.ghost.soul.current <- game.ghost.soul.current - 1;
       game.ghost.soul.last_decremented <- { at = state.frame.time })
   | FLAP ->
-    let started = game.ghost.history.flap.started.at in
-    let duration = game.ghost.history.flap.config.duration.seconds in
-    (* TODO move to config
-       - need to multiply duration here instead of changing config value because `is_doing FLAP`
-         needs to be true for long enough to get here
-       - maybe just subtract 0.1 like DREAM_NAIL does (not sure if flap duration is used elsewhere though)
-    *)
-    if state.frame.time -. started > duration *. 0.666666 then
+    let flap_duration =
+      (* this uses jump input buffer to handle flapping vs. buffering a jump off the ground *)
+      game.ghost.history.jump.config.input_buffer.seconds -. 0.05
+    in
+    if state.frame.time -. game.ghost.history.flap.started.at > flap_duration then
       game.ghost.entity.v.y <- Config.ghost.jump_vy *. 0.8
   | DREAM_NAIL ->
     if
@@ -1811,7 +1808,7 @@ let update (game : game) (state : state) =
         set_pose' (PERFORMING JUMP)
       else if game.ghost.entity.v.y > 0. then (
         stop_wall_sliding := true;
-        (* TODO this is a very naive hardfall check, probably need to keep track of "airborne_duration" to check dy
+        (* FIXME this is a very naive hardfall check, probably need to keep track of "airborne_duration" to check dy
            - airborne_duration would be reset when can_dash/flap are reset (pogo, wall_slide)
         *)
         if game.ghost.entity.v.y >= Config.ghost.max_vy then
@@ -1876,7 +1873,7 @@ let update (game : game) (state : state) =
       && Entity.on_ground game.ghost.entity
       && game.ghost.soul.current >= Config.action.soul_per_cast
       && not_doing_any game.ghost state.frame.time [ ATTACK RIGHT; DASH ]
-      && (not (is_casting state game))
+      && not (is_casting state game)
     in
     let still_focusing () =
       is_doing game.ghost FOCUS state.frame.time && state.frame_inputs.focus.down
