@@ -81,6 +81,7 @@ type ghost_abilities = Json_t.ghost_abilities = {
   mutable monarch_wings: bool;
   mutable mothwing_cloak: bool;
   mutable shade_cloak: bool;
+  mutable ismas_tear: bool;
   mutable vengeful_spirit: bool;
   mutable desolate_dive: bool;
   mutable howling_wraiths: bool

@@ -198,7 +198,7 @@ let draw_solid_tiles room camera_x camera_y frame_idx : unit =
   List.iter
     (draw_tiled_layer room camera_x camera_y frame_idx)
     (List.filter
-       (fun layer -> layer.config.collides_with_ghost || layer.config.damages_ghost)
+       (fun layer -> layer.config.collides_with_ghost || layer.config.hazard)
        room.layers)
 
 let draw_bg_tiles room camera_x camera_y frame_idx : unit =

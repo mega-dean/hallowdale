@@ -24,7 +24,7 @@ module Utils = struct
   let split_at_first c str : string * string =
     let separator_idx =
       match String.index_from_opt str 0 c with
-      | None -> failwith (Printf.sprintf "Utils.separate ---- no separator %c in string %s" c str)
+      | None -> failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
       | Some idx -> idx
     in
     (Str.string_before str separator_idx, Str.string_after str (separator_idx + 1))
@@ -909,7 +909,7 @@ type layer_render_config = {
 type layer_config = {
   render : layer_render_config;
   collides_with_ghost : bool;
-  damages_ghost : bool;
+  hazard : bool;
   pogoable : bool;
   destroyable : bool;
   permanently_removable : bool;

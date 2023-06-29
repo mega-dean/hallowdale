@@ -1083,6 +1083,7 @@ let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   | "mantis_claw" -> ghost.abilities.mantis_claw <- new_val ghost.abilities.mantis_claw
   | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
   | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
+  | "ismas_tear" -> ghost.abilities.ismas_tear <- new_val ghost.abilities.ismas_tear
   | _ -> failwithf "change_ability bad ability name: %s" ability_name
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
@@ -1148,8 +1149,8 @@ let handle_debug_keys (game : game) (state : state) =
       toggle_ability game.ghost "mantis_claw"
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
       print "ghost water is_some: %b" (Option.is_some game.ghost.current.water)
-    else if key_pressed DEBUG_4 then
-      toggle_ability game.ghost "desolate_dive")
+    else if key_pressed DEBUG_4 then (* toggle_ability game.ghost "desolate_dive" *)
+      toggle_ability game.ghost "ismas_tear")
   else if key_pressed DEBUG_1 then
     game.debug_paused <- not game.debug_paused;
   state
@@ -1907,6 +1908,23 @@ let update (game : game) (state : state) =
     { this_frame }
   in
 
+  let start_swimming (ghost : ghost) (rect : rect) =
+    if not (in_water game.ghost) then
+      game.ghost.entity.dest.pos.y <-
+        game.ghost.entity.dest.pos.y +. (game.ghost.entity.dest.h /. 2.);
+    (* seems weird to check jump inputs here instead of checking current.water in handle_jumping,
+       but set_pose SWIMMING resets ghost.v.y <- 0
+       - could use another ref (like stop_wall_sliding), but that doesn't really seem better
+    *)
+    if state.frame_inputs.jump.pressed then (
+      game.ghost.current.water <- None;
+      game.ghost.entity.dest.pos.y <-
+        game.ghost.entity.dest.pos.y -. (game.ghost.entity.dest.h /. 2.);
+      start_action state game JUMP)
+    else
+      set_pose' (SWIMMING rect)
+  in
+
   let handle_collisions () =
     let check_enemy_collisions () =
       if is_vulnerable state game then (
@@ -1918,7 +1936,14 @@ let update (game : game) (state : state) =
       let collisions = Entity.get_damage_collisions game.room game.ghost.entity in
       state.debug.rects <-
         List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
-      if List.length collisions = 0 then (
+      let collisions' =
+        if game.ghost.abilities.ismas_tear then
+          collisions
+        else (
+          let acid_collisions = Entity.get_acid_collisions game.room game.ghost.entity in
+          collisions @ acid_collisions)
+      in
+      if List.length collisions' = 0 then (
         if game.ghost.current.is_taking_hazard_damage && Option.is_some game.ghost.entity.y_recoil
         then (
           (* HACK this is just to get the ghost to continue colliding with the spikes, even if
@@ -1983,26 +2008,17 @@ let update (game : game) (state : state) =
             List.iter check_collision collisions))
     in
     let floor_collisions = Entity.get_floor_collisions game.room game.ghost.entity in
-    let water_collisions = Entity.get_water_collisions game.room game.ghost.entity in
-
-    (match List.nth_opt water_collisions 0 with
-    | None -> game.ghost.current.water <- None
-    | Some (_coll, rect) ->
-      if not (in_water game.ghost) then
-        game.ghost.entity.dest.pos.y <-
-          game.ghost.entity.dest.pos.y +. (game.ghost.entity.dest.h /. 2.);
-      (* seems weird to check jump inputs here instead of checking current.water in handle_jumping,
-         but set_pose SWIMMING resets ghost.v.y <- 0
-         - could use another ref (like stop_wall_sliding), but that doesn't really seem better
-      *)
-      if state.frame_inputs.jump.pressed then (
-        game.ghost.current.water <- None;
-        game.ghost.entity.dest.pos.y <-
-          game.ghost.entity.dest.pos.y -. (game.ghost.entity.dest.h /. 2.);
-        start_action state game JUMP)
+    let liquid_collisions =
+      let water_collisions = Entity.get_water_collisions game.room game.ghost.entity in
+      if game.ghost.abilities.ismas_tear then (
+        let acid_collisions = Entity.get_acid_collisions game.room game.ghost.entity in
+        water_collisions @ acid_collisions)
       else
-        set_pose' (SWIMMING rect));
-
+        water_collisions
+    in
+    (match List.nth_opt liquid_collisions 0 with
+    | None -> game.ghost.current.water <- None
+    | Some (_coll, rect) -> start_swimming game.ghost rect);
     check_enemy_collisions ();
     state.debug.rects <-
       List.map (fun c -> (Raylib.Color.green, snd c)) floor_collisions @ state.debug.rects;

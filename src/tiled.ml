@@ -349,7 +349,7 @@ module Room = struct
           (layer.config.collides_with_ghost
           || layer.config.water
           || layer.config.destroyable
-          || layer.config.damages_ghost)
+          || layer.config.hazard)
           && not layer.hidden
         then
           get_rectangle_tile_groups layer.json layer.name

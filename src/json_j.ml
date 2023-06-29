@@ -81,6 +81,7 @@ type ghost_abilities = Json_t.ghost_abilities = {
   mutable monarch_wings: bool;
   mutable mothwing_cloak: bool;
   mutable shade_cloak: bool;
+  mutable ismas_tear: bool;
   mutable vengeful_spirit: bool;
   mutable desolate_dive: bool;
   mutable howling_wraiths: bool
@@ -3358,6 +3359,15 @@ let write_ghost_abilities : _ -> ghost_abilities -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
+      Buffer.add_string ob "\"ismas_tear\":";
+    (
+      Yojson.Safe.write_bool
+    )
+      ob x.ismas_tear;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
       Buffer.add_string ob "\"vengeful_spirit\":";
     (
       Yojson.Safe.write_bool
@@ -3396,6 +3406,7 @@ let read_ghost_abilities = (
     let field_monarch_wings = ref (None) in
     let field_mothwing_cloak = ref (None) in
     let field_shade_cloak = ref (None) in
+    let field_ismas_tear = ref (None) in
     let field_vengeful_spirit = ref (None) in
     let field_desolate_dive = ref (None) in
     let field_howling_wraiths = ref (None) in
@@ -3408,6 +3419,14 @@ let read_ghost_abilities = (
           if pos < 0 || len < 0 || pos + len > String.length s then
             invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           match len with
+            | 10 -> (
+                if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
+                  5
+                )
+                else (
+                  -1
+                )
+              )
             | 11 -> (
                 match String.unsafe_get s pos with
                   | 'm' -> (
@@ -3442,7 +3461,7 @@ let read_ghost_abilities = (
                     )
                   | 'd' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'i' && String.unsafe_get s (pos+11) = 'v' && String.unsafe_get s (pos+12) = 'e' then (
-                        6
+                        7
                       )
                       else (
                         -1
@@ -3472,7 +3491,7 @@ let read_ghost_abilities = (
                 match String.unsafe_get s pos with
                   | 'h' -> (
                       if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'w' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'g' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'r' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 't' && String.unsafe_get s (pos+13) = 'h' && String.unsafe_get s (pos+14) = 's' then (
-                        7
+                        8
                       )
                       else (
                         -1
@@ -3480,7 +3499,7 @@ let read_ghost_abilities = (
                     )
                   | 'v' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'u' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'i' && String.unsafe_get s (pos+14) = 't' then (
-                        5
+                        6
                       )
                       else (
                         -1
@@ -3539,7 +3558,7 @@ let read_ghost_abilities = (
               )
             );
           | 5 ->
-            field_vengeful_spirit := (
+            field_ismas_tear := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3547,7 +3566,7 @@ let read_ghost_abilities = (
               )
             );
           | 6 ->
-            field_desolate_dive := (
+            field_vengeful_spirit := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3555,6 +3574,14 @@ let read_ghost_abilities = (
               )
             );
           | 7 ->
+            field_desolate_dive := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_bool
+                ) p lb
+              )
+            );
+          | 8 ->
             field_howling_wraiths := (
               Some (
                 (
@@ -3575,6 +3602,14 @@ let read_ghost_abilities = (
             if pos < 0 || len < 0 || pos + len > String.length s then
               invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             match len with
+              | 10 -> (
+                  if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
+                    5
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 11 -> (
                   match String.unsafe_get s pos with
                     | 'm' -> (
@@ -3609,7 +3644,7 @@ let read_ghost_abilities = (
                       )
                     | 'd' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'i' && String.unsafe_get s (pos+11) = 'v' && String.unsafe_get s (pos+12) = 'e' then (
-                          6
+                          7
                         )
                         else (
                           -1
@@ -3639,7 +3674,7 @@ let read_ghost_abilities = (
                   match String.unsafe_get s pos with
                     | 'h' -> (
                         if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'w' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'g' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'r' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 't' && String.unsafe_get s (pos+13) = 'h' && String.unsafe_get s (pos+14) = 's' then (
-                          7
+                          8
                         )
                         else (
                           -1
@@ -3647,7 +3682,7 @@ let read_ghost_abilities = (
                       )
                     | 'v' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'u' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'i' && String.unsafe_get s (pos+14) = 't' then (
-                          5
+                          6
                         )
                         else (
                           -1
@@ -3706,7 +3741,7 @@ let read_ghost_abilities = (
                 )
               );
             | 5 ->
-              field_vengeful_spirit := (
+              field_ismas_tear := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3714,7 +3749,7 @@ let read_ghost_abilities = (
                 )
               );
             | 6 ->
-              field_desolate_dive := (
+              field_vengeful_spirit := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3722,6 +3757,14 @@ let read_ghost_abilities = (
                 )
               );
             | 7 ->
+              field_desolate_dive := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_bool
+                  ) p lb
+                )
+              );
+            | 8 ->
               field_howling_wraiths := (
                 Some (
                   (
@@ -3743,6 +3786,7 @@ let read_ghost_abilities = (
             monarch_wings = (match !field_monarch_wings with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "monarch_wings");
             mothwing_cloak = (match !field_mothwing_cloak with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "mothwing_cloak");
             shade_cloak = (match !field_shade_cloak with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "shade_cloak");
+            ismas_tear = (match !field_ismas_tear with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ismas_tear");
             vengeful_spirit = (match !field_vengeful_spirit with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "vengeful_spirit");
             desolate_dive = (match !field_desolate_dive with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "desolate_dive");
             howling_wraiths = (match !field_howling_wraiths with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "howling_wraiths");

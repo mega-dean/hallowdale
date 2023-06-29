@@ -257,9 +257,9 @@ let init (params : room_params) : room =
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "water" -> [ "animated"; "water"; "fg" ]
               | "floors" -> [ "collides" ]
-              | "spikes" -> [ "damages"; "pogoable" ]
-              | "hazard" -> [ "damages" ]
-              | "acid" -> [ "animated"; "damages" ]
+              | "spikes" -> [ "hazard"; "pogoable" ]
+              | "hazard" -> [ "hazard" ]
+              | "acid" -> [ "animated"; "hazard" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
@@ -289,18 +289,19 @@ let init (params : room_params) : room =
               let depth_configs = ref 0 in
               if has "bg" then incr depth_configs;
               if has "fg" then incr depth_configs;
-              if has "damages" then incr depth_configs;
+              if has "hazard" then incr depth_configs;
               if has "collides" then incr depth_configs;
               if !depth_configs <> 1 then
                 failwithf
-                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', 'damages', or \
+                  (* TODO make this a variant and track it separately from the other config stuff *)
+                  "bad layer config for %s: needs to have exactly one of 'bg', 'fg', 'hazard', or \
                    'collides'"
                   layer_name
               else
                 {
                   render = { bg = has "bg"; fg = has "fg" };
                   collides_with_ghost = has "collides";
-                  damages_ghost = has "damages";
+                  hazard = has "hazard";
                   pogoable = has "pogoable";
                   destroyable = has "destroyable";
                   permanently_removable = has "permanently_removable";

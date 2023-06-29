@@ -25,6 +25,7 @@ let load_all_save_slots () : save_slots =
               crystal_heart = false;
               monarch_wings = false;
               shade_cloak = false;
+              ismas_tear = false;
               (* spells *)
               vengeful_spirit = false;
               desolate_dive = false;

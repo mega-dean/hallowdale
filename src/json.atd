@@ -181,6 +181,7 @@ type ghost_abilities = {
   monarch_wings <ocaml mutable> : bool;
   mothwing_cloak <ocaml mutable> : bool;
   shade_cloak <ocaml mutable> : bool;
+  ismas_tear <ocaml mutable> : bool;
   (* spells *)
   vengeful_spirit <ocaml mutable> : bool;
   desolate_dive <ocaml mutable> : bool;
