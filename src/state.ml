@@ -142,7 +142,7 @@ let update_camera (game : game) (state : state) =
         match trigger_config with
         | None -> (subject.x, subject.y)
         | Some (config, rect) ->
-          let x_config, y_config = Utils.separate config '-' in
+          let x_config, y_config = Utils.split_at_first '-' config  in
           let x_bound =
             let left = rect.pos.x +. Config.window.center_x in
             let right = rect.pos.x +. rect.w -. Config.window.center_x in

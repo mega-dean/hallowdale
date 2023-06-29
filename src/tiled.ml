@@ -347,6 +347,7 @@ module Room = struct
       let rects =
         if
           (layer.config.collides_with_ghost
+          || layer.config.water
           || layer.config.destroyable
           || layer.config.damages_ghost)
           && not layer.hidden

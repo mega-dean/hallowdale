@@ -101,6 +101,7 @@ let ghost_pose pose =
   | READING -> "READING"
   | WALKING d -> fmt "WALKING (%s)" (direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"
+  | SWIMMING _ -> "SWIMMING"
 
 let ghost_location (g : ghost) =
   print "ghost at %0.1f, %0.1f" g.entity.sprite.dest.pos.x g.entity.sprite.dest.pos.y

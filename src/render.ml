@@ -793,7 +793,7 @@ let tick (state : state) =
             | Some (SHAPE shape) -> debug_shape_outline sprite shape
             | _ -> ());
           let transformation_bits =
-            let direction, _ = Utils.separate door_coords '-' in
+            let direction, _ = Utils.split_at_first '-' door_coords  in
             match direction with
             | "up" -> 0
             | "down" -> 2

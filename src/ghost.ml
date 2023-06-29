@@ -67,7 +67,7 @@ let available_ghost_ids ghosts : ghost_id list =
   ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
 
 let maybe_begin_interaction (state : state) (game : game) name =
-  let name_prefix, _ = Utils.separate name '_' in
+  let name_prefix, _ = Utils.split_at_first '_' name in
   let begin_interaction ?(increase_health = false) () =
     game.interaction.name <- Some name;
     game.interaction.steps <- Interactions.get_steps ~increase_health state game name
@@ -402,10 +402,9 @@ let check_dream_nail_collisions (state : state) (game : game) =
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
       if Enemy.is_alive enemy then ((* TODO use collision shape for dream nail *)
         match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
-        | None -> tmp "no collision with enemy %s" (Show.enemy_id enemy.id)
+        | None -> ()
         | Some c ->
           if game.ghost.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
-            tmp "got a collision";
             (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
             game.ghost.soul.current <-
               Utils.bound_int 0
@@ -423,9 +422,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
             enemy.history <-
               Utils.replace_assoc
                 (TOOK_DAMAGE DREAM_NAIL : enemy_action)
-                { at = state.frame.time } enemy.history)
-          else
-            tmp "still colliding")
+                { at = state.frame.time } enemy.history))
     in
     List.iter resolve_enemy game.room.enemies
 
@@ -551,17 +548,17 @@ let resolve_slash_collisions (state : state) (game : game) =
         List.iter resolve_tile_group layer.tile_groups)
     in
 
-    let resolve_lever ((door_coords, lever_sprite) : string * sprite) =
+    let resolve_lever ((lever_name, lever_sprite) : string * sprite) =
       let layer =
         match List.find_opt (fun (l : layer) -> l.name = "lever-doors") game.room.layers with
         | None ->
           failwithf "room %s has levers '%s', but no lever-doors layer" (Show.room_id game.room.id)
-            door_coords
+            lever_name
         | Some l -> l
       in
       let new_tile_groups : tile_group list ref = ref [] in
-      let _direction, coords = Utils.separate door_coords '-' in
-      let x', y' = Utils.separate coords '-' in
+      let _direction, coords = Utils.split_at_first '-' lever_name in
+      let x', y' = Utils.split_at_first ',' coords in
       let door_tile_idx =
         Tiled.Tile.tile_idx_from_coords ~width:game.room.json.w_in_tiles
           (x' |> float_of_string, y' |> float_of_string)
@@ -591,6 +588,7 @@ let resolve_slash_collisions (state : state) (game : game) =
 let reset_current_status () =
   {
     wall = None;
+    water = None;
     is_diving = false;
     is_c_dashing = false;
     is_charging_c_dash = false;
@@ -760,6 +758,13 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.current.can_dash <- true;
       ghost.current.can_flap <- true;
       ghost.textures.wall_slide
+    | SWIMMING rect ->
+      ghost.current.can_dash <- true;
+      ghost.current.can_flap <- true;
+      ghost.current.water <- Some rect;
+      ghost.entity.v.y <- 0.;
+      (* TODO add swimming texture *)
+      ghost.textures.fall
   in
   Entity.update_sprite_texture ghost.entity next_texture
 
@@ -937,6 +942,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | FLAP -> game.ghost.history.flap
     | WALL_KICK -> game.ghost.history.wall_kick
   in
+
   action.started <- { at = state.frame.time };
   action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
@@ -1140,8 +1146,8 @@ let handle_debug_keys (game : game) (state : state) =
       game.ghost.soul.current <- game.ghost.soul.max
     else if key_pressed DEBUG_2 then
       toggle_ability game.ghost "mantis_claw"
-    else if key_pressed DEBUG_3 then
-      toggle_ability game.ghost "vengeful_spirit"
+    else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
+      print "ghost water is_some: %b" (Option.is_some game.ghost.current.water)
     else if key_pressed DEBUG_4 then
       toggle_ability game.ghost "desolate_dive")
   else if key_pressed DEBUG_1 then
@@ -1150,6 +1156,8 @@ let handle_debug_keys (game : game) (state : state) =
 
 (* this is used for actions that block other actions from happening during the same frame *)
 type handled_action = { this_frame : bool }
+
+let in_water (ghost : ghost) : bool = Option.is_some ghost.current.water
 
 let update (game : game) (state : state) =
   let stop_wall_sliding = ref false in
@@ -1238,19 +1246,19 @@ let update (game : game) (state : state) =
           | WARP destination ->
             let target_room_name, rest =
               (* this can't be a character that is used in room names *)
-              Utils.separate destination '|'
+              Utils.split_at_first '|' destination
             in
             (* TODO this might be too much stuff to embed in the name, maybe worth
                adding/parsing Custom Properties now
             *)
-            let blocking_interaction_name, coords = Utils.separate rest '@' in
+            let blocking_interaction_name, coords = Utils.split_at_first '@' rest in
             let blocked =
               match blocking_interaction_name with
               | "" -> false
               | s -> not (List.mem (fmt "cutscene_%s" s) game.room.progress.finished_interactions)
             in
             if not blocked then (
-              let target_x', target_y' = Utils.separate coords ',' in
+              let target_x', target_y' = Utils.split_at_first ',' coords in
               let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
               let target_x, target_y =
                 Tiled.Tile.tile_dest ~tile_w:game.room.json.tile_w ~tile_h:game.room.json.tile_h
@@ -1783,23 +1791,28 @@ let update (game : game) (state : state) =
 
   let handle_jumping new_vy =
     match game.ghost.entity.current_floor with
-    | None ->
-      (* TODO key_pressed_or_buffered detects the same keypress as the initial jump *)
-      if
-        game.ghost.abilities.monarch_wings
-        && game.ghost.current.can_flap
-        && state.frame_inputs.jump.pressed
-      then (
-        game.ghost.current.can_flap <- false;
-        start_action state game FLAP)
-      else if is_doing game.ghost FLAP state.frame.time then (
-        set_pose' (AIRBORNE new_vy);
-        if state.frame_inputs.jump.down then
-          continue_action state game FLAP
+    | None -> (
+      match game.ghost.current.water with
+      | None ->
+        if
+          (* TODO key_pressed_or_buffered detects the same keypress as the initial jump *)
+          game.ghost.abilities.monarch_wings
+          && game.ghost.current.can_flap
+          && state.frame_inputs.jump.pressed
+        then (
+          game.ghost.current.can_flap <- false;
+          start_action state game FLAP)
+        else if is_doing game.ghost FLAP state.frame.time then (
+          set_pose' (AIRBORNE new_vy);
+          if state.frame_inputs.jump.down then
+            continue_action state game FLAP
+          else
+            cancel_action state game FLAP)
         else
+          set_pose' (AIRBORNE new_vy)
+      | Some water ->
+        if is_doing game.ghost FLAP state.frame.time then
           cancel_action state game FLAP)
-      else
-        set_pose' (AIRBORNE new_vy)
     | Some floor ->
       if is_doing game.ghost FLAP state.frame.time then
         (* TODO need a check like this for current_wall too (to prevent extra height from buffering jump off wallslide) *)
@@ -1808,8 +1821,9 @@ let update (game : game) (state : state) =
         set_pose' (PERFORMING JUMP)
       else if game.ghost.entity.v.y > 0. then (
         stop_wall_sliding := true;
-        (* FIXME this is a very naive hardfall check, probably need to keep track of "airborne_duration" to check dy
+        (* TODO this is a very naive hardfall check, probably need to keep track of "airborne_duration" to check dy
            - airborne_duration would be reset when can_dash/flap are reset (pogo, wall_slide)
+           - use ghost.history
         *)
         if game.ghost.entity.v.y >= Config.ghost.max_vy then
           state.camera.shake <- 1.;
@@ -1924,7 +1938,7 @@ let update (game : game) (state : state) =
         game.ghost.current.is_taking_hazard_damage <- true;
         start_action state game TAKE_DAMAGE_AND_RESPAWN)
     in
-    let handle_wall_collisions collisions =
+    let handle_c_dash_wall_collisions collisions =
       let wall_collision =
         List.find_opt
           (fun ((c, _) : collision * 'a) -> List.mem c.direction [ LEFT; RIGHT ])
@@ -1969,6 +1983,25 @@ let update (game : game) (state : state) =
             List.iter check_collision collisions))
     in
     let floor_collisions = Entity.get_floor_collisions game.room game.ghost.entity in
+    let water_collisions = Entity.get_water_collisions game.room game.ghost.entity in
+
+    (match List.nth_opt water_collisions 0 with
+    | None -> game.ghost.current.water <- None
+    | Some (_coll, rect) ->
+      if not (in_water game.ghost) then
+        game.ghost.entity.dest.pos.y <-
+          game.ghost.entity.dest.pos.y +. (game.ghost.entity.dest.h /. 2.);
+      (* seems weird to check jump inputs here instead of checking current.water in handle_jumping,
+         but set_pose SWIMMING resets ghost.v.y <- 0
+         - could use another ref (like stop_wall_sliding), but that doesn't really seem better
+      *)
+      if state.frame_inputs.jump.pressed then (
+        game.ghost.current.water <- None;
+        game.ghost.entity.dest.pos.y <-
+          game.ghost.entity.dest.pos.y -. (game.ghost.entity.dest.h /. 2.);
+        start_action state game JUMP)
+      else
+        set_pose' (SWIMMING rect));
 
     check_enemy_collisions ();
     state.debug.rects <-
@@ -1976,7 +2009,7 @@ let update (game : game) (state : state) =
     apply_collisions game.ghost.entity floor_collisions;
     handle_wall_sliding floor_collisions;
     check_damage_collisions ();
-    handle_wall_collisions floor_collisions
+    handle_c_dash_wall_collisions floor_collisions
   in
 
   let check_cooldowns cooldowns =
@@ -2035,23 +2068,27 @@ let update (game : game) (state : state) =
         let cooling_down =
           check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
         in
-        if not cooling_down then (
-          let dream_nailing = handle_dream_nail () in
-          if not dream_nailing.this_frame then (
-            let focusing = handle_focusing () in
-            if not focusing.this_frame then (
-              let c_dashing = handle_c_dashing () in
-              if not c_dashing.this_frame then (
-                let dashing = handle_dashing () in
-                if not dashing.this_frame then (
-                  let casting = handle_casting () in
-                  if not casting.this_frame then (
-                    let wall_kicking = handle_wall_kicking () in
-                    if not wall_kicking.this_frame then (
-                      handle_walking ();
-                      handle_jumping new_vy);
-                    handle_attacking ();
-                    resolve_slash_collisions state game)))))))));
+        if not cooling_down then
+          if not (in_water game.ghost) then (
+            let dream_nailing = handle_dream_nail () in
+            if not dream_nailing.this_frame then (
+              let focusing = handle_focusing () in
+              if not focusing.this_frame then (
+                let c_dashing = handle_c_dashing () in
+                if not c_dashing.this_frame then (
+                  let dashing = handle_dashing () in
+                  if not dashing.this_frame then (
+                    let casting = handle_casting () in
+                    if not casting.this_frame then (
+                      let wall_kicking = handle_wall_kicking () in
+                      if not wall_kicking.this_frame then (
+                        handle_walking ();
+                        handle_jumping new_vy);
+                      handle_attacking ();
+                      resolve_slash_collisions state game))))))
+          else (
+            handle_walking ();
+            handle_jumping new_vy))));
 
   animate_and_despawn_children state.frame.time game.ghost;
   handle_collisions ();

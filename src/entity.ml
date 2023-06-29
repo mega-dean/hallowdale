@@ -101,6 +101,10 @@ let get_floor_collisions (room : room) (entity : entity) : (collision * rect) li
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
   get_tile_collisions layers entity
 
+let get_water_collisions (room : room) (entity : entity) : (collision * rect) list =
+  let layers = List.filter (fun (l : layer) -> l.config.water) room.layers in
+  get_tile_collisions layers entity
+
 let get_damage_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.damages_ghost) room.layers in
   get_tile_collisions layers entity

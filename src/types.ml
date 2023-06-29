@@ -21,8 +21,7 @@ module Utils = struct
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
   *)
-  (* CLEANUP rename to `split_at_first char str` *)
-  let separate str c : string * string =
+  let split_at_first c str : string * string =
     let separator_idx =
       match String.index_from_opt str 0 c with
       | None -> failwith (Printf.sprintf "Utils.separate ---- no separator %c in string %s" c str)
@@ -314,7 +313,7 @@ type collision = {
   direction : direction;
 }
 
-(* CLEANUP remove this type and use a (ghost_action * texture) list *)
+(* TODO remove this type and use a (ghost_action * texture) list *)
 (* non-ghost-specific textures that will be needed for any ghost *)
 type shared_textures = {
   (* TODO add separate dream_nail texture / collision shape *)
@@ -374,6 +373,7 @@ type ghost_pose =
   | READING
   | WALKING of direction
   | WALL_SLIDING of rect
+  | SWIMMING of rect
 
 (* TODO maybe this should be (ghost_pose * texture) list now, but we need to match against ghost_pose anyway to apply side-effects *)
 type ghost_textures = {
@@ -717,6 +717,7 @@ type ghost_action = {
 }
 
 (* this keeps track of the last time the ghost performed these actions *)
+(* TODO this should also keep track of airborne time (for hardfalls), but it isn't an "action" that has a config *)
 type ghost_action_history = {
   cast_vs : ghost_action;
   (* cast_dive ends when landing on a floor, not based on duration *)
@@ -756,6 +757,7 @@ type current_status = {
      - c-dash ends when hitting a wall, or when pressing a button to end it
      - c-dash charge ends when a button is released
   *)
+  mutable water : rect option;
   mutable is_diving : bool;
   mutable is_c_dashing : bool;
   mutable is_charging_c_dash : bool;
@@ -847,7 +849,7 @@ type ghosts_file = {
 type ghost = {
   entity : entity;
   mutable current : current_status;
-  (* FIXME use separate textures for ghost head vs body *)
+  (* TODO-6 use separate textures for ghost head vs body *)
   mutable textures : ghost_textures;
   (* TODO probably don't need .shared_textures on every ghost *)
   shared_textures : shared_textures;
@@ -914,6 +916,7 @@ type layer_config = {
   shaded : bool;
   animated : bool;
   monkey : bool;
+  water : bool;
 }
 
 (* a tilelayer in Tiled *)
@@ -939,7 +942,7 @@ type area_id =
   | MEOW_MEOW_BEENZ
   | TRAMPOLINEPATH
   | VENTWAYS
-  (* FIXME
+  (* TODO-7
      | TEACHERS_ARCHIVES
   *)
   | FINAL (* only used for final boss fight *)
@@ -1033,7 +1036,7 @@ type room_id =
   | TP_G
   (* VENTWAYS *)
   | VENT_HUB
-  (* FIXME
+  (* TODO-7
      | ARCH_TOP
      | ARCH_LIBRARY
   *)

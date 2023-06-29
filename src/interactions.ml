@@ -38,7 +38,7 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
 
     let matches regex = Str.string_match (Str.regexp regex) full_interaction_name 0 in
 
-    let interaction_prefix, interaction_name = Utils.separate full_interaction_name '_' in
+    let interaction_prefix, interaction_name = Utils.split_at_first '_' full_interaction_name in
 
     let get_lore () : string =
       match List.assoc_opt interaction_name state.global.lore with

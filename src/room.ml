@@ -102,7 +102,7 @@ let init (params : room_params) : room =
          can have an underscore, eg `enemy_LOCKER_BOY`
          - it still works because .separate only finds the first occurrence, but it looks weird
       *)
-      let name_prefix, name = Utils.separate coll_rect.name '_' in
+      let name_prefix, name = Utils.split_at_first '_' coll_rect.name in
       let tile_idx () =
         (* this fn finds the tile_idx that the trigger object's top-left corner is in, so trigger objects that are
            used like this (purple-pen, door-health) don't need to be placed exactly at that tile's coordinates *)
@@ -113,7 +113,7 @@ let init (params : room_params) : room =
       | "camera" ->
         camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
       | "lever" ->
-        let direction, _ = Utils.separate name '-' in
+        let direction, _ = Utils.split_at_first '-' name in
         if not @@ List.mem direction [ "up"; "down" ] then (* TODO horizontal levers *)
           failwithf "unsupported lever direction: %s" direction;
         let lever_sprite () : sprite =
@@ -255,9 +255,7 @@ let init (params : room_params) : room =
             let configs =
               match layer_name with
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
-              (* FIXME
-                 | "water" -> [ "collides" ]
-              *)
+              | "water" -> [ "animated"; "water"; "fg" ]
               | "floors" -> [ "collides" ]
               | "spikes" -> [ "damages"; "pogoable" ]
               | "hazard" -> [ "damages" ]
@@ -309,6 +307,7 @@ let init (params : room_params) : room =
                   shaded = has "shaded";
                   animated = has "animated";
                   monkey = has "monkey";
+                  water = has "water";
                 }
             in
             build_config configs
@@ -459,7 +458,8 @@ let init (params : room_params) : room =
       | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
       | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
       | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
-      | _ -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
+      | VENTWAYS -> Raylib.Color.create 129 129 129 255
+      | FINAL -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
     in
     {
       id = area_id;
