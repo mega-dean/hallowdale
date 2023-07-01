@@ -119,6 +119,7 @@ let area_id id =
   | INFECTED_CLASSROOMS -> "infected"
   | MEOW_MEOW_BEENZ -> "beenz"
   | TRAMPOLINEPATH -> "trampoline"
+  | LIBRARY -> "library"
   | VENTWAYS -> "ventways"
 
 let room_id id =
@@ -173,6 +174,9 @@ let room_id id =
   | IC_G -> "g"
   | IC_H -> "h"
   | IC_I -> "i"
+  | LIB_A -> "a"
+  | LIB_B -> "b"
+  | LIB_C -> "c"
   | MMB_1_A -> "one-entrance"
   | MMB_2_A -> "2-a"
   | MMB_2_B -> "2-b"

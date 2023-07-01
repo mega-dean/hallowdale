@@ -942,15 +942,14 @@ type area_id =
   | MEOW_MEOW_BEENZ
   | TRAMPOLINEPATH
   | VENTWAYS
-  (* TODO-7
-     | TEACHERS_ARCHIVES
-  *)
+  | LIBRARY
   | FINAL (* only used for final boss fight *)
 
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
   bg_color : Raylib.Color.t;
+  (* TODO-3 add bg/skybox _image *)
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
@@ -1036,10 +1035,10 @@ type room_id =
   | TP_G
   (* VENTWAYS *)
   | VENT_HUB
-  (* TODO-7
-     | ARCH_TOP
-     | ARCH_LIBRARY
-  *)
+  (* LIBRARY *)
+  | LIB_A
+  | LIB_B
+  | LIB_C
   (* FINAL *)
   | BOSS
 

@@ -460,6 +460,7 @@ let init (params : room_params) : room =
       | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
       | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
       | VENTWAYS -> Raylib.Color.create 129 129 129 255
+      | LIBRARY -> Raylib.Color.create (* FIXME  *) 29 229 29 255
       | FINAL -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
     in
     {
