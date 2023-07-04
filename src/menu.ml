@@ -45,6 +45,35 @@ let update_menu_choice (menu : menu) frame_inputs =
   if frame_inputs.up.pressed then
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
 
+let save_game (game : game) (state : state) (after_fn : state -> unit) =
+  Room.save_progress game;
+  let save_file : Json_t.save_file =
+    {
+      ghost_id = Show.ghost_id game.ghost.id;
+      ghosts_in_party =
+        (* game.ghosts only has the uncontrolled ghosts, but save_file.ghosts_in_party
+           should include the current ghost's id
+        *)
+        [ game.ghost.id ] @ Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id;
+      ghost_x = game.ghost.entity.dest.pos.x;
+      ghost_y = game.ghost.entity.dest.pos.y;
+      respawn_x = game.room.respawn_pos.x;
+      respawn_y = game.room.respawn_pos.y;
+      room_name = Tiled.Room.get_filename' game.room.area.id game.room.id;
+      abilities = game.ghost.abilities;
+      progress = game.progress;
+      weapons = List.map fst game.ghost.weapons;
+      current_weapon = game.ghost.current_weapon.name;
+    }
+  in
+  let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
+  let contents = Json_j.string_of_save_file save_file in
+  let written = File.write save_file_path contents in
+  if written then
+    after_fn state
+  else
+    failwith "error when trying to save"
+
 let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
@@ -67,34 +96,10 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU CHANGE_GHOST ->
         state.pause_menu <- Some (change_ghost_menu ([ (game.ghost.id, game.ghost) ] @ game.ghosts))
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
-        state.pause_menu <- None;
         (* TODO unload textures *)
-        Room.save_progress game;
-        let save_file : Json_t.save_file =
-          {
-            ghost_id = Show.ghost_id game.ghost.id;
-            ghosts_in_party =
-              (* game.ghosts only has the uncontrolled ghosts, but save_file.ghosts_in_party
-                 should include the current ghost's id *)
-              [ game.ghost.id ] @ Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id;
-            ghost_x = game.ghost.entity.dest.pos.x;
-            ghost_y = game.ghost.entity.dest.pos.y;
-            respawn_x = game.room.respawn_pos.x;
-            respawn_y = game.room.respawn_pos.y;
-            room_name = Tiled.Room.get_uuid' game.room.area.id game.room.id;
-            abilities = game.ghost.abilities;
-            progress = game.progress;
-            weapons = List.map fst game.ghost.weapons;
-            current_weapon = game.ghost.current_weapon.name;
-          }
-        in
-        let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
-        let contents = Json_j.string_of_save_file save_file in
-        let written = File.write save_file_path contents in
-        if written then
-          state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ())
-        else
-          failwith "error when trying to save"
+        state.pause_menu <- None;
+        save_game game state (fun state ->
+            state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
       | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Ghost.equip_weapon game.ghost weapon_name
       | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
         if game.ghost.id <> ghost_id then

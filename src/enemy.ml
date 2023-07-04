@@ -370,7 +370,7 @@ let create_from_rects
               start_and_log_action self "jumping" params.time [ ("random_jump_vx", jump_vx) ])
         in
         update_duncan
-      | _ ->
+      | PENGUIN ->
         fun ~(self : enemy) (params : enemy_behavior_params) : unit ->
           ignore self;
           ignore params;

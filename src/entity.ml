@@ -97,6 +97,11 @@ let get_tile_collisions (layers : layer list) (entity : entity) : (collision * r
   List.iter check_collision layers;
   !collisions
 
+(* TODO consolidate these *)
+let get_bench_collisions (room : room) (entity : entity) : (collision * rect) list =
+  let layers = List.filter (fun (l : layer) -> l.name = "benches") room.layers in
+  get_tile_collisions layers entity
+
 let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
   get_tile_collisions layers entity

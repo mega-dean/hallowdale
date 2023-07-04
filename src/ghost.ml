@@ -1128,6 +1128,14 @@ let is_vulnerable (state : state) (game : game) : bool =
   Option.is_none (get_invincibility_kind state game)
 
 let handle_debug_keys (game : game) (state : state) =
+  let show_ghost_location () =
+    let room_location = List.assoc game.room.id state.world in
+    print "================\nghost global pos: %s"
+      (Show.vector (Room.get_global_pos game.ghost.entity.dest.pos room_location));
+    print "room %s" (Tiled.Room.get_filename game.room);
+    print "full room_id: %s" (Show.room_id game.room.id);
+    print "room_location global x/y: %f, %f" room_location.global_x room_location.global_y
+  in
   let dv =
     if state.debug.enabled then
       Config.ghost.small_debug_v /. 3.
@@ -1143,10 +1151,10 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then
-      game.ghost.soul.current <- game.ghost.soul.max
-    else if key_pressed DEBUG_2 then
-      toggle_ability game.ghost "mantis_claw"
+    if key_pressed DEBUG_1 then (* game.ghost.soul.current <- game.ghost.soul.max *)
+      show_ghost_location ()
+    else if key_pressed DEBUG_2 then (* toggle_ability game.ghost "mantis_claw" *)
+      game.ghost.health.current <- game.ghost.health.current - 1
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
       print "ghost water is_some: %b" (Option.is_some game.ghost.current.water)
     else if key_pressed DEBUG_4 then (* toggle_ability game.ghost "desolate_dive" *)
@@ -1266,7 +1274,7 @@ let update (game : game) (state : state) =
                   (tile_x, tile_y)
               in
               let target_room_location = Tiled.Room.locate_by_name state.world target_room_name in
-              Room.change_current_room state game target_room_name target_room_location
+              Room.change_current_room state game target_room_location
                 { x = target_x; y = target_y })
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
@@ -2008,6 +2016,23 @@ let update (game : game) (state : state) =
             List.iter check_collision collisions))
     in
     let floor_collisions = Entity.get_floor_collisions game.room game.ghost.entity in
+    let bench_collisions = Entity.get_bench_collisions game.room game.ghost.entity in
+    (match List.nth_opt bench_collisions 0 with
+    | None -> (
+      match game.interaction.corner_text with
+      | None -> ()
+      | Some (_, end_time) ->
+        if state.frame.time > end_time.at then
+          game.interaction.corner_text <- None)
+    | Some (coll, rect) -> (
+      match coll.direction with
+      | UP ->
+        let end_time = { at = state.frame.time +. 1.5 } in
+        game.interaction.corner_text <-
+          Some ({ content = [ "Game saved." ]; increases_health = false }, end_time);
+        state.should_save <- true;
+        game.ghost.health.current <- game.ghost.health.max
+      | _ -> ()));
     let liquid_collisions =
       let water_collisions = Entity.get_water_collisions game.room game.ghost.entity in
       if game.ghost.abilities.ismas_tear then (

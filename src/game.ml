@@ -20,12 +20,12 @@ let load_all_save_slots () : save_slots =
           abilities =
             {
               (* movement *)
-              mothwing_cloak = true;
-              mantis_claw = true;
-              crystal_heart = true;
-              monarch_wings = true;
-              shade_cloak = true;
-              ismas_tear = true;
+              mothwing_cloak = false;
+              mantis_claw = false;
+              crystal_heart = false;
+              monarch_wings = false;
+              shade_cloak = false;
+              ismas_tear = false;
               (* spells *)
               vengeful_spirit = false;
               desolate_dive = false;
@@ -193,7 +193,15 @@ let init
     ghost;
     ghosts = other_ghosts;
     room;
-    interaction = { steps = []; text = None; speaker_name = None; name = None; black_rects = [] };
+    interaction =
+      {
+        steps = [];
+        text = None;
+        speaker_name = None;
+        name = None;
+        black_rects = [];
+        corner_text = None;
+      };
     progress = save_file.progress;
     save_file_slot;
     debug_paused = false;

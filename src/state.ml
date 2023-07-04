@@ -88,6 +88,7 @@ let init () : state =
   {
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
+    should_save = false;
     world;
     camera = { raylib = camera; subject = GHOST; shake = 0. };
     screen_fade = None;
@@ -142,7 +143,7 @@ let update_camera (game : game) (state : state) =
         match trigger_config with
         | None -> (subject.x, subject.y)
         | Some (config, rect) ->
-          let x_config, y_config = Utils.split_at_first '-' config  in
+          let x_config, y_config = Utils.split_at_first '-' config in
           let x_bound =
             let left = rect.pos.x +. Config.window.center_x in
             let right = rect.pos.x +. rect.w -. Config.window.center_x in
@@ -427,6 +428,9 @@ let tick (state : state) =
       match state'.pause_menu with
       | Some menu -> state'
       | None ->
+        if state.should_save then (
+          Menu.save_game game state (fun _ -> ());
+          state.should_save <- false);
         state'
         |> Ghost.handle_debug_keys game
         |> Ghost.update game

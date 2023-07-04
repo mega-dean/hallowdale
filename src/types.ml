@@ -1,5 +1,16 @@
 [@@@ocaml.warning "-26-27-32"]
 
+module StrSet = Set.Make (String)
+
+type str_set = StrSet.t
+
+let fmt s = Printf.sprintf s
+let print fmtstr = Printf.ksprintf print_endline fmtstr
+let tmp fmtstr = Printf.ksprintf print_endline fmtstr
+let itmp fmtstr = Printf.ifprintf print_endline fmtstr
+let failwithf f = Printf.ksprintf failwith f
+let join ?(sep = ", ") strs = String.concat sep strs
+
 module Utils = struct
   let range (n : int) : int list = List.init n (fun x -> x)
   let rangef (n : int) : float list = List.init n (fun x -> x) |> List.map Int.to_float
@@ -24,7 +35,8 @@ module Utils = struct
   let split_at_first c str : string * string =
     let separator_idx =
       match String.index_from_opt str 0 c with
-      | None -> failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
+      | None ->
+        failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
       | Some idx -> idx
     in
     (Str.string_before str separator_idx, Str.string_after str (separator_idx + 1))
@@ -38,18 +50,13 @@ module Utils = struct
   let filter_somes xs =
     (* TODO seems like there is probably a better way to do List.filter_mapi, but this works *)
     xs |> List.filter Option.is_some |> List.map Option.get
+
+  let only xs =
+    if List.length xs = 1 then
+      List.nth xs 0
+    else
+      failwithf "only: expected 1, got %d" (List.length xs)
 end
-
-module StrSet = Set.Make (String)
-
-type str_set = StrSet.t
-
-let fmt s = Printf.sprintf s
-let print fmtstr = Printf.ksprintf print_endline fmtstr
-let tmp fmtstr = Printf.ksprintf print_endline fmtstr
-let itmp fmtstr = Printf.ifprintf print_endline fmtstr
-let failwithf f = Printf.ksprintf failwith f
-let join ?(sep = ", ") strs = String.concat sep strs
 
 (* TODO maybe add type hdirection = LEFT | RIGHT for things that only can be horizontal *)
 type direction =
@@ -595,6 +602,7 @@ module Interaction = struct
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
+    mutable corner_text : (text * time) option;
     (* these are only used for revealing the opening poem for new games *)
     mutable black_rects : rect list;
   }
@@ -915,6 +923,7 @@ type layer_config = {
   permanently_removable : bool;
   shaded : bool;
   animated : bool;
+  (* TODO probably don't want these "single-use" properties (just check layer name, already doing this with "acid") *)
   monkey : bool;
   water : bool;
 }
@@ -948,8 +957,7 @@ type area_id =
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
-  bg_color : Raylib.Color.t;
-  (* TODO-3 add bg/skybox _image *)
+  bg_color : Raylib.Color.t; (* TODO-3 add bg/skybox _image *)
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
@@ -1039,6 +1047,7 @@ type room_id =
   | LIB_A
   | LIB_B
   | LIB_C
+  | LIB_D
   (* FINAL *)
   | BOSS
 
@@ -1077,7 +1086,6 @@ type camera_state = {
 type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
-(* | DOOR_LEVER of int *)
 
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death
@@ -1108,8 +1116,6 @@ type room_location = {
   w : float;
   h : float;
 }
-
-type world = (room_id * room_location) list
 
 type texture_cache = {
   (* TODO this causes every damage sprite to share the same texture
@@ -1169,12 +1175,15 @@ type frame_info = {
   mutable time : float;
 }
 
+type world = (room_id * room_location) list
+
 type state = {
   mutable game_context : game_context;
   world : world;
   mutable screen_fade : int option; (* out of 255 *)
   mutable camera : camera;
   mutable frame : frame_info;
+  mutable should_save : bool;
   mutable pause_menu : menu option;
   frame_inputs : frame_inputs;
   mutable debug : debug;

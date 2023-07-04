@@ -37,7 +37,7 @@ let update_pickup_indicators (state : state) (game : game) =
       game.room.triggers.item_pickups
 
 let save_progress (game : game) =
-  let room_uuid = Tiled.Room.get_uuid game.room in
+  let room_uuid = Tiled.Room.get_filename game.room in
   game.progress <- Utils.replace_assoc room_uuid game.room.progress game.progress
 
 type room_params = {
@@ -56,7 +56,7 @@ let init (params : room_params) : room =
   let (area_id, room_id) : area_id * room_id =
     Tiled.parse_room_filename "init_room" params.file_name
   in
-  let room_key = Tiled.Room.get_uuid' area_id room_id in
+  let room_key = Tiled.Room.get_filename' area_id room_id in
   let new_room_progress () : Json_t.room_progress =
     (* room_progress gets created here, but isn't saved into state.progress.rooms until the room is being unloaded at an exit *)
     { finished_interactions = []; revealed_shadow_layers = []; removed_idxs_by_layer = [] }
@@ -257,6 +257,7 @@ let init (params : room_params) : room =
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "water" -> [ "animated"; "water"; "fg" ]
               | "floors" -> [ "collides" ]
+              | "benches" -> [ "collides" ]
               | "spikes" -> [ "hazard"; "pogoable" ]
               | "hazard" -> [ "hazard" ]
               | "acid" -> [ "animated"; "hazard" ]
@@ -272,11 +273,11 @@ let init (params : room_params) : room =
               | "fg"
               | "shadow" ->
                 (* TODO maybe move this validation somewhere else *)
-                if not (List.mem 0 json.data) then
-                  print
-                    "\n\n\n\n\
-                    \ -------------------- BAD SHADOW LAYER in room %s -------------------- \n\n\n\n"
-                    params.file_name;
+                (* if not (List.mem 0 json.data) then
+                 *   print
+                 *     "\n\n\n\n\
+                 *     \ -------------------- BAD SHADOW LAYER in room %s -------------------- \n\n\n\n"
+                 *     params.file_name; *)
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
@@ -460,7 +461,7 @@ let init (params : room_params) : room =
       | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
       | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
       | VENTWAYS -> Raylib.Color.create 129 129 129 255
-      | LIBRARY -> Raylib.Color.create (* FIXME  *) 29 229 29 255
+      | LIBRARY -> Raylib.Color.create 2 89 2 255
       | FINAL -> failwithf "area_id not configured yet: %s" (Show.area_id area_id)
     in
     {
@@ -503,7 +504,6 @@ let init (params : room_params) : room =
 let change_current_room
     (state : state)
     (game : game)
-    (file_name : string)
     (room_location : room_location)
     (start_pos : vector) =
   let exits = Tiled.Room.get_exits room_location in
@@ -512,7 +512,7 @@ let change_current_room
   let new_room =
     init
       {
-        file_name;
+        file_name = room_location.filename;
         progress = game.progress;
         exits;
         enemy_configs = state.global.enemy_configs;
@@ -538,10 +538,10 @@ let change_current_room
     Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
   state.camera.raylib <- Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.
 
+let get_global_pos (current_pos : vector) (room_location : room_location) : vector =
+  { x = current_pos.x +. room_location.global_x; y = current_pos.y +. room_location.global_y }
+
 let handle_transitions (state : state) (game : game) =
-  let get_global_pos (current : vector) (room_location : room_location) : vector =
-    { x = current.x +. room_location.global_x; y = current.y +. room_location.global_y }
-  in
   let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
     let room_location = List.assoc room_id world in
     { x = global.x -. room_location.global_x; y = global.y -. room_location.global_y }
@@ -559,16 +559,14 @@ let handle_transitions (state : state) (game : game) =
     else (
       let cr = collision.rect in
       let current_room_location = List.assoc game.room.id state.world in
-      let ghost_pos = game.ghost.entity.dest.pos in
-      let global_ghost_pos = get_global_pos ghost_pos current_room_location in
-      let (path, target_room_id) : string * room_id =
+      let global_ghost_pos = get_global_pos game.ghost.entity.dest.pos current_room_location in
+      let target_room_id, room_location =
         let global_x, global_y =
           ( cr.pos.x +. (cr.w /. 2.) +. current_room_location.global_x,
             cr.pos.y +. (cr.h /. 2.) +. current_room_location.global_y )
         in
         Tiled.Room.locate_by_coords state.world global_x global_y
       in
-      let room_location = List.assoc target_room_id state.world in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
         (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen
@@ -586,5 +584,5 @@ let handle_transitions (state : state) (game : game) =
         | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.entity.dest.h }
       in
 
-      change_current_room state game path room_location start_pos;
+      change_current_room state game room_location start_pos;
       true)

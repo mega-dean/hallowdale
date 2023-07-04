@@ -56,7 +56,6 @@ let parse_room_filename source file_name : area_id * room_id =
   | "forgotten_c" -> (FORGOTTEN_CLASSROOMS, FC_C)
   | "forgotten_d" -> (FORGOTTEN_CLASSROOMS, FC_D)
   | "forgotten_e" -> (FORGOTTEN_CLASSROOMS, FC_E)
-  | "forgotten_f" -> (FORGOTTEN_CLASSROOMS, FC_F)
   | "forgotten_g" -> (FORGOTTEN_CLASSROOMS, FC_G)
   | "forgotten_h" -> (FORGOTTEN_CLASSROOMS, FC_H)
   | "forgotten_i" -> (FORGOTTEN_CLASSROOMS, FC_I)
@@ -70,9 +69,10 @@ let parse_room_filename source file_name : area_id * room_id =
   | "infected_g" -> (INFECTED_CLASSROOMS, IC_G)
   | "infected_h" -> (INFECTED_CLASSROOMS, IC_H)
   | "infected_i" -> (INFECTED_CLASSROOMS, IC_I)
-  | "library_a" -> (LIBRARY, TP_A)
-  | "library_b" -> (LIBRARY, TP_B)
-  | "library_c" -> (LIBRARY, TP_C)
+  | "library_a" -> (LIBRARY, LIB_A)
+  | "library_b" -> (LIBRARY, LIB_B)
+  | "library_c" -> (LIBRARY, LIB_C)
+  | "library_d" -> (LIBRARY, LIB_D)
   | "trampoline_dreamer" -> (TRAMPOLINEPATH, TP_DREAMER)
   | "trampoline_a" -> (TRAMPOLINEPATH, TP_A)
   | "trampoline_b" -> (TRAMPOLINEPATH, TP_B)
@@ -137,13 +137,15 @@ module Room = struct
   (* TODO this module is a little weird since it works on both json_room and room types *)
   type t = Json_t.room
 
-  let get_uuid' area_id room_id : string = fmt "%s_%s" (Show.area_id area_id) (Show.room_id room_id)
-  let get_uuid (room : room) : string = get_uuid' room.area.id room.id
+  let get_filename' area_id room_id : string =
+    fmt "%s_%s" (Show.area_id area_id) (Show.room_id_filename room_id)
+
+  let get_filename (room : room) : string = get_filename' room.area.id room.id
 
   let tile_idx (room : Json_t.room) (x, y) =
     Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
 
-  let locate_by_coords (world : world) global_x global_y : string * room_id =
+  let locate_by_coords (world : world) global_x global_y : room_id * room_location =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =
       room_location.global_x < global_x
       && global_x < room_location.global_x +. room_location.w
@@ -152,7 +154,7 @@ module Room = struct
     in
     match List.find_opt in_location world with
     | None -> failwithf "no room found at %0.1f, %0.1f" global_x global_y
-    | Some (room_id, room_location) -> (room_location.filename, room_id)
+    | Some (room_id, room_location) -> (room_id, room_location)
 
   let locate_by_name (world : world) room_name : room_location =
     let _area_id, room_id = parse_room_filename (fmt ".world file") room_name in

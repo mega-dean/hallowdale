@@ -197,9 +197,7 @@ let draw_tiles room camera_x camera_y frame_idx layers : unit =
 let draw_solid_tiles room camera_x camera_y frame_idx : unit =
   List.iter
     (draw_tiled_layer room camera_x camera_y frame_idx)
-    (List.filter
-       (fun layer -> layer.config.collides_with_ghost || layer.config.hazard)
-       room.layers)
+    (List.filter (fun layer -> layer.config.collides_with_ghost || layer.config.hazard) room.layers)
 
 let draw_bg_tiles room camera_x camera_y frame_idx : unit =
   draw_tiles room camera_x camera_y frame_idx
@@ -539,6 +537,24 @@ let tick (state : state) =
       (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 alpha)
   in
 
+  let draw_corner_text game =
+    match game.interaction.corner_text with
+    | None -> ()
+    | Some (text, end_time) ->
+      let dest =
+        {
+          x = camera_x;
+          y = camera_y +. ((Config.window.height |> Int.to_float) -. (font_size |> Int.to_float));
+        }
+      in
+      let alpha =
+          256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int
+      in
+      Raylib.draw_text (Utils.only text.content) (dest.x |> Float.to_int) (dest.y |> Float.to_int)
+        font_size
+        (Raylib.Color.create 255 255 255 alpha)
+  in
+
   let maybe_draw_text (game : game option) (interaction_text : Interaction.text_kind option) =
     let draw_text_bg_box (config : text_config) =
       let w = Config.window.width - (2 * config.margin_x) in
@@ -547,21 +563,6 @@ let tick (state : state) =
         ((camera_x |> Float.to_int) + config.margin_x)
         ((camera_y |> Float.to_int) + config.margin_y)
         w h (Color.create 0 0 0 200)
-    in
-
-    let display_line (config : text_config) y_offset line_number (line : line) : unit =
-      let display_segment (segment : line_segment) =
-        let centered_x =
-          if config.centered then (text_box_width config - line.w) / 2 else config.padding_x
-        in
-        let line_spacing = line_height *. (line_number |> Int.to_float) in
-        let dest_y = line_spacing +. camera_y +. y_offset in
-        Raylib.draw_text segment.content
-          ((segment.dest.pos.x +. camera_x |> Float.to_int) + config.margin_x + centered_x)
-          ((dest_y |> Float.to_int) + (line_number * font_size))
-          font_size segment.color
-      in
-      List.iter display_segment line.segments
     in
 
     (* TODO add offset_x based on ghost.id, and make ability-outlines.png a grid of images *)
@@ -578,8 +579,22 @@ let tick (state : state) =
       draw_texture texture dest 0
     in
 
-    let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) : unit
-        =
+    let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) =
+      let display_line (config : text_config) y_offset line_number (line : line) =
+        let display_segment (segment : line_segment) =
+          let centered_x =
+            if config.centered then (text_box_width config - line.w) / 2 else config.padding_x
+          in
+          let line_spacing = line_height *. (line_number |> Int.to_float) in
+          let dest_y = line_spacing +. camera_y +. y_offset in
+          Raylib.draw_text segment.content
+            ((segment.dest.pos.x +. camera_x |> Float.to_int) + config.margin_x + centered_x)
+            ((dest_y |> Float.to_int) + (line_number * font_size))
+            font_size segment.color
+        in
+        List.iter display_segment line.segments
+      in
+
       let paragraph_offset = paragraph_idx * Config.scale.paragraph_spacing in
       let y_offset' =
         paragraph_offset + config.margin_y + config.padding_y + y_offset |> Int.to_float
@@ -793,7 +808,7 @@ let tick (state : state) =
             | Some (SHAPE shape) -> debug_shape_outline sprite shape
             | _ -> ());
           let transformation_bits =
-            let direction, _ = Utils.split_at_first '-' door_coords  in
+            let direction, _ = Utils.split_at_first '-' door_coords in
             match direction with
             | "up" -> 0
             | "down" -> 2
@@ -1136,6 +1151,7 @@ let tick (state : state) =
        | Some pause_menu -> Some (MENU (pause_menu, None))
      in
      maybe_draw_text (Some game) interaction_text);
+    draw_corner_text game;
     Raylib.draw_fps
       ((camera_x |> Float.to_int) + Config.window.width - 100)
       (camera_y |> Float.to_int);
