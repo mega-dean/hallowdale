@@ -128,7 +128,9 @@ type enemy_config = {
   w : int;
   h : int;
   kind : string;
-  (* TODO maybe rename this, since the other "props" are temporary/dynamic values, while these don't change *)
+  (* TODO add default values for these *)
+  gravity_multiplier : float;
+  can_take_damage : bool;
   props : (string * float) list;
   texture_configs : (string * texture_config) list;
 }

@@ -242,7 +242,7 @@
             // FIXME
             // HK times: 1.75s without dream wielder, 1.1s with dream wielder
             // "duration": 1.8,
-            "duration": 0.5,
+            "duration": 1.1,
             "cooldown": 0.0,
             "input_buffer": 0.0
         }],

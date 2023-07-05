@@ -431,13 +431,13 @@ let resolve_slash_collisions (state : state) (game : game) =
   | None -> check_dream_nail_collisions state game
   | Some slash ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
-      if enemy.status.check_damage_collisions then (
+      if enemy.json.can_take_damage && enemy.status.check_damage_collisions then (
         match Collision.with_slash slash enemy.entity.sprite with
         | None -> ()
         | Some collision ->
           if
             Enemy.maybe_take_damage state enemy game.ghost.history.nail.started NAIL
-              (get_damage game.ghost NAIL) enemy.entity.dest
+              (get_damage game.ghost NAIL) collision
           then (
             (match collision.direction with
             | DOWN -> pogo game.ghost

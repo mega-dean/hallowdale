@@ -256,7 +256,7 @@ let update_enemies (game : game) (state : state) =
       Entity.update_pos game.room enemy.entity state.frame.dt;
     let interacting () = List.length game.interaction.steps > 0 in
     if (not (interacting ())) && enemy.status.choose_behavior then
-      enemy.choose_behavior ~self:enemy behavior_params;
+      Enemy.choose_behavior enemy behavior_params;
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) =
       Sprite.advance_or_despawn state.frame.time sprite.texture sprite
@@ -268,7 +268,7 @@ let update_enemies (game : game) (state : state) =
       (* TODO use Collision.between_shapes *)
       match Collision.with_entity enemy.entity sprite.dest with
       | None -> ()
-      | Some c ->
+      | Some collision ->
         let damage_kind =
           if game.ghost.current.is_diving then
             DESOLATE_DIVE
@@ -280,7 +280,7 @@ let update_enemies (game : game) (state : state) =
         ignore
           (Enemy.maybe_take_damage state enemy action_started damage_kind
              (Ghost.get_damage game.ghost damage_kind)
-             c.rect)));
+             collision)));
 
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
@@ -332,11 +332,11 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
       if enemy.status.check_damage_collisions then (
         match Collision.with_entity enemy.entity f.dest with
         | None -> ()
-        | Some c ->
+        | Some collision ->
           ignore
             (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT
                (Ghost.get_damage game.ghost VENGEFUL_SPIRIT)
-               c.rect))
+               collision))
     in
     List.iter maybe_damage_enemy game.room.enemies
   in

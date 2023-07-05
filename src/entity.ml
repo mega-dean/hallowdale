@@ -162,7 +162,7 @@ let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) =
     let dvy =
       match entity.current_floor with
       | Some _ -> 0.
-      | None -> Config.physics.gravity *. dt
+      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
     in
     apply_v ~debug dt entity;
     entity.v.y <- entity.v.y +. dvy;
@@ -236,6 +236,7 @@ let create
     (path : string)
     ?(scale = Config.scale.ghost)
     ?(inanimate = false)
+    ?(gravity_multiplier = 1.)
     ?(v = Zero.vector ())
     ?(facing_right = true)
     ?(collision = None)
@@ -248,7 +249,7 @@ let create
     sprite =
       Sprite.create path initial_texture ~facing_right ~collision
         { pos = { x = dest.pos.x; y = dest.pos.y }; w = sprite_w; h = sprite_h };
-    config = { bounce = (if inanimate then 0.2 else 0.); inanimate };
+    config = { bounce = (if inanimate then 0.2 else 0.); inanimate; gravity_multiplier };
     update_pos = (not inanimate) && is_on_screen' dest;
     v;
     current_floor = None;
@@ -256,12 +257,16 @@ let create
     y_recoil = None;
   }
 
-let create_for_sprite (sprite : sprite) ?(inanimate = false) ?(v = Zero.vector ()) (dest : rect) :
-    entity =
+let create_for_sprite
+    (sprite : sprite)
+    ?(inanimate = false)
+    ?(gravity_multiplier = 1.)
+    ?(v = Zero.vector ())
+    (dest : rect) : entity =
   {
     dest;
     sprite;
-    config = { bounce = (if inanimate then 0.2 else 0.); inanimate };
+    config = { bounce = (if inanimate then 0.2 else 0.); inanimate; gravity_multiplier };
     update_pos = (not inanimate) && is_on_screen' dest;
     v;
     current_floor = None;
@@ -286,6 +291,7 @@ let load_pose (texture_config : texture_config) : string * texture =
 
 let create_from_textures
     ?(collision = None)
+    ?(gravity_multiplier = 1.)
     (texture_configs : texture_config list)
     (entity_dest : rect) : entity * (string * texture) list =
   (* let animation_src = get_src sprite.texture in *)
@@ -324,4 +330,5 @@ let create_from_textures
   let initial_texture = List.nth textures 0 |> snd in
   let texture_config = List.nth texture_configs 0 in
   validate_configs_are_complete ();
-  (create ~collision texture_config.character_name initial_texture entity_dest, textures)
+  ( create ~collision ~gravity_multiplier texture_config.character_name initial_texture entity_dest,
+    textures )

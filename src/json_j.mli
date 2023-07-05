@@ -161,6 +161,8 @@ type enemy_config = Json_t.enemy_config = {
   w: int;
   h: int;
   kind: string;
+  gravity_multiplier: float;
+  can_take_damage: bool;
   props: (string * float) list;
   texture_configs: (string * texture_config) list
 }

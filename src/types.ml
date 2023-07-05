@@ -293,6 +293,10 @@ type entity_config = {
   bounce : float;
   (* only using the negative here because "animate" sounds more like a verb than an adjective *)
   inanimate : bool;
+  (* CLEANUP maybe not a good idea to make this mutable
+     - used for frog death poses
+  *)
+  mutable gravity_multiplier : float;
 }
 
 (* a sprite with physical/movement properties *)
@@ -407,9 +411,6 @@ type ghost_id =
   | JEFF
   | TROY
 
-(* when an enemy is initialized, this cache is filled with a texture for each image file in their directory *)
-type npc_texture_cache = (string * texture) list
-
 type health = {
   mutable current : int;
   mutable max : int;
@@ -429,12 +430,13 @@ type npc_id =
   | VICKI
   | GARRETT
 
-(* TODO-5 add more enemies *)
-(* TODO-5 add more bosses w/rewards *)
 type enemy_id =
   | PENGUIN
   | DUNCAN
   | LOCKER_BOY
+  | FISH
+  | FROG
+  | ELECTRICITY
 
 type weapon = {
   name : string;
@@ -674,7 +676,6 @@ type enemy = {
   textures : (string * texture) list;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
-  choose_behavior : self:enemy -> enemy_behavior_params -> unit;
 }
 
 type npc = {

@@ -324,6 +324,9 @@ let enemy_id (e : enemy_id) : string =
   | DUNCAN -> "DUNCAN"
   | LOCKER_BOY -> "LOCKER_BOY"
   | PENGUIN -> "PENGUIN"
+  | FISH -> "FISH"
+  | FROG -> "FROG"
+  | ELECTRICITY -> "ELECTRICITY"
 
 let npc_id (n : npc_id) : string =
   match n with
