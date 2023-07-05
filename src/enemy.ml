@@ -465,7 +465,8 @@ let choose_behavior (enemy : enemy) (params : enemy_behavior_params) =
       (tmp "dead frog with current v: %s" (Show.vector enemy.entity.v);
        enemy.entity.config.gravity_multiplier <- 0.;
 
-       if get_prop "homing" enemy.props = 1. then
+       (* FIXME add get_bool_prop : enemy -> string -> bool *)
+       if get_prop ~default:(Some 0.) "homing" enemy.props = 1. then
          (
            (* FIXME check for wall or ghost collision and explode *)
          )
