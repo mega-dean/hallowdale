@@ -152,7 +152,8 @@
                 }],
                 ["explosion", {
                     "count": 2,
-                    "duration": 0.0,
+                    "duration": 0.1,
+                    // TODO the explosion should be a lot bigger
                     "x_offset": 0,
                     "y_offset": 0
                 }],

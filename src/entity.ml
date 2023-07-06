@@ -157,7 +157,7 @@ let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * r
   List.iter adjust_position left_right_collisions;
   List.iter adjust_position up_down_collisions
 
-let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) =
+let update_pos' ?(debug = None) (room : room) (entity : entity) (dt : float) : unit =
   if entity.update_pos then (
     let dvy =
       match entity.current_floor with
@@ -167,6 +167,51 @@ let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) =
     apply_v ~debug dt entity;
     entity.v.y <- entity.v.y +. dvy;
     get_floor_collisions room entity |> apply_collisions entity)
+
+let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) : unit =
+  if entity.update_pos then (
+    let dvy =
+      match entity.current_floor with
+      | Some _ -> 0.
+      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
+    in
+    apply_v ~debug dt entity;
+    entity.v.y <- entity.v.y +. dvy;
+    get_floor_collisions room entity |> apply_collisions entity)
+
+let update_enemy_pos ?(debug = None) (room : room) (entity : entity) (dt : float) : bool =
+  if entity.update_pos then (
+    let dvy =
+      match entity.current_floor with
+      | Some _ -> 0.
+      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
+    in
+    apply_v ~debug dt entity;
+    entity.v.y <- entity.v.y +. dvy;
+    let collisions = get_floor_collisions room entity in
+    apply_collisions entity collisions;
+    List.length collisions > 0)
+  else
+    false
+
+(* CLEANUP remove *)
+(* this returns the direction of the first collision *)
+let check_floor_collisions ?(debug = None) (room : room) (entity : entity) (dt : float) : bool =
+  if entity.update_pos then (
+    let dvy =
+      match entity.current_floor with
+      | Some _ -> 0.
+      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
+    in
+    apply_v ~debug dt entity;
+    entity.v.y <- entity.v.y +. dvy;
+    let floor_collisions = get_floor_collisions room entity in
+    apply_collisions entity floor_collisions;
+    match List.nth_opt floor_collisions 0 with
+    | None -> false
+    | Some (_, _) -> true)
+  else
+    false
 
 let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
   let to_the_left () =

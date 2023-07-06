@@ -200,8 +200,8 @@
             "fileName": "basement_d.json",
             "height": 384,
             "width": 2040,
-            "x": -4992,
-            "y": 6816
+            "x": -2400,
+            "y": 4056
         },
         {
             "fileName": "ac-repair_a.json",
@@ -263,57 +263,57 @@
             "fileName": "final_boss.json",
             "height": 720,
             "width": 720,
-            "x": 3504,
-            "y": 2736
+            "x": -3144,
+            "y": 48
         },
         {
             "fileName": "computer_a.json",
             "height": 336,
             "width": 768,
-            "x": -1992,
-            "y": 2424
+            "x": -1152,
+            "y": 3336
         },
         {
             "fileName": "computer_d.json",
             "height": 480,
             "width": 1440,
-            "x": -5304,
-            "y": 7512
+            "x": 2496,
+            "y": 6360
         },
         {
             "fileName": "computer_e.json",
             "height": 480,
             "width": 1440,
-            "x": -3456,
-            "y": 7536
+            "x": 1464,
+            "y": 5856
         },
         {
             "fileName": "computer_f.json",
             "height": 480,
             "width": 1800,
-            "x": -4176,
-            "y": 5808
+            "x": -288,
+            "y": 4656
         },
         {
             "fileName": "computer_b.json",
             "height": 1200,
             "width": 3840,
-            "x": -480,
-            "y": 3408
+            "x": 432,
+            "y": 2904
         },
         {
             "fileName": "computer_dreamer.json",
             "height": 480,
             "width": 1080,
-            "x": 48,
-            "y": 5952
+            "x": 408,
+            "y": 4128
         },
         {
             "fileName": "computer_c.json",
             "height": 1272,
             "width": 720,
-            "x": -2304,
-            "y": 5112
+            "x": -336,
+            "y": 3360
         },
         {
             "fileName": "forgotten_a.json",
@@ -326,7 +326,7 @@
             "fileName": "library_d.json",
             "height": 480,
             "width": 960,
-            "x": 1344,
+            "x": 0,
             "y": 1632
         },
         {
@@ -340,8 +340,8 @@
             "fileName": "forgotten_b.json",
             "height": 2112,
             "width": 864,
-            "x": -888,
-            "y": 6216
+            "x": -4080,
+            "y": -1104
         },
         {
             "fileName": "infected_c.json",
@@ -473,15 +473,22 @@
             "fileName": "library_b.json",
             "height": 2304,
             "width": 1584,
-            "x": -3960,
-            "y": 2928
+            "x": -4512,
+            "y": 2256
         },
         {
             "fileName": "library_c.json",
             "height": 480,
-            "width": 864,
-            "x": 2304,
-            "y": 1800
+            "width": 1104,
+            "x": -504,
+            "y": 2208
+        },
+        {
+            "fileName": "library_e.json",
+            "height": 480,
+            "width": 1104,
+            "x": 2064,
+            "y": 2040
         }
     ],
     "onlyShowAdjacentMaps": false,

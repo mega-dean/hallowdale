@@ -75,6 +75,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "library_b" -> (LIBRARY, LIB_B)
   | "library_c" -> (LIBRARY, LIB_C)
   | "library_d" -> (LIBRARY, LIB_D)
+  | "library_e" -> (LIBRARY, LIB_E)
   | "trampoline_dreamer" -> (TRAMPOLINEPATH, TP_DREAMER)
   | "trampoline_a" -> (TRAMPOLINEPATH, TP_A)
   | "trampoline_b" -> (TRAMPOLINEPATH, TP_B)

@@ -229,13 +229,6 @@ let update_projectile p (frame_info : frame_info) : bool =
     true)
 
 let update_enemies (game : game) (state : state) =
-  let behavior_params : enemy_behavior_params =
-    {
-      ghost_pos = game.ghost.entity.dest.pos;
-      room_bounds = game.room.camera_bounds;
-      time = state.frame.time;
-    }
-  in
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
     let update_projectile' (projectile : projectile) =
@@ -252,11 +245,11 @@ let update_enemies (game : game) (state : state) =
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
-    if enemy.entity.update_pos then
-      Entity.update_pos game.room enemy.entity state.frame.dt;
+    enemy.floor_collision_this_frame <-
+      Entity.update_enemy_pos game.room enemy.entity state.frame.dt;
     let interacting () = List.length game.interaction.steps > 0 in
     if (not (interacting ())) && enemy.status.choose_behavior then
-      Enemy.choose_behavior enemy behavior_params;
+      Enemy.choose_behavior enemy state game;
     Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) =
       Sprite.advance_or_despawn state.frame.time sprite.texture sprite

@@ -632,15 +632,6 @@ type enemy_action =
   | PERFORMED of string
   | TOOK_DAMAGE of damage_kind
 
-(* things that enemies use to decide what to do next
-   - these could be optional values since not all enemies need all this info
-*)
-type enemy_behavior_params = {
-  ghost_pos : vector;
-  room_bounds : bounds;
-  time : float;
-}
-
 type projectile_duration =
   | TIME_LEFT of duration
   | X_BOUNDS of float * float
@@ -671,6 +662,7 @@ type enemy = {
   mutable health : health;
   mutable history : (enemy_action * time) list;
   mutable props : (string * float) list;
+  mutable floor_collision_this_frame : bool;
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
   textures : (string * texture) list;
@@ -830,7 +822,9 @@ type ghost_child_kind =
   | C_DASH_WALL_CHARGE_CRYSTALS
   | C_DASH_WHOOSH
   | SHADE_DASH_SPARKLES
-  (* | DASH_WHOOSH *)
+  (* CLEANUP
+     | DASH_WHOOSH
+  *)
   | WRAITHS
   | DIVE
   | DIVE_COOLDOWN
@@ -1049,6 +1043,7 @@ type room_id =
   | LIB_B
   | LIB_C
   | LIB_D
+  | LIB_E
   (* FINAL *)
   | BOSS
 
