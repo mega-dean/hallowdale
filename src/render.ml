@@ -547,9 +547,7 @@ let tick (state : state) =
           y = camera_y +. ((Config.window.height |> Int.to_float) -. (font_size |> Int.to_float));
         }
       in
-      let alpha =
-          256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int
-      in
+      let alpha = 256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int in
       Raylib.draw_text (Utils.only text.content) (dest.x |> Float.to_int) (dest.y |> Float.to_int)
         font_size
         (Raylib.Color.create 255 255 255 alpha)
@@ -800,6 +798,15 @@ let tick (state : state) =
         game.room.pickup_indicators
     in
 
+    let draw_projectile (p : projectile) =
+      draw_entity p.entity;
+      if state.debug.enabled then (
+        debug_rect p.entity.dest;
+        debug_rect_outline p.entity.sprite.dest)
+    in
+
+    let draw_loose_projectiles () = List.iter draw_projectile game.room.loose_projectiles in
+
     let draw_levers () =
       List.iter
         (fun ((door_coords, sprite) : string * sprite) ->
@@ -940,12 +947,6 @@ let tick (state : state) =
     let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
 
     let draw_enemies (enemies : (enemy_id * enemy) list) =
-      let draw_projectile (p : projectile) =
-        draw_entity p.entity;
-        if state.debug.enabled then (
-          debug_rect p.entity.dest;
-          debug_rect_outline p.entity.sprite.dest)
-      in
       List.iter
         (fun ((_, e) : enemy_id * enemy) ->
           if state.debug.enabled then (
@@ -1138,6 +1139,7 @@ let tick (state : state) =
     draw_ghost game.ghost;
     draw_enemies game.room.enemies;
     draw_object_trigger_indicators ();
+    draw_loose_projectiles ();
     draw_fg_tiles game.room camera_x camera_y state.frame.idx;
     draw_hud ();
     (match state.screen_fade with

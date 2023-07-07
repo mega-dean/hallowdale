@@ -1952,7 +1952,20 @@ let update (game : game) (state : state) =
           collisions @ acid_collisions)
       in
       if List.length collisions' = 0 then (
-        if game.ghost.current.is_taking_hazard_damage && Option.is_some game.ghost.entity.y_recoil
+        let projectile_collisions =
+          if is_vulnerable state game then
+            Entity.get_loose_projectile_collisions game.room game.ghost.entity
+          else
+            []
+        in
+        if List.length projectile_collisions > 0 then (
+          state.camera.shake <- 1.;
+          (* `start_action TAKE_DAMAGE` calls take_damage, so this does 2 damage to the ghost *)
+          take_damage game.ghost;
+          (* arbitrary direction *)
+          start_action state game (TAKE_DAMAGE UP))
+        else if
+          game.ghost.current.is_taking_hazard_damage && Option.is_some game.ghost.entity.y_recoil
         then (
           (* HACK this is just to get the ghost to continue colliding with the spikes, even if
              they tried to pogo on the same frame they hit the spikes
@@ -1966,7 +1979,7 @@ let update (game : game) (state : state) =
         game.ghost.current.is_taking_hazard_damage <- false;
         hazard_respawn game)
       else (
-        take_damage game.ghost;
+        tmp "taking hazard damage ====================== %d" state.frame.idx;
         state.camera.shake <- 1.;
         game.ghost.current.is_taking_hazard_damage <- true;
         start_action state game TAKE_DAMAGE_AND_RESPAWN)

@@ -197,21 +197,6 @@ let update_camera (game : game) (state : state) =
     state.camera.shake <- state.camera.shake -. state.frame.dt;
   state
 
-(* this is for inanimate objects like jug fragments or door levers *)
-let update_environment (game : game) (state : state) =
-  let update_fragment (f : entity) = Entity.update_pos game.room f state.frame.dt in
-  let all_spawned_fragments =
-    List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
-  in
-  List.iter update_fragment all_spawned_fragments;
-  let update_lever (door_coords, lever_sprite) =
-    match Sprite.advance_or_despawn state.frame.time lever_sprite.texture lever_sprite with
-    | None -> lever_sprite.texture <- state.global.textures.door_lever
-    | Some lever_sprite -> ()
-  in
-  List.iter update_lever game.room.triggers.levers;
-  state
-
 (* return value is "keep spawned" *)
 let update_projectile p (frame_info : frame_info) : bool =
   let despawn_projectile =
@@ -227,6 +212,29 @@ let update_projectile p (frame_info : frame_info) : bool =
     Entity.apply_v frame_info.dt p.entity;
     Sprite.advance_animation frame_info.time p.entity.sprite.texture p.entity.sprite;
     true)
+
+(* this is for inanimate objects like jug fragments or door levers *)
+let update_environment (game : game) (state : state) =
+  let loose_projectiles = ref [] in
+  let update_fragment (f : entity) = Entity.update_pos game.room f state.frame.dt in
+  let all_spawned_fragments =
+    List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
+  in
+  let update_lever (door_coords, lever_sprite) =
+    match Sprite.advance_or_despawn state.frame.time lever_sprite.texture lever_sprite with
+    | None -> lever_sprite.texture <- state.global.textures.door_lever
+    | Some lever_sprite -> ()
+  in
+  let update_projectile' projectile =
+    let keep_spawned = update_projectile projectile state.frame in
+    if keep_spawned then
+      loose_projectiles := projectile :: !loose_projectiles
+  in
+  List.iter update_fragment all_spawned_fragments;
+  List.iter update_lever game.room.triggers.levers;
+  List.iter update_projectile' game.room.loose_projectiles;
+  game.room.loose_projectiles <- !loose_projectiles;
+  state
 
 let update_enemies (game : game) (state : state) =
   let update_enemy ((_, enemy) : enemy_id * enemy) =

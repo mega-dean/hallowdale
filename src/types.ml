@@ -293,10 +293,7 @@ type entity_config = {
   bounce : float;
   (* only using the negative here because "animate" sounds more like a verb than an adjective *)
   inanimate : bool;
-  (* CLEANUP maybe not a good idea to make this mutable
-     - used for frog death poses
-  *)
-  mutable gravity_multiplier : float;
+  gravity_multiplier : float;
 }
 
 (* a sprite with physical/movement properties *)
@@ -662,6 +659,7 @@ type enemy = {
   mutable health : health;
   mutable history : (enemy_action * time) list;
   mutable props : (string * float) list;
+  (* TODO maybe add bool_props : (string * bool) list; *)
   mutable floor_collision_this_frame : bool;
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
@@ -822,7 +820,7 @@ type ghost_child_kind =
   | C_DASH_WALL_CHARGE_CRYSTALS
   | C_DASH_WHOOSH
   | SHADE_DASH_SPARKLES
-  (* CLEANUP
+  (* TODO
      | DASH_WHOOSH
   *)
   | WRAITHS
@@ -1102,6 +1100,8 @@ type room = {
   mutable npcs : npc list;
   mutable layers : layer list;
   mutable pickup_indicators : sprite list;
+  (* this is for projectiles that are spawned by enemies after they die *)
+  mutable loose_projectiles : projectile list;
 }
 
 (* these are all in pixels, scaled by Config.scale.room *)

@@ -135,7 +135,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       state.screen_fade <- Some 255;
       Ghost.maybe_begin_interaction state game "info_opening-poem");
     state.game_context <- IN_PROGRESS game
-    (* CLEANUP maybe do something to prevent the ghost from jumping when file is loaded *)
+    (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in
 
   if state.frame_inputs.jump.pressed then (

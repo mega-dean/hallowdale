@@ -1,7 +1,7 @@
 {
     "enemies": [
         [ "DUNCAN", {
-            "health": 65,
+            "health": 5,
             "w": 19,
             "h": 45,
             "gravity_multiplier": 1.0,
@@ -119,6 +119,8 @@
             "gravity_multiplier": 0.0,
             "can_take_damage": true,
             "props": [
+                ["direction_change_max_dt", 3.0],
+                ["max_v", 30.0]
             ],
             "texture_configs": [
                 ["idle", {
@@ -133,9 +135,10 @@
             "w": 30,
             "h": 37,
             "kind": "enemy",
-            "gravity_multiplier": 0.2, // CLEANUP
+            "gravity_multiplier": 0.2,
             "can_take_damage": true,
             "props": [
+                ["death_recoil_v", 1200]
             ],
             "texture_configs": [
                 ["idle", {
@@ -180,7 +183,6 @@
             "gravity_multiplier": 0.0,
             "can_take_damage": false,
             "props": [
-                ["projectile_vx", 0.0]
             ],
             "texture_configs": [
                 ["idle", {

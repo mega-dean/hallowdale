@@ -496,6 +496,7 @@ let init (params : room_params) : room =
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
     npcs;
+    loose_projectiles = [];
     pickup_indicators =
       get_pickup_indicators room_progress params.pickup_indicator_texture !pickup_triggers;
     cache;

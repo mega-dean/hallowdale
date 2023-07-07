@@ -58,13 +58,15 @@ let set_pose (enemy : enemy) (pose_name : string) : unit =
       (Show.enemy enemy)
   | Some texture -> Entity.update_sprite_texture enemy.entity texture
 
+(* this can't take an enemy arg like the other functions because it uses current_props
+   for "single-frame"/"temporary" props
+*)
 let get_prop ?(default = None) key props : float =
   match (List.assoc_opt key props, default) with
   | None, None -> failwithf "could not find enemy prop '%s' for enemy" key
   | None, Some d -> d
   | Some v, _ -> v
 
-(* CLEANUP use this *)
 let get_bool_prop (enemy : enemy) prop : bool = get_prop ~default:(Some 0.) prop enemy.props = 1.
 let set_prop (e : enemy) key new_val = e.props <- Utils.replace_assoc key new_val e.props
 
@@ -79,6 +81,7 @@ let spawn_projectile
     ?(scale = 1.)
     ?(projectile_texture_name = "projectile")
     ?(pogoable = false)
+    ?(projectile_vx_opt = None)
     (x_alignment : x_alignment)
     despawn
     spawn_time : projectile =
@@ -92,14 +95,16 @@ let spawn_projectile
   let src = get_src projectile_texture in
   let w, h = (src.w *. Config.scale.room *. scale, src.h *. Config.scale.room *. scale) in
   let vx =
-    (* CLEANUP maybe don't want to require this now that there are projectiles with vx = 0. *)
-    get_json_prop enemy "projectile_vx"
+    match projectile_vx_opt with
+    | None -> get_json_prop enemy "projectile_vx"
+    | Some vx' -> vx'
   in
   let spawn_pos = Entity.get_child_pos enemy.entity (ALIGNED (x_alignment, CENTER)) w h in
   let vx' =
+    (* FIXME something is wrong here - locker-boy projectiles are moving backwards *)
     match x_alignment with
-    | LEFT -> -1. *. vx
-    | RIGHT -> vx
+    | LEFT -> vx
+    | RIGHT -> -1. *. vx
     | CENTER -> 0.
   in
   let dest = { pos = spawn_pos; w; h } in
@@ -155,9 +160,6 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           get_prop' "facing_right" = 1.;
         enemy.spawned_projectiles <-
           [
-            (* CLEANUP these projectile spawns might be off now
-               - maybe do one IN_FRONT and one BEHIND
-            *)
             spawn_projectile enemy LEFT projectile_duration current_time;
             spawn_projectile enemy RIGHT projectile_duration current_time;
           ]
@@ -240,8 +242,7 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
       | _ -> ())
     | FROG -> (
       match pose_name' with
-      (* CLEANUP try using variants, maybe polymorphic variants *)
-      (* CLEANUP also maybe try enemies as first-class modules *)
+      (* FIXME try using variants, maybe polymorphic variants *)
       | "ascend" ->
         pose_name := "idle";
         enemy.entity.v.y <- -500. +. Random.float 150.
@@ -277,15 +278,15 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
         in
         enemy.spawned_projectiles <-
           [
-            spawn_projectile enemy ~projectile_texture_name:"shock" ~scale:1.1 ~pogoable:true CENTER
-              projectile_duration current_time;
+            spawn_projectile enemy ~projectile_texture_name:"shock" ~projectile_vx_opt:(Some 0.)
+              ~scale:1.1 ~pogoable:true CENTER projectile_duration current_time;
           ];
 
         pose_name := "idle"
       | _ -> ())));
   set_pose enemy !pose_name
 
-(* CLEANUP maybe rename these:
+(* TODO maybe rename these:
    - continue_action is only used for things that depend on current_duration_opt
    - some actions need to be "continued" indefinitely though, so it's weird to keep using "start_action" for those
 *)
@@ -300,9 +301,7 @@ let continue_action
     current_props =
   set_action enemy ~current_duration_opt pose_name current_time current_props
 
-(* this is for logging arbitrary actions that don't have to be a renderable pose
-   CLEANUP this forces choose_behavior to make some state updates, which maybe isn't a good idea
-*)
+(* this is for logging arbitrary actions that don't have to be a renderable pose *)
 let log_action (enemy : enemy) (action_name : string) (current : float) =
   enemy.history <- Utils.replace_assoc (PERFORMED action_name) { at = current } enemy.history
 
@@ -324,21 +323,6 @@ let maybe_take_damage
     (damage : int)
     (collision : collision) : bool =
   let kill_enemy () =
-    (match enemy.kind with
-    | ENEMY ->
-      (* CLEANUP better death recoil *)
-      (* enemy.entity.y_recoil <- Some { speed = 100.; time_left = { seconds = 1. }; reset_v = true };
-       * enemy.entity.x_recoil <-
-       *   Some
-       *     {
-       *       speed = (if Random.bool () then -100. else 100.);
-       *       time_left = { seconds = 1. };
-       *       reset_v = true;
-       *     } *)
-      ()
-    | BOSS
-    | MULTI_BOSS ->
-      ());
     (* TODO start_and_log_action "die"; *)
     enemy.spawned_projectiles <- [];
     enemy.status.choose_behavior <- false;
@@ -346,9 +330,8 @@ let maybe_take_damage
     match enemy.id with
     | LOCKER_BOY -> Entity.hide enemy.entity
     | FROG ->
-      (* CLEANUP maybe move this somewhere else *)
       let v =
-        let v' = (* CLEANUP  *) 600. in
+        let v' = get_json_prop enemy "death_recoil_v" in
         match collision.direction with
         | UP -> { x = 0.; y = -1. *. v' }
         | DOWN -> { x = 0.; y = v' }
@@ -397,14 +380,19 @@ let time_ago (enemy : enemy) (action_name : string) (clock : time) : duration =
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let ghost_pos = game.ghost.entity.dest.pos in
+  let still_doing (action_name : string) (duration : float) : bool =
+    (* TODO maybe look up duration by name by adding json props like `action-name_duration` *)
+    let started = action_started_at enemy action_name in
+    state.frame.time -. started.at < duration
+  in
   match enemy.id with
   | LOCKER_BOY ->
     let vanished = action_started_at enemy "vanish" in
     let unvanished = action_started_at enemy "unvanish" in
     let vanish_duration = animation_loop_duration (List.assoc "vanish" enemy.textures) in
-    let still_vanishing = state.frame.time -. vanished.at < vanish_duration in
+    let still_vanishing = still_doing "vanish" vanish_duration in
     let should_unvanish () = (not still_vanishing) && vanished > unvanished in
-    let should_vanish () = get_prop ~default:(Some 0.) "should_vanish" enemy.props = 1. in
+    let should_vanish () = get_bool_prop enemy "should_vanish" in
     let unvanish () =
       enemy.entity.v <- Zero.vector ();
       match Random.int 3 with
@@ -460,12 +448,12 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     let last_direction_change = action_started_at enemy "change_direction" in
     let direction_change_dt = get_prop ~default:(Some 1.) "direction_change_dt" enemy.props in
     if last_direction_change.at < state.frame.time -. direction_change_dt then (
-      (* CLEANUP move these hardcoded numbers into enemies.json *)
-      set_prop enemy "direction_change_dt" (Random.float 3.);
-      (* CLEANUP this is sticking too tightly to the initial x/y *)
+      let direction_change_max_dt = get_json_prop enemy "direction_change_max_dt" in
+      set_prop enemy "direction_change_dt" (Random.float direction_change_max_dt);
       let initial_x = get_prop "initial_x" enemy.props in
       let initial_y = get_prop "initial_y" enemy.props in
-      let rand_x, rand_y = (Random.float 20., Random.float 20.) in
+      let max_v = get_json_prop enemy "max_v" in
+      let rand_x, rand_y = (Random.float max_v, Random.float max_v) in
       let new_vx =
         if initial_x > enemy.entity.dest.pos.x then (
           enemy.entity.sprite.facing_right <- true;
@@ -484,7 +472,11 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       enemy.entity.v.y <- new_vy;
       log_action enemy "change_direction" state.frame.time)
   | FROG ->
-    (* CLEANUP lots of hardcoded numbers in here *)
+    (* TODO these could be moved to enemies.json *)
+    let explosion_scale = 3. in
+    let dunk_vy = 40. in
+    let dunk_duration = 2. in
+    let cooldown_duration = 0.5 in
     let initial_x = get_prop "initial_x" enemy.props in
     let initial_y = get_prop "initial_y" enemy.props in
     (* most enemies set choose_behavior <- false on death, but not FROG *)
@@ -497,37 +489,18 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         List.length collisions > 0
       in
       let dunk () =
-        enemy.entity.v <- { x = 0.; y = 40. };
-        enemy.entity.dest.pos.y <- enemy.entity.dest.pos.y +. 20.;
+        enemy.entity.v <- { x = 0.; y = dunk_vy };
         log_action enemy "dunked" state.frame.time;
         set_prop enemy "dunked" 1.;
         set_pose enemy "struck"
       in
-      itmp "dead frog with current v: %s" (Show.vector enemy.entity.v);
-      enemy.entity.config.gravity_multiplier <- 0.;
 
       if get_bool_prop enemy "dunked" then (
-        (* CLEANUP still_doing : string -> time -> float -> bool *)
-        let dunk_started = action_started_at enemy "dunked" in
-        let dunk_duration = (* CLEANUP  *) 2. in
-        let still_dunking = state.frame.time -. dunk_started.at < dunk_duration in
-        if still_dunking then
+        if still_doing "dunked" dunk_duration then
           set_pose enemy "struck"
         else
           Entity.hide enemy.entity;
         tmp "despawn enemy")
-      else if get_bool_prop enemy "exploding" then
-        (if Collision.between_entities enemy.entity game.ghost.entity then
-           (* FIXME check ghost collision and cause damage
-- not sure how to do this since enemy can't call Ghost.take_damage directly
-- so maybe instead of keeping the "explosion" phase as an enemy, it could despawn when the explosion starts
-- and just spawn the explosion separately (that the ghost can check from ghost.ml)
-           *)
-          ();
-        (* FIXME probably also need to check enemy collisions
-           - maybe only the other FROG enemies though
-        *)
-        start_action enemy "explosion" state.frame.time [])
       else if get_bool_prop enemy "homing" then (
         start_action enemy "homing" state.frame.time
           [ ("ghost_x", ghost_pos.x); ("ghost_y", ghost_pos.y) ];
@@ -536,10 +509,14 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
           || Collision.between_entities enemy.entity game.ghost.entity
         in
         if should_explode then (
-          enemy.entity.v.x <- 0.;
-          enemy.entity.v.y <- 0.;
-          set_prop enemy "exploding" 1.;
-          start_and_log_action enemy "explosion" state.frame.time [])
+          let projectile =
+            let projectile_duration = TIME_LEFT { seconds = 1. } in
+            spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
+              ~pogoable:true ~projectile_vx_opt:(Some 0.) CENTER projectile_duration
+              state.frame.time
+          in
+          game.room.loose_projectiles <- projectile :: game.room.loose_projectiles;
+          Entity.hide enemy.entity)
         else if any_liquid_collisions () then
           dunk ();
         itmp "homing at pos %s, with ghost at %s"
@@ -548,10 +525,9 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       else if get_bool_prop enemy "struck_cooldown" then (
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
+
         let cooldown_started = action_started_at enemy "struck_cooldown" in
-        let cooldown_duration = (* CLEANUP  *) 0.5 in
-        if cooldown_started.at +. cooldown_duration < state.frame.time then
-          (* CLEANUP maybe add set_bool_prop fn *)
+        if not (still_doing "struck_cooldown" cooldown_duration) then
           set_prop enemy "homing" 1.)
       else if get_bool_prop enemy "death_recoil" then (
         itmp "death recoiling with current v: %s" (Show.vector enemy.entity.v);
@@ -564,7 +540,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
           set_pose enemy "struck"))
     else (
       if enemy.entity.dest.pos.y > initial_y +. 100. then (
-        (* CLEANUP duplicated *)
+        (* TODO duplicated - maybe add turn_towards_origin fn if this is shared often enough *)
         let rand_x = Random.float 25. in
         let new_vx =
           if initial_x > enemy.entity.dest.pos.x then (
@@ -578,7 +554,6 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         ();
         start_action enemy "ascend" state.frame.time []);
       if enemy.entity.v.y > 0. then (
-        (* CLEANUP maybe not a good idea to be calling set_pose directly from here *)
         enemy.entity.v.y <- Utils.bound 0. enemy.entity.v.y 120.;
         set_pose enemy "idle-descending")
       else
@@ -597,15 +572,22 @@ let create_from_rects
     (enemy_rects : (enemy_id * rect) list)
     finished_interactions
     (enemy_configs : (enemy_id * Json_t.enemy_config) list) : enemy list =
-  (* CLEANUP this is loading the same textures multiple times for eg. locker-boys *)
+  let texture_cache : (enemy_id * (string * texture) list) list ref = ref [] in
   let build id kind enemy_name (enemy_config : Json_t.enemy_config) entity_dest on_killed : enemy =
     let texture_configs : texture_config list =
       List.map (Entity.to_texture_config ENEMIES enemy_name) enemy_config.texture_configs
     in
     let entity, textures =
-      Entity.create_from_textures ~collision:(Some DEST)
-        ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs entity_dest
+      match List.assoc_opt id !texture_cache with
+      | None ->
+        Entity.create_from_texture_configs ~collision:(Some DEST)
+          ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs entity_dest
+      | Some textures ->
+        Entity.create_from_textures ~collision:(Some DEST)
+          ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs textures entity_dest
     in
+
+    texture_cache := Utils.replace_assoc id textures !texture_cache;
 
     let json =
       match List.assoc_opt id enemy_configs with

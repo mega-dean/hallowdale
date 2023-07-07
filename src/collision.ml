@@ -159,6 +159,7 @@ let between_rects (r1 : rect) (r2 : rect) : collision option =
 
 let with_entity (entity : entity) (r2 : rect) : collision option = between_rects entity.dest r2
 
+(* TODO this (and between_shapes) should probably return a collision option like the other fns in this file *)
 let between_entities (entity1 : entity) (entity2 : entity) : bool =
   match with_entity entity1 entity2.dest with
   | None -> false

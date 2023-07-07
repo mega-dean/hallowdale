@@ -121,6 +121,14 @@ let get_damage_collisions (room : room) (entity : entity) : (collision * rect) l
   in
   get_tile_collisions layers entity
 
+let get_loose_projectile_collisions (room : room) (entity : entity) : (collision * rect) list =
+  let get_projectile_collision (projectile : projectile) : (collision * rect) option =
+    match Collision.with_entity entity projectile.entity.dest with
+    | None -> None
+    | Some c -> Some (c, projectile.entity.dest)
+  in
+  List.filter_map get_projectile_collision room.loose_projectiles
+
 let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * rect) list) : unit =
   let adjust_position ((coll, floor) : collision * rect) =
     let top_of r = r.pos.y in
@@ -191,25 +199,6 @@ let update_enemy_pos ?(debug = None) (room : room) (entity : entity) (dt : float
     let collisions = get_floor_collisions room entity in
     apply_collisions entity collisions;
     List.length collisions > 0)
-  else
-    false
-
-(* CLEANUP remove *)
-(* this returns the direction of the first collision *)
-let check_floor_collisions ?(debug = None) (room : room) (entity : entity) (dt : float) : bool =
-  if entity.update_pos then (
-    let dvy =
-      match entity.current_floor with
-      | Some _ -> 0.
-      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
-    in
-    apply_v ~debug dt entity;
-    entity.v.y <- entity.v.y +. dvy;
-    let floor_collisions = get_floor_collisions room entity in
-    apply_collisions entity floor_collisions;
-    match List.nth_opt floor_collisions 0 with
-    | None -> false
-    | Some (_, _) -> true)
   else
     false
 
@@ -338,26 +327,26 @@ let create_from_textures
     ?(collision = None)
     ?(gravity_multiplier = 1.)
     (texture_configs : texture_config list)
+    (textures : (string * texture) list)
     (entity_dest : rect) : entity * (string * texture) list =
-  (* let animation_src = get_src sprite.texture in *)
-  let textures = List.map load_pose texture_configs in
+  (* let textures = List.map load_pose texture_configs in *)
+  let config =
+    (* texture_configs can't be empty *)
+    List.nth texture_configs 0
+  in
   let validate_configs_are_complete () =
-    let tc =
-      (* texture_configs can't be empty *)
-      List.nth texture_configs 0
-    in
     let get_filenames asset_dir char_name =
       Sys.readdir (File.convert_path (fmt "../assets/%s/%s" asset_dir char_name)) |> Array.to_list
     in
     let config_names =
       texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name)
     in
-    let png_names = get_filenames (Show.asset_dir tc.asset_dir) tc.character_name in
+    let png_names = get_filenames (Show.asset_dir config.asset_dir) config.character_name in
 
     let validate_png_name png_name =
       if not (List.mem png_name config_names) then
         failwithf "found %s image '%s' that has no corresponding config in enemies.json"
-          tc.character_name png_name
+          config.character_name png_name
     in
 
     let validate_config_name config_name =
@@ -367,13 +356,25 @@ let create_from_textures
           Str.first_chars config_name (String.length config_name - 4)
         in
         failwithf "found %s texture_config for '%s' that has no corresponding %s.png"
-          tc.character_name short short)
+          config.character_name short short)
     in
     List.iter validate_png_name png_names;
     List.iter validate_config_name config_names
   in
-  let initial_texture = List.nth textures 0 |> snd in
+  let initial_texture =
+    match List.assoc_opt "idle" textures with
+    | None -> failwithf "could not find 'idle' texture for %s" config.character_name
+    | Some texture -> texture
+  in
   let texture_config = List.nth texture_configs 0 in
   validate_configs_are_complete ();
   ( create ~collision ~gravity_multiplier texture_config.character_name initial_texture entity_dest,
     textures )
+
+let create_from_texture_configs
+    ?(collision = None)
+    ?(gravity_multiplier = 1.)
+    (texture_configs : texture_config list)
+    (entity_dest : rect) : entity * (string * texture) list =
+  let textures = List.map load_pose texture_configs in
+  create_from_textures ~collision ~gravity_multiplier texture_configs textures entity_dest

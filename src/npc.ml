@@ -28,7 +28,7 @@ let create_from_rects (npc_rects : (npc_id * rect * bool) list) (npc_configs : (
     let texture_configs : texture_config list =
       List.map (Entity.to_texture_config NPCS npc_name) npc_config.texture_configs
     in
-    let entity, textures = Entity.create_from_textures texture_configs { dest with w; h } in
+    let entity, textures = Entity.create_from_texture_configs texture_configs { dest with w; h } in
 
     (* TODO create_from_textures could also take a facing_right arg *)
     entity.sprite.facing_right <- facing_right;
