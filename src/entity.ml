@@ -239,6 +239,9 @@ let is_on_screen' (r : rect) = not (r.pos.x < 0. && r.pos.y < 0.)
 let is_on_screen (e : entity) = is_on_screen' e.dest
 let is_off_screen (e : entity) = not (is_on_screen e)
 
+let get_center (entity : entity) : vector =
+  { x = entity.dest.pos.x +. (entity.dest.w /. 2.); y = entity.dest.pos.y +. (entity.dest.h /. 2.) }
+
 (* called once per frame to align sprite.dest position with entity.dest position *)
 let adjust_sprite_dest (e : entity) =
   e.sprite.dest.pos.y <- e.dest.pos.y -. e.sprite.texture.coll_offset.y;

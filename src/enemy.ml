@@ -76,6 +76,8 @@ let get_json_prop (e : enemy) key : float =
     failwithf "could not find json prop '%s' in enemies.json for enemy %s" key (Show.enemy_id e.id)
   | Some v -> v
 
+(* this only supports projectiles moving horizontally *)
+(* CLEANUP labels for args *)
 let spawn_projectile
     (enemy : enemy)
     ?(scale = 1.)
@@ -83,6 +85,7 @@ let spawn_projectile
     ?(pogoable = false)
     ?(projectile_vx_opt = None)
     (x_alignment : x_alignment)
+    (direction : direction)
     despawn
     spawn_time : projectile =
   let projectile_texture =
@@ -101,22 +104,21 @@ let spawn_projectile
   in
   let spawn_pos = Entity.get_child_pos enemy.entity (ALIGNED (x_alignment, CENTER)) w h in
   let vx' =
-    (* FIXME something is wrong here - locker-boy projectiles are moving backwards *)
-    match x_alignment with
-    | LEFT -> vx
-    | RIGHT -> -1. *. vx
-    | CENTER -> 0.
+    match direction with
+    | LEFT -> -1. *. vx
+    | RIGHT -> vx
+    | _ -> failwith "spawn_projectile direction must be horizontal"
   in
   let dest = { pos = spawn_pos; w; h } in
   let entity =
     Entity.create
-      (fmt "%s projectile ---------------------- " (Show.enemy_name enemy))
+      (fmt "%s projectile" (Show.enemy_name enemy))
       ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.)
       ~collision:(Some DEST) projectile_texture dest
   in
-
   { entity; despawn; spawned = { at = spawn_time }; pogoable }
 
+(* CLEANUP remove *)
 let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current_time current_props
     =
   let get_prop' prop_name = get_prop prop_name current_props in
@@ -160,8 +162,8 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           get_prop' "facing_right" = 1.;
         enemy.spawned_projectiles <-
           [
-            spawn_projectile enemy LEFT projectile_duration current_time;
-            spawn_projectile enemy RIGHT projectile_duration current_time;
+            spawn_projectile enemy LEFT RIGHT projectile_duration current_time;
+            spawn_projectile enemy RIGHT LEFT projectile_duration current_time;
           ]
           @ enemy.spawned_projectiles
       | "jumping" ->
@@ -214,13 +216,13 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           set_prop enemy "should_vanish" 1.
       | "wall-perch" ->
         if starting_action then (
-          let x, projectile_direction =
+          let (x, projectile_direction, alignment) : float * direction * x_alignment =
             if get_prop' "random_direction_right" = 1. then (
               enemy.entity.sprite.facing_right <- true;
-              (get_json_prop enemy "wall_perch_left_x", RIGHT))
+              (get_json_prop enemy "wall_perch_left_x", RIGHT, RIGHT))
             else (
               enemy.entity.sprite.facing_right <- false;
-              (get_json_prop enemy "wall_perch_right_x", LEFT))
+              (get_json_prop enemy "wall_perch_right_x", LEFT, LEFT))
           in
           let y = get_prop' "random_wall_perch_y" in
           Entity.unhide enemy.entity;
@@ -234,56 +236,17 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           in
           enemy.spawned_projectiles <-
             [
-              spawn_projectile enemy ~scale:0.5 ~pogoable:true projectile_direction
+              spawn_projectile enemy ~scale:0.5 ~pogoable:true alignment projectile_direction
                 projectile_duration current_time;
             ])
         else if current_duration > 2. then
           set_prop enemy "should_vanish" 1.
       | _ -> ())
-    | FROG -> (
-      match pose_name' with
-      (* FIXME try using variants, maybe polymorphic variants *)
-      | "ascend" ->
-        pose_name := "idle";
-        enemy.entity.v.y <- -500. +. Random.float 150.
-      | "homing" ->
-        let larger v = Utils.bound (-500.) (v +. 5. +. Random.float 10.) 500. in
-        let smaller v = Utils.bound (-500.) (v -. (5. +. Random.float 10.)) 500. in
-        let ghost_x = get_prop' "ghost_x" in
-        let ghost_y = get_prop' "ghost_y" in
-        let vx =
-          if ghost_x > enemy.entity.dest.pos.x then
-            larger enemy.entity.v.x
-          else
-            smaller enemy.entity.v.x
-        in
-        let vy =
-          if ghost_y > enemy.entity.dest.pos.y then
-            larger enemy.entity.v.y
-          else
-            smaller enemy.entity.v.y
-        in
-        enemy.entity.v.x <- vx;
-        enemy.entity.v.y <- vy
-      | _ -> ())
+    | FROG -> ()
     | FISH
     | PENGUIN
-    | ELECTRICITY -> (
-      match pose_name' with
-      | "shock" ->
-        (* ELECTRICITY should always have the "idle" pose - starting this action just adds the shock child sprite *)
-        let shock_config = List.assoc "shock" enemy.json.texture_configs in
-        let projectile_duration =
-          TIME_LEFT { seconds = (shock_config.count |> Int.to_float) *. shock_config.duration }
-        in
-        enemy.spawned_projectiles <-
-          [
-            spawn_projectile enemy ~projectile_texture_name:"shock" ~projectile_vx_opt:(Some 0.)
-              ~scale:1.1 ~pogoable:true CENTER projectile_duration current_time;
-          ];
-
-        pose_name := "idle"
-      | _ -> ())));
+    | ELECTRICITY ->
+      ()));
   set_pose enemy !pose_name
 
 (* TODO maybe rename these:
@@ -309,6 +272,100 @@ let log_action (enemy : enemy) (action_name : string) (current : float) =
 let start_and_log_action (enemy : enemy) (action_name : string) (current : float) current_props =
   log_action enemy action_name current;
   start_action enemy action_name current current_props
+
+(* CLEANUP still not sure if this is a good idea
+- having the enemy-specific variants in the type signature is pretty nice
+- but still requires some unnecessary syncing of the variant with its string
+- probably worth trying modules for enemies, that can have explicit `type actions = HOMING | ASCEND | ...`
+ *)
+let set_electricity_action (enemy : enemy) action current_time current_props =
+  let pose_name =
+    match action with
+    | `SHOCK ->
+      let action_name = "shock" in
+      (* ELECTRICITY should always have the "idle" pose - starting this action just adds the shock child sprite *)
+      let shock_config = List.assoc action_name enemy.json.texture_configs in
+      let projectile_duration =
+        TIME_LEFT { seconds = (shock_config.count |> Int.to_float) *. shock_config.duration }
+      in
+      enemy.spawned_projectiles <-
+        [
+          spawn_projectile enemy ~projectile_texture_name:action_name ~projectile_vx_opt:(Some 0.)
+            ~scale:1.1 ~pogoable:true CENTER RIGHT projectile_duration current_time;
+        ];
+      tmp " ------------------------ got shock";
+      log_action enemy action_name current_time;
+      "idle"
+  in
+  set_pose enemy pose_name
+
+let set_frog_action (enemy : enemy) action (room : room) current_time current_props =
+  let pose_name =
+    match action with
+    | `HOMING ->
+      let min_v, max_v =
+        let v' = (* CLEANUP move to json config *) 500. in
+        (-1. *. v', v')
+      in
+      let larger v = Utils.bound min_v (v +. 5. +. Random.float 10.) max_v in
+      let smaller v = Utils.bound min_v (v -. (5. +. Random.float 10.)) max_v in
+      let ghost_x = get_prop "ghost_x" current_props in
+      let ghost_y = get_prop "ghost_y" current_props in
+      let vx =
+        if ghost_x > enemy.entity.dest.pos.x then
+          larger enemy.entity.v.x
+        else
+          smaller enemy.entity.v.x
+      in
+      let vy =
+        if ghost_y > enemy.entity.dest.pos.y then
+          larger enemy.entity.v.y
+        else
+          smaller enemy.entity.v.y
+      in
+      enemy.entity.v.x <- vx;
+      enemy.entity.v.y <- vy;
+      "homing"
+    | `ASCEND ->
+      itmp "------------------- ascending frog";
+      enemy.entity.v.y <- -500. +. Random.float 150.;
+      "idle"
+    | `EXPLODE ->
+      let projectile =
+        let explosion_scale = 4. in
+        let projectile_duration = TIME_LEFT { seconds = 1. } in
+        spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
+          ~pogoable:true ~projectile_vx_opt:(Some 0.) CENTER RIGHT projectile_duration current_time
+      in
+      (* this will only catch collisions on the first frame of the
+         explosion, so a frog can move into an explosion without dying
+      *)
+      let check_frog_collision ((_, target_enemy) : enemy_id * enemy) =
+        if target_enemy.id = FROG && target_enemy <> enemy then
+          if
+            (* if target_enemy.id = FROG then *)
+            Collision.between_entities projectile.entity target_enemy.entity
+          then (
+            let vx =
+              let v' = get_json_prop enemy "death_recoil_v" in
+              let explosion_center = (Entity.get_center projectile.entity).x in
+              let target_center = (Entity.get_center target_enemy.entity).x in
+              if explosion_center > target_center then
+                -1. *. v'
+              else
+                v'
+            in
+            (* this only recoils the frog horizontally *)
+            target_enemy.entity.v.x <- vx;
+            target_enemy.health.current <- 0;
+            set_prop target_enemy "death_recoil" 1.)
+      in
+      List.iter check_frog_collision room.enemies;
+      room.loose_projectiles <- projectile :: room.loose_projectiles;
+      Entity.hide enemy.entity;
+      "idle"
+  in
+  set_pose enemy pose_name
 
 let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
   match List.assoc_opt (TOOK_DAMAGE damage_kind : enemy_action) enemy.history with
@@ -473,7 +530,6 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       log_action enemy "change_direction" state.frame.time)
   | FROG ->
     (* TODO these could be moved to enemies.json *)
-    let explosion_scale = 3. in
     let dunk_vy = 40. in
     let dunk_duration = 2. in
     let cooldown_duration = 0.5 in
@@ -500,34 +556,26 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
           set_pose enemy "struck"
         else
           Entity.hide enemy.entity;
-        tmp "despawn enemy")
+        itmp "despawn enemy")
       else if get_bool_prop enemy "homing" then (
-        start_action enemy "homing" state.frame.time
+        set_frog_action enemy `HOMING game.room state.frame.time
           [ ("ghost_x", ghost_pos.x); ("ghost_y", ghost_pos.y) ];
         let should_explode =
           enemy.floor_collision_this_frame
           || Collision.between_entities enemy.entity game.ghost.entity
+          (* TODO maybe check slash collisions too *)
         in
         if should_explode then (
-          let projectile =
-            let projectile_duration = TIME_LEFT { seconds = 1. } in
-            spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
-              ~pogoable:true ~projectile_vx_opt:(Some 0.) CENTER projectile_duration
-              state.frame.time
-          in
-          game.room.loose_projectiles <- projectile :: game.room.loose_projectiles;
-          Entity.hide enemy.entity)
+          state.camera.shake <- 1.;
+          set_frog_action enemy `EXPLODE game.room state.frame.time [])
         else if any_liquid_collisions () then
-          dunk ();
-        itmp "homing at pos %s, with ghost at %s"
-          (Show.vector enemy.entity.dest.pos)
-          (Show.vector ghost_pos))
+          dunk ())
       else if get_bool_prop enemy "struck_cooldown" then (
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
-
         let cooldown_started = action_started_at enemy "struck_cooldown" in
         if not (still_doing "struck_cooldown" cooldown_duration) then
+          (* CLEANUP maybe use start/continue_frog_action for homing *)
           set_prop enemy "homing" 1.)
       else if get_bool_prop enemy "death_recoil" then (
         itmp "death recoiling with current v: %s" (Show.vector enemy.entity.v);
@@ -551,8 +599,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
             -1. *. rand_x)
         in
         enemy.entity.v.x <- new_vx;
-        ();
-        start_action enemy "ascend" state.frame.time []);
+        set_frog_action enemy `ASCEND game.room state.frame.time []);
       if enemy.entity.v.y > 0. then (
         enemy.entity.v.y <- Utils.bound 0. enemy.entity.v.y 120.;
         set_pose enemy "idle-descending")
@@ -562,10 +609,8 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     let last_shock = action_started_at enemy "shock" in
     let shock_dt = (* needs to be > 2.2 *) 4. in
     if last_shock.at < state.frame.time -. shock_dt then
-      start_and_log_action enemy "shock" state.frame.time []
-  | PENGUIN ->
-    ignore enemy;
-    ()
+      set_electricity_action enemy `SHOCK state.frame.time []
+  | PENGUIN -> ()
 
 (* object rects in Tiled define the position of the enemy, and enemies.json defines w/h *)
 let create_from_rects
