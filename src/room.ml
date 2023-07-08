@@ -503,10 +503,6 @@ let init (params : room_params) : room =
     cache;
   }
 
-(* FIXME this should take a separate camera_pos arg instead of using ghost
-- that probably wouldn't work since the new room isn't known yet (so the camera_ bounds aren't known)
-   - can probably get this working by adding more control over camera "speed", and have it instantly update after room transitions
-*)
 let change_current_room
     (state : state)
     (game : game)
@@ -542,7 +538,7 @@ let change_current_room
   game.room <- new_room;
   game.room.layers <-
     Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
-  tmp "creating new camera at %s" (Show.vector ghost_start_pos);
+  state.camera.update_instantly <- true;
   state.camera.raylib <-
     Tiled.create_camera_at (Raylib.Vector2.create ghost_start_pos.x ghost_start_pos.y) 0.
 

@@ -90,7 +90,7 @@ let init () : state =
     pause_menu = None;
     should_save = false;
     world;
-    camera = { raylib = camera; subject = GHOST; shake = 0. };
+    camera = { raylib = camera; subject = GHOST; shake = 0.; update_instantly = false };
     screen_fade = None;
     frame = { idx = 0; dt = 0.; time = 0. };
     frame_inputs =
@@ -168,7 +168,6 @@ let update_camera (game : game) (state : state) =
       in
       let current_x, current_y = (camera_state.current_pos.x, camera_state.current_pos.y) in
       let between amount a b =
-        (* TODO use motion to calculate *)
         (* amount = 1.0 returns the midpoint, larger amount is closer to `a` *)
         ((amount *. a) +. b) /. (amount +. 1.)
       in
@@ -185,9 +184,16 @@ let update_camera (game : game) (state : state) =
         else
           target_y
       in
-      Raylib.Vector2.create
-        (Utils.bound camera_state.room_bounds.min.x smooth_x camera_state.room_bounds.max.x)
-        (Utils.bound camera_state.room_bounds.min.y smooth_y camera_state.room_bounds.max.y)
+      let create_bounded_camera x y =
+        Raylib.Vector2.create
+          (Utils.bound camera_state.room_bounds.min.x x camera_state.room_bounds.max.x)
+          (Utils.bound camera_state.room_bounds.min.y y camera_state.room_bounds.max.y)
+      in
+      if state.camera.update_instantly then (
+        state.camera.update_instantly <- false;
+        create_bounded_camera target_x target_y)
+      else
+        create_bounded_camera smooth_x smooth_y
     in
     let target = bounded_target () in
     Tiled.create_camera_at target state.camera.shake

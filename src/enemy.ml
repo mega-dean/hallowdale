@@ -77,16 +77,15 @@ let get_json_prop (e : enemy) key : float =
   | Some v -> v
 
 (* this only supports projectiles moving horizontally *)
-(* CLEANUP labels for args *)
 let spawn_projectile
-    (enemy : enemy)
     ?(scale = 1.)
     ?(projectile_texture_name = "projectile")
     ?(pogoable = false)
     ?(projectile_vx_opt = None)
-    (x_alignment : x_alignment)
-    (direction : direction)
-    despawn
+    ~(x_alignment : x_alignment)
+    ~(direction : direction)
+    (enemy : enemy)
+    (despawn : projectile_duration)
     spawn_time : projectile =
   let projectile_texture =
     match List.assoc_opt projectile_texture_name enemy.textures with
@@ -118,7 +117,7 @@ let spawn_projectile
   in
   { entity; despawn; spawned = { at = spawn_time }; pogoable }
 
-(* CLEANUP remove *)
+(* TODO remove after figuring out how to handle enemies *)
 let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current_time current_props
     =
   let get_prop' prop_name = get_prop prop_name current_props in
@@ -162,8 +161,10 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           get_prop' "facing_right" = 1.;
         enemy.spawned_projectiles <-
           [
-            spawn_projectile enemy LEFT RIGHT projectile_duration current_time;
-            spawn_projectile enemy RIGHT LEFT projectile_duration current_time;
+            spawn_projectile enemy ~x_alignment:LEFT ~direction:RIGHT projectile_duration
+              current_time;
+            spawn_projectile enemy ~x_alignment:RIGHT ~direction:LEFT projectile_duration
+              current_time;
           ]
           @ enemy.spawned_projectiles
       | "jumping" ->
@@ -216,7 +217,7 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           set_prop enemy "should_vanish" 1.
       | "wall-perch" ->
         if starting_action then (
-          let (x, projectile_direction, alignment) : float * direction * x_alignment =
+          let (x, direction, x_alignment) : float * direction * x_alignment =
             if get_prop' "random_direction_right" = 1. then (
               enemy.entity.sprite.facing_right <- true;
               (get_json_prop enemy "wall_perch_left_x", RIGHT, RIGHT))
@@ -236,7 +237,7 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           in
           enemy.spawned_projectiles <-
             [
-              spawn_projectile enemy ~scale:0.5 ~pogoable:true alignment projectile_direction
+              spawn_projectile enemy ~scale:0.5 ~pogoable:true ~x_alignment ~direction
                 projectile_duration current_time;
             ])
         else if current_duration > 2. then
@@ -252,6 +253,8 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
 (* TODO maybe rename these:
    - continue_action is only used for things that depend on current_duration_opt
    - some actions need to be "continued" indefinitely though, so it's weird to keep using "start_action" for those
+
+   - also, enemy_action is used for things that end up in enemy.history, which doesn't apply to everything that uses this fn
 *)
 let start_action (enemy : enemy) (pose_name : string) (current_time : float) current_props =
   set_action enemy pose_name current_time current_props
@@ -273,11 +276,11 @@ let start_and_log_action (enemy : enemy) (action_name : string) (current : float
   log_action enemy action_name current;
   start_action enemy action_name current current_props
 
-(* CLEANUP still not sure if this is a good idea
-- having the enemy-specific variants in the type signature is pretty nice
-- but still requires some unnecessary syncing of the variant with its string
-- probably worth trying modules for enemies, that can have explicit `type actions = HOMING | ASCEND | ...`
- *)
+(* TODO still not sure if this is a good idea
+   - having the enemy-specific variants in the type signature is pretty nice
+   - but still requires some unnecessary syncing of the variant with its string
+   - probably worth trying modules for enemies, that can have explicit `type actions = HOMING | ASCEND | ...`
+*)
 let set_electricity_action (enemy : enemy) action current_time current_props =
   let pose_name =
     match action with
@@ -291,20 +294,21 @@ let set_electricity_action (enemy : enemy) action current_time current_props =
       enemy.spawned_projectiles <-
         [
           spawn_projectile enemy ~projectile_texture_name:action_name ~projectile_vx_opt:(Some 0.)
-            ~scale:1.1 ~pogoable:true CENTER RIGHT projectile_duration current_time;
+            ~scale:1.1 ~pogoable:true ~x_alignment:CENTER ~direction:RIGHT projectile_duration
+            current_time;
         ];
-      tmp " ------------------------ got shock";
       log_action enemy action_name current_time;
       "idle"
   in
   set_pose enemy pose_name
 
 let set_frog_action (enemy : enemy) action (room : room) current_time current_props =
+  (* TODO move hardcoded numbers to json config *)
   let pose_name =
     match action with
     | `HOMING ->
       let min_v, max_v =
-        let v' = (* CLEANUP move to json config *) 500. in
+        let v' = 500. in
         (-1. *. v', v')
       in
       let larger v = Utils.bound min_v (v +. 5. +. Random.float 10.) max_v in
@@ -327,7 +331,6 @@ let set_frog_action (enemy : enemy) action (room : room) current_time current_pr
       enemy.entity.v.y <- vy;
       "homing"
     | `ASCEND ->
-      itmp "------------------- ascending frog";
       enemy.entity.v.y <- -500. +. Random.float 150.;
       "idle"
     | `EXPLODE ->
@@ -335,7 +338,8 @@ let set_frog_action (enemy : enemy) action (room : room) current_time current_pr
         let explosion_scale = 4. in
         let projectile_duration = TIME_LEFT { seconds = 1. } in
         spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
-          ~pogoable:true ~projectile_vx_opt:(Some 0.) CENTER RIGHT projectile_duration current_time
+          ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT
+          projectile_duration current_time
       in
       (* this will only catch collisions on the first frame of the
          explosion, so a frog can move into an explosion without dying
@@ -551,12 +555,11 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         set_pose enemy "struck"
       in
 
-      if get_bool_prop enemy "dunked" then (
+      if get_bool_prop enemy "dunked" then
         if still_doing "dunked" dunk_duration then
           set_pose enemy "struck"
         else
-          Entity.hide enemy.entity;
-        itmp "despawn enemy")
+          Entity.hide enemy.entity
       else if get_bool_prop enemy "homing" then (
         set_frog_action enemy `HOMING game.room state.frame.time
           [ ("ghost_x", ghost_pos.x); ("ghost_y", ghost_pos.y) ];
@@ -575,10 +578,8 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         enemy.entity.v.y <- 0.;
         let cooldown_started = action_started_at enemy "struck_cooldown" in
         if not (still_doing "struck_cooldown" cooldown_duration) then
-          (* CLEANUP maybe use start/continue_frog_action for homing *)
           set_prop enemy "homing" 1.)
       else if get_bool_prop enemy "death_recoil" then (
-        itmp "death recoiling with current v: %s" (Show.vector enemy.entity.v);
         if enemy.floor_collision_this_frame then (
           log_action enemy "struck_cooldown" state.frame.time;
           set_prop enemy "struck_cooldown" 1.)

@@ -1221,9 +1221,7 @@ let update (game : game) (state : state) =
           maybe_begin_interaction state game name);
       (match find_trigger_collision game.ghost game.room.triggers.cutscene with
       | None -> ()
-      | Some (name, _rect) ->
-        tmp "got cutscene trigger collision %d" state.frame.idx;
-        maybe_begin_interaction state game name);
+      | Some (name, _rect) -> maybe_begin_interaction state game name);
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
@@ -1995,7 +1993,6 @@ let update (game : game) (state : state) =
         game.ghost.current.is_taking_hazard_damage <- false;
         hazard_respawn game)
       else (
-        tmp "taking hazard damage ====================== %d" state.frame.idx;
         state.camera.shake <- 1.;
         game.ghost.current.is_taking_hazard_damage <- true;
         start_action state game TAKE_DAMAGE_AND_RESPAWN)

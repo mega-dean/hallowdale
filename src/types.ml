@@ -626,13 +626,11 @@ type damage_kind =
   | DESOLATE_DIVE_SHOCKWAVE
   | HOWLING_WRAITHS
 
-(* CLEANUP rename this *)
 type enemy_action =
   | PERFORMED of string
   | TOOK_DAMAGE of damage_kind
 
 type projectile_duration =
-  (* CLEANUP maybe add ANIMATION for particle animations *)
   | TIME_LEFT of duration
   | X_BOUNDS of float * float
 
@@ -1162,6 +1160,10 @@ type camera = {
   mutable raylib : Raylib.Camera2D.t;
   mutable subject : camera_subject;
   mutable shake : float;
+  (* the camera smoothly follows the subject, but sometimes (room transitions) it should be
+     updated immediately
+  *)
+  mutable update_instantly : bool;
 }
 
 type game_context =
