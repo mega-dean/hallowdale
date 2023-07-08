@@ -73,6 +73,7 @@ let maybe_begin_interaction (state : state) (game : game) name =
     game.interaction.steps <- Interactions.get_steps ~increase_health state game name
   in
   match name_prefix with
+  | "door-warp"
   | "warp"
   | "info" ->
     (* these have no side effects and can be repeated *)
@@ -1128,6 +1129,16 @@ let is_vulnerable (state : state) (game : game) : bool =
   Option.is_none (get_invincibility_kind state game)
 
 let handle_debug_keys (game : game) (state : state) =
+  let show_camera_location () =
+    let camera =
+      match state.camera.subject with
+      | FIXED v -> v
+      | GHOST -> game.ghost.entity.dest.pos
+    in
+    let v = Raylib.Camera2D.target state.camera.raylib in
+    print "camera subject at: %s" (Show.vector camera);
+    print "camera at: %f, %f" (Raylib.Vector2.x v) (Raylib.Vector2.y v)
+  in
   let show_ghost_location () =
     let room_location = List.assoc game.room.id state.world in
     print "================\nghost global pos: %s"
@@ -1151,8 +1162,10 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then (* game.ghost.soul.current <- game.ghost.soul.max *)
-      show_ghost_location ()
+    if key_pressed DEBUG_1 then
+      (* game.ghost.soul.current <- game.ghost.soul.max *)
+      (* show_ghost_location () *)
+      show_camera_location ()
     else if key_pressed DEBUG_2 then (* toggle_ability game.ghost "mantis_claw" *)
       game.ghost.health.current <- game.ghost.health.current - 1
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
@@ -1208,7 +1221,9 @@ let update (game : game) (state : state) =
           maybe_begin_interaction state game name);
       (match find_trigger_collision game.ghost game.room.triggers.cutscene with
       | None -> ()
-      | Some (name, _rect) -> maybe_begin_interaction state game name);
+      | Some (name, _rect) ->
+        tmp "got cutscene trigger collision %d" state.frame.idx;
+        maybe_begin_interaction state game name);
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
@@ -1252,6 +1267,7 @@ let update (game : game) (state : state) =
               | None -> ())
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
+          | DOOR_WARP destination
           | WARP destination ->
             let target_room_name, rest =
               (* this can't be a character that is used in room names *)

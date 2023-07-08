@@ -496,6 +496,7 @@ module Interaction = struct
     | FADE_SCREEN_IN
     | WAIT of float
     | WARP of string
+    | DOOR_WARP of string
     | SPAWN_VENGEFUL_SPIRIT of direction * int * int
     (* text *)
     | TEXT of string list

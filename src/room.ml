@@ -183,6 +183,7 @@ let init (params : room_params) : room =
             (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name) name)
             coll_rect
           :: !enemy_rects
+      | "door-warp"
       | "cutscene" ->
         cutscene_triggers := get_object_rect coll_rect.name coll_rect :: !cutscene_triggers
       | _ ->
@@ -502,11 +503,15 @@ let init (params : room_params) : room =
     cache;
   }
 
+(* FIXME this should take a separate camera_pos arg instead of using ghost
+- that probably wouldn't work since the new room isn't known yet (so the camera_ bounds aren't known)
+   - can probably get this working by adding more control over camera "speed", and have it instantly update after room transitions
+*)
 let change_current_room
     (state : state)
     (game : game)
     (room_location : room_location)
-    (start_pos : vector) =
+    (ghost_start_pos : vector) =
   let exits = Tiled.Room.get_exits room_location in
   save_progress game;
 
@@ -520,13 +525,13 @@ let change_current_room
         npc_configs = state.global.npc_configs;
         pickup_indicator_texture = state.global.textures.pickup_indicator;
         lever_texture = state.global.textures.door_lever;
-        respawn_pos = start_pos;
+        respawn_pos = ghost_start_pos;
       }
   in
   game.ghost.entity.current_floor <- None;
   game.ghost.current.wall <- None;
   game.ghost.spawned_vengeful_spirits <- [];
-  game.ghost.entity.dest.pos <- start_pos;
+  game.ghost.entity.dest.pos <- ghost_start_pos;
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
      - not really sure about ^this comment, I don't know if different tileset order would break the
@@ -537,7 +542,9 @@ let change_current_room
   game.room <- new_room;
   game.room.layers <-
     Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
-  state.camera.raylib <- Tiled.create_camera_at (Raylib.Vector2.create start_pos.x start_pos.y) 0.
+  tmp "creating new camera at %s" (Show.vector ghost_start_pos);
+  state.camera.raylib <-
+    Tiled.create_camera_at (Raylib.Vector2.create ghost_start_pos.x ghost_start_pos.y) 0.
 
 let get_global_pos (current_pos : vector) (room_location : room_location) : vector =
   { x = current_pos.x +. room_location.global_x; y = current_pos.y +. room_location.global_y }

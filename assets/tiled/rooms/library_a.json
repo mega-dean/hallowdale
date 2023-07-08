@@ -54,10 +54,32 @@
          "draworder":"topdown",
          "id":11,
          "name":"triggers",
-         "objects":[],
+         "objects":[
+                {
+                 "height":127,
+                 "id":6,
+                 "name":"door-warp_library_e|@24,16",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":31,
+                 "y":454
+                }, 
+                {
+                 "height":588,
+                 "id":8,
+                 "name":"camera_>x-gy",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":357.333333333333,
+                 "x":80,
+                 "y":1.33333333333337
+                }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -403,7 +425,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":6,
+ "nextobjectid":10,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
