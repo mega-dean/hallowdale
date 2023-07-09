@@ -106,6 +106,8 @@ type object_layer = Json_t.object_layer = {
   objects: coll_rect list
 }
 
+type image_layer = Json_t.image_layer = { name: string; image: string }
+
 type layer = Json_t.layer
 
 type room = Json_t.room = {
@@ -4613,6 +4615,159 @@ let read_object_layer = (
 )
 let object_layer_of_string s =
   read_object_layer (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_image_layer : _ -> image_layer -> _ = (
+  fun ob (x : image_layer) ->
+    Buffer.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"name\":";
+    (
+      Yojson.Safe.write_string
+    )
+      ob x.name;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"image\":";
+    (
+      Yojson.Safe.write_string
+    )
+      ob x.image;
+    Buffer.add_char ob '}';
+)
+let string_of_image_layer ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_image_layer ob x;
+  Buffer.contents ob
+let read_image_layer = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_name = ref (None) in
+    let field_image = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+          match len with
+            | 4 -> (
+                if String.unsafe_get s pos = 'n' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
+            | 5 -> (
+                if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 'm' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'e' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
+            | _ -> (
+                -1
+              )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_name := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              )
+            );
+          | 1 ->
+            field_image := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+            match len with
+              | 4 -> (
+                  if String.unsafe_get s pos = 'n' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 5 -> (
+                  if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 'm' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'e' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | _ -> (
+                  -1
+                )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_name := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_string
+                  ) p lb
+                )
+              );
+            | 1 ->
+              field_image := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_string
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            name = (match !field_name with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "name");
+            image = (match !field_image with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "image");
+          }
+         : image_layer)
+      )
+)
+let image_layer_of_string s =
+  read_image_layer (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_layer = (
   Atdgen_runtime.Oj_run.write_with_adapter Atdgen_runtime.Json_adapter.Type_field.restore (
     fun ob x ->
@@ -4621,6 +4776,12 @@ let write_layer = (
           Buffer.add_string ob "<\"tilelayer\":";
           (
             write_tile_layer
+          ) ob x;
+          Buffer.add_char ob '>'
+        | `IMAGE_LAYER x ->
+          Buffer.add_string ob "<\"imagelayer\":";
+          (
+            write_image_layer
           ) ob x;
           Buffer.add_char ob '>'
         | `OBJECT_LAYER x ->
@@ -4651,6 +4812,15 @@ let read_layer = (
                 Yojson.Safe.read_space p lb;
                 Yojson.Safe.read_gt p lb;
                 `TILE_LAYER x
+              | "imagelayer" ->
+                Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                let x = (
+                    read_image_layer
+                  ) p lb
+                in
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_gt p lb;
+                `IMAGE_LAYER x
               | "objectgroup" ->
                 Atdgen_runtime.Oj_run.read_until_field_value p lb;
                 let x = (
@@ -4681,6 +4851,17 @@ let read_layer = (
                 Yojson.Safe.read_space p lb;
                 Yojson.Safe.read_rbr p lb;
                 `TILE_LAYER x
+              | "imagelayer" ->
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_comma p lb;
+                Yojson.Safe.read_space p lb;
+                let x = (
+                    read_image_layer
+                  ) p lb
+                in
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_rbr p lb;
+                `IMAGE_LAYER x
               | "objectgroup" ->
                 Yojson.Safe.read_space p lb;
                 Yojson.Safe.read_comma p lb;

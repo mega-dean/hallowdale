@@ -271,7 +271,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           STEP (WAIT 1.);
           ENEMY (DUNCAN, SET_POSE "scavenging");
           ENEMY (DUNCAN, ENTITY FREEZE);
-          STEP (SWAP_HIDDEN_LAYER "bg-iso2");
+          STEP (HIDE_LAYER "bg-iso2");
+          STEP (UNHIDE_LAYER "bg-iso3");
           GHOST (ANNIE, ENTITY (UNHIDE_AT (6, 32, 0., 0.)));
           GHOST (JEFF, ENTITY (UNHIDE_AT (7, 31, 12., 0.)));
           GHOST (ANNIE, ENTITY FREEZE);
@@ -379,7 +380,8 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
           STEP (WAIT 0.7);
           STEP UNHIDE_BOSS_DOORS;
           STEP (WAIT 1.);
-          STEP (SWAP_HIDDEN_LAYER "bg-iso2");
+          STEP (HIDE_LAYER "bg-iso2");
+          STEP (UNHIDE_LAYER "bg-iso3");
           ENEMY (LOCKER_BOY, ENTITY UNHIDE);
           ENEMY (LOCKER_BOY, ENTITY FREEZE);
           STEP (WAIT 0.5);
@@ -566,6 +568,10 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             "Press [ZR] to scootenanny forwards, cloaked in shadow.";
             "Use the cloak to scootenanny through enemies and their attacks without taking damage.";
           ]
+      | "cutscene_kp-drop" ->
+        (* TODO starting an interaction resets ghost.v to 0, which looks a little weird when
+           jumping into the trigger *)
+        [ STEP (HIDE_LAYER "floors3"); CURRENT_GHOST UNSET_FLOOR ]
       | other -> failwithf "unrecognized interaction name: %s" other)
   in
   (* SET_GHOST_CAMERA to reset the camera if it changed *)

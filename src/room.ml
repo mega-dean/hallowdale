@@ -198,7 +198,9 @@ let init (params : room_params) : room =
       | "triggers" -> List.iter categorize json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
-    | `TILE_LAYER _json -> ()
+    | `IMAGE_LAYER _
+    | `TILE_LAYER _ ->
+      ()
   in
   List.iter get_object_rects json_room.layers;
 
@@ -224,19 +226,42 @@ let init (params : room_params) : room =
     let layer_names = ref [] in
     let build_tile_layer (json_layer : Json_t.layer) =
       match json_layer with
-      | `OBJECT_LAYER _ -> ()
+      | `IMAGE_LAYER _
+      | `OBJECT_LAYER _ ->
+        ()
       | `TILE_LAYER json ->
         let add_new_layer () =
+          (* TODO use this for:
+             - vending machines in teacher's lounge
+             - scootenanny chair
+             - keys unlocking doors
+             - could do something like slightly alter the corkboard when the health has already been increased
+          *)
+          (* CLEANUP too many things called layer_name:
+             - this is the name with number
+          *)
           let (layer_name', hidden) : string * bool =
-            let str_starts_with s prefix =
-              (* TODO move to Utils *)
-              Str.string_match (Str.regexp prefix) s 0
-            in
-            let prefix = "hidden-" in
-            if str_starts_with json.name prefix then
-              (Str.string_after json.name (String.length prefix), true)
-            else
-              (json.name, List.mem json.name room_progress.revealed_shadow_layers)
+            match Utils.split_at_first_opt '|' json.name with
+            | interaction_name, Some layer_name -> (
+              let finished name =
+                List.mem (fmt "cutscene_%s" name) room_progress.finished_interactions
+              in
+              match String.get interaction_name 0 with
+              | '!' -> (layer_name, not (finished (Str.string_after interaction_name 1)))
+              | _ -> (layer_name, finished interaction_name))
+            | _ ->
+              let str_starts_with s prefix =
+                (* TODO move to Utils *)
+                Str.string_match (Str.regexp prefix) s 0
+              in
+              (* CLEANUP can probably remove this *)
+              let prefix = "hidden-" in
+              if str_starts_with json.name prefix then
+                (Str.string_after json.name (String.length prefix), true)
+              (* else if str_starts_with json.name "" then
+               *   (Str.string_after json.name (String.length prefix), true) *)
+              else
+                (json.name, List.mem json.name room_progress.revealed_shadow_layers)
           in
           let config =
             (* layer_number has to be unique, but it's checked later with List.mem json.name !layer_names *)
@@ -325,7 +350,7 @@ let init (params : room_params) : room =
           layers :=
             {
               json;
-              name = json.name;
+              name = layer_name';
               config;
               (* tile_groups gets populated later *)
               tile_groups = [];

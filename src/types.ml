@@ -32,14 +32,20 @@ module Utils = struct
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
   *)
+  (* CLEANUP this return type makes using this a little awkward *)
+  let split_at_first_opt c str : string * string option =
+    match String.index_from_opt str 0 c with
+    | None -> (str, None)
+    | Some idx -> (Str.string_before str idx, Some (Str.string_after str (idx + 1)))
+
+  (* returns the strings before and after the first occurrence of char c:
+     separate "a.b.c.d" '.' => "a", "b.c.d"
+  *)
   let split_at_first c str : string * string =
-    let separator_idx =
-      match String.index_from_opt str 0 c with
-      | None ->
-        failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
-      | Some idx -> idx
-    in
-    (Str.string_before str separator_idx, Str.string_after str (separator_idx + 1))
+    match split_at_first_opt c str with
+    | hd, Some tl -> (hd, tl)
+    | _, None ->
+      failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
 
   let find_idx x xs =
     let matches ((_i, x') : int * 'a) : bool = x = x' in
@@ -510,7 +516,6 @@ module Interaction = struct
     | SET_FIXED_CAMERA of int * int
     | SET_GHOST_CAMERA
     (* layers *)
-    | SWAP_HIDDEN_LAYER of string
     | HIDE_LAYER of string
     | UNHIDE_LAYER of string
     | HIDE_BOSS_DOORS
@@ -540,6 +545,7 @@ module Interaction = struct
     | JUMP of direction * float
     | ENTITY of entity_step
     | MAKE_CURRENT_GHOST
+    | UNSET_FLOOR
 
   type enemy_step =
     | WALK_TO of int

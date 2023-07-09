@@ -4,47 +4,49 @@ open Types
 
 let save_file_path idx = fmt "saves/%d.json" idx
 
+let new_game () : Json_t.save_file =
+  let kings_pass_drop = { x = 1800.; y = 100. } in
+  {
+    ghost_id = "BRITTA";
+    ghosts_in_party = [ "BRITTA" ];
+    ghost_x = kings_pass_drop.x;
+    ghost_y = kings_pass_drop.y;
+    (* there aren't any hazards in king's pass for new games, so respawn_pos doesn't matter *)
+    respawn_x = 0.;
+    respawn_y = 0.;
+    room_name = "forgotten_deans-pass";
+    abilities =
+      {
+        (* movement *)
+        mothwing_cloak = false;
+        mantis_claw = false;
+        crystal_heart = false;
+        monarch_wings = true;
+        shade_cloak = false;
+        ismas_tear = false;
+        (* spells *)
+        vengeful_spirit = false;
+        desolate_dive = false;
+        howling_wraiths = false;
+      };
+    progress = [];
+    weapons =
+      [
+        "Old Nail";
+        (* "Devil's Drench XJ-11"; *)
+        (* "Bush Scissors"; *)
+        (* "Limpken Wrench"; *)
+        "Orange Paintball Gun";
+        (* "Pickle Magnet"; *)
+        (* "Quantum Spanner"; *)
+      ];
+    current_weapon = "Old Nail";
+  }
+
 let load_all_save_slots () : save_slots =
   let load_file save_file_idx : Json_t.save_file * bool =
     match File.maybe_read (fmt "../%s" (save_file_path save_file_idx)) with
-    | None ->
-      ( {
-          ghost_id = "BRITTA";
-          ghosts_in_party = [ "BRITTA" ];
-          ghost_x = 1500.;
-          ghost_y = 100.;
-          (* there aren't any hazards in king's pass for new games, so respawn_pos doesn't matter *)
-          respawn_x = 0.;
-          respawn_y = 0.;
-          room_name = "forgotten_deans-pass";
-          abilities =
-            {
-              (* movement *)
-              mothwing_cloak = false;
-              mantis_claw = false;
-              crystal_heart = false;
-              monarch_wings = false;
-              shade_cloak = false;
-              ismas_tear = false;
-              (* spells *)
-              vengeful_spirit = false;
-              desolate_dive = false;
-              howling_wraiths = false;
-            };
-          progress = [];
-          weapons =
-            [
-              "Old Nail";
-              (* "Devil's Drench XJ-11"; *)
-              (* "Bush Scissors"; *)
-              (* "Limpken Wrench"; *)
-              "Orange Paintball Gun";
-              (* "Pickle Magnet"; *)
-              (* "Quantum Spanner"; *)
-            ];
-          current_weapon = "Old Nail";
-        },
-        true )
+    | None -> (new_game (), true)
     | Some save_file -> (Json_j.save_file_of_string save_file, false)
   in
   { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }

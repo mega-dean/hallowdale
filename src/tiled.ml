@@ -231,8 +231,10 @@ module Room = struct
     let tile, _ = look_up_tile json_room room.cache gid in
     tile.coll_offset
 
-  let get_layer_tile_groups (room : room) (removed_idxs_by_layer : (string * int list) list) :
-      layer list =
+  let get_layer_tile_groups
+      ?(debug = false)
+      (room : room)
+      (removed_idxs_by_layer : (string * int list) list) : layer list =
     let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) :
         tile_group list =
       let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in

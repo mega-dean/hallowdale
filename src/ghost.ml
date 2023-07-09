@@ -96,11 +96,26 @@ let maybe_begin_interaction (state : state) (game : game) name =
       begin_interaction ())
   | _ -> failwithf "maybe_begin_interaction: unknown interaction prefix %s" name_prefix
 
-let maybe_unset_current_floor (ghost : ghost) =
+let maybe_unset_current_floor (ghost : ghost) (room : room) =
   match ghost.entity.current_floor with
   | None -> ()
   | Some floor ->
-    let walked_over_edge = not (Entity.above_floor ghost.entity floor) in
+    let walked_over_edge =
+      if not (Entity.above_floor ghost.entity floor) then (
+        (* smoothly walk to adjacent floors by (temporarily) pushing the ghost down a pixel to
+           check Entity.get_floor_collisions
+        *)
+        ghost.entity.dest.pos.y <- ghost.entity.dest.pos.y +. 1.;
+        match List.nth_opt (Entity.get_floor_collisions room ghost.entity) 0 with
+        | None ->
+          ghost.entity.dest.pos.y <- ghost.entity.dest.pos.y -. 1.;
+          true
+        | Some (collision, floor) ->
+          ghost.entity.current_floor <- Some floor;
+          false)
+      else
+        false
+    in
     let jumping_over_edge = ghost.entity.v.y < 0. in
     if walked_over_edge || jumping_over_edge then
       ghost.entity.current_floor <- None
@@ -1222,6 +1237,8 @@ let update (game : game) (state : state) =
       (match find_trigger_collision game.ghost game.room.triggers.cutscene with
       | None -> ()
       | Some (name, _rect) -> maybe_begin_interaction state game name);
+      (* FIXME check respawn triggers *)
+      (* CLEANUP add pickup indicators *)
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
@@ -1252,6 +1269,12 @@ let update (game : game) (state : state) =
           ref false
         in
         let tile_w, tile_h = (game.room.json.tile_w, game.room.json.tile_h) in
+
+        let set_layer_hidden (layer_name : string) hidden =
+          match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
+          | None -> failwithf "expected %s layer" layer_name
+          | Some layer_to_hide -> layer_to_hide.hidden <- hidden
+        in
 
         (* could divide these up into some smaller groups like TEXT or LAYER to get rid of more of the duplication, but
            probably not really worth it *)
@@ -1313,38 +1336,22 @@ let update (game : game) (state : state) =
             state.camera.subject <- GHOST
           | WAIT time -> new_wait := time -. state.frame.dt
           | HIDE_BOSS_DOORS ->
-            (match
-               List.find_opt (fun (l : layer) -> l.name = "hidden-boss-doors") game.room.layers
-             with
-            | None -> failwith "HIDE_BOSS_DOORS, expected hidden-boss-doors layer"
-            | Some layer_to_hide -> layer_to_hide.hidden <- true);
+            set_layer_hidden "boss-doors" true;
             game.room.layers <-
               Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer
           | UNHIDE_BOSS_DOORS ->
-            (match
-               List.find_opt (fun (l : layer) -> l.name = "hidden-boss-doors") game.room.layers
-             with
-            | None -> failwith "UNHIDE_BOSS_DOORS, expected hidden-boss-doors layer"
-            | Some layer_to_hide -> layer_to_hide.hidden <- false);
+            set_layer_hidden "boss-doors" false;
             game.room.layers <-
               Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer
-          | HIDE_LAYER layer_name -> (
-            match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
-            | None -> ()
-            | Some layer_to_hide -> layer_to_hide.hidden <- true)
-          | UNHIDE_LAYER layer_name -> (
-            match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
-            | None -> ()
-            | Some layer_to_unhide -> layer_to_unhide.hidden <- false)
-          | SWAP_HIDDEN_LAYER layer_name ->
-            let layer_to_hide : layer =
-              List.find (fun (l : layer) -> l.name = layer_name) game.room.layers
-            in
-            let layer_to_unhide : layer =
-              List.find (fun (l : layer) -> l.name = fmt "hidden-%s" layer_name) game.room.layers
-            in
-            layer_to_hide.hidden <- true;
-            layer_to_unhide.hidden <- false
+          | HIDE_LAYER layer_name ->
+            set_layer_hidden layer_name true;
+            game.room.layers <-
+              Tiled.Room.get_layer_tile_groups ~debug:true game.room
+                game.room.progress.removed_idxs_by_layer
+          | UNHIDE_LAYER layer_name ->
+            set_layer_hidden layer_name false;
+            game.room.layers <-
+              Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer
           | SPAWN_VENGEFUL_SPIRIT (direction, end_tile_x, end_tile_y) ->
             let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (end_tile_x, end_tile_y) in
             let end_x, end_y = (tx *. Config.scale.room, ty *. Config.scale.room) in
@@ -1418,6 +1425,7 @@ let update (game : game) (state : state) =
             set_interaction_pose' ghost (PERFORMING JUMP)
           | SET_POSE pose -> set_interaction_pose' ghost pose
           | MAKE_CURRENT_GHOST -> swap_current_ghost state ~swap_pos:false game ghost.id
+          | UNSET_FLOOR -> game.ghost.entity.current_floor <- None
           | ENTITY entity_step ->
             (match entity_step with
             | HIDE ->
@@ -2025,8 +2033,24 @@ let update (game : game) (state : state) =
           let wall = Option.get game.ghost.current.wall in
           if high_enough_to_slide_on wall then
             set_pose' (WALL_SLIDING wall)
-          else
-            game.ghost.current.wall <- None)
+          else (
+            let dx =
+              (* can't check sprite.facing_right because it gets updated for the frame based on input, so it depends on whether a direction is being held *)
+              if Entity.get_center game.ghost.entity > Entity.get_center' wall then
+                -1.
+              else
+                1.
+            in
+            game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x +. dx;
+            match
+              List.find_opt
+                (fun (_, rect) -> rect <> wall)
+                (Entity.get_floor_collisions game.room game.ghost.entity)
+            with
+            | None ->
+              game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dx;
+              game.ghost.current.wall <- None
+            | Some (collision, new_wall) -> set_pose' (WALL_SLIDING new_wall)))
         else (
           game.ghost.current.wall <- None;
           if not (is_doing game.ghost (ATTACK RIGHT) state.frame.time) then (
@@ -2159,7 +2183,7 @@ let update (game : game) (state : state) =
 
   animate_and_despawn_children state.frame.time game.ghost;
   handle_collisions ();
-  maybe_unset_current_floor game.ghost;
+  maybe_unset_current_floor game.ghost game.room;
   Sprite.advance_animation state.frame.time game.ghost.entity.sprite.texture
     game.ghost.entity.sprite;
   state

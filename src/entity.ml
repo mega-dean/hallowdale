@@ -239,8 +239,12 @@ let is_on_screen' (r : rect) = not (r.pos.x < 0. && r.pos.y < 0.)
 let is_on_screen (e : entity) = is_on_screen' e.dest
 let is_off_screen (e : entity) = not (is_on_screen e)
 
+(* CLEANUP move to types.ml *)
+let get_center' (rect : rect) : vector =
+  { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
+
 let get_center (entity : entity) : vector =
-  { x = entity.dest.pos.x +. (entity.dest.w /. 2.); y = entity.dest.pos.y +. (entity.dest.h /. 2.) }
+  get_center' entity.dest
 
 (* called once per frame to align sprite.dest position with entity.dest position *)
 let adjust_sprite_dest (e : entity) =

@@ -94,7 +94,13 @@ type save_file = {
 
 type object_layer = { name: string; objects: coll_rect list }
 
-type layer = [ `TILE_LAYER of tile_layer | `OBJECT_LAYER of object_layer ]
+type image_layer = { name: string; image: string }
+
+type layer = [
+    `TILE_LAYER of tile_layer
+  | `IMAGE_LAYER of image_layer
+  | `OBJECT_LAYER of object_layer
+]
 
 type room = {
   tile_h: float;

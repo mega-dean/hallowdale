@@ -42,6 +42,11 @@ type window_config = {
 
 let window : window_config =
   let width, height = (1280, 720) in
+  (* TODO this is the correct size, but causes the scaled pixels to be distorted
+     - only when camera.vx = 0 though
+
+     let width, height = (1565, 880) in
+  *)
   let fps =
     (* 960 *)
     (* 480 *)

@@ -16,12 +16,18 @@ type object_layer = {
   objects : coll_rect list;
 }
 
+type image_layer = {
+  name : string;
+  image : string;
+}
+
 (* the Type_field adapter pulls out the "type" field from json
    from: { ..., "type": "some-type", ... }
    into: ["some-type", { ... }]
  *)
 type layer = [
     TILE_LAYER <json name="tilelayer"> of tile_layer |
+    IMAGE_LAYER <json name="imagelayer"> of image_layer |
     OBJECT_LAYER <json name="objectgroup"> of object_layer
 ] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
 

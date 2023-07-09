@@ -67,7 +67,8 @@ let save_game (game : game) (state : state) (after_fn : state -> unit) =
     }
   in
   let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
-  let contents = Json_j.string_of_save_file save_file in
+  let contents =
+    Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write save_file_path contents in
   if written then
     after_fn state
@@ -123,6 +124,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       | _ -> failwithf "bad save file idx: %d" save_file_idx
     in
     let game = Game.init save_file state.global state.world save_file_idx in
+    state.camera.update_instantly <- true;
     state.camera.raylib <-
       (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
          TODO can maybe improve this, since it can still be off if the camera is bounded

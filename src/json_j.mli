@@ -106,6 +106,8 @@ type object_layer = Json_t.object_layer = {
   objects: coll_rect list
 }
 
+type image_layer = Json_t.image_layer = { name: string; image: string }
+
 type layer = Json_t.layer
 
 type room = Json_t.room = {
@@ -491,6 +493,26 @@ val read_object_layer :
 val object_layer_of_string :
   string -> object_layer
   (** Deserialize JSON data of type {!type:object_layer}. *)
+
+val write_image_layer :
+  Buffer.t -> image_layer -> unit
+  (** Output a JSON value of type {!type:image_layer}. *)
+
+val string_of_image_layer :
+  ?len:int -> image_layer -> string
+  (** Serialize a value of type {!type:image_layer}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_image_layer :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> image_layer
+  (** Input JSON data of type {!type:image_layer}. *)
+
+val image_layer_of_string :
+  string -> image_layer
+  (** Deserialize JSON data of type {!type:image_layer}. *)
 
 val write_layer :
   Buffer.t -> layer -> unit

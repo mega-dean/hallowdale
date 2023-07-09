@@ -324,7 +324,7 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
     if ghost.entity.update_pos then (
       Entity.update_pos game.room ghost.entity state.frame.dt;
-      Ghost.maybe_unset_current_floor ghost)
+      Ghost.maybe_unset_current_floor ghost game.room)
   in
 
   List.iter update_ghost game.ghosts;
@@ -436,7 +436,7 @@ let tick (state : state) =
       | Some menu -> state'
       | None ->
         if state.should_save then (
-          Menu.save_game game state (fun _ -> ());
+          Menu.save_game game state ignore;
           state.should_save <- false);
         state'
         |> Ghost.handle_debug_keys game
