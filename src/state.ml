@@ -114,8 +114,8 @@ let init () : state =
   }
 
 let update_camera (game : game) (state : state) =
-  let trigger_config : (string * rect) option =
-    Ghost.find_trigger_collision game.ghost game.room.triggers.camera
+  let trigger_config : trigger option =
+    Ghost.find_trigger_collision' game.ghost game.room.triggers.camera
   in
   let subject =
     match state.camera.subject with
@@ -142,11 +142,11 @@ let update_camera (game : game) (state : state) =
       let target_x, target_y =
         match trigger_config with
         | None -> (subject.x, subject.y)
-        | Some (config, rect) ->
-          let x_config, y_config = Utils.split_at_first '-' config in
+        | Some trigger ->
+          let x_config, y_config = Utils.split_at_first '-' trigger.name in
           let x_bound =
-            let left = rect.pos.x +. Config.window.center_x in
-            let right = rect.pos.x +. rect.w -. Config.window.center_x in
+            let left = trigger.dest.pos.x +. Config.window.center_x in
+            let right = trigger.dest.pos.x +. trigger.dest.w -. Config.window.center_x in
             match x_config with
             | "gx" -> subject.x
             | ">x" -> Utils.bound left subject.x camera_state.room_bounds.max.x
@@ -155,8 +155,8 @@ let update_camera (game : game) (state : state) =
             | _ -> failwithf "invalid x_bound %s" x_config
           in
           let y_bound =
-            let top = rect.pos.y +. Config.window.center_y in
-            let bottom = rect.pos.y +. rect.h -. Config.window.center_y in
+            let top = trigger.dest.pos.y +. Config.window.center_y in
+            let bottom = trigger.dest.pos.y +. trigger.dest.h -. Config.window.center_y in
             match y_config with
             | "gy" -> subject.y
             | ">y" -> Utils.bound top subject.y camera_state.room_bounds.max.y
@@ -226,7 +226,7 @@ let update_environment (game : game) (state : state) =
   let all_spawned_fragments =
     List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
   in
-  let update_lever (door_coords, lever_sprite) =
+  let update_lever (lever_sprite, _, trigger) =
     match Sprite.advance_or_despawn state.frame.time lever_sprite.texture lever_sprite with
     | None -> lever_sprite.texture <- state.global.textures.door_lever
     | Some lever_sprite -> ()
@@ -242,6 +242,9 @@ let update_environment (game : game) (state : state) =
   game.room.loose_projectiles <- !loose_projectiles;
   state
 
+(* TODO some enemy behavior gets really messed up when an interaction is started
+   (eg. frogs when reading lore)
+*)
 let update_enemies (game : game) (state : state) =
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
@@ -435,6 +438,16 @@ let tick (state : state) =
       match state'.pause_menu with
       | Some menu -> state'
       | None ->
+        let show_triggers ?(color = Raylib.Color.blue) triggers =
+          state.debug.rects <- List.map (fun r -> (color, r.dest)) triggers @ state.debug.rects
+        in
+        let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
+          state.debug.rects <- List.map (fun (_, r) -> (color, r.dest)) triggers @ state.debug.rects
+        in
+
+        show_triggers game.room.triggers.lore;
+        show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn;
+
         if state.should_save then (
           Menu.save_game game state ignore;
           state.should_save <- false);

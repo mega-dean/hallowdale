@@ -346,10 +346,7 @@ let set_frog_action (enemy : enemy) action (room : room) current_time current_pr
       *)
       let check_frog_collision ((_, target_enemy) : enemy_id * enemy) =
         if target_enemy.id = FROG && target_enemy <> enemy then
-          if
-            (* if target_enemy.id = FROG then *)
-            Collision.between_entities projectile.entity target_enemy.entity
-          then (
+          if Collision.between_entities projectile.entity target_enemy.entity then (
             let vx =
               let v' = get_json_prop enemy "death_recoil_v" in
               let explosion_center = (Entity.get_center projectile.entity).x in
@@ -384,6 +381,10 @@ let maybe_take_damage
     (damage : int)
     (collision : collision) : bool =
   let kill_enemy () =
+    (* TODO death animation
+       - maybe not a real one for now, but at least make the enemy's body fall to the ground
+       - maybe flip upside-down
+    *)
     (* TODO start_and_log_action "die"; *)
     enemy.spawned_projectiles <- [];
     enemy.status.choose_behavior <- false;
@@ -579,14 +580,14 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         let cooldown_started = action_started_at enemy "struck_cooldown" in
         if not (still_doing "struck_cooldown" cooldown_duration) then
           set_prop enemy "homing" 1.)
-      else if get_bool_prop enemy "death_recoil" then (
+      else if get_bool_prop enemy "death_recoil" then
         if enemy.floor_collision_this_frame then (
           log_action enemy "struck_cooldown" state.frame.time;
           set_prop enemy "struck_cooldown" 1.)
         else if any_liquid_collisions () then (* TODO maybe have a different texture for "dunked" *)
           dunk ()
         else
-          set_pose enemy "struck"))
+          set_pose enemy "struck")
     else (
       if enemy.entity.dest.pos.y > initial_y +. 100. then (
         (* TODO duplicated - maybe add turn_towards_origin fn if this is shared often enough *)

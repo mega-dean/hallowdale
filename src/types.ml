@@ -32,7 +32,6 @@ module Utils = struct
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
   *)
-  (* CLEANUP this return type makes using this a little awkward *)
   let split_at_first_opt c str : string * string option =
     match String.index_from_opt str 0 c with
     | None -> (str, None)
@@ -89,7 +88,7 @@ type rect = {
   mutable h : float;
 }
 
-let get_center (rect : rect) =
+let get_rect_center (rect : rect) =
   { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
 
 type bounds = {
@@ -1070,13 +1069,25 @@ type room_cache = {
   tilesets_by_path : (string * tileset) list;
 }
 
+type trigger = {
+  name : string;
+  dest : rect;
+  label : string option;
+  blocking_interaction : string option;
+}
+
 type triggers = {
-  camera : (string * rect) list;
-  lore : (string * rect) list;
-  item_pickups : (string * rect) list;
-  shadows : (string * rect) list;
-  cutscene : (string * rect) list;
-  levers : (string * sprite) list;
+  camera : trigger list;
+  cutscene : trigger list;
+  item_pickups : trigger list;
+  levers : (sprite * int * trigger) list;
+  (* this is used for any infinitely-repeatable interactions, like reading lore or warping
+     TODO maybe use a separate field for warp : (vector * string * trigger) list
+     target x/y, target room name
+  *)
+  lore : trigger list;
+  respawn : (vector * trigger) list;
+  shadows : trigger list;
 }
 
 type camera_state = {
@@ -1104,10 +1115,11 @@ type room = {
   triggers : triggers;
   enemies : (enemy_id * enemy) list;
   exits : rect list;
-  respawn_pos : vector;
+  mutable respawn_pos : vector;
   mutable npcs : npc list;
   mutable layers : layer list;
   mutable pickup_indicators : sprite list;
+  mutable interaction_label : (string * rect) option;
   (* this is for projectiles that are spawned by enemies after they die *)
   mutable loose_projectiles : projectile list;
 }

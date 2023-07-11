@@ -120,10 +120,12 @@ let maybe_unset_current_floor (ghost : ghost) (room : room) =
     if walked_over_edge || jumping_over_edge then
       ghost.entity.current_floor <- None
 
-let find_trigger_collision ghost triggers =
-  let colliding (_label, trigger_rect) =
-    Option.is_some (Collision.with_entity ghost.entity trigger_rect)
-  in
+let find_trigger_collision' ghost (triggers : trigger list) =
+  let colliding rt = Option.is_some (Collision.with_entity ghost.entity rt.dest) in
+  List.find_opt colliding triggers
+
+let find_respawn_trigger_collision ghost (triggers : (vector * trigger) list) =
+  let colliding (_, rt) = Option.is_some (Collision.with_entity ghost.entity rt.dest) in
   List.find_opt colliding triggers
 
 (* returns the first enemy collision *)
@@ -222,10 +224,8 @@ let make_slash
       (dest_w' *. ghost.current_weapon.scale_x, dest_h')
   in
   let dest =
-    (* pos is somewhat arbitrary because this will be adjusted to parent dest based on child's relative_position
-       - TODO for some reason, it stays in this position for 2 frames before being adjusted
-    *)
-    { pos = clone_vector ghost.entity.dest.pos; h = dest_h; w = dest_w }
+    let pos = Entity.get_child_pos ghost.entity relative_pos dest_w dest_h in
+    { pos; h = dest_h; w = dest_w }
   in
 
   (* TODO move these to config *)
@@ -564,16 +564,16 @@ let resolve_slash_collisions (state : state) (game : game) =
         List.iter resolve_tile_group layer.tile_groups)
     in
 
-    let resolve_lever ((lever_name, lever_sprite) : string * sprite) =
+    let resolve_lever ((lever_sprite, _, trigger) : sprite * int * trigger) =
       let layer =
         match List.find_opt (fun (l : layer) -> l.name = "lever-doors") game.room.layers with
         | None ->
           failwithf "room %s has levers '%s', but no lever-doors layer" (Show.room_id game.room.id)
-            lever_name
+            trigger.name
         | Some l -> l
       in
       let new_tile_groups : tile_group list ref = ref [] in
-      let _direction, coords = Utils.split_at_first '-' lever_name in
+      let _direction, coords = Utils.split_at_first '-' trigger.name in
       let x', y' = Utils.split_at_first ',' coords in
       let door_tile_idx =
         Tiled.Tile.tile_idx_from_coords ~width:game.room.json.w_in_tiles
@@ -703,7 +703,11 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
     | FOCUS ->
       update_vx 0.;
       ghost.textures.focus
-    | TAKE_DAMAGE_AND_RESPAWN -> ghost.textures.take_damage
+    | TAKE_DAMAGE_AND_RESPAWN ->
+      (* TODO can't call this here for some reason, need to figure out when to deduct health for hazards
+         take_damage ghost;
+      *)
+      ghost.textures.take_damage
     | TAKE_DAMAGE direction ->
       let x_recoil_speed =
         match direction with
@@ -964,9 +968,10 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
   set_pose game.ghost (PERFORMING action_kind) state.frame.time
 
-let hazard_respawn (game : game) =
+let hazard_respawn (state : state) (game : game) =
   game.ghost.entity.current_floor <- None;
   Entity.unfreeze game.ghost.entity;
+  state.camera.update_instantly <- true;
   game.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
 
 let continue_action (state : state) (game : game) (action_kind : ghost_action_kind) =
@@ -1225,20 +1230,40 @@ let update (game : game) (state : state) =
      - also bound velocity to prevent falling through floors with high vy through horizontal doors
   *)
   let handle_interactions () =
-    (* the ghost can only collide with one trigger at a time *)
+    (* the ghost can only collide with one trigger of each type per frame *)
     let check_for_new_interactions () : bool =
       let interactable_triggers = game.room.triggers.lore @ game.room.triggers.item_pickups in
-      (match find_trigger_collision game.ghost interactable_triggers with
-      | None -> ()
-      | Some (name, _rect) ->
+      (match find_trigger_collision' game.ghost interactable_triggers with
+      | None -> game.room.interaction_label <- None
+      | Some trigger ->
+        let label =
+          match trigger.label with
+          | None -> ""
+          | Some label' -> label'
+        in
+        (* FIXME needs to consider blocking interactions (eg vending machines "Enter")
+           - not really sure how to do this, since finished_interactions are tracked by room
+        *)
+        (match trigger.blocking_interaction with
+        | None -> game.room.interaction_label <- Some (label, trigger.dest)
+        | Some bi ->
+          itmp "got blocking interaction: %s" bi;
+          itmp "got finished_interactions: %s" (game.room.progress.finished_interactions |> join);
+          if List.mem (fmt "cutscene_%s" bi) game.room.progress.finished_interactions then (
+            itmp "finished";
+            game.room.interaction_label <- Some (label, trigger.dest))
+          else
+            itmp "not finished");
+
         (* TODO maybe want to also check `Entity.on_ground game.ghost.entity` *)
         if state.frame_inputs.interact.pressed then
-          maybe_begin_interaction state game name);
-      (match find_trigger_collision game.ghost game.room.triggers.cutscene with
+          maybe_begin_interaction state game trigger.name);
+      (match find_trigger_collision' game.ghost game.room.triggers.cutscene with
       | None -> ()
-      | Some (name, _rect) -> maybe_begin_interaction state game name);
-      (* FIXME check respawn triggers *)
-      (* CLEANUP add pickup indicators *)
+      | Some trigger -> maybe_begin_interaction state game trigger.name);
+      (match find_respawn_trigger_collision game.ghost game.room.triggers.respawn with
+      | None -> ()
+      | Some (new_respawn_pos, trigger) -> game.room.respawn_pos <- new_respawn_pos);
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
@@ -1301,18 +1326,14 @@ let update (game : game) (state : state) =
             let blocked =
               match blocking_interaction_name with
               | "" -> false
-              | s -> not (List.mem (fmt "cutscene_%s" s) game.room.progress.finished_interactions)
+              | s ->
+                (* TODO this only checks the current room's finished_interactions *)
+                not (List.mem (fmt "cutscene_%s" s) game.room.progress.finished_interactions)
             in
             if not blocked then (
-              let target_x', target_y' = Utils.split_at_first ',' coords in
-              let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
-              let target_x, target_y =
-                Tiled.Tile.tile_dest ~tile_w:game.room.json.tile_w ~tile_h:game.room.json.tile_h
-                  (tile_x, tile_y)
-              in
+              let target = Tiled.Room.dest_from_coords game.room coords in
               let target_room_location = Tiled.Room.locate_by_name state.world target_room_name in
-              Room.change_current_room state game target_room_location
-                { x = target_x; y = target_y })
+              Room.change_current_room state game target_room_location target)
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
           | TEXT paragraphs ->
@@ -1999,7 +2020,7 @@ let update (game : game) (state : state) =
         continue_action state game TAKE_DAMAGE_AND_RESPAWN
       else if game.ghost.current.is_taking_hazard_damage then (
         game.ghost.current.is_taking_hazard_damage <- false;
-        hazard_respawn game)
+        hazard_respawn state game)
       else (
         state.camera.shake <- 1.;
         game.ghost.current.is_taking_hazard_damage <- true;
@@ -2036,7 +2057,7 @@ let update (game : game) (state : state) =
           else (
             let dx =
               (* can't check sprite.facing_right because it gets updated for the frame based on input, so it depends on whether a direction is being held *)
-              if Entity.get_center game.ghost.entity > Entity.get_center' wall then
+              if Entity.get_center game.ghost.entity > get_rect_center wall then
                 -1.
               else
                 1.
@@ -2116,18 +2137,18 @@ let update (game : game) (state : state) =
   in
 
   let reveal_shadows () =
-    let colliding (_label, trigger_rect) =
-      Option.is_some (Collision.with_entity game.ghost.entity trigger_rect)
+    let colliding (trigger : trigger) =
+      Option.is_some (Collision.with_entity game.ghost.entity trigger.dest)
     in
     match List.find_opt colliding game.room.triggers.shadows with
     | None -> ()
-    | Some (layer_name, _rect) -> (
-      match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
-      | None -> failwithf "Ghost.update: could not find layer '%s' to reveal" layer_name
+    | Some trigger -> (
+      match List.find_opt (fun (l : layer) -> l.name = trigger.name) game.room.layers with
+      | None -> failwithf "Ghost.update: could not find layer '%s' to reveal" trigger.name
       | Some layer ->
-        if not (List.mem layer_name game.room.progress.revealed_shadow_layers) then
+        if not (List.mem trigger.name game.room.progress.revealed_shadow_layers) then
           game.room.progress.revealed_shadow_layers <-
-            layer_name :: game.room.progress.revealed_shadow_layers;
+            trigger.name :: game.room.progress.revealed_shadow_layers;
         layer.hidden <- true)
   in
 

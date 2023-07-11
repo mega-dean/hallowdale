@@ -166,13 +166,9 @@ let init
         g.entity.dest.pos.y <- -1. *. g.entity.dest.pos.y))
     all_ghosts;
 
-  let _, room_id = Tiled.parse_room_filename "State.load_room" save_file.room_name in
+  let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
-  let parse_texture_configs parse_name coll =
-    let parse (name, config) = (parse_name "state.init" name, config) in
-    List.map parse coll
-  in
 
   let room : room =
     Room.init

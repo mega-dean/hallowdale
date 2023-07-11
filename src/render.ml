@@ -795,7 +795,16 @@ let tick (state : state) =
           if state.debug.enabled then
             debug_rect_outline sprite.dest;
           draw_sprite sprite)
-        game.room.pickup_indicators
+        game.room.pickup_indicators;
+      match game.room.interaction_label with
+      | None -> ()
+      | Some (label, dest) ->
+        let pos =
+          let w = measure_text label in
+          Entity.get_child_pos' dest true (ALIGNED (CENTER, TOP)) (w |> Int.to_float) 10.
+        in
+        Raylib.draw_text label (pos.x |> Float.to_int) (pos.y |> Float.to_int) font_size
+          Color.raywhite
     in
 
     let draw_projectile (p : projectile) =
@@ -809,21 +818,11 @@ let tick (state : state) =
 
     let draw_levers () =
       List.iter
-        (fun ((door_coords, sprite) : string * sprite) ->
+        (fun ((sprite, transformation_bits, trigger) : sprite * int * trigger) ->
           if state.debug.enabled then (
             match sprite.collision with
             | Some (SHAPE shape) -> debug_shape_outline sprite shape
             | _ -> ());
-          let transformation_bits =
-            let direction, _ = Utils.split_at_first '-' door_coords in
-            match direction with
-            | "up" -> 0
-            | "down" -> 2
-            | "left"
-            | "right" ->
-              failwithf "horizontal levers aren't supported" direction
-            | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction
-          in
           draw_texture sprite.texture sprite.dest transformation_bits)
         game.room.triggers.levers
     in

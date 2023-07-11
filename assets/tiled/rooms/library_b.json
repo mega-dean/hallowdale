@@ -443,6 +443,94 @@
                  "width":23,
                  "x":877.833333333333,
                  "y":390.666666666667
+                }, 
+                {
+                 "height":233.333333333333,
+                 "id":45,
+                 "name":"respawn_5,32",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":730.666666666667,
+                 "x":21.3333333333333,
+                 "y":685.333333333333
+                }, 
+                {
+                 "height":233.333,
+                 "id":46,
+                 "name":"respawn_57,32",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":700,
+                 "x":760,
+                 "y":684.666833333333
+                }, 
+                {
+                 "height":519.999666666667,
+                 "id":47,
+                 "name":"respawn_31,53",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":685.333333333333,
+                 "x":412.666666666667,
+                 "y":935.3335
+                }, 
+                {
+                 "height":209.333333333333,
+                 "id":48,
+                 "name":"respawn_3,89",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":707.999666666667,
+                 "x":13.3335,
+                 "y":2086.66666666667
+                }, 
+                {
+                 "height":209.333,
+                 "id":49,
+                 "name":"respawn_53,81",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":806.666666666667,
+                 "x":727.333333333333,
+                 "y":2086.00016666667
+                }, 
+                {
+                 "height":231.999666666667,
+                 "id":50,
+                 "name":"respawn_44,14",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":346.666666666667,
+                 "x":950,
+                 "y":236.666833333333
+                }, 
+                {
+                 "height":61.5,
+                 "id":51,
+                 "name":"info_dean-and-creator",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":67,
+                 "x":984.5,
+                 "y":609
+                }, 
+                {
+                 "height":61.5,
+                 "id":54,
+                 "name":"weapon_limpken-wrench",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":67,
+                 "x":860.75,
+                 "y":609.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1315,7 +1403,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":44,
+ "nextobjectid":55,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

@@ -5,9 +5,9 @@ open Types
 let get_pickup_indicators
     (room_progress : Json_t.room_progress)
     (texture : texture)
-    (triggers : (string * rect) list) : sprite list =
-  let show_obj ((name, dest') : string * rect) : sprite option =
-    if List.mem name room_progress.finished_interactions then
+    (triggers : trigger list) : sprite list =
+  let show_obj (trigger : trigger) : sprite option =
+    if List.mem trigger.name room_progress.finished_interactions then
       None
     else (
       let dest =
@@ -15,8 +15,8 @@ let get_pickup_indicators
           let src = get_src texture in
           (src.w *. Config.scale.room, src.h *. Config.scale.room)
         in
-        let parent_w, parent_h = (dest'.w, dest'.h) in
-        let parent_x, parent_y = (dest'.pos.x, dest'.pos.y) in
+        let parent_w, parent_h = (trigger.dest.w, trigger.dest.h) in
+        let parent_x, parent_y = (trigger.dest.pos.x, trigger.dest.pos.y) in
         {
           pos =
             {
@@ -74,12 +74,13 @@ let init (params : room_params) : room =
 
   let json_room = parse_room (fmt "%s.json" params.file_name) in
   let idx_configs : (int * idx_config) list ref = ref [] in
-  let camera_triggers : (string * rect) list ref = ref [] in
-  let lever_triggers : (string * sprite) list ref = ref [] in
-  let shadow_triggers : (string * rect) list ref = ref [] in
-  let lore_triggers : (string * rect) list ref = ref [] in
-  let pickup_triggers : (string * rect) list ref = ref [] in
-  let cutscene_triggers : (string * rect) list ref = ref [] in
+  let camera_triggers : trigger list ref = ref [] in
+  let lever_triggers : (sprite * int * trigger) list ref = ref [] in
+  let shadow_triggers : trigger list ref = ref [] in
+  let lore_triggers : trigger list ref = ref [] in
+  let item_pickup_triggers : trigger list ref = ref [] in
+  let cutscene_triggers : trigger list ref = ref [] in
+  let respawn_triggers : (vector * trigger) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
   let get_object_rects (jl : Json_t.layer) =
@@ -97,6 +98,38 @@ let init (params : room_params) : room =
       else
         (name, rect)
     in
+
+    let get_object_trigger
+        ?(floor = false)
+        ?(hidden = false)
+        ?(label = None)
+        ?(blocking_interaction = None)
+        name
+        (coll_rect : Json_t.coll_rect) : trigger =
+      let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      if floor then
+        {
+          name;
+          dest =
+            {
+              pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
+              w = rect.w |> Float.floor;
+              h = rect.h |> Float.floor;
+            };
+          label;
+          blocking_interaction;
+        }
+      else if hidden then
+        {
+          name;
+          dest = { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } };
+          label;
+          blocking_interaction;
+        }
+      else
+        { name; dest = rect; label; blocking_interaction }
+    in
+
     let categorize (coll_rect : Json_t.coll_rect) =
       (* TODO maybe want to use a different separator because enemy rects use variant names that
          can have an underscore, eg `enemy_LOCKER_BOY`
@@ -111,12 +144,19 @@ let init (params : room_params) : room =
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
       match name_prefix with
       | "camera" ->
-        camera_triggers := get_object_rect ~floor:true name coll_rect :: !camera_triggers
+        camera_triggers := get_object_trigger ~floor:true name coll_rect :: !camera_triggers
       | "lever" ->
         let direction, _ = Utils.split_at_first '-' name in
-        if not @@ List.mem direction [ "up"; "down" ] then (* TODO horizontal levers *)
-          failwithf "unsupported lever direction: %s" direction;
-        let lever_sprite () : sprite =
+        let transformation_bits =
+          match direction with
+          | "up" -> 0
+          | "down" -> 2
+          | "left"
+          | "right" ->
+            failwithf "horizontal levers aren't supported" direction
+          | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction
+        in
+        let lever_sprite : sprite =
           let shape =
             make_shape
               [
@@ -139,7 +179,11 @@ let init (params : room_params) : room =
             facing_right = true;
           }
         in
-        lever_triggers := (name, lever_sprite ()) :: !lever_triggers
+        lever_triggers :=
+          ( lever_sprite,
+            transformation_bits,
+            { name; dest = lever_sprite.dest; label = None; blocking_interaction = None } )
+          :: !lever_triggers
       | "door-health" ->
         let door_health =
           (* this uses the object height, eg most breakable walls take 4 hits to destroy, so the door-health rects are 4 pixels high *)
@@ -147,16 +191,28 @@ let init (params : room_params) : room =
         in
         add_idx_config (DOOR_HITS door_health)
       | "purple-pen" -> add_idx_config (PURPLE_PEN coll_rect.name)
-      | "hide" -> shadow_triggers := get_object_rect name coll_rect :: !shadow_triggers
-      | "warp"
+      | "hide" -> shadow_triggers := get_object_trigger name coll_rect :: !shadow_triggers
+      | "warp" ->
+        let target_room, rest = Utils.split_at_first '|' name in
+        let blocking_interaction', coords = Utils.split_at_first '@' rest in
+        let blocking_interaction =
+          if blocking_interaction' = "" then None else Some blocking_interaction'
+        in
+        lore_triggers :=
+          get_object_trigger ~label:(Some "Enter") ~blocking_interaction coll_rect.name coll_rect
+          :: !lore_triggers
       | "info"
       | "health" ->
-        lore_triggers := get_object_rect coll_rect.name coll_rect :: !lore_triggers
+        lore_triggers :=
+          get_object_trigger ~label:(Some "Read") coll_rect.name coll_rect :: !lore_triggers
       | "ability"
       | "weapon"
       | "dreamer" ->
-        pickup_triggers := get_object_rect coll_rect.name coll_rect :: !pickup_triggers
+        item_pickup_triggers :=
+          get_object_trigger ~label:(Some "Pick up") coll_rect.name coll_rect
+          :: !item_pickup_triggers
       | "npc" ->
+        (* TODO this should have "Talk" interaction_label *)
         let npc_id, dest =
           get_object_rect (Npc.parse_name (fmt "Tiled rect npc_%s" name) name) coll_rect
         in
@@ -183,9 +239,13 @@ let init (params : room_params) : room =
             (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name) name)
             coll_rect
           :: !enemy_rects
+      | "respawn" ->
+        let respawn_pos = Tiled.Room.dest_from_coords' json_room name in
+        respawn_triggers :=
+          (respawn_pos, get_object_trigger coll_rect.name coll_rect) :: !respawn_triggers
       | "door-warp"
       | "cutscene" ->
-        cutscene_triggers := get_object_rect coll_rect.name coll_rect :: !cutscene_triggers
+        cutscene_triggers := get_object_trigger coll_rect.name coll_rect :: !cutscene_triggers
       | _ ->
         failwithf
           "init_room invalid interaction name '%s' - needs to start with 'camera_', 'health_', \
@@ -237,9 +297,6 @@ let init (params : room_params) : room =
              - keys unlocking doors
              - could do something like slightly alter the corkboard when the health has already been increased
           *)
-          (* CLEANUP too many things called layer_name:
-             - this is the name with number
-          *)
           let (layer_name', hidden) : string * bool =
             match Utils.split_at_first_opt '|' json.name with
             | interaction_name, Some layer_name -> (
@@ -254,7 +311,6 @@ let init (params : room_params) : room =
                 (* TODO move to Utils *)
                 Str.string_match (Str.regexp prefix) s 0
               in
-              (* CLEANUP can probably remove this *)
               let prefix = "hidden-" in
               if str_starts_with json.name prefix then
                 (Str.string_after json.name (String.length prefix), true)
@@ -513,18 +569,20 @@ let init (params : room_params) : room =
     triggers =
       {
         camera = !camera_triggers;
-        lore = !lore_triggers;
-        item_pickups = !pickup_triggers;
         cutscene = !cutscene_triggers;
-        shadows = !shadow_triggers;
+        item_pickups = !item_pickup_triggers;
         levers = !lever_triggers;
+        lore = !lore_triggers;
+        respawn = !respawn_triggers;
+        shadows = !shadow_triggers;
       };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
     npcs;
     loose_projectiles = [];
     pickup_indicators =
-      get_pickup_indicators room_progress params.pickup_indicator_texture !pickup_triggers;
+      get_pickup_indicators room_progress params.pickup_indicator_texture !item_pickup_triggers;
+    interaction_label = None;
     cache;
   }
 

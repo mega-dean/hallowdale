@@ -202,49 +202,51 @@ let update_enemy_pos ?(debug = None) (room : room) (entity : entity) (dt : float
   else
     false
 
-let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
+let get_child_pos'
+    (parent_dest : rect)
+    (facing_right : bool)
+    (relative_pos : relative_position)
+    child_w
+    child_h =
   let to_the_left () =
-    { y = parent.dest.pos.y; x = parent.dest.pos.x -. child_w +. (parent.dest.w /. 2.) }
+    { y = parent_dest.pos.y; x = parent_dest.pos.x -. child_w +. (parent_dest.w /. 2.) }
   in
-  let to_the_right () = { y = parent.dest.pos.y; x = parent.dest.pos.x +. (parent.dest.w /. 2.) } in
+  let to_the_right () = { y = parent_dest.pos.y; x = parent_dest.pos.x +. (parent_dest.w /. 2.) } in
   match relative_pos with
   | IN_FRONT ->
-    if parent.sprite.facing_right then
+    if facing_right then
       to_the_right ()
     else
       to_the_left ()
   | BEHIND ->
-    if parent.sprite.facing_right then
+    if facing_right then
       to_the_left ()
     else
       to_the_right ()
   | ALIGNED (x_alignment, y_alignment) ->
     let x =
       match x_alignment with
-      | LEFT -> parent.dest.pos.x
-      | RIGHT -> parent.dest.pos.x +. parent.dest.w -. child_w
-      | CENTER -> parent.dest.pos.x +. ((parent.dest.w -. child_w) /. 2.)
+      | LEFT -> parent_dest.pos.x
+      | RIGHT -> parent_dest.pos.x +. parent_dest.w -. child_w
+      | CENTER -> parent_dest.pos.x +. ((parent_dest.w -. child_w) /. 2.)
     in
     let y =
       match y_alignment with
-      | TOP -> parent.dest.pos.y
-      | BOTTOM -> parent.dest.pos.y +. parent.dest.h -. child_h
-      | CENTER -> parent.dest.pos.y +. ((parent.dest.h -. child_h) /. 2.)
+      | TOP -> parent_dest.pos.y
+      | BOTTOM -> parent_dest.pos.y +. parent_dest.h -. child_h
+      | CENTER -> parent_dest.pos.y +. ((parent_dest.h -. child_h) /. 2.)
     in
     { x; y }
+
+let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
+  get_child_pos' parent.dest parent.sprite.facing_right relative_pos child_w child_h
 
 let on_ground (e : entity) = e.current_floor <> None
 let descending (e : entity) = e.v.y > 0.
 let is_on_screen' (r : rect) = not (r.pos.x < 0. && r.pos.y < 0.)
 let is_on_screen (e : entity) = is_on_screen' e.dest
 let is_off_screen (e : entity) = not (is_on_screen e)
-
-(* CLEANUP move to types.ml *)
-let get_center' (rect : rect) : vector =
-  { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
-
-let get_center (entity : entity) : vector =
-  get_center' entity.dest
+let get_center (entity : entity) : vector = get_rect_center entity.dest
 
 (* called once per frame to align sprite.dest position with entity.dest position *)
 let adjust_sprite_dest (e : entity) =

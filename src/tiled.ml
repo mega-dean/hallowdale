@@ -148,6 +148,15 @@ module Room = struct
   let tile_idx (room : Json_t.room) (x, y) =
     Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
 
+  let dest_from_coords' (json_room : Json_t.room) (coords : string) : vector =
+    let target_x', target_y' = Utils.split_at_first ',' coords in
+    let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
+    let x, y = Tile.tile_dest ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y) in
+    { x; y }
+
+  let dest_from_coords (room : room) (coords : string) : vector =
+    dest_from_coords' room.json coords
+
   let locate_by_coords (world : world) global_x global_y : room_id * room_location =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =
       room_location.global_x < global_x
