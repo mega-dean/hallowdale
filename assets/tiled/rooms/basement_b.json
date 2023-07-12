@@ -84,6 +84,23 @@
                  "width":116.271,
                  "x":171.6145,
                  "y":1107.01318333333
+                }, 
+                {
+                 "height":36.14,
+                 "id":7,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "color":"#ffffff",
+                     "text":"large deepnest room",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":182.438,
+                 "x":118.781,
+                 "y":115.93
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -297,7 +314,7 @@
          "y":0
         }],
  "nextlayerid":7,
- "nextobjectid":7,
+ "nextobjectid":8,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

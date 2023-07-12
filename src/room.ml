@@ -7,7 +7,7 @@ let get_pickup_indicators
     (texture : texture)
     (triggers : trigger list) : sprite list =
   let show_obj (trigger : trigger) : sprite option =
-    if List.mem trigger.name room_progress.finished_interactions then
+    if List.mem trigger.full_name room_progress.finished_interactions then
       None
     else (
       let dest =
@@ -99,54 +99,53 @@ let init (params : room_params) : room =
         (name, rect)
     in
 
-    let get_object_trigger
-        ?(floor = false)
-        ?(hidden = false)
-        ?(label = None)
-        ?(blocking_interaction = None)
-        name
-        (coll_rect : Json_t.coll_rect) : trigger =
-      let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      if floor then
-        {
-          name;
-          dest =
+    let categorize (coll_rect : Json_t.coll_rect) =
+      (* CLEANUP maybe want to use a different separator because enemy rects use variant names that
+         can have an underscore, eg `enemy_LOCKER_BOY`
+         - also warp destinations are hard to read
+         - it still works because .separate only finds the first occurrence, but it looks weird
+      *)
+      let name_prefix', name_suffix = Utils.split_at_first '_' coll_rect.name in
+      let (blocking_interaction, name_prefix) : string option * string =
+        Utils.split_at_first_opt '|' name_prefix'
+      in
+
+      let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
+        let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+        let dest : rect =
+          if floor then
+            (* these were preventing the pixels in the background from being distorted
+               TODO see if that still happens
+            *)
             {
               pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
               w = rect.w |> Float.floor;
               h = rect.h |> Float.floor;
-            };
-          label;
-          blocking_interaction;
-        }
-      else if hidden then
-        {
-          name;
-          dest = { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } };
-          label;
-          blocking_interaction;
-        }
-      else
-        { name; dest = rect; label; blocking_interaction }
-    in
+            }
+          else if hidden then
+            { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } }
+          else
+            rect
+        in
+        (* FIXME triggers are parsing a lot of the info from the name into these fields, and then
+           trying to re-parse the full name anyway *)
+        { full_name = coll_rect.name; name_suffix; kind; dest; label; blocking_interaction }
+      in
 
-    let categorize (coll_rect : Json_t.coll_rect) =
-      (* TODO maybe want to use a different separator because enemy rects use variant names that
-         can have an underscore, eg `enemy_LOCKER_BOY`
-         - it still works because .separate only finds the first occurrence, but it looks weird
-      *)
-      let name_prefix, name = Utils.split_at_first '_' coll_rect.name in
       let tile_idx () =
         (* this fn finds the tile_idx that the trigger object's top-left corner is in, so trigger objects that are
            used like this (purple-pen, door-health) don't need to be placed exactly at that tile's coordinates *)
         Tiled.Room.tile_idx json_room (coll_rect.x, coll_rect.y)
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
+
+      tmp " ---------- Room.init ----------- got trigger with name_suffix: %s, coll_rect name: %s"
+        name_suffix coll_rect.name;
+
       match name_prefix with
-      | "camera" ->
-        camera_triggers := get_object_trigger ~floor:true name coll_rect :: !camera_triggers
+      | "camera" -> camera_triggers := get_object_trigger ~floor:true CAMERA :: !camera_triggers
       | "lever" ->
-        let direction, _ = Utils.split_at_first '-' name in
+        let direction, _ = Utils.split_at_first '-' name_suffix in
         let transformation_bits =
           match direction with
           | "up" -> 0
@@ -168,7 +167,7 @@ let init (params : room_params) : room =
               ]
           in
           {
-            ident = fmt "Sprite %s" name;
+            ident = fmt "Sprite %s" name_suffix;
             dest =
               Sprite.make_dest
                 (coll_rect.x *. Config.scale.room)
@@ -182,7 +181,14 @@ let init (params : room_params) : room =
         lever_triggers :=
           ( lever_sprite,
             transformation_bits,
-            { name; dest = lever_sprite.dest; label = None; blocking_interaction = None } )
+            {
+              full_name = coll_rect.name;
+              name_suffix;
+              kind = LEVER;
+              dest = lever_sprite.dest;
+              label = None;
+              blocking_interaction = None;
+            } )
           :: !lever_triggers
       | "door-health" ->
         let door_health =
@@ -191,61 +197,61 @@ let init (params : room_params) : room =
         in
         add_idx_config (DOOR_HITS door_health)
       | "purple-pen" -> add_idx_config (PURPLE_PEN coll_rect.name)
-      | "hide" -> shadow_triggers := get_object_trigger name coll_rect :: !shadow_triggers
-      | "warp" ->
-        let target_room, rest = Utils.split_at_first '|' name in
-        let blocking_interaction', coords = Utils.split_at_first '@' rest in
-        let blocking_interaction =
-          if blocking_interaction' = "" then None else Some blocking_interaction'
-        in
-        lore_triggers :=
-          get_object_trigger ~label:(Some "Enter") ~blocking_interaction coll_rect.name coll_rect
-          :: !lore_triggers
-      | "info"
+      | "hide" ->
+        shadow_triggers :=
+          (* FIXME this is using name instead of coll_rect.name, so hiding shadows will probably break from this *)
+          get_object_trigger SHADOW :: !shadow_triggers
+      | "warp" -> lore_triggers := get_object_trigger ~label:(Some "Enter") WARP :: !lore_triggers
+      | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
       | "health" ->
-        lore_triggers :=
-          get_object_trigger ~label:(Some "Read") coll_rect.name coll_rect :: !lore_triggers
+        lore_triggers := get_object_trigger ~label:(Some "Read") HEALTH :: !lore_triggers
       | "ability"
       | "weapon"
       | "dreamer" ->
         item_pickup_triggers :=
-          get_object_trigger ~label:(Some "Pick up") coll_rect.name coll_rect
-          :: !item_pickup_triggers
+          get_object_trigger ~label:(Some "Pick up") ITEM :: !item_pickup_triggers
       | "npc" ->
-        (* TODO this should have "Talk" interaction_label *)
+        (* CLEANUP this should have "Talk" interaction_label *)
         let npc_id, dest =
-          get_object_rect (Npc.parse_name (fmt "Tiled rect npc_%s" name) name) coll_rect
+          get_object_rect
+            (Npc.parse_name (fmt "Tiled rect npc_%s" name_suffix) name_suffix)
+            coll_rect
         in
         npc_rects := (npc_id, dest, true) :: !npc_rects
       | "mirrored-npc" ->
         let npc_id, dest =
-          get_object_rect (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name) name) coll_rect
+          get_object_rect
+            (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name_suffix) name_suffix)
+            coll_rect
         in
         npc_rects := (npc_id, dest, false) :: !npc_rects
       | "hidden-npc" ->
         let npc_id, dest =
           get_object_rect ~hidden:true
-            (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name) name)
+            (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name_suffix) name_suffix)
             coll_rect
         in
         npc_rects := (npc_id, dest, true) :: !npc_rects
       | "enemy" ->
         enemy_rects :=
-          get_object_rect (Enemy.parse_name (fmt "Tiled rect enemy_%s" name) name) coll_rect
+          get_object_rect
+            (Enemy.parse_name (fmt "Tiled rect enemy_%s" name_suffix) name_suffix)
+            coll_rect
           :: !enemy_rects
       | "hidden-enemy" ->
         enemy_rects :=
           get_object_rect ~hidden:true
-            (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name) name)
+            (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name_suffix) name_suffix)
             coll_rect
           :: !enemy_rects
       | "respawn" ->
-        let respawn_pos = Tiled.Room.dest_from_coords' json_room name in
-        respawn_triggers :=
-          (respawn_pos, get_object_trigger coll_rect.name coll_rect) :: !respawn_triggers
-      | "door-warp"
-      | "cutscene" ->
-        cutscene_triggers := get_object_trigger coll_rect.name coll_rect :: !cutscene_triggers
+        let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
+        respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
+      | "door-warp" ->
+        (* FIXME make sure this is right *)
+        tmp " ====================== saving door-warp trigger with name %s" coll_rect.name;
+        cutscene_triggers := get_object_trigger WARP :: !cutscene_triggers
+      | "cutscene" -> cutscene_triggers := get_object_trigger CUTSCENE :: !cutscene_triggers
       | _ ->
         failwithf
           "init_room invalid interaction name '%s' - needs to start with 'camera_', 'health_', \
@@ -298,8 +304,9 @@ let init (params : room_params) : room =
              - could do something like slightly alter the corkboard when the health has already been increased
           *)
           let (layer_name', hidden) : string * bool =
+            (* CLEANUP use this for object blockers too *)
             match Utils.split_at_first_opt '|' json.name with
-            | interaction_name, Some layer_name -> (
+            | Some interaction_name, layer_name -> (
               let finished name =
                 List.mem (fmt "cutscene_%s" name) room_progress.finished_interactions
               in
@@ -314,8 +321,6 @@ let init (params : room_params) : room =
               let prefix = "hidden-" in
               if str_starts_with json.name prefix then
                 (Str.string_after json.name (String.length prefix), true)
-              (* else if str_starts_with json.name "" then
-               *   (Str.string_after json.name (String.length prefix), true) *)
               else
                 (json.name, List.mem json.name room_progress.revealed_shadow_layers)
           in

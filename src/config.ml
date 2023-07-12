@@ -78,12 +78,12 @@ type ghost_config = {
 
 let ghost : ghost_config =
   let width, height = (20., 34.) in
-  let jump_vy = -1020. in
+  let jump_vy = -1200. in
   let wall_jump_vy = jump_vy *. 0.8 in
   {
     width;
     height;
-    max_vy = 1400.;
+    max_vy = 1000.;
     dive_vy = 1600.;
     vx = 400.;
     jump_vy;
@@ -119,7 +119,7 @@ type physics_config = {
   jump_fall_threshold : float;
 }
 
-let physics = { gravity = 1400.; jump_damping = 0.8; jump_fall_threshold = -80. }
+let physics = { gravity = 1800.; jump_damping = 0.8; jump_fall_threshold = -80. }
 
 type debug_keys = {
   mutable n : bool;

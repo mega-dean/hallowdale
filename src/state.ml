@@ -143,7 +143,8 @@ let update_camera (game : game) (state : state) =
         match trigger_config with
         | None -> (subject.x, subject.y)
         | Some trigger ->
-          let x_config, y_config = Utils.split_at_first '-' trigger.name in
+          (* FIXME get this from trigger.kind (CAMERA of string * string) *)
+          let x_config, y_config = Utils.split_at_first '-' trigger.name_suffix in
           let x_bound =
             let left = trigger.dest.pos.x +. Config.window.center_x in
             let right = trigger.dest.pos.x +. trigger.dest.w -. Config.window.center_x in
@@ -306,9 +307,9 @@ let update_enemies (game : game) (state : state) =
             List.length living_bosses = 0
           in
           if all_bosses_dead then
-            Ghost.maybe_begin_interaction state game name)
+            Ghost.maybe_begin_interaction state game (`Name name))
         else
-          Ghost.maybe_begin_interaction state game name)
+          Ghost.maybe_begin_interaction state game (`Name name))
   in
   List.iter update_enemy game.room.enemies;
   state
@@ -446,7 +447,9 @@ let tick (state : state) =
         in
 
         show_triggers game.room.triggers.lore;
-        show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn;
+        show_triggers game.room.triggers.cutscene;
+        show_triggers ~color:(Raylib.Color.red) game.room.triggers.item_pickups;
+        (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
 
         if state.should_save then (
           Menu.save_game game state ignore;

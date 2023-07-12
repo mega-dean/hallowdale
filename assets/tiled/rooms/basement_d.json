@@ -35,21 +35,21 @@
          "name":"world-map-labels",
          "objects":[
                 {
-                 "height":36.6403333333333,
+                 "height":51.7918484848485,
                  "id":4,
                  "name":"",
                  "rotation":0,
                  "text":
                     {
                      "color":"#ffffff",
-                     "text":"hazard pit",
+                     "text":"rooms from Crystal Peak to Dirtmouth",
                      "wrap":true
                     },
                  "type":"",
                  "visible":true,
-                 "width":100.770666666667,
-                 "x":1016.28133333333,
-                 "y":307.013166666667
+                 "width":321.982787878788,
+                 "x":758.705575757573,
+                 "y":85.8010454545458
                 }],
          "opacity":1,
          "type":"objectgroup",

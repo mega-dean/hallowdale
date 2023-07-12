@@ -37,7 +37,24 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[],
+         "objects":[
+                {
+                 "height":36.14,
+                 "id":6,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "color":"#ffffff",
+                     "text":"large deepnest room",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":182.438,
+                 "x":341.568878787879,
+                 "y":144.611818181818
+                }],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -233,7 +250,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":6,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

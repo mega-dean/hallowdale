@@ -135,7 +135,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     if is_new_game then (
       Entity.freeze game.ghost.entity;
       state.screen_fade <- Some 255;
-      Ghost.maybe_begin_interaction state game "info_opening-poem");
+      Ghost.maybe_begin_interaction state game (`Name "info_opening-poem"));
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in

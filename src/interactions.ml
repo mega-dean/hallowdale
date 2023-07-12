@@ -38,7 +38,11 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
 
     let matches regex = Str.string_match (Str.regexp regex) full_interaction_name 0 in
 
-    let interaction_prefix, interaction_name = Utils.split_at_first '_' full_interaction_name in
+    let interaction_prefix, interaction_name =
+      match Utils.split_at_first_opt '_' full_interaction_name with
+      | Some prefix, name -> (prefix, name)
+      | _ -> failwithf "full_interaction_name '%s' must include prefix" full_interaction_name
+    in
 
     let get_lore () : string =
       match List.assoc_opt interaction_name state.global.lore with
@@ -65,11 +69,10 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
     in
 
     (* TODO-2 add dialogue for Shirley Island npcs *)
+    (* FIXME this should match against trigger.kind *)
     match interaction_prefix with
-    | "warp" ->
-      [ STEP (WARP interaction_name) ]
-    | "door-warp" ->
-      [ STEP (DOOR_WARP interaction_name) ]
+    | "warp" -> [ STEP (WARP interaction_name) ]
+    | "door-warp" -> [ STEP (DOOR_WARP interaction_name) ]
     | "purple-pen" ->
       remove_nail := false;
       [
@@ -91,6 +94,9 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
         CURRENT_GHOST (ADD_ITEM (WEAPON interaction_name));
       ]
     | _ -> (
+        (* FIXME should be able to match against just the name_suffix, without "info_", "ability_", etc.
+           - would be nested under the kind match, I guess
+        *)
       match full_interaction_name with
       | "info_opening-poem" ->
         [
@@ -570,6 +576,9 @@ let get_steps ?(increase_health = false) state game (full_interaction_name : str
             "Press [ZR] to scootenanny forwards, cloaked in shadow.";
             "Use the cloak to scootenanny through enemies and their attacks without taking damage.";
           ]
+      | "cutscene_testcutscene" ->
+        tmp "============================ got testcutscene";
+        []
       | "cutscene_kp-drop" ->
         (* TODO starting an interaction resets ghost.v to 0, which looks a little weird when
            jumping into the trigger *)

@@ -1,5 +1,9 @@
 open Types
 
+(* CLEANUP probably time to start organizing this file *)
+
+
+
 let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c
 
 let line_mx_b (line : line) : string =
@@ -21,6 +25,17 @@ let shape_points shape : string =
   List.map fst shape.edges
   |> List.map (fun v -> fmt "{ x = %f; y = %f };" v.x v.y)
   |> join ~sep:"\n"
+
+let trigger_kind (kind : trigger_kind) = match kind with
+  | CAMERA -> "CAMERA"
+  | LEVER -> "LEVER"
+  | INFO -> "INFO"
+  | HEALTH -> "HEALTH"
+  | ITEM -> "ITEM"
+  | SHADOW -> "SHADOW"
+  | WARP -> "WARP"
+  | CUTSCENE -> "CUTSCENE"
+  | RESPAWN -> "RESPAWN"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with

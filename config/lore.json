@@ -38,6 +38,7 @@
     ["3.10.2", "We are Planet Christmas when we sing. We will sing together throughout everything."],
     ["3.11.1", "Flowers look good in a pot. There are people dying in Uganda."],
     ["3.13.1", "Our values, our identities, they mean nothing to me now - only the primal remains."],
+    ["3.15.1", "Boy, this guy doesn't give vampires a square inch of leeway."],
     ["3.16.1", "\"Blogon\" means \"thank you\" in Blorgon."],
     ["3.17.1", "No, {{orange}} you {{white}} zip it, Uncle Knobby. I'm not fighting your wars anymore."],
     ["3.20.1", "I live in the village. I love {{orange}} Abed."],
@@ -66,6 +67,20 @@
     ["5.12.1", "Well \"bread\" is a substance. What do you call the units of bread you use? \"Breads\"?"],
     ["5.13.1", "You're special, Richie. Your mind is special. You know it works differently from other kids' minds."],
     // dreamer items
+    // library
     ["Note from Ass Crack Bandit", "It will take more than a {{blue}} jimi thing {{white}} to uncover my identity, for I am hidden beyond your grasp. It is amusing to see the pressure of solving this case {{blue}} crush {{white}} you, as you struggle in vain to unravel the truth. Lost like a {{blue}} satellite {{white}} adrift in the vast expanse, your search for meaning orbits fruitlessly, while I remain a distant enigma, observing from afar. {{blue}} Where are you going {{white}} when this is all finished? Will you ever be able to leave, or will you {{blue}} stay (wasting time) {{white}} forever? {{blue}} What would you say {{white}} if I revealed my true identity? I can feel your judgments {{blue}} crash into me, {{white}} but do you truly comprehend the reasons behind my actions?"],
-    ["Intro to Chemistry, 3rd Edition", "Mint. $200 retail, $160 on the street."]
+    // basement
+    ["Intro to Chemistry, 3rd Edition", "Mint. $200 retail, $160 on the street."],
+    // ac repair
+    ["Heart of a Hero", "It's up to you not to waste it like I did."],
+    // computer wing
+    ["Racquel's Emotional Components", ""],
+    // forgotten classrooms (Dean's office)
+    ["Priority Registration", "Talk him through the hunger, {{orange}} Abed."],
+    // trampolinepath
+    ["Lost Season 1", "It represents {{blue}} lack of payoff."],
+    // mmb
+    ["", ""],
+    // white palace
+    ["Mr. Whitney Original", "You want it when?"]
 ]

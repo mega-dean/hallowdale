@@ -42,7 +42,24 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[],
+         "objects":[
+                {
+                 "height":55.14,
+                 "id":8,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "color":"#ffffff",
+                     "text":"greenpath before hornet",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":219.104666666667,
+                 "x":786.447666666667,
+                 "y":107.096666666667
+                }],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -254,7 +271,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":6,
+ "nextobjectid":9,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

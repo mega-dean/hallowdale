@@ -39,21 +39,21 @@
          "name":"world-map-labels",
          "objects":[
                 {
-                 "height":36.6403,
+                 "height":63.9130272727273,
                  "id":4,
                  "name":"",
                  "rotation":0,
                  "text":
                     {
                      "color":"#ffffff",
-                     "text":"hazard pit",
+                     "text":"room to Deep Focus",
                      "wrap":true
                     },
                  "type":"",
                  "visible":true,
-                 "width":100.771,
-                 "x":780.6145,
-                 "y":400.67985
+                 "width":188.649787878788,
+                 "x":798.796318181818,
+                 "y":106.740456060606
                 }],
          "opacity":1,
          "type":"objectgroup",

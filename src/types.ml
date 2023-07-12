@@ -32,19 +32,24 @@ module Utils = struct
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
   *)
-  let split_at_first_opt c str : string * string option =
+  let split_at_first_opt c str : string option * string =
     match String.index_from_opt str 0 c with
-    | None -> (str, None)
-    | Some idx -> (Str.string_before str idx, Some (Str.string_after str (idx + 1)))
+    | None -> (None, str)
+    | Some idx -> (Some (Str.string_before str idx), Str.string_after str (idx + 1))
 
   (* returns the strings before and after the first occurrence of char c:
      separate "a.b.c.d" '.' => "a", "b.c.d"
   *)
   let split_at_first c str : string * string =
     match split_at_first_opt c str with
-    | hd, Some tl -> (hd, tl)
-    | _, None ->
+    | Some prefix, rest -> (prefix, rest)
+    | None, _ ->
       failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
+
+  let maybe_trim_before c str : string =
+    match split_at_first_opt c str with
+    | Some prefix, rest -> rest
+    | None, _ -> str
 
   let find_idx x xs =
     let matches ((_i, x') : int * 'a) : bool = x = x' in
@@ -228,11 +233,11 @@ let make_shape (points : vector list) : shape =
     failwith "can't make a shape with < 3 points";
   let make_line_from_points (p1 : vector) (p2 : vector) : line =
     if p1.x = p2.x then
-      { a = 1.; b = 0.; c = -1. *. p1.x }
+      { a = 1.; b = 0.; c = -.p1.x }
     else (
       let slope = (p1.y -. p2.y) /. (p1.x -. p2.x) in
       let y_intercept = p1.y -. (slope *. p1.x) in
-      { a = -1. *. slope; b = 1.; c = -1. *. y_intercept })
+      { a = -.slope; b = 1.; c = -.y_intercept })
   in
   let get_point_and_line point_idx point =
     let next_point = List.nth points ((point_idx + 1) mod List.length points) in
@@ -246,12 +251,6 @@ let get_lines (shape : shape) = List.map snd shape.edges
 
 let shape_of_rect (rect : rect) : shape =
   make_shape
-    (* [
-     *   { x = rect.pos.x +. 1.; y = rect.pos.y };
-     *   { x = rect.pos.x +. rect.w; y = rect.pos.y +. 1. };
-     *   { x = rect.pos.x +. rect.w +. 1.; y = rect.pos.y +. rect.h };
-     *   { x = rect.pos.x; y = rect.pos.y +. rect.h +. 1. };
-     * ] *)
     [
       { x = rect.pos.x; y = rect.pos.y };
       { x = rect.pos.x +. rect.w; y = rect.pos.y };
@@ -1069,11 +1068,25 @@ type room_cache = {
   tilesets_by_path : (string * tileset) list;
 }
 
+(* FIXME parse full_name into args, eg. WARP of float * float *)
+type trigger_kind =
+  | CAMERA
+  | LEVER
+  | HEALTH
+  | INFO
+  | ITEM
+  | SHADOW
+  | WARP
+  | CUTSCENE
+  | RESPAWN
+
 type trigger = {
-  name : string;
+  full_name : string;
+  name_suffix : string;
   dest : rect;
   label : string option;
   blocking_interaction : string option;
+  kind : trigger_kind;
 }
 
 type triggers = {

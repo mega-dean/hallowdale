@@ -513,24 +513,35 @@
                 {
                  "height":61.5,
                  "id":51,
+                 "name":"testcutscene|info_dean-and-creator",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":67,
+                 "x":678,
+                 "y":33
+                }, 
+                {
+                 "height":225,
+                 "id":55,
+                 "name":"camera_gx-y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":573,
+                 "x":528.5,
+                 "y":4
+                }, 
+                {
+                 "height":61.5,
+                 "id":56,
                  "name":"info_dean-and-creator",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":67,
-                 "x":984.5,
-                 "y":609
-                }, 
-                {
-                 "height":61.5,
-                 "id":54,
-                 "name":"weapon_limpken-wrench",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":67,
-                 "x":860.75,
-                 "y":609.5
+                 "x":649,
+                 "y":129.75
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1403,7 +1414,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":55,
+ "nextobjectid":57,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

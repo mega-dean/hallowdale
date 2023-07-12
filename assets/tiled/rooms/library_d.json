@@ -28,7 +28,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":40,
          "x":0,
          "y":0
@@ -281,7 +281,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":40,
          "x":0,
          "y":0
