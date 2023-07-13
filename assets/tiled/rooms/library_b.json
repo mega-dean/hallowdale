@@ -128,7 +128,7 @@
                 {
                  "height":24,
                  "id":5,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -139,7 +139,7 @@
                 {
                  "height":24,
                  "id":8,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -150,7 +150,7 @@
                 {
                  "height":24,
                  "id":9,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -161,7 +161,7 @@
                 {
                  "height":24,
                  "id":10,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -172,7 +172,7 @@
                 {
                  "height":24,
                  "id":11,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -183,7 +183,7 @@
                 {
                  "height":24,
                  "id":12,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -194,7 +194,7 @@
                 {
                  "height":24,
                  "id":13,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -205,7 +205,7 @@
                 {
                  "height":24,
                  "id":14,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -216,7 +216,7 @@
                 {
                  "height":24,
                  "id":15,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -227,7 +227,7 @@
                 {
                  "height":24,
                  "id":16,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -238,7 +238,7 @@
                 {
                  "height":24,
                  "id":17,
-                 "name":"enemy_FISH",
+                 "name":"enemy:FISH",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -249,7 +249,7 @@
                 {
                  "height":24,
                  "id":19,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -260,7 +260,7 @@
                 {
                  "height":24,
                  "id":20,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -271,7 +271,7 @@
                 {
                  "height":24,
                  "id":21,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -282,7 +282,7 @@
                 {
                  "height":24,
                  "id":22,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -293,7 +293,7 @@
                 {
                  "height":24,
                  "id":23,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -304,7 +304,7 @@
                 {
                  "height":24,
                  "id":24,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -315,7 +315,7 @@
                 {
                  "height":24,
                  "id":25,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -326,7 +326,7 @@
                 {
                  "height":24,
                  "id":26,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -337,7 +337,7 @@
                 {
                  "height":24,
                  "id":27,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -348,7 +348,7 @@
                 {
                  "height":24,
                  "id":28,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -359,7 +359,7 @@
                 {
                  "height":24,
                  "id":29,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -370,7 +370,7 @@
                 {
                  "height":24,
                  "id":30,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -381,7 +381,7 @@
                 {
                  "height":24,
                  "id":31,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -392,7 +392,7 @@
                 {
                  "height":24,
                  "id":32,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -403,7 +403,7 @@
                 {
                  "height":24,
                  "id":33,
-                 "name":"enemy_ELECTRICITY",
+                 "name":"enemy:ELECTRICITY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -414,7 +414,7 @@
                 {
                  "height":520,
                  "id":35,
-                 "name":"camera_x-y",
+                 "name":"camera:x-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -425,7 +425,7 @@
                 {
                  "height":617,
                  "id":37,
-                 "name":"camera_x->y",
+                 "name":"camera:x->y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -436,7 +436,7 @@
                 {
                  "height":24,
                  "id":43,
-                 "name":"enemy_FROG",
+                 "name":"enemy:FROG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -447,7 +447,7 @@
                 {
                  "height":233.333333333333,
                  "id":45,
-                 "name":"respawn_5,32",
+                 "name":"respawn:5,32",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -458,7 +458,7 @@
                 {
                  "height":233.333,
                  "id":46,
-                 "name":"respawn_57,32",
+                 "name":"respawn:57,32",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -469,7 +469,7 @@
                 {
                  "height":519.999666666667,
                  "id":47,
-                 "name":"respawn_31,53",
+                 "name":"respawn:31,53",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -480,7 +480,7 @@
                 {
                  "height":209.333333333333,
                  "id":48,
-                 "name":"respawn_3,89",
+                 "name":"respawn:3,89",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -491,7 +491,7 @@
                 {
                  "height":209.333,
                  "id":49,
-                 "name":"respawn_53,81",
+                 "name":"respawn:53,81",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -502,7 +502,7 @@
                 {
                  "height":231.999666666667,
                  "id":50,
-                 "name":"respawn_44,14",
+                 "name":"respawn:44,14",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -513,7 +513,7 @@
                 {
                  "height":61.5,
                  "id":51,
-                 "name":"testcutscene|info_dean-and-creator",
+                 "name":"testcutscene|info:dean-and-creator",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -524,7 +524,7 @@
                 {
                  "height":225,
                  "id":55,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -535,7 +535,7 @@
                 {
                  "height":61.5,
                  "id":56,
-                 "name":"info_dean-and-creator",
+                 "name":"info:dean-and-creator",
                  "rotation":0,
                  "type":"",
                  "visible":true,

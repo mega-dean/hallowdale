@@ -69,7 +69,7 @@ let available_ghost_ids ghosts : ghost_id list =
 let maybe_begin_interaction (state : state) (game : game) interaction =
   let begin_interaction ?(increase_health = false) name =
     game.interaction.name <- Some name;
-    game.interaction.steps <- Interactions.get_steps ~increase_health state game name
+    game.interaction.steps <- Interactions.get_steps ~increase_health state game name interaction
   in
 
   let begin_health_interaction name =
@@ -89,12 +89,11 @@ let maybe_begin_interaction (state : state) (game : game) interaction =
 
   match interaction with
   | `Trigger trigger -> (
-    (* FIXME use name_suffix *)
-    let name = Utils.maybe_trim_before '|' trigger.full_name in
+    (* CLEANUP maybe use name_suffix *)
+      let name = Utils.maybe_trim_before '|' trigger.full_name in
     match trigger.kind with
-    | WARP ->
-      (* FIXME not sure if this is right, should probably be able to use name now *)
-      begin_interaction trigger.full_name
+    | WARP target ->
+      begin_interaction trigger.name_suffix
     | INFO ->
       (* these have no side effects and can be repeated *)
       begin_interaction name
@@ -102,8 +101,8 @@ let maybe_begin_interaction (state : state) (game : game) interaction =
     | ITEM
     | CUTSCENE ->
       begin_cutscene_interaction name
-    | CAMERA
-    | LEVER
+    | CAMERA _
+    | LEVER _
     | SHADOW
     | RESPAWN ->
       failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind))
@@ -115,7 +114,8 @@ let maybe_begin_interaction (state : state) (game : game) interaction =
     let name_prefix, _ = Utils.split_at_first '_' name in
     match name_prefix with
     | "door-warp"
-    | "warp"
+    | "warp" ->
+      failwith "warps should use `Trigger"
     | "info" ->
       (* these have no side effects and can be repeated *)
       begin_interaction name
@@ -606,11 +606,10 @@ let resolve_slash_collisions (state : state) (game : game) =
         | Some l -> l
       in
       let new_tile_groups : tile_group list ref = ref [] in
-      let _direction, coords = Utils.split_at_first '-' trigger.name_suffix in
-      let x', y' = Utils.split_at_first ',' coords in
       let door_tile_idx =
-        Tiled.Tile.tile_idx_from_coords ~width:game.room.json.w_in_tiles
-          (x' |> float_of_string, y' |> float_of_string)
+        match trigger.kind with
+        | LEVER lever -> lever.door_tile_idx
+        | _ -> failwith "lever trigger needs LEVER kind"
       in
       match Collision.with_slash slash lever_sprite with
       (* TODO don't really need to check slash collisions after a lever's door has already been opened *)
@@ -1374,30 +1373,14 @@ let update (game : game) (state : state) =
               | None -> ())
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
-          | DOOR_WARP destination
-          | WARP destination ->
-            tmp "maybe starting warp -------------------------------------------------";
-            (* FIXME this should reuse the other blocking_interaction format *)
-            let target_room_name, rest =
-              (* this can't be a character that is used in room names *)
-              Utils.split_at_first '|' destination
-            in
-            (* TODO this might be too much stuff to embed in the name, maybe worth
-               adding/parsing Custom Properties now
-            *)
-            let blocking_interaction_name, coords = Utils.split_at_first '@' rest in
-            let blocked =
-              match blocking_interaction_name with
-              | "" -> false
-              | s ->
-                (* TODO this only checks the current room's finished_interactions *)
-                not (List.mem (fmt "cutscene_%s" s) game.room.progress.finished_interactions)
-            in
-            if not blocked then (
-              let target = Tiled.Room.dest_from_coords game.room coords in
-              let target_room_location = Tiled.Room.locate_by_name state.world target_room_name in
-              Room.change_current_room state game target_room_location target
-            )
+          | DOOR_WARP trigger_kind
+          | WARP trigger_kind -> (
+            match trigger_kind with
+            | WARP (target) ->
+              tmp "got target room name: %s" target.room_name;
+              let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
+              Room.change_current_room state game target_room_location target.pos
+            | _ -> failwithf "need WARP trigger kind for WARP steps, got '%s'" (Show.trigger_kind trigger_kind))
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
           | TEXT paragraphs ->
@@ -1986,6 +1969,7 @@ let update (game : game) (state : state) =
     in
     let this_frame =
       if starting_dream_nail () then (
+        (* TODO-7 check dream-nail trigger collisions and start interaction *)
         start_action state game DREAM_NAIL;
         true)
       else if still_dream_nailing () then (
@@ -2212,7 +2196,7 @@ let update (game : game) (state : state) =
     match List.find_opt colliding game.room.triggers.shadows with
     | None -> ()
     | Some trigger -> ()
-    (* FIXME shadow layers
+    (* FIXME-3 shadow layers aren't being hidden
        - I think room.ml was doing something unique for shadows
     *)
     (* match List.find_opt (fun (l : layer) -> l.name = trigger.name) game.room.layers with

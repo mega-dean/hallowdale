@@ -52,7 +52,7 @@
                 {
                  "height":28.5,
                  "id":4,
-                 "name":"lever_up-4,10",
+                 "name":"lever:up-4,10",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -63,7 +63,7 @@
                 {
                  "height":217.167,
                  "id":5,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -74,7 +74,7 @@
                 {
                  "height":239.667,
                  "id":6,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -85,7 +85,7 @@
                 {
                  "height":236.500333333333,
                  "id":7,
-                 "name":"camera_x-y",
+                 "name":"camera:x-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,

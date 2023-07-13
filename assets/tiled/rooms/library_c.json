@@ -52,7 +52,7 @@
                 {
                  "height":254,
                  "id":5,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,

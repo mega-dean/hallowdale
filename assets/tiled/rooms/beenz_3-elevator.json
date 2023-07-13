@@ -96,7 +96,7 @@
                 {
                  "height":50,
                  "id":7,
-                 "name":"warp_beenz_3-a|@8,10",
+                 "name":"warp:beenz_3-a|@8,10",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -107,7 +107,7 @@
                 {
                  "height":30,
                  "id":9,
-                 "name":"enemy_PENGUIN",
+                 "name":"enemy:PENGUIN",
                  "rotation":0,
                  "type":"",
                  "visible":true,

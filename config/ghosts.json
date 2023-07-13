@@ -215,7 +215,7 @@
         ["jump", {
             "duration": 0.0,
             "cooldown": 0.166666,
-            "input_buffer": 0.3 // this is longer than HK, but makes the code for flapping simpler
+            "input_buffer": 0.2 // this is longer than HK, but makes the code for flapping simpler
         }],
         ["wall-kick", {
             "duration": 0.166666,
@@ -223,7 +223,7 @@
             "input_buffer": 0.2
         }],
         ["flap", {
-            "duration": 0.4,
+            "duration": 0.21,
             "cooldown": 0.2,
             "input_buffer": 0.2
         }],
@@ -239,7 +239,6 @@
         }],
 
         ["dream-nail", {
-            // FIXME
             // HK times: 1.75s without dream wielder, 1.1s with dream wielder
             // "duration": 1.8,
             "duration": 1.1,

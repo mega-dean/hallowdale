@@ -124,7 +124,7 @@
                 {
                  "height":50,
                  "id":1,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -135,7 +135,7 @@
                 {
                  "height":29,
                  "id":2,
-                 "name":"mirrored-npc_ANNIES_BOOBS",
+                 "name":"mirrored-npc:ANNIES_BOOBS",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -146,7 +146,7 @@
                 {
                  "height":50,
                  "id":3,
-                 "name":"warp_forgotten_cafeteria|@52,40",
+                 "name":"warp:forgotten_cafeteria|@52,40",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -157,7 +157,7 @@
                 {
                  "height":50,
                  "id":4,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -168,7 +168,7 @@
                 {
                  "height":50,
                  "id":5,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -179,7 +179,7 @@
                 {
                  "height":50,
                  "id":8,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -190,7 +190,7 @@
                 {
                  "height":50,
                  "id":9,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -201,7 +201,7 @@
                 {
                  "height":50,
                  "id":10,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -212,7 +212,7 @@
                 {
                  "height":50,
                  "id":11,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -223,7 +223,7 @@
                 {
                  "height":50,
                  "id":12,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -234,7 +234,7 @@
                 {
                  "height":50,
                  "id":13,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -245,7 +245,7 @@
                 {
                  "height":50,
                  "id":14,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -256,7 +256,7 @@
                 {
                  "height":50,
                  "id":15,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -267,7 +267,7 @@
                 {
                  "height":50,
                  "id":16,
-                 "name":"warp_FIXME|@0,0",
+                 "name":"warp:FIXME|@0,0",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -278,7 +278,7 @@
                 {
                  "height":27.2273,
                  "id":17,
-                 "name":"lever_up-18,32",
+                 "name":"lever:up-18,32",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -289,7 +289,7 @@
                 {
                  "height":27.2273,
                  "id":18,
-                 "name":"lever_up-18,37",
+                 "name":"lever:up-18,37",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -300,7 +300,7 @@
                 {
                  "height":27.2273,
                  "id":19,
-                 "name":"lever_up-8,31",
+                 "name":"lever:up-8,31",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -311,7 +311,7 @@
                 {
                  "height":27.2273,
                  "id":20,
-                 "name":"lever_up-35,31",
+                 "name":"lever:up-35,31",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -322,7 +322,7 @@
                 {
                  "height":27.2273,
                  "id":21,
-                 "name":"lever_up-28,24",
+                 "name":"lever:up-28,24",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -333,7 +333,7 @@
                 {
                  "height":27.2273,
                  "id":22,
-                 "name":"lever_up-15,24",
+                 "name":"lever:up-15,24",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -344,7 +344,7 @@
                 {
                  "height":27.2273,
                  "id":23,
-                 "name":"lever_down-18,12",
+                 "name":"lever:down-18,12",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -355,7 +355,7 @@
                 {
                  "height":27.2273,
                  "id":24,
-                 "name":"lever_down-22,7",
+                 "name":"lever:down-22,7",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -366,7 +366,7 @@
                 {
                  "height":27.2273,
                  "id":25,
-                 "name":"lever_down-9,6",
+                 "name":"lever:down-9,6",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -377,7 +377,7 @@
                 {
                  "height":27.2273,
                  "id":26,
-                 "name":"lever_down-34,6",
+                 "name":"lever:down-34,6",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -388,7 +388,7 @@
                 {
                  "height":27.2273,
                  "id":27,
-                 "name":"lever_down-28,13",
+                 "name":"lever:down-28,13",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -399,7 +399,7 @@
                 {
                  "height":27.2273,
                  "id":28,
-                 "name":"lever_down-15,13",
+                 "name":"lever:down-15,13",
                  "rotation":0,
                  "type":"",
                  "visible":true,

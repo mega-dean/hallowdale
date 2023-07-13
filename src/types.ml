@@ -87,6 +87,11 @@ type vector = {
   mutable y : float;
 }
 
+type warp_target = {
+  room_name : string;
+  pos : vector;
+}
+
 type rect = {
   mutable pos : vector;
   mutable w : float;
@@ -493,14 +498,30 @@ type save_slots = {
   slot_4 : Json_t.save_file * bool;
 }
 
+type lever = {
+  direction : direction;
+  door_tile_idx : int;
+}
+
+type trigger_kind =
+  | CAMERA of string * string
+  | LEVER of lever
+  | HEALTH
+  | INFO
+  | ITEM
+  | SHADOW
+  | WARP of warp_target
+  | CUTSCENE
+  | RESPAWN
+
 module Interaction = struct
   type general_step =
     | INITIALIZE_INTERACTIONS of bool
     | FADE_SCREEN_OUT
     | FADE_SCREEN_IN
     | WAIT of float
-    | WARP of string
-    | DOOR_WARP of string
+    | WARP of trigger_kind
+    | DOOR_WARP of trigger_kind
     | SPAWN_VENGEFUL_SPIRIT of direction * int * int
     (* text *)
     | TEXT of string list
@@ -1068,20 +1089,10 @@ type room_cache = {
   tilesets_by_path : (string * tileset) list;
 }
 
-(* FIXME parse full_name into args, eg. WARP of float * float *)
-type trigger_kind =
-  | CAMERA
-  | LEVER
-  | HEALTH
-  | INFO
-  | ITEM
-  | SHADOW
-  | WARP
-  | CUTSCENE
-  | RESPAWN
-
 type trigger = {
+  (* CLEANUP can probably remove full_name (but it may be useful for debugging) *)
   full_name : string;
+  name_prefix : string;
   name_suffix : string;
   dest : rect;
   label : string option;
@@ -1093,6 +1104,7 @@ type triggers = {
   camera : trigger list;
   cutscene : trigger list;
   item_pickups : trigger list;
+  (* sprite to render and transformation_bits *)
   levers : (sprite * int * trigger) list;
   (* this is used for any infinitely-repeatable interactions, like reading lore or warping
      TODO maybe use a separate field for warp : (vector * string * trigger) list

@@ -193,8 +193,8 @@
             "fileName": "basement_b.json",
             "height": 1200,
             "width": 480,
-            "x": 6936,
-            "y": 6048
+            "x": 8736,
+            "y": 6168
         },
         {
             "fileName": "basement_d.json",
@@ -270,7 +270,7 @@
             "fileName": "computer_a.json",
             "height": 336,
             "width": 1968,
-            "x": 2784,
+            "x": 2736,
             "y": 3648
         },
         {
@@ -291,8 +291,8 @@
             "fileName": "computer_f.json",
             "height": 480,
             "width": 1800,
-            "x": 960,
-            "y": 3552
+            "x": -1704,
+            "y": 4512
         },
         {
             "fileName": "computer_b.json",
@@ -403,8 +403,8 @@
             "fileName": "basement_e.json",
             "height": 480,
             "width": 1200,
-            "x": 5712,
-            "y": 5784
+            "x": 7368,
+            "y": 6000
         },
         {
             "fileName": "city_a.json",

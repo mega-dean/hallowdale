@@ -58,7 +58,7 @@
                 {
                  "height":127,
                  "id":6,
-                 "name":"door-warp_library_e|@24,16",
+                 "name":"door-warp:library_e@24,16",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -69,7 +69,7 @@
                 {
                  "height":608.666666666667,
                  "id":8,
-                 "name":"camera_>x-gy",
+                 "name":"camera:>x-gy",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -80,7 +80,7 @@
                 {
                  "height":61.5,
                  "id":10,
-                 "name":"cutscene_testcutscene",
+                 "name":"cutscene:testcutscene",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -91,7 +91,7 @@
                 {
                  "height":61.5,
                  "id":11,
-                 "name":"weapon_Limpken Wrench",
+                 "name":"weapon:Limpken Wrench",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -102,7 +102,7 @@
                 {
                  "height":65,
                  "id":12,
-                 "name":"dreamer_Intro to Chemistry, 3rd Edition",
+                 "name":"dreamer:Intro to Chemistry, 3rd Edition",
                  "rotation":0,
                  "type":"",
                  "visible":true,

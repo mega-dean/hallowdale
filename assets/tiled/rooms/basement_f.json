@@ -61,7 +61,7 @@
                 {
                  "height":54,
                  "id":5,
-                 "name":"ability_shade-cloak",
+                 "name":"ability:shade-cloak",
                  "rotation":0,
                  "type":"",
                  "visible":true,

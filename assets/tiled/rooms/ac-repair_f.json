@@ -48,7 +48,7 @@
                 {
                  "height":65,
                  "id":5,
-                 "name":"ability_monkey-gas",
+                 "name":"ability:monkey-gas",
                  "rotation":0,
                  "type":"",
                  "visible":true,

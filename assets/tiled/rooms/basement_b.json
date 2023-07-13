@@ -116,7 +116,7 @@
                 {
                  "height":65,
                  "id":6,
-                 "name":"ability_claw",
+                 "name":"ability:claw",
                  "rotation":0,
                  "type":"",
                  "visible":true,

@@ -2,8 +2,6 @@ open Types
 
 (* CLEANUP probably time to start organizing this file *)
 
-
-
 let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c
 
 let line_mx_b (line : line) : string =
@@ -26,14 +24,22 @@ let shape_points shape : string =
   |> List.map (fun v -> fmt "{ x = %f; y = %f };" v.x v.y)
   |> join ~sep:"\n"
 
-let trigger_kind (kind : trigger_kind) = match kind with
-  | CAMERA -> "CAMERA"
-  | LEVER -> "LEVER"
+let direction (d : direction) : string =
+  match d with
+  | UP -> "up"
+  | DOWN -> "down"
+  | LEFT -> "left"
+  | RIGHT -> "right"
+
+let trigger_kind (kind : trigger_kind) =
+  match kind with
+  | CAMERA (x, y) -> fmt "CAMERA_%s-%s" x y
+  | LEVER lever -> fmt "LEVER (%s, %d)" (direction lever.direction) lever.door_tile_idx
   | INFO -> "INFO"
   | HEALTH -> "HEALTH"
   | ITEM -> "ITEM"
   | SHADOW -> "SHADOW"
-  | WARP -> "WARP"
+  | WARP target -> fmt "WARP to %s at (%0.2f, %0.2f)" target.room_name target.pos.x target.pos.y
   | CUTSCENE -> "CUTSCENE"
   | RESPAWN -> "RESPAWN"
 
@@ -49,13 +55,6 @@ let asset_dir (asset_dir : asset_dir) =
   | GHOSTS -> "ghosts"
   | NPCS -> "npcs"
   | ENEMIES -> "enemies"
-
-let direction (d : direction) : string =
-  match d with
-  | UP -> "up"
-  | DOWN -> "down"
-  | LEFT -> "left"
-  | RIGHT -> "right"
 
 let attack_direction (d : direction option) : string =
   match d with

@@ -100,12 +100,7 @@ let init (params : room_params) : room =
     in
 
     let categorize (coll_rect : Json_t.coll_rect) =
-      (* CLEANUP maybe want to use a different separator because enemy rects use variant names that
-         can have an underscore, eg `enemy_LOCKER_BOY`
-         - also warp destinations are hard to read
-         - it still works because .separate only finds the first occurrence, but it looks weird
-      *)
-      let name_prefix', name_suffix = Utils.split_at_first '_' coll_rect.name in
+      let name_prefix', name_suffix = Utils.split_at_first ':' coll_rect.name in
       let (blocking_interaction, name_prefix) : string option * string =
         Utils.split_at_first_opt '|' name_prefix'
       in
@@ -127,9 +122,15 @@ let init (params : room_params) : room =
           else
             rect
         in
-        (* FIXME triggers are parsing a lot of the info from the name into these fields, and then
-           trying to re-parse the full name anyway *)
-        { full_name = coll_rect.name; name_suffix; kind; dest; label; blocking_interaction }
+        {
+          full_name = coll_rect.name;
+          name_prefix;
+          name_suffix;
+          kind;
+          dest;
+          label;
+          blocking_interaction;
+        }
       in
 
       let tile_idx () =
@@ -139,21 +140,34 @@ let init (params : room_params) : room =
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
 
+      let parse_warp_target name : warp_target =
+        let room_name, coords = Utils.split_at_first '@' name in
+        let pos = Tiled.Room.dest_from_coords' json_room coords in
+        { room_name; pos }
+      in
+
       tmp " ---------- Room.init ----------- got trigger with name_suffix: %s, coll_rect name: %s"
         name_suffix coll_rect.name;
 
       match name_prefix with
-      | "camera" -> camera_triggers := get_object_trigger ~floor:true CAMERA :: !camera_triggers
+      | "camera" ->
+        let x, y = Utils.split_at_first '-' name_suffix in
+        camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
-        let direction, _ = Utils.split_at_first '-' name_suffix in
-        let transformation_bits =
-          match direction with
-          | "up" -> 0
-          | "down" -> 2
+        let direction', door_coords' = Utils.split_at_first '-' name_suffix in
+        let direction, transformation_bits =
+          match direction' with
+          | "up" -> (UP, 0)
+          | "down" -> (DOWN, 2)
           | "left"
           | "right" ->
-            failwithf "horizontal levers aren't supported" direction
-          | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction
+            failwithf "horizontal levers aren't supported" direction'
+          | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction'
+        in
+        let x', y' = Utils.split_at_first ',' door_coords' in
+        let door_tile_idx =
+          Tiled.Tile.tile_idx_from_coords ~width:json_room.w_in_tiles
+            (x' |> float_of_string, y' |> float_of_string)
         in
         let lever_sprite : sprite =
           let shape =
@@ -183,8 +197,9 @@ let init (params : room_params) : room =
             transformation_bits,
             {
               full_name = coll_rect.name;
+              name_prefix;
               name_suffix;
-              kind = LEVER;
+              kind = LEVER { direction; door_tile_idx };
               dest = lever_sprite.dest;
               label = None;
               blocking_interaction = None;
@@ -199,9 +214,11 @@ let init (params : room_params) : room =
       | "purple-pen" -> add_idx_config (PURPLE_PEN coll_rect.name)
       | "hide" ->
         shadow_triggers :=
-          (* FIXME this is using name instead of coll_rect.name, so hiding shadows will probably break from this *)
+          (* FIXME-3 this was using name instead of coll_rect.name, so hiding shadows will probably break from this *)
           get_object_trigger SHADOW :: !shadow_triggers
-      | "warp" -> lore_triggers := get_object_trigger ~label:(Some "Enter") WARP :: !lore_triggers
+      | "warp" ->
+        let target = parse_warp_target name_suffix in
+        lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
       | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
       | "health" ->
         lore_triggers := get_object_trigger ~label:(Some "Read") HEALTH :: !lore_triggers
@@ -248,9 +265,11 @@ let init (params : room_params) : room =
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "door-warp" ->
-        (* FIXME make sure this is right *)
         tmp " ====================== saving door-warp trigger with name %s" coll_rect.name;
-        cutscene_triggers := get_object_trigger WARP :: !cutscene_triggers
+        tmp "got coll_rect.name: %s" coll_rect.name;
+
+        let target = parse_warp_target name_suffix in
+        cutscene_triggers := get_object_trigger (WARP target) :: !cutscene_triggers
       | "cutscene" -> cutscene_triggers := get_object_trigger CUTSCENE :: !cutscene_triggers
       | _ ->
         failwithf

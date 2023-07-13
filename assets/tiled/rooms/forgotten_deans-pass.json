@@ -87,7 +87,7 @@
                 {
                  "height":1336,
                  "id":5,
-                 "name":"camera_x-y",
+                 "name":"camera:x-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -98,7 +98,7 @@
                 {
                  "height":1342,
                  "id":6,
-                 "name":"camera_>x-y",
+                 "name":"camera:>x-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -109,7 +109,7 @@
                 {
                  "height":285,
                  "id":7,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -120,7 +120,7 @@
                 {
                  "height":234,
                  "id":19,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -131,7 +131,7 @@
                 {
                  "height":246,
                  "id":20,
-                 "name":"camera_x-y",
+                 "name":"camera:x-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -142,7 +142,7 @@
                 {
                  "height":64.5,
                  "id":34,
-                 "name":"info_dean-and-creator",
+                 "name":"info:dean-and-creator",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -153,7 +153,7 @@
                 {
                  "height":56,
                  "id":37,
-                 "name":"info_focus",
+                 "name":"info:focus",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -164,7 +164,7 @@
                 {
                  "height":67.6667,
                  "id":38,
-                 "name":"health_2.09.1",
+                 "name":"health:2.09.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -175,7 +175,7 @@
                 {
                  "height":13,
                  "id":39,
-                 "name":"door-health_big-doors",
+                 "name":"door-health:big-doors",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -186,7 +186,7 @@
                 {
                  "height":154,
                  "id":41,
-                 "name":"hide_shadow3",
+                 "name":"hide:shadow3",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -197,7 +197,7 @@
                 {
                  "height":246.666666666667,
                  "id":42,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -208,7 +208,7 @@
                 {
                  "height":109.5,
                  "id":44,
-                 "name":"hide_shadow2",
+                 "name":"hide:shadow2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -219,7 +219,7 @@
                 {
                  "height":109.5,
                  "id":45,
-                 "name":"hide_shadow4",
+                 "name":"hide:shadow4",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -230,7 +230,7 @@
                 {
                  "height":88.5,
                  "id":46,
-                 "name":"cutscene_kp-drop",
+                 "name":"cutscene:kp-drop",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -241,7 +241,7 @@
                 {
                  "height":3,
                  "id":47,
-                 "name":"door-health_horizontal",
+                 "name":"door-health:horizontal",
                  "rotation":0,
                  "type":"",
                  "visible":true,

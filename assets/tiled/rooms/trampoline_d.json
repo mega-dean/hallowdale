@@ -74,7 +74,7 @@
                 {
                  "height":99,
                  "id":5,
-                 "name":"ability_double-bouncies",
+                 "name":"ability:double-bouncies",
                  "rotation":0,
                  "type":"",
                  "visible":true,

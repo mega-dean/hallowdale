@@ -47,7 +47,7 @@
                 {
                  "height":28.5,
                  "id":4,
-                 "name":"lever_up-4,8",
+                 "name":"lever:up-4,8",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -58,7 +58,7 @@
                 {
                  "height":28.5,
                  "id":5,
-                 "name":"lever_up-42,2",
+                 "name":"lever:up-42,2",
                  "rotation":0,
                  "type":"",
                  "visible":true,

@@ -51,7 +51,7 @@
                 {
                  "height":67.7878787878788,
                  "id":1,
-                 "name":"cutscene_mama-mahogany",
+                 "name":"cutscene:mama-mahogany",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -62,7 +62,7 @@
                 {
                  "height":338.5,
                  "id":2,
-                 "name":"cutscene_lockers",
+                 "name":"cutscene:lockers",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -73,7 +73,7 @@
                 {
                  "height":98.6666666666667,
                  "id":3,
-                 "name":"cutscene_fight-locker-boys",
+                 "name":"cutscene:fight-locker-boys",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -84,7 +84,7 @@
                 {
                  "height":358,
                  "id":4,
-                 "name":"cutscene_lockers-lockers-lockers",
+                 "name":"cutscene:lockers-lockers-lockers",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -95,7 +95,7 @@
                 {
                  "height":175.666666666667,
                  "id":5,
-                 "name":"camera_gx-<y",
+                 "name":"camera:gx-<y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -106,7 +106,7 @@
                 {
                  "height":486.833333333333,
                  "id":6,
-                 "name":"camera_x-y",
+                 "name":"camera:x-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -117,7 +117,7 @@
                 {
                  "height":273.5,
                  "id":10,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -128,7 +128,7 @@
                 {
                  "height":26,
                  "id":12,
-                 "name":"hidden-enemy_LOCKER_BOY",
+                 "name":"hidden-enemy:LOCKER_BOY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -139,7 +139,7 @@
                 {
                  "height":29,
                  "id":45,
-                 "name":"npc_CHANG",
+                 "name":"npc:CHANG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -150,7 +150,7 @@
                 {
                  "height":26,
                  "id":58,
-                 "name":"hidden-enemy_LOCKER_BOY",
+                 "name":"hidden-enemy:LOCKER_BOY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -161,7 +161,7 @@
                 {
                  "height":486.833,
                  "id":59,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -172,7 +172,7 @@
                 {
                  "height":26,
                  "id":60,
-                 "name":"hidden-enemy_LOCKER_BOY",
+                 "name":"hidden-enemy:LOCKER_BOY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -183,7 +183,7 @@
                 {
                  "height":126.333333333333,
                  "id":62,
-                 "name":"hidden-npc_HICKEY",
+                 "name":"hidden-npc:HICKEY",
                  "rotation":0,
                  "type":"",
                  "visible":true,

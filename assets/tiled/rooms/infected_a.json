@@ -79,7 +79,7 @@
                 {
                  "height":65,
                  "id":1,
-                 "name":"ability_scootenanny",
+                 "name":"ability:scootenanny",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -90,7 +90,7 @@
                 {
                  "height":80,
                  "id":2,
-                 "name":"health_2.02.1",
+                 "name":"health:2.02.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -101,7 +101,7 @@
                 {
                  "height":4,
                  "id":5,
-                 "name":"door-health_to-scootenanny",
+                 "name":"door-health:to-scootenanny",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -112,7 +112,7 @@
                 {
                  "height":90.6666666666666,
                  "id":6,
-                 "name":"hide_shadow2",
+                 "name":"hide:shadow2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -123,7 +123,7 @@
                 {
                  "height":90.6667,
                  "id":8,
-                 "name":"hide_shadow3",
+                 "name":"hide:shadow3",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -134,7 +134,7 @@
                 {
                  "height":19.25,
                  "id":9,
-                 "name":"purple-pen_2.13.1",
+                 "name":"purple-pen:2.13.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -145,7 +145,7 @@
                 {
                  "height":60,
                  "id":10,
-                 "name":"weapon_Devil's Drench XJ-11",
+                 "name":"weapon:Devil's Drench XJ-11",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -156,7 +156,7 @@
                 {
                  "height":27.2272727272727,
                  "id":14,
-                 "name":"lever_up-47,1",
+                 "name":"lever:up-47,1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -167,7 +167,7 @@
                 {
                  "height":202,
                  "id":18,
-                 "name":"camera_gx-y",
+                 "name":"camera:gx-y",
                  "rotation":0,
                  "type":"",
                  "visible":true,

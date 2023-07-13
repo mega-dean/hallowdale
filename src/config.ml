@@ -78,7 +78,7 @@ type ghost_config = {
 
 let ghost : ghost_config =
   let width, height = (20., 34.) in
-  let jump_vy = -1200. in
+  let jump_vy = -1080. in
   let wall_jump_vy = jump_vy *. 0.8 in
   {
     width;

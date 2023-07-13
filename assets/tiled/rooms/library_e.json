@@ -52,7 +52,7 @@
                 {
                  "height":236,
                  "id":6,
-                 "name":"hide_shadow2",
+                 "name":"hide:shadow2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -63,7 +63,7 @@
                 {
                  "height":19.25,
                  "id":7,
-                 "name":"purple-pen_2.13.1",
+                 "name":"purple-pen:2.13.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -74,7 +74,7 @@
                 {
                  "height":132.333333333333,
                  "id":8,
-                 "name":"warp_library_a|@7,22",
+                 "name":"warp:library_a@7,22",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -84,7 +84,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
