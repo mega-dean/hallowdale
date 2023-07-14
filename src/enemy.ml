@@ -339,7 +339,7 @@ let set_frog_action (enemy : enemy) action (room : room) current_time current_pr
         let explosion_scale = 4. in
         let projectile_duration = TIME_LEFT { seconds = 1. } in
         spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
-          ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT
+          ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT ~damage:2
           projectile_duration current_time
       in
       (* this will only catch collisions on the first frame of the
@@ -651,6 +651,7 @@ let create_from_rects
       status;
       kind;
       entity;
+      damage = json.damage;
       health = { current = enemy_config.health; max = enemy_config.health };
       textures;
       history = [];

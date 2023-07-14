@@ -130,9 +130,10 @@ type texture_config = {
 }
 
 type enemy_config = {
-  health : int;
   w : int;
   h : int;
+  health : int;
+  ~damage <ocaml default="1"> : int;
   kind : string;
   (* TODO add default values for these *)
   gravity_multiplier : float;

@@ -148,7 +148,6 @@ module Room = struct
   let tile_idx (room : Json_t.room) (x, y) =
     Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
 
-  (* CLEANUP consolidate *)
   let dest_from_coords' (json_room : Json_t.room) (coords : string) : vector =
     let target_x', target_y' = Utils.split_at_first ',' coords in
     let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in

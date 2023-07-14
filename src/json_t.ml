@@ -146,9 +146,10 @@ type ghosts_file = {
 }
 
 type enemy_config = {
-  health: int;
   w: int;
   h: int;
+  health: int;
+  damage: int;
   kind: string;
   gravity_multiplier: float;
   can_take_damage: bool;

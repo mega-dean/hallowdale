@@ -135,7 +135,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       Entity.freeze game.ghost.entity;
       state.screen_fade <- Some 255;
       let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
-      Ghost.maybe_begin_interaction state game (`Trigger trigger));
+      Ghost.maybe_begin_interaction state game trigger);
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in

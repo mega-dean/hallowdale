@@ -513,10 +513,6 @@ type trigger_kind =
   | WARP of warp_target
   | CUTSCENE
   | RESPAWN
-  (* these two don't have objects in the triggers layer, but they need
-     triggers here to be able to start interactions
-     CLEANUP maybe make a separate type for these then
-  *)
   | PURPLE_PEN
   | BOSS_KILLED
 
@@ -688,6 +684,7 @@ type enemy = {
   kind : enemy_kind;
   status : enemy_status;
   entity : entity;
+  damage : int;
   mutable health : health;
   mutable history : (enemy_action * time) list;
   mutable props : (string * float) list;
@@ -1096,7 +1093,6 @@ type room_cache = {
 }
 
 type trigger = {
-  (* CLEANUP can probably remove full_name (but it may be useful for debugging) *)
   full_name : string;
   name_prefix : string;
   name_suffix : string;
@@ -1107,7 +1103,6 @@ type trigger = {
 }
 
 (* this is for things that aren't created from Tiled objects in the triggers layer *)
-(* CLEANUP maybe a better name for this *)
 let make_stub_trigger kind name_prefix name_suffix : trigger =
   {
     full_name = fmt "%s:%s" name_prefix name_suffix;
@@ -1132,8 +1127,6 @@ type triggers = {
   lore : trigger list;
   respawn : (vector * trigger) list;
   shadows : trigger list;
-  purple_pens : (string * trigger) list;
-  boss_on_killed : (string * trigger) list;
 }
 
 type camera_state = {

@@ -2,6 +2,7 @@
     "enemies": [
         [ "DUNCAN", {
             "health": 5,
+            "damage": 3,
             "w": 19,
             "h": 45,
             "gravity_multiplier": 1.0,

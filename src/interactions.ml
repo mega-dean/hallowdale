@@ -64,7 +64,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     | "warp" -> [ STEP (WARP trigger.kind) ]
     | "door-warp" -> [ STEP (DOOR_WARP trigger.kind) ]
     | "weapon" ->
-      tmp "got weapon interaction =========================";
       (* TODO center this text *)
       [
         CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
@@ -222,10 +221,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | _ -> failwithf "unknown ability interaction suffix: %s" trigger.name_suffix)
     | "cutscene" -> (
       match trigger.name_suffix with
-      | "testcutscene" ->
-        (* CLEANUP remove *)
-        tmp "============================ got testcutscene";
-        []
       | "kp-drop" ->
         (* TODO starting an interaction resets ghost.v to 0, which looks a little weird when
            jumping into the trigger *)
@@ -344,7 +339,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 13, 31));
           STEP (WAIT 0.6);
           ENEMY (DUNCAN, SET_VX 200.);
-          (* CLEANUP a lot of these are wrong now, need to adjust for new physics *)
+          (* TODO a lot of these are wrong now, need to adjust for new physics *)
           ENEMY (DUNCAN, SET_ACTION "interaction-jumping");
           STEP (WAIT 1.);
           ENEMY (DUNCAN, SET_POSE "scavenging");

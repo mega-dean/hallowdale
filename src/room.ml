@@ -77,7 +77,6 @@ let init (params : room_params) : room =
   let camera_triggers : trigger list ref = ref [] in
   let lever_triggers : (sprite * int * trigger) list ref = ref [] in
   let shadow_triggers : trigger list ref = ref [] in
-  let purple_pen_triggers : (string * trigger) list ref = ref [] in
   let lore_triggers : trigger list ref = ref [] in
   let item_pickup_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
@@ -147,9 +146,6 @@ let init (params : room_params) : room =
         { room_name; pos }
       in
 
-      tmp " ---------- Room.init ----------- got trigger with name_suffix: %s, coll_rect name: %s"
-        name_suffix coll_rect.name;
-
       match name_prefix with
       | "camera" ->
         let x, y = Utils.split_at_first '-' name_suffix in
@@ -212,10 +208,7 @@ let init (params : room_params) : room =
           coll_rect.h |> Float.to_int
         in
         add_idx_config (DOOR_HITS door_health)
-      | "purple-pen" ->
-        purple_pen_triggers :=
-          (coll_rect.name, get_object_trigger PURPLE_PEN) :: !purple_pen_triggers;
-        add_idx_config (PURPLE_PEN coll_rect.name)
+      | "purple-pen" -> add_idx_config (PURPLE_PEN name_suffix)
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
         let target = parse_warp_target name_suffix in
@@ -229,7 +222,7 @@ let init (params : room_params) : room =
         item_pickup_triggers :=
           get_object_trigger ~label:(Some "Pick up") ITEM :: !item_pickup_triggers
       | "npc" ->
-        (* CLEANUP this should have "Talk" interaction_label *)
+        (* TODO this should have "Talk" interaction_label *)
         let npc_id, dest =
           get_object_rect
             (Npc.parse_name (fmt "Tiled rect npc_%s" name_suffix) name_suffix)
@@ -266,9 +259,6 @@ let init (params : room_params) : room =
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "door-warp" ->
-        tmp " ====================== saving door-warp trigger with name %s" coll_rect.name;
-        tmp "got coll_rect.name: %s" coll_rect.name;
-
         let target = parse_warp_target name_suffix in
         cutscene_triggers := get_object_trigger (WARP target) :: !cutscene_triggers
       | "cutscene" -> cutscene_triggers := get_object_trigger CUTSCENE :: !cutscene_triggers
@@ -324,7 +314,6 @@ let init (params : room_params) : room =
              - could do something like slightly alter the corkboard when the health has already been increased
           *)
           let (layer_name', hidden) : string * bool =
-            (* CLEANUP use this for object blockers too *)
             match Utils.split_at_first_opt '|' json.name with
             | Some interaction_name, layer_name -> (
               let finished name =
@@ -583,11 +572,6 @@ let init (params : room_params) : room =
     }
   in
 
-  let boss_on_killed =
-    List.map
-      (fun name -> (name, make_stub_trigger BOSS_KILLED "boss-killed" name))
-      [ "DUNCAN"; "LOCKER_BOY" ]
-  in
   {
     area;
     id = room_id;
@@ -606,8 +590,6 @@ let init (params : room_params) : room =
         lore = !lore_triggers;
         respawn = !respawn_triggers;
         shadows = !shadow_triggers;
-        purple_pens = !purple_pen_triggers;
-        boss_on_killed;
       };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;

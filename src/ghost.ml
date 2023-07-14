@@ -66,15 +66,10 @@ let read_config () : ghosts_file =
 let available_ghost_ids ghosts : ghost_id list =
   ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
 
-(* Interactions can be started from a trigger using `Trigger trigger. A string can be
-   passed in with `Name string, but they need to have a corresponding trigger that can
-   be looked up from room.triggers.
-*)
-let maybe_begin_interaction (state : state) (game : game) interaction =
+let maybe_begin_interaction (state : state) (game : game) trigger =
   let begin_interaction ?(increase_health = false) trigger =
     game.interaction.steps <- Interactions.get_steps ~increase_health state game trigger
   in
-
   let begin_health_interaction name trigger =
     (* these can be repeated, but health should only be increased once *)
     let increase_health = not (List.mem name game.room.progress.finished_interactions) in
@@ -82,57 +77,32 @@ let maybe_begin_interaction (state : state) (game : game) interaction =
       game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
     begin_interaction ~increase_health trigger
   in
-
   let begin_cutscene_interaction name trigger =
     (* these are only viewable once *)
     if not (List.mem name game.room.progress.finished_interactions) then (
       game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
       begin_interaction trigger)
   in
-
   let strip_blocking_interaction (full_name : string) : string =
     Utils.maybe_trim_before '|' full_name
   in
-
-  match interaction with
-  | `Trigger trigger -> (
-    let name = strip_blocking_interaction trigger.full_name in
-    match trigger.kind with
-    | WARP target -> begin_interaction trigger
-    | INFO ->
-      (* these have no side effects and can be repeated *)
-      begin_interaction trigger
-    | HEALTH -> begin_health_interaction name trigger
-    | ITEM
-    | CUTSCENE ->
-      begin_cutscene_interaction name trigger
-    | CAMERA _
-    | LEVER _
-    | SHADOW
-    | PURPLE_PEN
-    | BOSS_KILLED
-    | RESPAWN ->
-      failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind))
-  | `Name name -> (
-    (* TODO not sure if these will ever have a blocking interaction *)
-    let name_prefix, name_suffix = Utils.split_at_first ':' name in
-    match name_prefix with
-    | "purple-pen" ->
-      let trigger : trigger =
-        match List.assoc_opt name game.room.triggers.purple_pens with
-        | Some trigger' -> trigger'
-        | None -> failwithf "could not find purple-pen trigger: %s" name_suffix
-      in
-      begin_interaction trigger
-    | "boss-killed" ->
-      let trigger : trigger =
-        match List.assoc_opt name_suffix game.room.triggers.boss_on_killed with
-        | Some trigger' -> trigger'
-        | None -> failwithf "could not find boss-killed trigger: %s" name_suffix
-      in
-      begin_cutscene_interaction name trigger
-    | _ ->
-      failwithf "cannot use `Name without corresponding trigger in room.triggers: %s" name_prefix)
+  let name = strip_blocking_interaction trigger.full_name in
+  match trigger.kind with
+  | WARP _
+  | PURPLE_PEN
+  | INFO ->
+    (* these have no side effects and can be repeated *)
+    begin_interaction trigger
+  | HEALTH -> begin_health_interaction name trigger
+  | BOSS_KILLED
+  | ITEM
+  | CUTSCENE ->
+    begin_cutscene_interaction name trigger
+  | CAMERA _
+  | LEVER _
+  | SHADOW
+  | RESPAWN ->
+    failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
 
 let maybe_unset_current_floor (ghost : ghost) (room : room) =
   match ghost.entity.current_floor with
@@ -180,8 +150,7 @@ let get_enemy_collision (ghost : ghost) (room : room) : (int * direction) option
         else
           RIGHT
       in
-      (* FIXME add enemy.damage, or maybe use enemy.props *)
-      Some (1, direction))
+      Some (enemy.damage, direction))
     else
       None
   in
@@ -551,7 +520,8 @@ let resolve_slash_collisions (state : state) (game : game) =
             List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
-          | Some (PURPLE_PEN name) -> maybe_begin_interaction state game (`Name name)
+          | Some (PURPLE_PEN name) ->
+            maybe_begin_interaction state game (make_stub_trigger PURPLE_PEN "purple-pen" name)
           | _ -> ());
           destroy_tile_group layer tile_group;
           if collision.direction = DOWN && layer.config.pogoable then
@@ -868,7 +838,9 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
       despawn = TIME_LEFT { seconds = Config.action.vengeful_spirit_duration };
       spawned = { at = state.frame.time };
       pogoable = true;
-      (* FIXME not sure if this is needed for ghost projectiles, this field is really "damage done to ghost" *)
+      (* TODO could try to use this for ghost projectiles, but this field is
+         currently "damage done to ghost" for enemy projectiles
+      *)
       damage = 1;
     }
   in
@@ -1287,7 +1259,6 @@ let update (game : game) (state : state) =
       (match find_trigger_collision' game.ghost interactable_triggers with
       | None -> game.room.interaction_label <- None
       | Some trigger -> (
-        itmp "got a colliding trigger with kind %s" (Show.trigger_kind trigger.kind);
         let label =
           match trigger.label with
           | None -> ""
@@ -1295,23 +1266,19 @@ let update (game : game) (state : state) =
         in
         let check_interact_key () =
           (* TODO maybe want to also check `Entity.on_ground game.ghost.entity` *)
-          if state.frame_inputs.interact.pressed then (
-            tmp "starting interaction with name %s" trigger.full_name;
-            maybe_begin_interaction state game (`Trigger trigger))
+          if state.frame_inputs.interact.pressed then
+            maybe_begin_interaction state game trigger
         in
         match trigger.blocking_interaction with
         | None -> (
           match trigger.kind with
           | ITEM ->
-            itmp "got an item trigger with name %s" trigger.full_name;
             (* TODO seems like this should be coordinated with the pickup_indicators updating
                - looks a little weird because the pickup indicator goes away sooner than the label
             *)
-            if List.mem trigger.full_name all_finished_interactions then (
-              itmp "ghost has item already";
-              game.room.interaction_label <- None)
+            if List.mem trigger.full_name all_finished_interactions then
+              game.room.interaction_label <- None
             else (
-              itmp "ghost does not have item";
               check_interact_key ();
               game.room.interaction_label <- Some (label, trigger.dest))
           | _ ->
@@ -1319,23 +1286,13 @@ let update (game : game) (state : state) =
               (check_interact_key ();
                Some (label, trigger.dest)))
         | Some bi ->
-          tmp "got blocking interaction: %s" bi;
-          tmp "got all_finished_interactions: %s" (all_finished_interactions |> join);
-
-          itmp "==================================================";
           (* this only supports "cutscene" blocking interactions *)
           if List.mem (fmt "cutscene:%s" bi) all_finished_interactions then (
-            itmp "finished";
             game.room.interaction_label <- Some (label, trigger.dest);
-            check_interact_key ())
-          else
-            itmp "not finished"));
+            check_interact_key ())));
       (match find_trigger_collision' game.ghost game.room.triggers.cutscene with
       | None -> ()
-      | Some trigger ->
-        itmp " 7777777777777777 beginning cutscene interaction with trigger name: %s"
-          trigger.full_name;
-        maybe_begin_interaction state game (`Trigger trigger));
+      | Some trigger -> maybe_begin_interaction state game trigger);
       (match find_respawn_trigger_collision game.ghost game.room.triggers.respawn with
       | None -> ()
       | Some (new_respawn_pos, trigger) -> game.room.respawn_pos <- new_respawn_pos);
@@ -1392,7 +1349,6 @@ let update (game : game) (state : state) =
           | WARP trigger_kind -> (
             match trigger_kind with
             | WARP target ->
-              tmp "got target room name: %s" target.room_name;
               let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
               Room.change_current_room state game target_room_location target.pos
             | _ ->
@@ -2069,9 +2025,6 @@ let update (game : game) (state : state) =
         match List.nth_opt projectile_collisions 0 with
         | Some (collision, projectile) ->
           state.camera.shake <- 1.;
-          (*
-             CLEANUP maybe add int arg to TAKE_DAMAGE, and damage : int to projectile
-          *)
           (* arbitrary direction *)
           start_action state game (TAKE_DAMAGE (projectile.damage, UP))
         | None ->
@@ -2119,7 +2072,7 @@ let update (game : game) (state : state) =
           game.ghost.current.wall <- None
         else if still_wall_sliding then (
           let wall = Option.get game.ghost.current.wall in
-          (* CLEANUP also check that wall is still within x range too
+          (* TODO also check that wall is still within x range too
              - would fix wall-cling storage for hazard respawns
           *)
           if high_enough_to_slide_on wall then

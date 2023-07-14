@@ -296,6 +296,10 @@ let update_enemies (game : game) (state : state) =
              (Ghost.get_damage game.ghost damage_kind)
              collision)));
 
+    let maybe_begin_interaction' () =
+      let trigger = make_stub_trigger BOSS_KILLED "boss-killed" (Show.enemy_id enemy.id) in
+      Ghost.maybe_begin_interaction state game trigger
+    in
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
       | None -> ()
@@ -310,9 +314,9 @@ let update_enemies (game : game) (state : state) =
             List.length living_bosses = 0
           in
           if all_bosses_dead then
-            Ghost.maybe_begin_interaction state game (`Name name))
+            maybe_begin_interaction' ())
         else
-          Ghost.maybe_begin_interaction state game (`Name name))
+          maybe_begin_interaction' ())
   in
   List.iter update_enemy game.room.enemies;
   state

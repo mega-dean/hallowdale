@@ -1,7 +1,5 @@
 open Types
 
-(* CLEANUP probably time to start organizing this file *)
-
 let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c
 
 let line_mx_b (line : line) : string =
