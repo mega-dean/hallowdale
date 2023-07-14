@@ -3,6 +3,16 @@
  "infinite":false,
  "layers":[
         {
+         "id":10,
+         "image":"..\/hk-reference\/fungal-drop.png",
+         "name":"bg-reference",
+         "opacity":1,
+         "type":"imagelayer",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 45, 45, 45, 45, 45, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 23, 23, 23, 23, 23, 23, 23, 23, 23, 45, 45, 45, 45, 45, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 0,
             0, 23, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 23, 0,
@@ -953,7 +963,7 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
+ "nextlayerid":11,
  "nextobjectid":4,
  "orientation":"orthogonal",
  "renderorder":"right-down",

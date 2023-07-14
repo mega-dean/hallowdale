@@ -7,6 +7,7 @@ type scale_config = {
   health : float;
   soul : float;
   slash : float;
+  roomi : int;
   room : float;
   font_size : int;
   paragraph_spacing : int;
@@ -17,7 +18,7 @@ let scale =
   let ghost = 2 in
   let health = 2 in
   let soul = 3 in
-  let room = 3 in
+  let roomi = 3 in
   let font_size =
     (* TODO at sizes > 24, text starts to overlap with some of the ability outlines (eg focus-info) *)
     24
@@ -27,7 +28,8 @@ let scale =
     health = health |> Int.to_float;
     soul = soul |> Int.to_float;
     slash = 0.8;
-    room = room |> Int.to_float;
+    roomi;
+    room = roomi |> Int.to_float;
     font_size;
     paragraph_spacing = font_size * 2;
   }
@@ -41,7 +43,15 @@ type window_config = {
 }
 
 let window : window_config =
-  let width, height = (1280, 720) in
+  let tile_size = 24 in
+  let tiles (x_tiles, y_tiles) =
+    (*
+       - if this is not an exact multiple of tile_size, pixels get distorted when the camera isn't moving
+    *)
+    (x_tiles * tile_size * scale.roomi, y_tiles * tile_size * scale.roomi)
+  in
+  let width, height = tiles (18, 10) in
+  let width, height = tiles (22, 12) in
   (* TODO this is the correct size, but causes the scaled pixels to be distorted
      - only when camera.vx = 0 though
 

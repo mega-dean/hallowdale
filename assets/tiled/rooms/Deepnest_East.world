@@ -172,15 +172,15 @@
             "fileName": "basement_c.json",
             "height": 720,
             "width": 1200,
-            "x": 5376,
-            "y": 6672
+            "x": 5400,
+            "y": 7344
         },
         {
             "fileName": "basement_abyss-climb.json",
             "height": 3600,
-            "width": 1440,
-            "x": 3936,
-            "y": 5280
+            "width": 1920,
+            "x": 3456,
+            "y": 5712
         },
         {
             "fileName": "basement_a.json",
@@ -191,17 +191,17 @@
         },
         {
             "fileName": "basement_b.json",
-            "height": 1200,
-            "width": 480,
-            "x": 8736,
-            "y": 6168
+            "height": 816,
+            "width": 1968,
+            "x": 5544,
+            "y": 6048
         },
         {
             "fileName": "basement_d.json",
             "height": 384,
             "width": 2040,
-            "x": -1968,
-            "y": 3672
+            "x": -1800,
+            "y": 3576
         },
         {
             "fileName": "ac-repair_a.json",
@@ -270,50 +270,50 @@
             "fileName": "computer_a.json",
             "height": 336,
             "width": 1968,
-            "x": 2736,
+            "x": 2856,
             "y": 3648
         },
         {
             "fileName": "computer_d.json",
             "height": 480,
             "width": 1440,
-            "x": 2496,
-            "y": 6360
+            "x": 1080,
+            "y": 6552
         },
         {
             "fileName": "computer_e.json",
             "height": 480,
             "width": 1440,
-            "x": 192,
-            "y": 5496
+            "x": 216,
+            "y": 5544
         },
         {
             "fileName": "computer_f.json",
             "height": 480,
             "width": 1800,
-            "x": -1704,
-            "y": 4512
+            "x": -1560,
+            "y": 4416
         },
         {
             "fileName": "computer_b.json",
             "height": 1200,
             "width": 3840,
-            "x": 912,
-            "y": 4056
+            "x": 432,
+            "y": 3984
         },
         {
             "fileName": "computer_dreamer.json",
             "height": 480,
             "width": 1080,
-            "x": -3120,
+            "x": -2880,
             "y": 3528
         },
         {
             "fileName": "computer_c.json",
             "height": 1920,
             "width": 720,
-            "x": 192,
-            "y": 3552
+            "x": 240,
+            "y": 3624
         },
         {
             "fileName": "forgotten_a.json",
@@ -333,8 +333,8 @@
             "fileName": "forgotten_g.json",
             "height": 720,
             "width": 2208,
-            "x": 288,
-            "y": -720
+            "x": -1080,
+            "y": -744
         },
         {
             "fileName": "forgotten_b.json",
@@ -345,10 +345,10 @@
         },
         {
             "fileName": "infected_c.json",
-            "height": 816,
-            "width": 2880,
-            "x": 3576,
-            "y": -1800
+            "height": 960,
+            "width": 4800,
+            "x": 1656,
+            "y": -1776
         },
         {
             "fileName": "trampoline_e.json",
@@ -382,29 +382,29 @@
             "fileName": "forgotten_d.json",
             "height": 480,
             "width": 768,
-            "x": 504,
-            "y": -1440
+            "x": -1416,
+            "y": -1512
         },
         {
             "fileName": "forgotten_h.json",
             "height": 480,
             "width": 1152,
-            "x": 2424,
-            "y": -1560
+            "x": 648,
+            "y": -1416
         },
         {
             "fileName": "forgotten_i.json",
             "height": 720,
             "width": 1152,
-            "x": 1272,
-            "y": -1440
+            "x": -576,
+            "y": -1488
         },
         {
             "fileName": "basement_e.json",
             "height": 480,
             "width": 1200,
-            "x": 7368,
-            "y": 6000
+            "x": 6048,
+            "y": 5544
         },
         {
             "fileName": "city_a.json",
@@ -452,8 +452,8 @@
             "fileName": "basement_f.json",
             "height": 288,
             "width": 1200,
-            "x": 5376,
-            "y": 8592
+            "x": 5352,
+            "y": 9624
         },
         {
             "fileName": "ventways_hub.json",
@@ -465,8 +465,8 @@
         {
             "fileName": "library_a.json",
             "height": 624,
-            "width": 1344,
-            "x": -2400,
+            "width": 1680,
+            "x": -2688,
             "y": 6528
         },
         {
