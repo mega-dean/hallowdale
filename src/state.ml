@@ -178,7 +178,7 @@ let update_camera (game : game) (state : state) =
       let diff_x, diff_y = (abs_float (current_x -. target_x), abs_float (current_y -. target_y)) in
       let smooth_x =
         if diff_x > 1. then
-          (* FIXME don't depend on fps
+          (* CLEANUP don't depend on fps
              - probably add a new field like camera.movement with type camera_movement = LINEAR | SMOOTH of float
              - maybe want separate x_movement/y_movement
           *)
@@ -461,6 +461,17 @@ let tick (state : state) =
         show_triggers game.room.triggers.cutscene;
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
+
+        (* FIXME
+           - move this to a better spot
+           - maybe consolidate with corner_text
+        *)
+        (match game.interaction.floating_text with
+         | None -> ()
+         | Some (_, end_time) ->
+           if state.frame.time > end_time.at then
+             game.interaction.floating_text <- None);
+
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         if state.should_save then (

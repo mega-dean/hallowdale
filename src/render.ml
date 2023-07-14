@@ -535,32 +535,43 @@ let tick (state : state) =
       (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 alpha)
   in
 
-  let draw_corner_text game =
-    match game.interaction.corner_text with
-    | None -> ()
-    | Some (text, end_time) ->
-      let dest =
-        {
-          x = camera_x;
-          y = camera_y +. ((Config.window.height |> Int.to_float) -. (font_size |> Int.to_float));
-        }
+  let draw_text_bg_box ?(color = Color.create 0 0 0 200) (config : text_config) =
+    let w = Config.window.width - (2 * config.margin_x) in
+    let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
+    Draw.rect
+      ((camera_x |> Float.to_int) + config.margin_x)
+      ((camera_y |> Float.to_int) + config.margin_y)
+      w h color
+  in
+
+  let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) =
+    let display_line (config : text_config) y_offset line_number (line : line) =
+      let display_segment (segment : line_segment) =
+        let centered_x =
+          if config.centered then (text_box_width config - line.w) / 2 else config.padding_x
+        in
+        let line_spacing = line_height *. (line_number |> Int.to_float) in
+        let dest_y = line_spacing +. camera_y +. y_offset in
+        Raylib.draw_text segment.content
+          ((segment.dest.pos.x +. camera_x |> Float.to_int) + config.margin_x + centered_x)
+          ((dest_y |> Float.to_int) + (line_number * font_size))
+          font_size segment.color
       in
-      let alpha = 256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int in
-      Raylib.draw_text (Utils.only text.content) (dest.x |> Float.to_int) (dest.y |> Float.to_int)
-        font_size
-        (Raylib.Color.create 255 255 255 alpha)
+      List.iter display_segment line.segments
+    in
+
+    let paragraph_offset = paragraph_idx * Config.scale.paragraph_spacing in
+    let y_offset' =
+      paragraph_offset + config.margin_y + config.padding_y + y_offset |> Int.to_float
+    in
+    let lines =
+      let w = text_box_width config - (2 * config.padding_x) in
+      get_lines measure_text w (String.split_on_char ' ' paragraph)
+    in
+    List.iteri (display_line config y_offset') lines
   in
 
   let maybe_draw_text (game : game option) (interaction_text : Interaction.text_kind option) =
-    let draw_text_bg_box (config : text_config) =
-      let w = Config.window.width - (2 * config.margin_x) in
-      let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
-      Draw.rect
-        ((camera_x |> Float.to_int) + config.margin_x)
-        ((camera_y |> Float.to_int) + config.margin_y)
-        w h (Color.create 0 0 0 200)
-    in
-
     (* TODO add offset_x based on ghost.id, and make ability-outlines.png a grid of images *)
     let draw_outline ?(offset_y = 0) (ability_text : Interaction.ability_text) =
       let texture =
@@ -573,33 +584,6 @@ let tick (state : state) =
       let y = camera_y +. Config.window.center_y -. (h /. 2.) -. (offset_y |> Int.to_float) in
       let dest = { pos = { x; y }; w; h } in
       draw_texture texture dest 0
-    in
-
-    let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) =
-      let display_line (config : text_config) y_offset line_number (line : line) =
-        let display_segment (segment : line_segment) =
-          let centered_x =
-            if config.centered then (text_box_width config - line.w) / 2 else config.padding_x
-          in
-          let line_spacing = line_height *. (line_number |> Int.to_float) in
-          let dest_y = line_spacing +. camera_y +. y_offset in
-          Raylib.draw_text segment.content
-            ((segment.dest.pos.x +. camera_x |> Float.to_int) + config.margin_x + centered_x)
-            ((dest_y |> Float.to_int) + (line_number * font_size))
-            font_size segment.color
-        in
-        List.iter display_segment line.segments
-      in
-
-      let paragraph_offset = paragraph_idx * Config.scale.paragraph_spacing in
-      let y_offset' =
-        paragraph_offset + config.margin_y + config.padding_y + y_offset |> Int.to_float
-      in
-      let lines =
-        let w = text_box_width config - (2 * config.padding_x) in
-        get_lines measure_text w (String.split_on_char ' ' paragraph)
-      in
-      List.iteri (display_line config y_offset') lines
     in
 
     match interaction_text with
@@ -762,6 +746,44 @@ let tick (state : state) =
       (* TODO better cursor for current item *)
       display_paragraph config 0 menu.current_choice_idx
         "*                                           *"
+  in
+
+  let draw_other_text game =
+    (match game.interaction.corner_text with
+    | None -> ()
+    | Some (text, end_time) ->
+      let dest =
+        {
+          x = camera_x;
+          y = camera_y +. ((Config.window.height |> Int.to_float) -. (font_size |> Int.to_float));
+        }
+      in
+      let alpha = 256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int in
+      Raylib.draw_text (Utils.only text.content) (dest.x |> Float.to_int) (dest.y |> Float.to_int)
+        font_size
+        (Raylib.Color.create 255 255 255 alpha));
+
+    match game.interaction.floating_text with
+    | None -> ()
+    | Some (text, end_time) ->
+      if String.length text > 160 then
+        failwithf "dream nail text is too long: %s" text;
+
+      (* this config works pretty well for text that is one or two lines long *)
+      let config : text_config =
+        {
+          margin_x = 150;
+          margin_y = 50;
+          margin_y_bottom = Config.window.height * 3 / 4;
+          outline_offset_y = 0;
+          padding_x = 50;
+          padding_y = 50;
+          centered = true;
+        }
+      in
+
+      draw_text_bg_box ~color:(Color.create 0 155 50 100) config;
+      List.iteri (display_paragraph config 0) [ text ]
   in
 
   let show_main_menu menu save_slots =
@@ -1150,7 +1172,7 @@ let tick (state : state) =
        | Some pause_menu -> Some (MENU (pause_menu, None))
      in
      maybe_draw_text (Some game) interaction_text);
-    draw_corner_text game;
+    draw_other_text game;
     Raylib.draw_fps
       ((camera_x |> Float.to_int) + Config.window.width - 100)
       (camera_y |> Float.to_int);

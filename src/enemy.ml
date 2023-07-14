@@ -536,6 +536,10 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       log_action enemy "change_direction" state.frame.time)
   | FROG ->
     (* TODO these could be moved to enemies.json *)
+    (* TODO this is breaking by the frog getting stuck in "ascending"
+       - happens when starting a "Read" interaction in the same room
+       - happens after pushing them sideways with a dream nail
+ *)
     let dunk_vy = 40. in
     let dunk_duration = 2. in
     let cooldown_duration = 0.5 in

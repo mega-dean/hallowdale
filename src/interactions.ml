@@ -313,6 +313,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
              - probably keep it entirely separate from existing interaction_text, and make a new floating_text field
           *)
           CURRENT_GHOST (ENTITY FREEZE);
+          (* CLEANUP use floating text for this instead of TEXT *)
           STEP (TEXT [ "... lockers ..." ]);
         ]
       | "lockers-lockers-lockers" ->

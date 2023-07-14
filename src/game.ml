@@ -198,6 +198,7 @@ let init
         speaker_name = None;
         black_rects = [];
         corner_text = None;
+        floating_text = None;
       };
     progress = save_file.progress;
     save_file_slot;

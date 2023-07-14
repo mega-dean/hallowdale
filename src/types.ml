@@ -629,7 +629,12 @@ module Interaction = struct
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
+    (* this is used for "Game Saved" *)
+    (* CLEANUP use strign *)
     mutable corner_text : (text * time) option;
+    (* this is for text boxes that should show up on the screen without blocking gameplay,
+       like dream-nail thoughts and some interactions *)
+    mutable floating_text : (string * time) option;
     (* these are only used for revealing the opening poem for new games *)
     mutable black_rects : rect list;
   }
@@ -696,6 +701,7 @@ type enemy = {
   textures : (string * texture) list;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
+  (* FIXME add dream_nail_dialogues *)
 }
 
 type npc = {

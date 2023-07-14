@@ -429,6 +429,9 @@ let check_dream_nail_collisions (state : state) (game : game) =
         match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
         | None -> ()
         | Some c ->
+          (* FIXME use enemy.dream_nail_dialogues *)
+          game.interaction.floating_text <-
+            Some (fmt "I am a %s" (Show.enemy_id enemy.id), { at = state.frame.time +. 1. });
           if game.ghost.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
             (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
             game.ghost.soul.current <-
@@ -1203,10 +1206,16 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then
+    if key_pressed DEBUG_1 then (
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* show_ghost_location () *)
-      show_camera_location ()
+      (* show_camera_location () *)
+      tmp "setting floating text";
+      tmp "current corner_text: %s"
+        (match game.interaction.corner_text with
+        | None -> ""
+        | Some (t, _) -> t.content |> join);
+      game.interaction.floating_text <- Some ("floating text", { at = state.frame.time +. 1. }))
     else if key_pressed DEBUG_2 then (* toggle_ability game.ghost "mantis_claw" *)
       game.ghost.health.current <- game.ghost.health.current - 1
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
