@@ -165,17 +165,6 @@ let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * r
   List.iter adjust_position left_right_collisions;
   List.iter adjust_position up_down_collisions
 
-let update_pos' ?(debug = None) (room : room) (entity : entity) (dt : float) : unit =
-  if entity.update_pos then (
-    let dvy =
-      match entity.current_floor with
-      | Some _ -> 0.
-      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
-    in
-    apply_v ~debug dt entity;
-    entity.v.y <- entity.v.y +. dvy;
-    get_floor_collisions room entity |> apply_collisions entity)
-
 let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) : unit =
   if entity.update_pos then (
     let dvy =

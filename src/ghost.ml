@@ -1511,6 +1511,7 @@ let update (game : game) (state : state) =
           match enemy_step with
           | WALK_TO target_tile_x ->
             apply_to_only "WALK_TO" (fun (e : enemy) ->
+                (* TODO figure out how to do nested modules in .mli files *)
                 let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
                 let dist = (tx *. Config.scale.room) -. e.entity.dest.pos.x in
                 still_walking := abs_float dist > 10.;

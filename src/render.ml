@@ -222,8 +222,6 @@ type line = {
   mutable w : int;
 }
 
-type paragraph = line list
-
 let show_segment (line_segment : line_segment) : string =
   if line_segment.color = Raylib.Color.raywhite then
     line_segment.content
