@@ -82,6 +82,7 @@ let spawn_projectile
     ?(projectile_texture_name = "projectile")
     ?(pogoable = false)
     ?(projectile_vx_opt = None)
+    ?(damage = 1)
     ~(x_alignment : x_alignment)
     ~(direction : direction)
     (enemy : enemy)
@@ -115,7 +116,7 @@ let spawn_projectile
       ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.)
       ~collision:(Some DEST) projectile_texture dest
   in
-  { entity; despawn; spawned = { at = spawn_time }; pogoable }
+  { entity; despawn; spawned = { at = spawn_time }; pogoable; damage }
 
 (* TODO remove after figuring out how to handle enemies *)
 let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current_time current_props
@@ -672,8 +673,8 @@ let create_from_rects
       (* boss_kind could probably be configured as an optional variant in atd, but using a string with default value is easier *)
       match enemy_config.kind with
       | "enemy" -> ("", false, ENEMY)
-      | "boss" -> (fmt "boss-killed_%s" enemy_name, false, BOSS)
-      | "multi-boss" -> (fmt "boss-killed_%s" enemy_name, true, MULTI_BOSS)
+      | "boss" -> (fmt "boss-killed:%s" enemy_name, false, BOSS)
+      | "multi-boss" -> (fmt "boss-killed:%s" enemy_name, true, MULTI_BOSS)
       | _ -> failwithf "%s bad boss_kind '%s'" enemy_name enemy_config.kind
     in
     let on_killed =

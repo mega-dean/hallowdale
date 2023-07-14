@@ -365,7 +365,7 @@ type ghost_action_kind =
   | WALL_KICK
   | JUMP
   | TAKE_DAMAGE_AND_RESPAWN
-  | TAKE_DAMAGE of direction
+  | TAKE_DAMAGE of int * direction
   | CAST of spell_kind
   | DIVE_COOLDOWN
   | SHADE_DASH
@@ -513,7 +513,12 @@ type trigger_kind =
   | WARP of warp_target
   | CUTSCENE
   | RESPAWN
+  (* these two don't have objects in the triggers layer, but they need
+     triggers here to be able to start interactions
+     CLEANUP maybe make a separate type for these then
+  *)
   | PURPLE_PEN
+  | BOSS_KILLED
 
 module Interaction = struct
   type general_step =
@@ -624,7 +629,6 @@ module Interaction = struct
     | MENU of menu * save_slots option
 
   type t = {
-    mutable name : string option;
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
@@ -638,9 +642,6 @@ end
    - or maybe this should be boss_on_killed, and geo should be handled separately
 *)
 type enemy_on_killed = {
-  (* FIXME maybe make this a trigger option
-- maybe not - could just keep track of triggers by name to lookup when interactions need to be started
-  *)
   interaction_name : string option;
   (* this means there are multiple enemies that all need to die before the interaction starts
      - this is pretty specific and will mostly be false, but it will at least be used for Sisters of Battle and Watcher Knights *)
@@ -668,6 +669,7 @@ type projectile = {
   mutable despawn : projectile_duration;
   spawned : time;
   pogoable : bool;
+  damage : int;
 }
 
 (* TODO probably don't need a separate type for this anymore *)
@@ -1104,6 +1106,19 @@ type trigger = {
   kind : trigger_kind;
 }
 
+(* this is for things that aren't created from Tiled objects in the triggers layer *)
+(* CLEANUP maybe a better name for this *)
+let make_stub_trigger kind name_prefix name_suffix : trigger =
+  {
+    full_name = fmt "%s:%s" name_prefix name_suffix;
+    name_prefix;
+    name_suffix;
+    kind;
+    dest = Zero.rect ();
+    label = None;
+    blocking_interaction = None;
+  }
+
 type triggers = {
   camera : trigger list;
   cutscene : trigger list;
@@ -1117,10 +1132,8 @@ type triggers = {
   lore : trigger list;
   respawn : (vector * trigger) list;
   shadows : trigger list;
-
-  (* FIXME  *)
   purple_pens : (string * trigger) list;
-  (* boss_on_killed : (string * trigger) list; *)
+  boss_on_killed : (string * trigger) list;
 }
 
 type camera_state = {

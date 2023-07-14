@@ -196,7 +196,6 @@ let init
         steps = [];
         text = None;
         speaker_name = None;
-        name = None;
         black_rects = [];
         corner_text = None;
       };

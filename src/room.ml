@@ -213,8 +213,8 @@ let init (params : room_params) : room =
         in
         add_idx_config (DOOR_HITS door_health)
       | "purple-pen" ->
-        (* FIXME add trigger *)
-        purple_pen_triggers := (coll_rect.name, get_object_trigger PURPLE_PEN) :: !purple_pen_triggers;
+        purple_pen_triggers :=
+          (coll_rect.name, get_object_trigger PURPLE_PEN) :: !purple_pen_triggers;
         add_idx_config (PURPLE_PEN coll_rect.name)
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
@@ -582,6 +582,12 @@ let init (params : room_params) : room =
           255;
     }
   in
+
+  let boss_on_killed =
+    List.map
+      (fun name -> (name, make_stub_trigger BOSS_KILLED "boss-killed" name))
+      [ "DUNCAN"; "LOCKER_BOY" ]
+  in
   {
     area;
     id = room_id;
@@ -601,6 +607,7 @@ let init (params : room_params) : room =
         respawn = !respawn_triggers;
         shadows = !shadow_triggers;
         purple_pens = !purple_pen_triggers;
+        boss_on_killed;
       };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;

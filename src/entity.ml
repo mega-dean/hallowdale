@@ -121,11 +121,11 @@ let get_damage_collisions (room : room) (entity : entity) : (collision * rect) l
   in
   get_tile_collisions layers entity
 
-let get_loose_projectile_collisions (room : room) (entity : entity) : (collision * rect) list =
-  let get_projectile_collision (projectile : projectile) : (collision * rect) option =
+let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =
+  let get_projectile_collision (projectile : projectile) =
     match Collision.with_entity entity projectile.entity.dest with
     | None -> None
-    | Some c -> Some (c, projectile.entity.dest)
+    | Some c -> Some (c, projectile)
   in
   List.filter_map get_projectile_collision room.loose_projectiles
 

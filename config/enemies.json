@@ -45,7 +45,7 @@
         }],
 
         [ "LOCKER_BOY", {
-            "health": 55,
+            "health": 5,
             "w": 22,
             "h": 40,
             "gravity_multiplier": 1.0,

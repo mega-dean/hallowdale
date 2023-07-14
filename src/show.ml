@@ -43,6 +43,7 @@ let trigger_kind (kind : trigger_kind) =
   | CUTSCENE -> "CUTSCENE"
   | RESPAWN -> "RESPAWN"
   | PURPLE_PEN -> "PURPLE_PEN"
+  | BOSS_KILLED -> "BOSS_KILLED"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
@@ -89,7 +90,7 @@ let ghost_action_config (config : ghost_action_config) =
 
 let ghost_action_kind id =
   match id with
-  | TAKE_DAMAGE d -> fmt "TAKE_DAMAGE (%s)" (direction d)
+  | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (direction direction')
   | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)

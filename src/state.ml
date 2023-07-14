@@ -262,7 +262,7 @@ let update_enemies (game : game) (state : state) =
           | Some c ->
             (* TODO add collision shape to enemy projectiles *)
             if Collision.between_entities game.ghost.entity projectile.entity then
-              Ghost.start_action state game (TAKE_DAMAGE c.direction)))
+              Ghost.start_action state game (TAKE_DAMAGE (projectile.damage, c.direction))))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;

@@ -134,17 +134,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     if is_new_game then (
       Entity.freeze game.ghost.entity;
       state.screen_fade <- Some 255;
-      let trigger : trigger =
-        {
-          full_name = "info:opening-poem";
-          name_prefix = "info";
-          name_suffix = "opening-poem";
-          dest = Zero.rect ();
-          label = None;
-          blocking_interaction = None;
-          kind = INFO;
-        }
-      in
+      let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
       Ghost.maybe_begin_interaction state game (`Trigger trigger));
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
