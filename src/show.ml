@@ -42,6 +42,7 @@ let trigger_kind (kind : trigger_kind) =
   | WARP target -> fmt "WARP to %s at (%0.2f, %0.2f)" target.room_name target.pos.x target.pos.y
   | CUTSCENE -> "CUTSCENE"
   | RESPAWN -> "RESPAWN"
+  | PURPLE_PEN -> "PURPLE_PEN"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with

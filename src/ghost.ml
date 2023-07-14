@@ -66,68 +66,76 @@ let read_config () : ghosts_file =
 let available_ghost_ids ghosts : ghost_id list =
   ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
 
+(* Interactions can be started from a trigger using `Trigger trigger. A string can be
+   passed in with `Name string, but they need to have a corresponding trigger that can
+   be looked up from room.triggers.
+*)
 let maybe_begin_interaction (state : state) (game : game) interaction =
-  let begin_interaction ?(increase_health = false) name =
+  let begin_interaction ?(increase_health = false) name trigger =
+    (* CLEANUP maybe just remove interaction.name ? *)
     game.interaction.name <- Some name;
-    game.interaction.steps <- Interactions.get_steps ~increase_health state game name interaction
+    game.interaction.steps <-
+      (* FIXME should be able to get rid of the name arg and just use interaction *)
+      Interactions.get_steps ~increase_health state game trigger
   in
 
-  let begin_health_interaction name =
+  let begin_health_interaction name trigger =
     (* these can be repeated, but health should only be increased once *)
     let increase_health = not (List.mem name game.room.progress.finished_interactions) in
     if increase_health then
       game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
-    begin_interaction ~increase_health name
+    begin_interaction ~increase_health name trigger
   in
 
-  let begin_cutscene_interaction name =
+  let begin_cutscene_interaction name trigger =
     (* these are only viewable once *)
     if not (List.mem name game.room.progress.finished_interactions) then (
       game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
-      begin_interaction name)
+      begin_interaction name trigger)
   in
 
   match interaction with
   | `Trigger trigger -> (
     (* CLEANUP maybe use name_suffix *)
-      let name = Utils.maybe_trim_before '|' trigger.full_name in
+    let name = Utils.maybe_trim_before '|' trigger.full_name in
     match trigger.kind with
-    | WARP target ->
-      begin_interaction trigger.name_suffix
+    | WARP target -> begin_interaction name trigger
     | INFO ->
       (* these have no side effects and can be repeated *)
-      begin_interaction name
-    | HEALTH -> begin_health_interaction name
+      begin_interaction name trigger
+    | HEALTH -> begin_health_interaction name trigger
     | ITEM
     | CUTSCENE ->
-      begin_cutscene_interaction name
+      begin_cutscene_interaction name trigger
     | CAMERA _
     | LEVER _
     | SHADOW
+    | PURPLE_PEN
     | RESPAWN ->
       failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind))
   | `Name name -> (
-    (* TODO not really sure how to get rid of `Name without constructing triggers
-       everywhere this is called
-       - but that still might be better than having these two match statements
-    *)
-    let name_prefix, _ = Utils.split_at_first '_' name in
+    let name_prefix, name_suffix = Utils.split_at_first ':' name in
     match name_prefix with
     | "door-warp"
     | "warp" ->
       failwith "warps should use `Trigger"
-    | "info" ->
-      (* these have no side effects and can be repeated *)
-      begin_interaction name
-    | "health" -> begin_health_interaction name
+    | "purple-pen" ->
+      let trigger : trigger =
+        (* CLEANUP probably just use full name as key *)
+        match List.assoc_opt name game.room.triggers.purple_pens with
+        | Some trigger' -> trigger'
+        | None -> failwithf "could not find purple-pen trigger: %s" name_suffix
+      in
+      begin_interaction name trigger
+    | "info" (* -> begin_interaction name trigger *)
+    | "health" (* -> begin_health_interaction name trigger *)
     | "ability"
     | "dreamer"
     | "weapon"
-    | "purple-pen"
-    | "boss-killed"
-    | "cutscene" ->
-      begin_cutscene_interaction name
-    | _ -> failwithf "maybe_begin_interaction: unknown interaction prefix %s" name_prefix)
+    | "boss-killed" (* FIXME add boss-killed interactions *)
+    | "cutscene" (* -> begin_cutscene_interaction name trigger *)
+    | _ ->
+      failwithf "cannot use `Name without corresponding trigger in room.triggers: %s" name_prefix)
 
 let maybe_unset_current_floor (ghost : ghost) (room : room) =
   match ghost.entity.current_floor with
@@ -1294,10 +1302,10 @@ let update (game : game) (state : state) =
             itmp "got an item trigger with name %s" trigger.full_name;
             (* CLEANUP seems like this should be coordinated with the pickup_indicators updating *)
             if List.mem trigger.full_name all_finished_interactions then (
-              tmp "ghost has item already";
+              itmp "ghost has item already";
               game.room.interaction_label <- None)
             else (
-              tmp "ghost does not have item";
+              itmp "ghost does not have item";
               check_interact_key ();
               game.room.interaction_label <- Some (label, trigger.dest))
           | _ ->
@@ -1376,11 +1384,13 @@ let update (game : game) (state : state) =
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
             match trigger_kind with
-            | WARP (target) ->
+            | WARP target ->
               tmp "got target room name: %s" target.room_name;
               let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
               Room.change_current_room state game target_room_location target.pos
-            | _ -> failwithf "need WARP trigger kind for WARP steps, got '%s'" (Show.trigger_kind trigger_kind))
+            | _ ->
+              failwithf "need WARP trigger kind for WARP steps, got '%s'"
+                (Show.trigger_kind trigger_kind))
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
           | TEXT paragraphs ->
@@ -2195,17 +2205,14 @@ let update (game : game) (state : state) =
     in
     match List.find_opt colliding game.room.triggers.shadows with
     | None -> ()
-    | Some trigger -> ()
-    (* FIXME-3 shadow layers aren't being hidden
-       - I think room.ml was doing something unique for shadows
-    *)
-    (* match List.find_opt (fun (l : layer) -> l.name = trigger.name) game.room.layers with
-     * | None -> failwithf "Ghost.update: could not find layer '%s' to reveal" trigger.name
-     * | Some layer ->
-     *   if not (List.mem trigger.name game.room.progress.revealed_shadow_layers) then
-     *     game.room.progress.revealed_shadow_layers <-
-     *       trigger.name :: game.room.progress.revealed_shadow_layers;
-     *   layer.hidden <- true) *)
+    | Some trigger -> (
+      match List.find_opt (fun (l : layer) -> l.name = trigger.name_suffix) game.room.layers with
+      | None -> failwithf "Ghost.update: could not find layer '%s' to reveal" trigger.name_suffix
+      | Some layer ->
+        if not (List.mem trigger.name_suffix game.room.progress.revealed_shadow_layers) then
+          game.room.progress.revealed_shadow_layers <-
+            trigger.name_suffix :: game.room.progress.revealed_shadow_layers;
+        layer.hidden <- true)
   in
 
   Entity.apply_v state.frame.dt game.ghost.entity;

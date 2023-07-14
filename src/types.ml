@@ -513,6 +513,7 @@ type trigger_kind =
   | WARP of warp_target
   | CUTSCENE
   | RESPAWN
+  | PURPLE_PEN
 
 module Interaction = struct
   type general_step =
@@ -637,6 +638,9 @@ end
    - or maybe this should be boss_on_killed, and geo should be handled separately
 *)
 type enemy_on_killed = {
+  (* FIXME maybe make this a trigger option
+- maybe not - could just keep track of triggers by name to lookup when interactions need to be started
+  *)
   interaction_name : string option;
   (* this means there are multiple enemies that all need to die before the interaction starts
      - this is pretty specific and will mostly be false, but it will at least be used for Sisters of Battle and Watcher Knights *)
@@ -1113,6 +1117,10 @@ type triggers = {
   lore : trigger list;
   respawn : (vector * trigger) list;
   shadows : trigger list;
+
+  (* FIXME  *)
+  purple_pens : (string * trigger) list;
+  (* boss_on_killed : (string * trigger) list; *)
 }
 
 type camera_state = {

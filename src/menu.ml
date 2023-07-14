@@ -67,8 +67,7 @@ let save_game (game : game) (state : state) (after_fn : state -> unit) =
     }
   in
   let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
-  let contents =
-    Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
+  let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write save_file_path contents in
   if written then
     after_fn state
@@ -135,7 +134,18 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     if is_new_game then (
       Entity.freeze game.ghost.entity;
       state.screen_fade <- Some 255;
-      Ghost.maybe_begin_interaction state game (`Name "info_opening-poem"));
+      let trigger : trigger =
+        {
+          full_name = "info:opening-poem";
+          name_prefix = "info";
+          name_suffix = "opening-poem";
+          dest = Zero.rect ();
+          label = None;
+          blocking_interaction = None;
+          kind = INFO;
+        }
+      in
+      Ghost.maybe_begin_interaction state game (`Trigger trigger));
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in

@@ -77,6 +77,7 @@ let init (params : room_params) : room =
   let camera_triggers : trigger list ref = ref [] in
   let lever_triggers : (sprite * int * trigger) list ref = ref [] in
   let shadow_triggers : trigger list ref = ref [] in
+  let purple_pen_triggers : (string * trigger) list ref = ref [] in
   let lore_triggers : trigger list ref = ref [] in
   let item_pickup_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
@@ -211,11 +212,11 @@ let init (params : room_params) : room =
           coll_rect.h |> Float.to_int
         in
         add_idx_config (DOOR_HITS door_health)
-      | "purple-pen" -> add_idx_config (PURPLE_PEN coll_rect.name)
-      | "hide" ->
-        shadow_triggers :=
-          (* FIXME-3 this was using name instead of coll_rect.name, so hiding shadows will probably break from this *)
-          get_object_trigger SHADOW :: !shadow_triggers
+      | "purple-pen" ->
+        (* FIXME add trigger *)
+        purple_pen_triggers := (coll_rect.name, get_object_trigger PURPLE_PEN) :: !purple_pen_triggers;
+        add_idx_config (PURPLE_PEN coll_rect.name)
+      | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
         let target = parse_warp_target name_suffix in
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
@@ -599,6 +600,7 @@ let init (params : room_params) : room =
         lore = !lore_triggers;
         respawn = !respawn_triggers;
         shadows = !shadow_triggers;
+        purple_pens = !purple_pen_triggers;
       };
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
