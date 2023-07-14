@@ -59,6 +59,10 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         GHOST (ghost_id, SET_POSE end_pose);
       ]
     in
+    let fail () =
+      failwithf "unknown '%s' interaction: %s" trigger.name_prefix trigger.name_suffix
+    in
+
     (* TODO-2 add dialogue for Shirley Island npcs *)
     match trigger.name_prefix with
     | "warp" -> [ STEP (WARP trigger.kind) ]
@@ -80,6 +84,12 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         CURRENT_GHOST (SET_POSE READING);
         CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ()));
       ]
+    | "d-nail-item" -> (
+      match trigger.name_suffix with
+        | "dreamnailitem" -> [
+            STEP (TEXT [ "Give me some rope, tie me to dream." ]);
+          ]
+      | _ -> fail ())
     | "dreamer" ->
       fade_screen_with_dramatic_pause
         [ CURRENT_GHOST (ADD_ITEM (DREAMER (trigger.name_suffix, get_lore ()))) ]
@@ -168,7 +178,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                  "Hallowdale";
                ]);
         ]
-      | _ -> failwithf "unknown info interaction suffix: %s" trigger.name_suffix)
+      | _ -> fail ())
     | "ability" -> (
       match trigger.name_suffix with
       | "scootenanny" ->
@@ -218,7 +228,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             "Press [ZR] to scootenanny forwards, cloaked in shadow.";
             "Use the cloak to scootenanny through enemies and their attacks without taking damage.";
           ]
-      | _ -> failwithf "unknown ability interaction suffix: %s" trigger.name_suffix)
+      | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
       | "kp-drop" ->
@@ -325,7 +335,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (WAIT 0.5);
           ENEMY (LOCKER_BOY, ENTITY UNFREEZE);
         ]
-      | _ -> failwithf "unknown cutscene interaction suffix: %s" trigger.name_suffix)
+      | _ -> fail ())
     | "boss-killed" -> (
       match trigger.name_suffix with
       | "DUNCAN" ->
@@ -576,7 +586,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             GHOST (BRITTA, ENTITY HIDE);
             GHOST (BRITTA, REMOVE_FROM_PARTY);
           ]
-      | _ -> failwithf "unknown boss-killed interaction suffix: %s" trigger.name_suffix)
+      | _ -> fail ())
     | _ -> failwithf "unknown interaction prefix: %s" trigger.name_prefix
   in
 

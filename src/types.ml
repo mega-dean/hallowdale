@@ -515,6 +515,7 @@ type trigger_kind =
   | RESPAWN
   | PURPLE_PEN
   | BOSS_KILLED
+  | D_NAIL
 
 module Interaction = struct
   type general_step =
@@ -980,7 +981,7 @@ type area_id =
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
-  bg_color : Raylib.Color.t; (* TODO-3 add bg/skybox _image *)
+  bg_color : Raylib.Color.t; (* TODO add bg/skybox _image *)
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
@@ -1117,6 +1118,7 @@ let make_stub_trigger kind name_prefix name_suffix : trigger =
 type triggers = {
   camera : trigger list;
   cutscene : trigger list;
+  d_nail : trigger list;
   item_pickups : trigger list;
   (* sprite to render and transformation_bits *)
   levers : (sprite * int * trigger) list;

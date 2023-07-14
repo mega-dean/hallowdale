@@ -8,7 +8,7 @@
          "name":"bg-reference",
          "opacity":1,
          "type":"imagelayer",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -114,7 +114,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -126,7 +126,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -555,7 +555,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -663,7 +663,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -772,7 +772,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -881,7 +881,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -990,7 +990,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -1097,7 +1097,7 @@
          "name":"acid",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -1204,7 +1204,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -1311,7 +1311,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0
@@ -1418,7 +1418,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":66,
          "x":0,
          "y":0

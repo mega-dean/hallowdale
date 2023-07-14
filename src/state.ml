@@ -178,6 +178,10 @@ let update_camera (game : game) (state : state) =
       let diff_x, diff_y = (abs_float (current_x -. target_x), abs_float (current_y -. target_y)) in
       let smooth_x =
         if diff_x > 1. then
+          (* FIXME don't depend on fps
+             - probably add a new field like camera.movement with type camera_movement = LINEAR | SMOOTH of float
+             - maybe want separate x_movement/y_movement
+          *)
           between (Config.window.fps * 25 / 60 |> Int.to_float) current_x target_x
         else
           target_x
@@ -455,6 +459,7 @@ let tick (state : state) =
 
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
+        show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)

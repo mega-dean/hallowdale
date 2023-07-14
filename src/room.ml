@@ -78,6 +78,7 @@ let init (params : room_params) : room =
   let lever_triggers : (sprite * int * trigger) list ref = ref [] in
   let shadow_triggers : trigger list ref = ref [] in
   let lore_triggers : trigger list ref = ref [] in
+  let d_nail_triggers : trigger list ref = ref [] in
   let item_pickup_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
   let respawn_triggers : (vector * trigger) list ref = ref [] in
@@ -216,6 +217,7 @@ let init (params : room_params) : room =
       | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
       | "health" ->
         lore_triggers := get_object_trigger ~label:(Some "Read") HEALTH :: !lore_triggers
+      | "d-nail-item" -> d_nail_triggers := get_object_trigger D_NAIL :: !item_pickup_triggers
       | "ability"
       | "weapon"
       | "dreamer" ->
@@ -585,6 +587,7 @@ let init (params : room_params) : room =
       {
         camera = !camera_triggers;
         cutscene = !cutscene_triggers;
+        d_nail = !d_nail_triggers;
         item_pickups = !item_pickup_triggers;
         levers = !lever_triggers;
         lore = !lore_triggers;

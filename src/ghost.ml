@@ -94,6 +94,7 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
     (* these have no side effects and can be repeated *)
     begin_interaction trigger
   | HEALTH -> begin_health_interaction name trigger
+  | D_NAIL
   | BOSS_KILLED
   | ITEM
   | CUTSCENE ->
@@ -448,7 +449,15 @@ let check_dream_nail_collisions (state : state) (game : game) =
                 (TOOK_DAMAGE DREAM_NAIL : enemy_action)
                 { at = state.frame.time } enemy.history))
     in
-    List.iter resolve_enemy game.room.enemies
+    let resolve_trigger (trigger : trigger) =
+      match Collision.between_rects dream_nail_dest trigger.dest with
+      | None -> ()
+      | Some c ->
+        (* tmp "got d-nail interaction collision" *)
+        maybe_begin_interaction state game trigger
+    in
+    List.iter resolve_enemy game.room.enemies;
+    List.iter resolve_trigger game.room.triggers.d_nail
 
 let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.ghost with
@@ -1299,10 +1308,11 @@ let update (game : game) (state : state) =
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
-      (* holding down d-nail will skip through interactions quickly, but still perform each step
+      (* holding down c-dash will skip through interactions quickly, but still perform each step
          once so side-effects like gaining abilities still happen
+         TODO this starts a c-dash after the interaction, not sure if there's a better option
       *)
-      state.frame_inputs.dream_nail.down
+      state.frame_inputs.c_dash.down
     in
     match game.interaction.text with
     | Some _text ->
@@ -1943,7 +1953,6 @@ let update (game : game) (state : state) =
     in
     let this_frame =
       if starting_dream_nail () then (
-        (* TODO-7 check dream-nail trigger collisions and start interaction *)
         start_action state game DREAM_NAIL;
         true)
       else if still_dream_nailing () then (

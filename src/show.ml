@@ -42,6 +42,7 @@ let trigger_kind (kind : trigger_kind) =
   | RESPAWN -> "RESPAWN"
   | PURPLE_PEN -> "PURPLE_PEN"
   | BOSS_KILLED -> "BOSS_KILLED"
+  | D_NAIL -> "D_NAIL"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
