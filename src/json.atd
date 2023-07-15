@@ -129,16 +129,25 @@ type texture_config = {
   ~y_offset <ocaml default="0"> : int;
 }
 
+type enemy_dream_nail_config = {
+  ~dialogues <ocaml default="[]"> : string list;
+  ~recoil_vx <ocaml default="1800.0"> : float;
+  ~vulnerable <ocaml default="true"> : bool;
+}
+
 type enemy_config = {
   w : int;
   h : int;
   health : int;
-  ~damage <ocaml default="1"> : int;
+  (* TODO maybe use default "enemy", or maybe split into separate keys
+     "enemies"/"bosses"/"multi-bosses" in enemies_file *)
   kind : string;
-  (* TODO add default values for these *)
-  gravity_multiplier : float;
-  can_take_damage : bool;
-  props : (string * float) list;
+  ~damage <ocaml default="1"> : int;
+  ~gravity_multiplier <ocaml default="1.0"> : float;
+  ~can_take_damage <ocaml default="true"> : bool;
+  (* TODO getting a syntax error from atd when trying to use default="{}" *)
+  dream_nail : enemy_dream_nail_config;
+  ~props <ocaml default="[]"> : (string * float) list;
   texture_configs : (string * texture_config) list;
 }
 

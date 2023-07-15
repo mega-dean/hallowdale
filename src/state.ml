@@ -250,6 +250,19 @@ let update_environment (game : game) (state : state) =
   game.room.loose_projectiles <- !loose_projectiles;
   state
 
+(* this despawns corner_text and floating_text, not the normal interaction text *)
+let update_interaction_text (game : game) (state : state) =
+  let maybe_unset text unset =
+    match text with
+    | None -> ()
+    | Some (_, end_time) ->
+      if state.frame.time > end_time.at then
+        unset ()
+  in
+  maybe_unset game.interaction.floating_text (fun () -> game.interaction.floating_text <- None);
+  maybe_unset game.interaction.corner_text (fun () -> game.interaction.corner_text <- None);
+  state
+
 (* TODO some enemy behavior gets really messed up when an interaction is started
    (eg. frogs when reading lore)
 *)
@@ -462,18 +475,8 @@ let tick (state : state) =
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
-        (* FIXME
-           - move this to a better spot
-           - maybe consolidate with corner_text
-        *)
-        (match game.interaction.floating_text with
-         | None -> ()
-         | Some (_, end_time) ->
-           if state.frame.time > end_time.at then
-             game.interaction.floating_text <- None);
-
-
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
+
         if state.should_save then (
           Menu.save_game game state ignore;
           state.should_save <- false);
@@ -484,4 +487,5 @@ let tick (state : state) =
         |> update_enemies game
         |> update_npcs game
         |> update_environment game
+        |> update_interaction_text game
         |> update_camera game)

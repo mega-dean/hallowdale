@@ -158,14 +158,21 @@ type ghosts_file = Json_t.ghosts_file = {
   actions: (string * ghost_action) list
 }
 
+type enemy_dream_nail_config = Json_t.enemy_dream_nail_config = {
+  dialogues: string list;
+  recoil_vx: float;
+  vulnerable: bool
+}
+
 type enemy_config = Json_t.enemy_config = {
   w: int;
   h: int;
   health: int;
-  damage: int;
   kind: string;
+  damage: int;
   gravity_multiplier: float;
   can_take_damage: bool;
+  dream_nail: enemy_dream_nail_config;
   props: (string * float) list;
   texture_configs: (string * texture_config) list
 }
@@ -734,6 +741,26 @@ val read_ghosts_file :
 val ghosts_file_of_string :
   string -> ghosts_file
   (** Deserialize JSON data of type {!type:ghosts_file}. *)
+
+val write_enemy_dream_nail_config :
+  Buffer.t -> enemy_dream_nail_config -> unit
+  (** Output a JSON value of type {!type:enemy_dream_nail_config}. *)
+
+val string_of_enemy_dream_nail_config :
+  ?len:int -> enemy_dream_nail_config -> string
+  (** Serialize a value of type {!type:enemy_dream_nail_config}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_enemy_dream_nail_config :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> enemy_dream_nail_config
+  (** Input JSON data of type {!type:enemy_dream_nail_config}. *)
+
+val enemy_dream_nail_config_of_string :
+  string -> enemy_dream_nail_config
+  (** Deserialize JSON data of type {!type:enemy_dream_nail_config}. *)
 
 val write_enemy_config :
   Buffer.t -> enemy_config -> unit

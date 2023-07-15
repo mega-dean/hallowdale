@@ -382,7 +382,7 @@ let maybe_take_damage
     (damage : int)
     (collision : collision) : bool =
   let kill_enemy () =
-    (* TODO death animation
+    (* CLEANUP death animation
        - maybe not a real one for now, but at least make the enemy's body fall to the ground
        - maybe flip upside-down
     *)

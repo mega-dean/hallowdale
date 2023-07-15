@@ -420,44 +420,47 @@ let get_damage (ghost : ghost) (damage_kind : damage_kind) =
   | DESOLATE_DIVE_SHOCKWAVE -> 20
   | HOWLING_WRAITHS -> (* TODO this should be 13 with multihits *) 26
 
+(* TODO use collision shape for dream nail *)
 let check_dream_nail_collisions (state : state) (game : game) =
   match get_dream_nail game.ghost with
   | None -> ()
   | Some dream_nail_dest ->
     let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
-      if Enemy.is_alive enemy then ((* TODO use collision shape for dream nail *)
-        match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
-        | None -> ()
-        | Some c ->
-          (* FIXME use enemy.dream_nail_dialogues *)
-          game.interaction.floating_text <-
-            Some (fmt "I am a %s" (Show.enemy_id enemy.id), { at = state.frame.time +. 1. });
-          if game.ghost.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
-            (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
-            game.ghost.soul.current <-
-              Utils.bound_int 0
-                (game.ghost.soul.current + Config.action.soul_per_cast)
-                game.ghost.soul.max;
-            let recoil_vx =
-              (* TODO move to config *)
-              1800.
+      if Enemy.is_alive enemy then
+        if enemy.json.dream_nail.vulnerable then (
+          match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
+          | None -> ()
+          | Some c ->
+            let text =
+              if List.length enemy.json.dream_nail.dialogues = 0 then
+                "I have no dreams."
+              else
+                Utils.sample enemy.json.dream_nail.dialogues
             in
-            let recoil_speed =
-              if game.ghost.entity.sprite.facing_right then recoil_vx else -1. *. recoil_vx
-            in
-            enemy.entity.x_recoil <-
-              Some { speed = recoil_speed; time_left = { seconds = 0.1 }; reset_v = true };
-            enemy.history <-
-              Utils.replace_assoc
-                (TOOK_DAMAGE DREAM_NAIL : enemy_action)
-                { at = state.frame.time } enemy.history))
+            game.interaction.floating_text <- Some (text, { at = state.frame.time +. 1. });
+            if game.ghost.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
+              (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
+              game.ghost.soul.current <-
+                Utils.bound_int 0
+                  (game.ghost.soul.current + Config.action.soul_per_cast)
+                  game.ghost.soul.max;
+              let recoil_speed =
+                if game.ghost.entity.sprite.facing_right then
+                  enemy.json.dream_nail.recoil_vx
+                else
+                  -.enemy.json.dream_nail.recoil_vx
+              in
+              enemy.entity.x_recoil <-
+                Some { speed = recoil_speed; time_left = { seconds = 0.1 }; reset_v = true };
+              enemy.history <-
+                Utils.replace_assoc
+                  (TOOK_DAMAGE DREAM_NAIL : enemy_action)
+                  { at = state.frame.time } enemy.history))
     in
     let resolve_trigger (trigger : trigger) =
       match Collision.between_rects dream_nail_dest trigger.dest with
       | None -> ()
-      | Some c ->
-        (* tmp "got d-nail interaction collision" *)
-        maybe_begin_interaction state game trigger
+      | Some c -> maybe_begin_interaction state game trigger
     in
     List.iter resolve_enemy game.room.enemies;
     List.iter resolve_trigger game.room.triggers.d_nail
@@ -554,12 +557,8 @@ let resolve_slash_collisions (state : state) (game : game) =
               if door_health.last_hit_at < game.ghost.history.nail.started.at then (
                 door_health.last_hit_at <- state.frame.time;
                 if door_health.hits > 1 then (
-                  let get_random_fragment_idx () =
-                    Random.int (List.length tile_group.fragments - 1)
-                  in
-                  let make_random_fragment _n =
-                    List.nth tile_group.fragments (get_random_fragment_idx ())
-                  in
+                  (* TODO this isn't quite working - the fragments are spawning on top of the door and not moving *)
+                  let make_random_fragment _n = Utils.sample tile_group.fragments in
                   let random_fragments = List.init (Random.int 3) make_random_fragment in
                   layer.spawned_fragments <-
                     List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
@@ -1206,16 +1205,10 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then (
+    if key_pressed DEBUG_1 then
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* show_ghost_location () *)
-      (* show_camera_location () *)
-      tmp "setting floating text";
-      tmp "current corner_text: %s"
-        (match game.interaction.corner_text with
-        | None -> ""
-        | Some (t, _) -> t.content |> join);
-      game.interaction.floating_text <- Some ("floating text", { at = state.frame.time +. 1. }))
+      show_camera_location ()
     else if key_pressed DEBUG_2 then (* toggle_ability game.ghost "mantis_claw" *)
       game.ghost.health.current <- game.ghost.health.current - 1
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
@@ -1989,6 +1982,7 @@ let update (game : game) (state : state) =
         start_action state game FOCUS;
         true)
       else if still_focusing () then (
+        (* TODO this only heals once *)
         continue_action state game FOCUS;
         true)
       else (
@@ -2130,19 +2124,16 @@ let update (game : game) (state : state) =
     in
     let floor_collisions = Entity.get_floor_collisions game.room game.ghost.entity in
     let bench_collisions = Entity.get_bench_collisions game.room game.ghost.entity in
+    (* since these are collisions from above, they are only detected for the frame that the
+       ghost collides (and then again the frame after, which is a bug)
+    *)
     (match List.nth_opt bench_collisions 0 with
-    | None -> (
-      match game.interaction.corner_text with
-      | None -> ()
-      | Some (_, end_time) ->
-        if state.frame.time > end_time.at then
-          game.interaction.corner_text <- None)
+    | None -> ()
     | Some (coll, rect) -> (
       match coll.direction with
       | UP ->
         let end_time = { at = state.frame.time +. 1.5 } in
-        game.interaction.corner_text <-
-          Some ({ content = [ "Game saved." ]; increases_health = false }, end_time);
+        game.interaction.corner_text <- Some ("Game saved.", end_time);
         state.should_save <- true;
         game.ghost.health.current <- game.ghost.health.max
       | _ -> ()));

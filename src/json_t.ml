@@ -145,14 +145,21 @@ type ghosts_file = {
   actions: (string * ghost_action) list
 }
 
+type enemy_dream_nail_config = {
+  dialogues: string list;
+  recoil_vx: float;
+  vulnerable: bool
+}
+
 type enemy_config = {
   w: int;
   h: int;
   health: int;
-  damage: int;
   kind: string;
+  damage: int;
   gravity_multiplier: float;
   can_take_damage: bool;
+  dream_nail: enemy_dream_nail_config;
   props: (string * float) list;
   texture_configs: (string * texture_config) list
 }

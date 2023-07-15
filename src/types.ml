@@ -66,6 +66,9 @@ module Utils = struct
       List.nth xs 0
     else
       failwithf "only: expected 1, got %d" (List.length xs)
+
+  (* returns a random element from xs *)
+  let sample xs = List.nth xs (Random.int (List.length xs))
 end
 
 (* TODO maybe add type hdirection = LEFT | RIGHT for things that only can be horizontal *)
@@ -629,9 +632,8 @@ module Interaction = struct
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
-    (* this is used for "Game Saved" *)
-    (* CLEANUP use strign *)
-    mutable corner_text : (text * time) option;
+    (* this is used for "Game Saved" when sitting on benches *)
+    mutable corner_text : (string * time) option;
     (* this is for text boxes that should show up on the screen without blocking gameplay,
        like dream-nail thoughts and some interactions *)
     mutable floating_text : (string * time) option;
@@ -701,7 +703,6 @@ type enemy = {
   textures : (string * texture) list;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
-  (* FIXME add dream_nail_dialogues *)
 }
 
 type npc = {

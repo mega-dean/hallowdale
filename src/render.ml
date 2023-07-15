@@ -759,8 +759,7 @@ let tick (state : state) =
         }
       in
       let alpha = 256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int in
-      Raylib.draw_text (Utils.only text.content) (dest.x |> Float.to_int) (dest.y |> Float.to_int)
-        font_size
+      Raylib.draw_text text (dest.x |> Float.to_int) (dest.y |> Float.to_int) font_size
         (Raylib.Color.create 255 255 255 alpha));
 
     match game.interaction.floating_text with
