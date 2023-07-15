@@ -284,7 +284,14 @@ let update_enemies (game : game) (state : state) =
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
     enemy.floor_collision_this_frame <-
-      Entity.update_enemy_pos game.room enemy.entity state.frame.dt;
+      Entity.update_enemy_pos
+        ~gravity_multiplier':
+          (Some
+             (if Enemy.is_dead enemy then
+                enemy.json.death_gravity_multiplier
+             else
+               enemy.entity.config.gravity_multiplier))
+        game.room enemy.entity state.frame.dt;
     let interacting () = List.length game.interaction.steps > 0 in
     if (not (interacting ())) && enemy.status.choose_behavior then
       Enemy.choose_behavior enemy state game;
@@ -476,7 +483,6 @@ let tick (state : state) =
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
-
         if state.should_save then (
           Menu.save_game game state ignore;
           state.should_save <- false);

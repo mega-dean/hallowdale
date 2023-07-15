@@ -16,7 +16,10 @@ val get_acid_collisions : room -> entity -> (collision * rect) list
 val get_damage_collisions : room -> entity -> (collision * rect) list
 val get_loose_projectile_collisions : room -> entity -> (collision * projectile) list
 val update_pos : ?debug:string option -> room -> entity -> float -> unit
-val update_enemy_pos : ?debug:string option -> room -> entity -> float -> bool
+
+val update_enemy_pos :
+  ?debug:string option -> ?gravity_multiplier':float option -> room -> entity -> float -> bool
+
 val get_child_pos' : rect -> bool -> relative_position -> float -> float -> vector
 val get_child_pos : entity -> relative_position -> float -> float -> vector
 val on_ground : entity -> bool

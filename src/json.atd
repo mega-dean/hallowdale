@@ -144,6 +144,10 @@ type enemy_config = {
   kind : string;
   ~damage <ocaml default="1"> : int;
   ~gravity_multiplier <ocaml default="1.0"> : float;
+   (* TODO not sure about this, maybe would be better to just check enemy_id when
+      an enemy dies and only update based on that
+   *)
+  ~death_gravity_multiplier <ocaml default="1.0"> : float;
   ~can_take_damage <ocaml default="true"> : bool;
   (* TODO getting a syntax error from atd when trying to use default="{}" *)
   dream_nail : enemy_dream_nail_config;

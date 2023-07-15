@@ -86,9 +86,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       ]
     | "d-nail-item" -> (
       match trigger.name_suffix with
-        | "dreamnailitem" -> [
-            STEP (TEXT [ "Give me some rope, tie me to dream." ]);
-          ]
+      | "dreamnailitem" -> [ STEP (TEXT [ "Give me some rope, tie me to dream." ]) ]
       | _ -> fail ())
     | "dreamer" ->
       fade_screen_with_dramatic_pause
@@ -307,17 +305,9 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (WAIT 0.7);
           STEP (DIALOGUE ("Jeff", "Eh, too easy - could be a trap..."));
         ]
-      | "lockers" ->
-        [
-          (* TODO make it possible to walk while this text is on the screen
-             - probably keep it entirely separate from existing interaction_text, and make a new floating_text field
-          *)
-          CURRENT_GHOST (ENTITY FREEZE);
-          (* CLEANUP use floating text for this instead of TEXT *)
-          STEP (TEXT [ "... lockers ..." ]);
-        ]
+      | "lockers" -> [ STEP (FLOATING_TEXT ("... lockers ...", 1.)) ]
       | "lockers-lockers-lockers" ->
-        [ CURRENT_GHOST (ENTITY FREEZE); STEP (TEXT [ "... lockers, lockers, lockers ..." ]) ]
+        [ STEP (FLOATING_TEXT ("... lockers, lockers, lockers ...", 1.)) ]
       | "fight-locker-boys" ->
         [
           ENEMY (LOCKER_BOY, ENTITY HIDE);

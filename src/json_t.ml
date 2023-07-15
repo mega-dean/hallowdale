@@ -158,6 +158,7 @@ type enemy_config = {
   kind: string;
   damage: int;
   gravity_multiplier: float;
+  death_gravity_multiplier: float;
   can_take_damage: bool;
   dream_nail: enemy_dream_nail_config;
   props: (string * float) list;

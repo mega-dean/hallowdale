@@ -382,11 +382,8 @@ let maybe_take_damage
     (damage : int)
     (collision : collision) : bool =
   let kill_enemy () =
-    (* CLEANUP death animation
-       - maybe not a real one for now, but at least make the enemy's body fall to the ground
-       - maybe flip upside-down
-    *)
     (* TODO start_and_log_action "die"; *)
+    enemy.entity.v.x <- 0.;
     enemy.spawned_projectiles <- [];
     enemy.status.choose_behavior <- false;
     enemy.status.check_damage_collisions <- false;
@@ -450,6 +447,8 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
   in
   match enemy.id with
   | LOCKER_BOY ->
+    (* TODO this isn't working after resizing the screen - definitely need to update
+       config values, maybe some code too *)
     let vanished = action_started_at enemy "vanish" in
     let unvanished = action_started_at enemy "unvanish" in
     let vanish_duration = animation_loop_duration (List.assoc "vanish" enemy.textures) in
@@ -539,7 +538,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     (* TODO this is breaking by the frog getting stuck in "ascending"
        - happens when starting a "Read" interaction in the same room
        - happens after pushing them sideways with a dream nail
- *)
+    *)
     let dunk_vy = 40. in
     let dunk_duration = 2. in
     let cooldown_duration = 0.5 in

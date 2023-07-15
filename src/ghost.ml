@@ -1368,6 +1368,8 @@ let update (game : game) (state : state) =
                 (Show.trigger_kind trigger_kind))
           | PUSH_RECT (x, y, w, h) ->
             game.interaction.black_rects <- { pos = { x; y }; w; h } :: game.interaction.black_rects
+          | FLOATING_TEXT (text, duration) ->
+            game.interaction.floating_text <- Some (text, { at = state.frame.time +. duration })
           | TEXT paragraphs ->
             let text : Interaction.text = { content = paragraphs; increases_health = false } in
             game.interaction.speaker_name <- None;

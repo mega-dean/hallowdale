@@ -531,6 +531,7 @@ module Interaction = struct
     | SPAWN_VENGEFUL_SPIRIT of direction * int * int
     (* text *)
     | TEXT of string list
+    | FLOATING_TEXT of string * float
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
     | DIALOGUE of string * string

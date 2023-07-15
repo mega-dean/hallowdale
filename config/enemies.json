@@ -113,6 +113,7 @@
             "h": 12,
             "kind": "enemy",
             "gravity_multiplier": 0.0,
+            "death_gravity_multiplier": 1.0,
             "dream_nail": {
                 "dialogues": [
                     "I feel like I am flying.",
@@ -137,6 +138,7 @@
             "h": 37,
             "kind": "enemy",
             "gravity_multiplier": 0.2,
+            "death_gravity_multiplier": 0.2,
             "dream_nail": {
                 "recoil_vx": 0.0
             },
