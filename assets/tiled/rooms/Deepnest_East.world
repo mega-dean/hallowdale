@@ -47,133 +47,133 @@
             "height": 480,
             "width": 1200,
             "x": 6048,
-            "y": 1656
+            "y": 1464
         },
         {
             "fileName": "trampoline_b.json",
             "height": 480,
             "width": 960,
-            "x": 7464,
-            "y": 1656
+            "x": 9384,
+            "y": -264
         },
         {
             "fileName": "trampoline_d.json",
             "height": 600,
             "width": 1440,
-            "x": 6528,
-            "y": 2136
+            "x": 6216,
+            "y": 1968
         },
         {
             "fileName": "trampoline_dreamer.json",
             "height": 600,
             "width": 1056,
-            "x": 7680,
-            "y": 1056
+            "x": 8256,
+            "y": 384
         },
         {
             "fileName": "trampoline_c.json",
             "height": 360,
             "width": 1176,
-            "x": 7008,
-            "y": 624
+            "x": 7248,
+            "y": 0
         },
         {
             "fileName": "beenz_1-a.json",
             "height": 960,
             "width": 480,
-            "x": 6048,
-            "y": 2760
+            "x": 8736,
+            "y": 3888
         },
         {
             "fileName": "beenz_outlands-a.json",
             "height": 480,
             "width": 960,
-            "x": 6528,
-            "y": 2904
+            "x": 7128,
+            "y": 2760
         },
         {
             "fileName": "beenz_outlands-b.json",
             "height": 840,
             "width": 456,
-            "x": 7032,
-            "y": 3384
+            "x": 10488,
+            "y": 5472
         },
         {
             "fileName": "beenz_outlands-c.json",
             "height": 1488,
             "width": 480,
-            "x": 7488,
-            "y": 2736
+            "x": 9432,
+            "y": 5280
         },
         {
             "fileName": "beenz_2-a.json",
             "height": 720,
             "width": 432,
-            "x": 6528,
-            "y": 3456
+            "x": 6072,
+            "y": 3984
         },
         {
             "fileName": "beenz_2-b.json",
             "height": 480,
             "width": 480,
             "x": 6048,
-            "y": 3792
+            "y": 2760
         },
         {
             "fileName": "beenz_2-c.json",
             "height": 432,
             "width": 2088,
-            "x": 6048,
-            "y": 4272
+            "x": 10224,
+            "y": 6432
         },
         {
             "fileName": "beenz_3-elevator.json",
             "height": 720,
             "width": 384,
-            "x": 8136,
-            "y": 3936
+            "x": 10080,
+            "y": 5232
         },
         {
             "fileName": "beenz_3-a.json",
             "height": 336,
             "width": 1200,
-            "x": 8136,
-            "y": 2160
+            "x": 11208,
+            "y": 4032
         },
         {
             "fileName": "beenz_3-colo.json",
             "height": 720,
             "width": 960,
-            "x": 8616,
-            "y": 2496
+            "x": 12432,
+            "y": 3144
         },
         {
             "fileName": "beenz_4-a.json",
             "height": 528,
             "width": 384,
-            "x": 9576,
-            "y": 3024
+            "x": 12000,
+            "y": 4440
         },
         {
             "fileName": "beenz_4-colo.json",
             "height": 960,
             "width": 960,
-            "x": 8616,
-            "y": 3336
+            "x": 12432,
+            "y": 3936
         },
         {
             "fileName": "beenz_5-lounge.json",
             "height": 480,
             "width": 720,
-            "x": 9576,
-            "y": 4056
+            "x": 11640,
+            "y": 5016
         },
         {
             "fileName": "basement_c.json",
             "height": 720,
             "width": 1200,
-            "x": 5400,
-            "y": 7344
+            "x": 7224,
+            "y": 5928
         },
         {
             "fileName": "basement_abyss-climb.json",
@@ -193,8 +193,8 @@
             "fileName": "basement_b.json",
             "height": 816,
             "width": 1968,
-            "x": 5544,
-            "y": 6048
+            "x": 5376,
+            "y": 6264
         },
         {
             "fileName": "basement_d.json",
@@ -207,57 +207,57 @@
             "fileName": "ac-repair_a.json",
             "height": 480,
             "width": 480,
-            "x": 8424,
-            "y": 1656
+            "x": 9936,
+            "y": 2232
         },
         {
             "fileName": "ac-repair_c.json",
             "height": 840,
             "width": 720,
-            "x": 8904,
-            "y": 1320
+            "x": 10464,
+            "y": 1968
         },
         {
             "fileName": "ac-repair_e.json",
             "height": 336,
             "width": 480,
-            "x": 8736,
-            "y": 984
+            "x": 10224,
+            "y": 1344
         },
         {
             "fileName": "ac-repair_d.json",
             "height": 480,
             "width": 336,
-            "x": 9288,
-            "y": 840
+            "x": 10728,
+            "y": 1248
         },
         {
             "fileName": "ac-repair_f.json",
             "height": 384,
             "width": 720,
-            "x": 9624,
-            "y": 1800
+            "x": 11280,
+            "y": 2256
         },
         {
             "fileName": "ac-repair_b.json",
             "height": 480,
             "width": 480,
-            "x": 9864,
-            "y": 1320
+            "x": 11496,
+            "y": 1752
         },
         {
             "fileName": "ac-repair_dreamer.json",
             "height": 720,
             "width": 480,
-            "x": 10104,
-            "y": 600
+            "x": 11544,
+            "y": 1008
         },
         {
             "fileName": "ac-repair_g.json",
             "height": 384,
             "width": 1920,
-            "x": 8184,
-            "y": 456
+            "x": 9600,
+            "y": 840
         },
         {
             "fileName": "final_boss.json",
@@ -354,22 +354,22 @@
             "fileName": "trampoline_e.json",
             "height": 1440,
             "width": 720,
-            "x": 6288,
-            "y": 216
+            "x": 6408,
+            "y": -360
         },
         {
             "fileName": "trampoline_f.json",
             "height": 672,
             "width": 432,
-            "x": 7200,
-            "y": 984
+            "x": 7296,
+            "y": 408
         },
         {
             "fileName": "beenz_5-palace-grounds.json",
             "height": 720,
             "width": 960,
-            "x": 10296,
-            "y": 3816
+            "x": 12432,
+            "y": 4968
         },
         {
             "fileName": "forgotten_c.json",
@@ -404,7 +404,7 @@
             "height": 480,
             "width": 1200,
             "x": 6048,
-            "y": 5544
+            "y": 5352
         },
         {
             "fileName": "city_a.json",
@@ -445,8 +445,8 @@
             "fileName": "trampoline_g.json",
             "height": 1536,
             "width": 720,
-            "x": 6456,
-            "y": -1320
+            "x": 8880,
+            "y": 1680
         },
         {
             "fileName": "basement_f.json",
@@ -459,8 +459,8 @@
             "fileName": "ventways_hub.json",
             "height": 1080,
             "width": 1080,
-            "x": 8112,
-            "y": -1728
+            "x": 7440,
+            "y": -1824
         },
         {
             "fileName": "library_a.json",

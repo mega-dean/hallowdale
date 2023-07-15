@@ -891,23 +891,32 @@ type ghosts_file = {
   shared_textures : (string * texture_config) list;
 }
 
+(* CLEANUP name *)
+type uncontrolled_ghost ={
+  textures : ghost_textures;
+  entity : entity;
+}
+
 type ghost = {
   entity : entity;
   mutable current : current_status;
   (* TODO-6 use separate textures for ghost head vs body *)
-  mutable textures : ghost_textures;
-  (* TODO probably don't need .shared_textures on every ghost *)
+  (* FIXME probably don't need .shared_textures on every ghost *)
   shared_textures : shared_textures;
   history : ghost_action_history;
-  mutable abilities : Json_t.ghost_abilities;
+  mutable id : ghost_id;
+
+  mutable in_party : bool;
+
+  (* CLEANUP does this need to be mutable? *)
+  mutable textures : ghost_textures;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
-  mutable in_party : bool;
-  mutable id : ghost_id;
+  mutable abilities : Json_t.ghost_abilities;
   mutable health : health;
   mutable soul : soul;
-  mutable spawned_vengeful_spirits : projectile list;
   mutable children : (ghost_child_kind * ghost_child) list;
+  mutable spawned_vengeful_spirits : projectile list;
 }
 
 (* a cache for image/tiles that have been loaded for a tileset *)
@@ -1219,7 +1228,9 @@ type debug = {
 
 type game = {
   mutable ghost : ghost;
+  (* FIXME instead of keeping track of ghost list, just use the parts of ghost that are unique *)
   mutable ghosts : (ghost_id * ghost) list;
+  mutable ghosts' : (ghost_id * uncontrolled_ghost) list;
   mutable room : room;
   interaction : Interaction.t;
   (* string is room uuid *)

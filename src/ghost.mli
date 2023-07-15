@@ -28,3 +28,9 @@ val init :
   (string * Json_t.weapon) list ->
   shared_textures ->
   ghost
+
+val init_uncontrolled :
+  ghost_id ->
+  ghost_textures ->
+  rect ->
+  uncontrolled_ghost

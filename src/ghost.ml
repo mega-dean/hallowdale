@@ -1101,6 +1101,9 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
       Entity.hide old_ghost.entity;
       old_ghost.entity.current_floor <- None);
 
+    (* FIXME remove all this
+       - saving/loading weapons with different characters is probably broken because they are not being synced here
+    *)
     new_ghost.abilities <- old_ghost.abilities;
     new_ghost.health <- old_ghost.health;
     new_ghost.soul <- old_ghost.soul;
@@ -1475,7 +1478,9 @@ let update (game : game) (state : state) =
         let handle_ghost_step ghost (step : Interaction.ghost_step) =
           match step with
           | ADD_TO_PARTY -> ghost.in_party <- true
-          | REMOVE_FROM_PARTY -> ghost.in_party <- false
+          | REMOVE_FROM_PARTY ->
+            (* FIXME this isn't working - BRITTA is still in party after this step runs *)
+            ghost.in_party <- false
           | JUMP (_direction, vx) ->
             ghost.entity.v.x <- vx;
             ghost.entity.current_floor <- None;
@@ -2395,4 +2400,20 @@ let init
         scale_y = 1.;
         cooldown_scale = 1.;
       };
+  }
+
+let init_uncontrolled ghost_id textures dest : uncontrolled_ghost =
+  {
+    textures;
+    entity = (
+      Entity.create_for_sprite
+        (Sprite.create
+           (fmt "ghost-%s" (Show.ghost_id ghost_id))
+           ~collision:(Some DEST) textures.idle dest)
+        {
+          pos = clone_vector dest.pos;
+          w = Config.ghost.width *. Config.scale.ghost;
+          h = Config.ghost.height *. Config.scale.ghost;
+        };
+    );
   }

@@ -42,24 +42,7 @@
          "draworder":"topdown",
          "id":4,
          "name":"world-map-labels",
-         "objects":[
-                {
-                 "height":115.306666666667,
-                 "id":4,
-                 "name":"",
-                 "rotation":0,
-                 "text":
-                    {
-                     "color":"#ffffff",
-                     "text":"boss fight: Joshua (maybe Soul Master), reward is dreamer item",
-                     "wrap":true
-                    },
-                 "type":"",
-                 "visible":true,
-                 "width":207.938,
-                 "x":265.364333333333,
-                 "y":421.68
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
