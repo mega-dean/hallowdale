@@ -39,6 +39,8 @@ type window_config = {
   height : int;
   center_x : float;
   center_y : float;
+  camera_motion_x : float;
+  camera_motion_y : float;
   fps : int;
 }
 
@@ -50,13 +52,7 @@ let window : window_config =
     *)
     (x_tiles * tile_size * scale.roomi, y_tiles * tile_size * scale.roomi)
   in
-  let width, height = tiles (18, 10) in
   let width, height = tiles (22, 12) in
-  (* TODO this is the correct size, but causes the scaled pixels to be distorted
-     - only when camera.vx = 0 though
-
-     let width, height = (1565, 880) in
-  *)
   let fps =
     (* 960 *)
     (* 480 *)
@@ -70,7 +66,15 @@ let window : window_config =
     *)
     failwith
       (Printf.sprintf "got invalid fps %d, needs to be at least 60 to avoid dropping inputs" fps);
-  { width; height; center_x = Float.of_int width /. 2.; center_y = Float.of_int height /. 2.; fps }
+  {
+    width;
+    height;
+    center_x = Float.of_int width /. 2.;
+    center_y = Float.of_int height /. 2.;
+    fps;
+    camera_motion_x = 60.;
+    camera_motion_y = 12.;
+  }
 
 type ghost_config = {
   width : float;

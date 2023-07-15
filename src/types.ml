@@ -520,6 +520,10 @@ type trigger_kind =
   | BOSS_KILLED
   | D_NAIL
 
+type camera_motion =
+  | LINEAR of float
+  | SMOOTH of float * float
+
 module Interaction = struct
   type general_step =
     | INITIALIZE_INTERACTIONS of bool
@@ -541,6 +545,7 @@ module Interaction = struct
     (* camera *)
     | SET_FIXED_CAMERA of int * int
     | SET_GHOST_CAMERA
+    | SET_CAMERA_MOTION of camera_motion
     (* layers *)
     | HIDE_LAYER of string
     | UNHIDE_LAYER of string
@@ -1231,6 +1236,7 @@ type camera = {
      updated immediately
   *)
   mutable update_instantly : bool;
+  mutable motion : camera_motion;
 }
 
 type game_context =

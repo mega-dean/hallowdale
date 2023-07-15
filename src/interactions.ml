@@ -235,10 +235,21 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         [ STEP (HIDE_LAYER "floors3"); CURRENT_GHOST UNSET_FLOOR ]
       | "arrive-at-shirley-island" ->
         [
+          NPC (NEIL, ENTITY (SET_FACING LEFT));
           STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
-          STEP (SET_FIXED_CAMERA (19, 29));
-          STEP (WAIT 3.);
+          NPC (NEIL, ENTITY (SET_FACING RIGHT));
+          STEP (SET_CAMERA_MOTION (LINEAR 6.));
+
+          (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
+             - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
+             - that's probably more work than it's worth though
+          *)
+          STEP (SET_FIXED_CAMERA (50, 30));
+          (* STEP (WAIT 0.3); *)
+          STEP (WAIT 5.);
           STEP SET_GHOST_CAMERA;
+          NPC (NEIL, ENTITY (SET_FACING LEFT));
+
           STEP
             (DIALOGUE
                ( "Neil",
@@ -582,4 +593,10 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
   in
 
   (* SET_GHOST_CAMERA to reset the camera if it changed *)
-  [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ] @ interaction_steps @ [ STEP SET_GHOST_CAMERA ]
+  [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ]
+  @ interaction_steps
+  @ [
+      STEP
+        (SET_CAMERA_MOTION (SMOOTH (Config.window.camera_motion_x, Config.window.camera_motion_y)));
+      STEP SET_GHOST_CAMERA;
+    ]

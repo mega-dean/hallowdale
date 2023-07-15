@@ -90,7 +90,14 @@ let init () : state =
     pause_menu = None;
     should_save = false;
     world;
-    camera = { raylib = camera; subject = GHOST; shake = 0.; update_instantly = false };
+    camera =
+      {
+        raylib = camera;
+        subject = GHOST;
+        shake = 0.;
+        update_instantly = false;
+        motion = SMOOTH (Config.window.camera_motion_x, Config.window.camera_motion_y);
+      };
     screen_fade = None;
     frame = { idx = 0; dt = 0.; time = 0. };
     frame_inputs =
@@ -176,22 +183,6 @@ let update_camera (game : game) (state : state) =
         ((amount *. a) +. b) /. (amount +. 1.)
       in
       let diff_x, diff_y = (abs_float (current_x -. target_x), abs_float (current_y -. target_y)) in
-      let smooth_x =
-        if diff_x > 1. then
-          (* CLEANUP don't depend on fps
-             - probably add a new field like camera.movement with type camera_movement = LINEAR | SMOOTH of float
-             - maybe want separate x_movement/y_movement
-          *)
-          between (Config.window.fps * 25 / 60 |> Int.to_float) current_x target_x
-        else
-          target_x
-      in
-      let smooth_y =
-        if diff_y > 1. then
-          between (Config.window.fps * 5 / 60 |> Int.to_float) current_y target_y
-        else
-          target_y
-      in
       let create_bounded_camera x y =
         Raylib.Vector2.create
           (Utils.bound camera_state.room_bounds.min.x x camera_state.room_bounds.max.x)
@@ -200,8 +191,39 @@ let update_camera (game : game) (state : state) =
       if state.camera.update_instantly then (
         state.camera.update_instantly <- false;
         create_bounded_camera target_x target_y)
-      else
-        create_bounded_camera smooth_x smooth_y
+      else (
+        let smooth_x, smooth_y =
+          match state.camera.motion with
+          | LINEAR speed ->
+            let between' speed current target =
+              let eps = current -. target in
+              if abs_float eps < speed then
+                target
+              else if eps < speed then
+                current +. speed
+              else if eps > speed then
+                current -. speed
+              else
+                target
+            in
+            (between' speed current_x target_x, between' speed current_y target_y)
+          | SMOOTH (x_speed, y_speed) ->
+            let smooth_x =
+              if diff_x > 1. then
+                between x_speed current_x target_x
+              else
+                target_x
+            in
+            let smooth_y =
+              if diff_y > 1. then
+                between y_speed current_y target_y
+              else
+                target_y
+            in
+            (smooth_x, smooth_y)
+        in
+
+        create_bounded_camera smooth_x smooth_y)
     in
     let target = bounded_target () in
     Tiled.create_camera_at target state.camera.shake

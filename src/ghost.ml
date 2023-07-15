@@ -1386,7 +1386,9 @@ let update (game : game) (state : state) =
             let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (tile_x, tile_y) in
             let x, y = (tx *. Config.scale.room, ty *. Config.scale.room) in
             state.camera.subject <- FIXED { x; y }
+          | SET_CAMERA_MOTION motion -> state.camera.motion <- motion
           | SET_GHOST_CAMERA ->
+            (* this step is added to the end of every interaction *)
             Entity.unfreeze game.ghost.entity;
             state.camera.subject <- GHOST
           | WAIT time -> new_wait := time -. state.frame.dt
