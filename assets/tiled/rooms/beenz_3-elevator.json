@@ -92,29 +92,7 @@
          "draworder":"topdown",
          "id":5,
          "name":"triggers",
-         "objects":[
-                {
-                 "height":50,
-                 "id":7,
-                 "name":"warp:beenz_3-a|@8,10",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":47.66,
-                 "x":192.836666666667,
-                 "y":261
-                }, 
-                {
-                 "height":30,
-                 "id":9,
-                 "name":"enemy:PENGUIN",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":12.66,
-                 "x":164.336666666667,
-                 "y":640.333333333333
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,

@@ -2405,7 +2405,7 @@ let init
 let init_uncontrolled ghost_id textures dest : uncontrolled_ghost =
   {
     textures;
-    entity = (
+    entity =
       Entity.create_for_sprite
         (Sprite.create
            (fmt "ghost-%s" (Show.ghost_id ghost_id))
@@ -2415,5 +2415,4 @@ let init_uncontrolled ghost_id textures dest : uncontrolled_ghost =
           w = Config.ghost.width *. Config.scale.ghost;
           h = Config.ghost.height *. Config.scale.ghost;
         };
-    );
   }
