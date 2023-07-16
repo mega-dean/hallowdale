@@ -6,8 +6,6 @@
          "id":5,
          "image":"..\/hk-reference\/blue-lake.png",
          "name":"bg-reference",
-         "offsetx":100,
-         "offsety":50,
          "opacity":1,
          "type":"imagelayer",
          "visible":true,
