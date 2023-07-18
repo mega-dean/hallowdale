@@ -97,29 +97,19 @@ let init
   in
 
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
-  let make_ghost id in_party textures : ghost =
-    Ghost.init id textures in_party ghosts_file.actions (clone_vector start_pos) save_file
+  let make_ghost id (party_ghost : party_ghost) : ghost =
+    Ghost.init id party_ghost.textures ghosts_file.actions (clone_vector start_pos) save_file
       global.weapons shared_ghost_textures
   in
-  let make_ghost' id textures : uncontrolled_ghost =
-    Ghost.init_uncontrolled id textures (Zero.rect ())
-    (* in_party ghosts_file.actions (clone_vector start_pos) save_file
-     * global.weapons shared_ghost_textures *)
-  in
 
-  let current_ghost_id = Ghost.parse_name save_file.ghost_id in
-
-  let britta = make_ghost BRITTA true britta_ghost_textures in
-  britta.entity.update_pos <- true;
-
-  let ghosts' : (ghost_id * uncontrolled_ghost) list =
-    (* TODO could check config keys to decide when to fall back to britta so poses can be added without recompiling *)
-    let make_uncontrolled_ghost id config : ghost_id * uncontrolled_ghost =
+  let ghosts' : (ghost_id * party_ghost) list =
+    let make_party_ghost id config : ghost_id * party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
-      (id, make_ghost' id config)
+      (id, Ghost.init_party id config { x = 1000.; y = 1000. } in_party)
     in
     [
-      make_uncontrolled_ghost ABED
+      make_party_ghost BRITTA britta_ghost_textures;
+      make_party_ghost ABED
         {
           britta_ghost_textures with
           dash = use_json_config abed_configs "dash";
@@ -128,7 +118,7 @@ let init
           jump = use_json_config abed_configs "jump";
           walk = use_json_config abed_configs "walk";
         };
-      make_uncontrolled_ghost TROY
+      make_party_ghost TROY
         {
           britta_ghost_textures with
           dash = use_json_config troy_configs "dash";
@@ -138,14 +128,14 @@ let init
           jump = use_json_config troy_configs "jump";
           walk = use_json_config troy_configs "walk";
         };
-      make_uncontrolled_ghost ANNIE
+      make_party_ghost ANNIE
         {
           britta_ghost_textures with
           idle = use_json_config annie_configs "idle";
           nail = use_json_config annie_configs "nail";
           walk = use_json_config annie_configs "walk";
         };
-      make_uncontrolled_ghost JEFF
+      make_party_ghost JEFF
         {
           britta_ghost_textures with
           crawl = use_json_config jeff_configs "crawl";
@@ -158,70 +148,9 @@ let init
     ]
   in
 
-  let all_ghosts =
-    (* TODO could check config keys to decide when to fall back to britta so poses can be added without recompiling *)
-    let make_uncontrolled_ghost name config =
-      let in_party = List.mem (Show.ghost_id name) save_file.ghosts_in_party in
-      make_ghost name in_party config
-    in
-    [
-      (BRITTA, britta);
-      ( ABED,
-        make_uncontrolled_ghost ABED
-          {
-            britta_ghost_textures with
-            dash = use_json_config abed_configs "dash";
-            fall = use_json_config abed_configs "fall";
-            idle = use_json_config abed_configs "idle";
-            jump = use_json_config abed_configs "jump";
-            walk = use_json_config abed_configs "walk";
-          } );
-      ( TROY,
-        make_uncontrolled_ghost TROY
-          {
-            britta_ghost_textures with
-            dash = use_json_config troy_configs "dash";
-            dive = use_json_config troy_configs "dive";
-            fall = use_json_config troy_configs "fall";
-            idle = use_json_config troy_configs "idle";
-            jump = use_json_config troy_configs "jump";
-            walk = use_json_config troy_configs "walk";
-          } );
-      ( ANNIE,
-        make_uncontrolled_ghost ANNIE
-          {
-            britta_ghost_textures with
-            idle = use_json_config annie_configs "idle";
-            nail = use_json_config annie_configs "nail";
-            walk = use_json_config annie_configs "walk";
-          } );
-      ( JEFF,
-        make_uncontrolled_ghost JEFF
-          {
-            britta_ghost_textures with
-            crawl = use_json_config jeff_configs "crawl";
-            fall = use_json_config jeff_configs "fall";
-            idle = use_json_config jeff_configs "idle";
-            jump = use_json_config jeff_configs "jump";
-            nail = use_json_config jeff_configs "nail";
-            walk = use_json_config jeff_configs "walk";
-          } );
-    ]
-  in
-
-  (* FIXME do this for ghosts' too *)
-  List.iter
-    (fun ((ghost_id, g) : ghost_id * ghost) ->
-      if ghost_id <> current_ghost_id then (
-        Entity.freeze g.entity;
-        g.entity.dest.pos.x <- -1. *. g.entity.dest.pos.x;
-        g.entity.dest.pos.y <- -1. *. g.entity.dest.pos.y))
-    all_ghosts;
-
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
-
   let room : room =
     Room.init
       {
@@ -236,16 +165,15 @@ let init
       }
   in
   room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;
-  let ghost = List.assoc current_ghost_id all_ghosts in
+
+  let current_ghost_id = Ghost.parse_name save_file.ghost_id in
+  let party_ghost = List.assoc current_ghost_id ghosts' in
+  let ghost = make_ghost current_ghost_id party_ghost in
+  ghost.entity.update_pos <- true;
   Ghost.equip_weapon ghost save_file.current_weapon;
-  let other_ghosts = List.filter (fun (ghost_id, _) -> ghost_id <> current_ghost_id) all_ghosts in
-  (* let other_ghosts' : (ghost_id * uncontrolled_ghost) list =
-   *   List.filter (fun (ghost_id, _) -> ghost_id <> current_ghost_id) all_ghosts
-   *   |> List.map (fun (ghost_id, ghost) ->
-   * in *)
+
   {
     ghost;
-    ghosts = other_ghosts;
     ghosts';
     room;
     interaction =

@@ -27,7 +27,12 @@ let save_files_menu () : menu =
     current_choice_idx = 0;
   }
 
-let change_ghost_menu (ghosts : (ghost_id * ghost) list) : menu =
+(* TODO this is broken now, after the duncan fight:
+   - party_ghosts can be selected
+   - BRITTA can't be selected,
+   - trying to select BRITTA and then selecting someone else makes the ghost invisible
+*)
+let change_ghost_menu (ghosts : (ghost_id * party_ghost) list) : menu =
   let ghost_choices =
     List.filter_map
       (fun (id, ghost) -> if ghost.in_party then Some (CHANGE_GHOST_MENU (USE_GHOST id)) else None)
@@ -48,13 +53,14 @@ let update_menu_choice (menu : menu) frame_inputs =
 let save_game (game : game) (state : state) (after_fn : state -> unit) =
   Room.save_progress game;
   let save_file : Json_t.save_file =
+    let ghosts' = game.ghosts' in
     {
       ghost_id = Show.ghost_id game.ghost.id;
       ghosts_in_party =
         (* game.ghosts only has the uncontrolled ghosts, but save_file.ghosts_in_party
            should include the current ghost's id
         *)
-        [ game.ghost.id ] @ Ghost.available_ghost_ids game.ghosts |> List.map Show.ghost_id;
+        [ game.ghost.id ] @ Ghost.available_ghost_ids ghosts' |> List.map Show.ghost_id;
       ghost_x = game.ghost.entity.dest.pos.x;
       ghost_y = game.ghost.entity.dest.pos.y;
       respawn_x = game.room.respawn_pos.x;
@@ -78,7 +84,7 @@ let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
     | None ->
-      state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts)))
+      state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts')))
     | Some _ -> state.pause_menu <- None);
 
   (match state.pause_menu with
@@ -93,8 +99,7 @@ let update_pause_menu (game : game) (state : state) : state =
         game.interaction.text <- None
       | PAUSE_MENU CHANGE_WEAPON ->
         state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
-      | PAUSE_MENU CHANGE_GHOST ->
-        state.pause_menu <- Some (change_ghost_menu ([ (game.ghost.id, game.ghost) ] @ game.ghosts))
+      | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.ghosts')
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
         (* TODO unload textures *)
         state.pause_menu <- None;
@@ -106,7 +111,7 @@ let update_pause_menu (game : game) (state : state) : state =
           Ghost.swap_current_ghost state game ghost_id
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
-        state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts)))
+        state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts')))
       | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
 

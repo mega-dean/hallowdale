@@ -377,14 +377,14 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time sprite.texture sprite
   in
 
-  let update_ghost (_id, ghost) =
+  let update_ghost ((_id, ghost) : ghost_id * party_ghost) =
     Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
     if ghost.entity.update_pos then (
       Entity.update_pos game.room ghost.entity state.frame.dt;
-      Ghost.maybe_unset_current_floor ghost game.room)
+      Entity.maybe_unset_current_floor ghost.entity game.room)
   in
 
-  List.iter update_ghost game.ghosts;
+  List.iter update_ghost game.ghosts';
   List.iter update_npc game.room.npcs;
   (* pickup indicators aren't really "npcs" *)
   List.iter update_pickup_indicators game.room.pickup_indicators;

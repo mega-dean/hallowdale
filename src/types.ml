@@ -565,18 +565,27 @@ module Interaction = struct
     | ABILITY of string
     | DREAMER of string * string
 
-  type ghost_step =
+  type party_ghost_step =
     | SET_POSE of ghost_pose
     | WALK_TO of int
-    | FILL_LIFE_VAPOR
-    | ADD_ITEM of item_kind
-    | INCREASE_HEALTH_TEXT of bool * string
     | ADD_TO_PARTY
     | REMOVE_FROM_PARTY
     | JUMP of direction * float
     | ENTITY of entity_step
     | MAKE_CURRENT_GHOST
+
+  type ghost_step =
+    | FILL_LIFE_VAPOR
+    | INCREASE_HEALTH_TEXT of bool * string
+    | (* this isn't using (PARTY (SET_POSE ...)) because it uses the real Ghost.set_pose
+         instead of the simpler one for party_ghosts during interactions
+      *)
+      SET_POSE of
+        ghost_pose
+    | ADD_ITEM of item_kind
     | UNSET_FLOOR
+    | ENTITY of entity_step
+    | PARTY of party_ghost_step
 
   type enemy_step =
     | WALK_TO of int
@@ -593,7 +602,7 @@ module Interaction = struct
   type step =
     | STEP of general_step
     | CURRENT_GHOST of ghost_step
-    | GHOST of ghost_id * ghost_step
+    | GHOST of ghost_id * party_ghost_step
     | ENEMY of enemy_id * enemy_step
     | NPC of npc_id * npc_step
 
@@ -891,24 +900,20 @@ type ghosts_file = {
   shared_textures : (string * texture_config) list;
 }
 
-(* CLEANUP name *)
-type uncontrolled_ghost ={
+(* this is for the ghosts that are not being controlled right now *)
+type party_ghost = {
   textures : ghost_textures;
   entity : entity;
+  mutable in_party : bool;
 }
 
 type ghost = {
-  entity : entity;
   mutable current : current_status;
   (* TODO-6 use separate textures for ghost head vs body *)
-  (* FIXME probably don't need .shared_textures on every ghost *)
   shared_textures : shared_textures;
   history : ghost_action_history;
-  mutable id : ghost_id;
-
-  mutable in_party : bool;
-
-  (* CLEANUP does this need to be mutable? *)
+  id : ghost_id;
+  mutable entity : entity;
   mutable textures : ghost_textures;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
@@ -1228,9 +1233,10 @@ type debug = {
 
 type game = {
   mutable ghost : ghost;
-  (* FIXME instead of keeping track of ghost list, just use the parts of ghost that are unique *)
-  mutable ghosts : (ghost_id * ghost) list;
-  mutable ghosts' : (ghost_id * uncontrolled_ghost) list;
+  (* this should include a party_ghost for the currently-controlled ghost, so it should
+     always be a list of all five ghosts
+  *)
+  mutable ghosts' : (ghost_id * party_ghost) list;
   mutable room : room;
   interaction : Interaction.t;
   (* string is room uuid *)

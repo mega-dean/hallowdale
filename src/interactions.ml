@@ -44,7 +44,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
 
     let get_locker_boys_ghosts () : ghost_id * ghost_id =
       let is_available (_id, ghost) = ghost.in_party in
-      let other_ghosts = List.filter is_available game.ghosts in
+      let other_ghosts = List.filter is_available game.ghosts' in
       if List.length other_ghosts <> 2 then
         failwithf "got %d other_ghosts" (List.length other_ghosts)
       else
@@ -239,7 +239,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
           NPC (NEIL, ENTITY (SET_FACING RIGHT));
           STEP (SET_CAMERA_MOTION (LINEAR 6.));
-
           (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
              - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
              - that's probably more work than it's worth though
@@ -249,7 +248,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (WAIT 5.);
           STEP SET_GHOST_CAMERA;
           NPC (NEIL, ENTITY (SET_FACING LEFT));
-
           STEP
             (DIALOGUE
                ( "Neil",
@@ -263,7 +261,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ENEMY (DUNCAN, SET_POSE "scavenging");
           CURRENT_GHOST (SET_POSE IDLE);
           STEP (DIALOGUE ("Britta", "Professor Duncan?"));
-          STEP (SET_FIXED_CAMERA (19, 29));
+          STEP (SET_FIXED_CAMERA (19, 12));
           STEP (WAIT 0.7);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
@@ -320,9 +318,10 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | "lockers-lockers-lockers" ->
         [ STEP (FLOATING_TEXT ("... lockers, lockers, lockers ...", 1.)) ]
       | "fight-locker-boys" ->
+        (* TODO update for new room size *)
         [
           ENEMY (LOCKER_BOY, ENTITY HIDE);
-          CURRENT_GHOST (WALK_TO 35);
+          CURRENT_GHOST (PARTY (WALK_TO 35));
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE READING);
           STEP (WAIT 0.7);
@@ -342,13 +341,13 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       match trigger.name_suffix with
       | "DUNCAN" ->
         [
-          CURRENT_GHOST (WALK_TO 21);
+          CURRENT_GHOST (PARTY (WALK_TO 21));
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
           ENEMY (DUNCAN, WALK_TO 12);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING RIGHT));
           STEP (WAIT 0.3);
-          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 13, 31));
+          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 13, 14));
           STEP (WAIT 0.6);
           ENEMY (DUNCAN, SET_VX 200.);
           (* TODO a lot of these are wrong now, need to adjust for new physics *)
@@ -358,12 +357,12 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ENEMY (DUNCAN, ENTITY FREEZE);
           STEP (HIDE_LAYER "bg-iso2");
           STEP (UNHIDE_LAYER "bg-iso3");
-          GHOST (ANNIE, ENTITY (UNHIDE_AT (6, 32, 0., 0.)));
-          GHOST (JEFF, ENTITY (UNHIDE_AT (7, 31, 12., 0.)));
+          GHOST (ANNIE, ENTITY (UNHIDE_AT (6, 14, 0., 0.)));
+          GHOST (JEFF, ENTITY (UNHIDE_AT (7, 13, 12., 0.)));
           GHOST (ANNIE, ENTITY FREEZE);
           GHOST (JEFF, ENTITY FREEZE);
           STEP (WAIT 1.5);
-          STEP (SET_FIXED_CAMERA (14, 50));
+          STEP (SET_FIXED_CAMERA (14, 33));
           STEP (WAIT 0.5);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
@@ -413,8 +412,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                  ("Annie", "You want to join this alliance? Or you want to join the {{red}} lava?"));
             STEP (DIALOGUE ("Britta", "Fine, but I'm not learning the new names for anything."));
             STEP (WAIT 0.4);
-            (* TODO select current ghost in a menu *)
-            STEP (TEXT [ "Press DEBUG_1 to switch ghost." ]);
             GHOST (JEFF, ADD_TO_PARTY);
             GHOST (ANNIE, ADD_TO_PARTY);
             STEP (WAIT 0.4);
@@ -426,6 +423,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             GHOST (ANNIE, ENTITY HIDE);
           ]
       | "LOCKER_BOY" ->
+        (* TODO update for new room size *)
         let other_ghost_1, other_ghost_2 = get_locker_boys_ghosts () in
         [
           GHOST (other_ghost_1, ENTITY (UNHIDE_AT (50, 19, 0., 0.)));

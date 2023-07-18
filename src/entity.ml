@@ -53,6 +53,8 @@ let unhide_at (e : entity) (p : vector) =
   unfreeze e;
   e.dest.pos <- clone_vector p
 
+let hidden (entity : entity) : bool = entity.dest.pos.x < 0. && entity.dest.pos.y < 0.
+
 let set_facing (d : direction) (e : entity) =
   match d with
   | RIGHT -> e.sprite.facing_right <- true
@@ -179,9 +181,15 @@ let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) : un
 
 (* TODO maybe move this to enemy.ml *)
 (* returns true when there was a floor collision (to set floor_collision_this_frame) *)
-let update_enemy_pos ?(debug = None) ?(gravity_multiplier' = None) (room : room) (entity : entity) dt : bool =
+let update_enemy_pos
+    ?(debug = None)
+    ?(gravity_multiplier' = None)
+    (room : room)
+    (entity : entity)
+    dt : bool =
   if entity.update_pos then (
-    let gravity_multiplier = match gravity_multiplier' with
+    let gravity_multiplier =
+      match gravity_multiplier' with
       | None -> entity.config.gravity_multiplier
       | Some mult -> mult
     in
@@ -197,6 +205,30 @@ let update_enemy_pos ?(debug = None) ?(gravity_multiplier' = None) (room : room)
     List.length collisions > 0)
   else
     false
+
+let maybe_unset_current_floor (entity : entity) (room : room) =
+  match entity.current_floor with
+  | None -> ()
+  | Some floor ->
+    let walked_over_edge =
+      if not (above_floor entity floor) then (
+        (* smoothly walk to adjacent floors by (temporarily) pushing the ghost down a pixel to
+           check Entity.get_floor_collisions
+        *)
+        entity.dest.pos.y <- entity.dest.pos.y +. 1.;
+        match List.nth_opt (get_floor_collisions room entity) 0 with
+        | None ->
+          entity.dest.pos.y <- entity.dest.pos.y -. 1.;
+          true
+        | Some (collision, floor) ->
+          entity.current_floor <- Some floor;
+          false)
+      else
+        false
+    in
+    let jumping_over_edge = entity.v.y < 0. in
+    if walked_over_edge || jumping_over_edge then
+      entity.current_floor <- None
 
 let get_child_pos'
     (parent_dest : rect)
@@ -243,6 +275,23 @@ let is_on_screen' (r : rect) = not (r.pos.x < 0. && r.pos.y < 0.)
 let is_on_screen (e : entity) = is_on_screen' e.dest
 let is_off_screen (e : entity) = not (is_on_screen e)
 let get_center (entity : entity) : vector = get_rect_center entity.dest
+
+let set_facing_right ?(allow_vertical = true) (entity : entity) (direction : direction) =
+  match direction with
+  | LEFT -> entity.sprite.facing_right <- false
+  | RIGHT -> entity.sprite.facing_right <- true
+  | _ ->
+    if not allow_vertical then
+      failwithf "bad direction in set_facing_right: %s" (Show.direction direction)
+
+(* this uses Config.ghost.vx, which works fine for npcs in cutscenes *)
+let update_vx (entity : entity) multiplier =
+  let mult = if entity.sprite.facing_right then multiplier else -1. *. multiplier in
+  entity.v.x <- mult *. Config.ghost.vx
+
+let walk (entity : entity) (direction : direction) : unit =
+  set_facing_right entity direction;
+  update_vx entity 1.
 
 (* called once per frame to align sprite.dest position with entity.dest position *)
 let adjust_sprite_dest (e : entity) =

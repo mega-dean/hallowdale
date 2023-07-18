@@ -632,7 +632,6 @@ let reset_current_status () =
     can_flap = true;
   }
 
-(* TODO maybe this should also cancel_action for some things *)
 let take_damage (ghost : ghost) (damage : int) =
   ghost.current <- reset_current_status ();
   ghost.children <- [];
@@ -657,12 +656,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       ghost.current.can_flap <- true)
   in
   let set_facing_right ?(allow_vertical = true) (direction : direction) =
-    match direction with
-    | LEFT -> ghost.entity.sprite.facing_right <- false
-    | RIGHT -> ghost.entity.sprite.facing_right <- true
-    | _ ->
-      if not allow_vertical then
-        failwithf "bad direction in set_facing_right: %s" (Show.direction direction)
+    Entity.set_facing_right ~allow_vertical ghost.entity direction
   in
 
   let handle_cast (spell_kind : spell_kind) =
@@ -779,10 +773,9 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
     | READING ->
       update_vx 0.;
       ghost.textures.read
-    | WALKING d ->
+    | WALKING direction ->
       reset_standing_abilities ();
-      set_facing_right ~allow_vertical:false d;
-      update_vx 1.;
+      Entity.walk ghost.entity direction;
       ghost.textures.walk
     | WALL_SLIDING wall ->
       let wall_to_the_left = wall.pos.x < ghost.entity.sprite.dest.pos.x in
@@ -1084,14 +1077,17 @@ let is_casting (state : state) (game : game) =
   || game.ghost.current.is_diving
   || is_doing game.ghost (CAST HOWLING_WRAITHS) state.frame.time
 
+let make_party ?(in_party = true) (ghost : ghost) : party_ghost =
+  { textures = ghost.textures; entity = ghost.entity; in_party }
+
 let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_ghost_id =
-  match List.assoc_opt target_ghost_id game.ghosts with
+  match List.assoc_opt target_ghost_id game.ghosts' with
   | None -> failwithf "could not find other ghost %s" (Show.ghost_id target_ghost_id)
   | Some new_ghost ->
-    let old_ghost = game.ghost in
-    let new_ghosts = (old_ghost.id, old_ghost) :: List.remove_assoc new_ghost.id game.ghosts in
+    let old_ghost = make_party game.ghost in
     let current_pos = old_ghost.entity.dest.pos in
 
+    (* TODO test locker-boys cutscene for MAKE_CURRENT_GHOST *)
     (* MAKE_CURRENT_GHOST uses this fn during interactions to update game.ghost, but shouldn't swap places *)
     if swap_pos then (
       Entity.unhide_at new_ghost.entity current_pos;
@@ -1101,19 +1097,8 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
       Entity.hide old_ghost.entity;
       old_ghost.entity.current_floor <- None);
 
-    (* FIXME remove all this
-       - saving/loading weapons with different characters is probably broken because they are not being synced here
-    *)
-    new_ghost.abilities <- old_ghost.abilities;
-    new_ghost.health <- old_ghost.health;
-    new_ghost.soul <- old_ghost.soul;
-    new_ghost.current.can_dash <- old_ghost.current.can_dash;
-    new_ghost.current.can_flap <- old_ghost.current.can_flap;
-    new_ghost.children <- old_ghost.children;
-    new_ghost.spawned_vengeful_spirits <- old_ghost.spawned_vengeful_spirits;
-
-    game.ghost <- new_ghost;
-    game.ghosts <- new_ghosts
+    game.ghost.textures <- new_ghost.textures;
+    game.ghost.entity <- new_ghost.entity
 
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   let new_val v =
@@ -1185,7 +1170,8 @@ let handle_debug_keys (game : game) (state : state) =
     print "camera subject at: %s" (Show.vector camera);
     print "camera at: %f, %f" (Raylib.Vector2.x v) (Raylib.Vector2.y v)
   in
-  let show_ghost_location () =
+  let show_ghost_location () = print "ghost at %s" (Show.vector game.ghost.entity.dest.pos) in
+  let show_full_ghost_location () =
     let room_location = List.assoc game.room.id state.world in
     print "================\nghost global pos: %s"
       (Show.vector (Room.get_global_pos game.ghost.entity.dest.pos room_location));
@@ -1208,10 +1194,8 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.ghost.entity.dest.pos.x <- game.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then
-      (* game.ghost.soul.current <- game.ghost.soul.max *)
-      (* show_ghost_location () *)
-      show_camera_location ()
+    if key_pressed DEBUG_1 then (* game.ghost.soul.current <- game.ghost.soul.max *)
+      show_ghost_location () (* show_camera_location () *)
     else if key_pressed DEBUG_2 then (* toggle_ability game.ghost "mantis_claw" *)
       game.ghost.health.current <- game.ghost.health.current - 1
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
@@ -1443,6 +1427,7 @@ let update (game : game) (state : state) =
             let x, y =
               ((tx +. x_offset) *. Config.scale.room, (ty +. y_offset) *. Config.scale.room)
             in
+            state.debug.rects <- (Raylib.Color.green, entity.dest) :: state.debug.rects;
             Entity.unhide_at entity { x; y }
           | HIDE -> Entity.hide entity
           | FREEZE -> Entity.freeze entity
@@ -1475,38 +1460,68 @@ let update (game : game) (state : state) =
             game.interaction.text <- Some (PLAIN text)
         in
 
-        let handle_ghost_step ghost (step : Interaction.ghost_step) =
+        let handle_party_ghost_step
+            ghost_id
+            (party_ghost : party_ghost)
+            (step : Interaction.party_ghost_step) =
+          let set_interaction_pose pose =
+            let new_texture =
+              match pose with
+              | IDLE ->
+                party_ghost.entity.v.x <- 0.;
+                party_ghost.textures.idle
+              | PERFORMING action -> (
+                match action with
+                | ATTACK _ -> party_ghost.textures.nail
+                | _ -> failwithf "bad PERFORMING action: %s" (Show.ghost_action_kind action))
+              | AIRBORNE _ -> party_ghost.textures.fall
+              | CRAWLING -> party_ghost.textures.crawl
+              | WALKING direction ->
+                Entity.walk party_ghost.entity direction;
+                party_ghost.textures.walk
+              | LANDING _
+              | READING
+              | WALL_SLIDING _
+              | SWIMMING _ ->
+                failwithf "bad interaction pose '%s' for party ghost %s" (Show.ghost_pose pose)
+                  (Show.ghost_id ghost_id)
+            in
+            Entity.update_sprite_texture party_ghost.entity new_texture
+          in
           match step with
-          | ADD_TO_PARTY -> ghost.in_party <- true
-          | REMOVE_FROM_PARTY ->
-            (* FIXME this isn't working - BRITTA is still in party after this step runs *)
-            ghost.in_party <- false
+          | ADD_TO_PARTY -> party_ghost.in_party <- true
+          | REMOVE_FROM_PARTY -> party_ghost.in_party <- false
           | JUMP (_direction, vx) ->
-            ghost.entity.v.x <- vx;
-            ghost.entity.current_floor <- None;
-            set_interaction_pose' ghost (PERFORMING JUMP)
-          | SET_POSE pose -> set_interaction_pose' ghost pose
-          | MAKE_CURRENT_GHOST -> swap_current_ghost state ~swap_pos:false game ghost.id
-          | UNSET_FLOOR -> game.ghost.entity.current_floor <- None
+            (* TODO fix the jump cutscene *)
+            (* set_interaction_pose' ghost (PERFORMING JUMP) *)
+            party_ghost.entity.v.x <- vx;
+            party_ghost.entity.current_floor <- None
+          | SET_POSE pose -> set_interaction_pose pose
+          | MAKE_CURRENT_GHOST -> swap_current_ghost state ~swap_pos:false game ghost_id
           | ENTITY entity_step ->
             (match entity_step with
             | HIDE ->
-              if ghost.id = game.ghost.id then
-                failwithf "can't hide current ghost %s" (Show.ghost_id ghost.id)
+              if ghost_id = game.ghost.id then
+                failwithf "can't hide current ghost %s" (Show.ghost_id ghost_id)
             | UNHIDE ->
-              failwithf "can't unhide %s, use UNHIDE_AT for ghosts" (Show.ghost_id ghost.id)
+              failwithf "can't unhide %s, use UNHIDE_AT for ghosts" (Show.ghost_id ghost_id)
             | _ -> ());
-            handle_entity_step ghost.entity entity_step
+            handle_entity_step party_ghost.entity entity_step
           | WALK_TO target_tile_x ->
             let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
-            let dist = (tx *. Config.scale.room) -. ghost.entity.dest.pos.x in
+            let dist = (tx *. Config.scale.room) -. party_ghost.entity.dest.pos.x in
             still_walking := abs_float dist > 10.;
             if not !still_walking then
-              set_interaction_pose' ghost IDLE
+              set_interaction_pose IDLE
             else if dist > 0. then
-              set_interaction_pose' ghost (WALKING RIGHT)
+              set_interaction_pose (WALKING RIGHT)
             else
-              set_interaction_pose' ghost (WALKING LEFT)
+              set_interaction_pose (WALKING LEFT)
+        in
+
+        let handle_ghost_step (ghost : ghost) (step : Interaction.ghost_step) =
+          match step with
+          | SET_POSE pose -> set_interaction_pose' ghost pose
           | FILL_LIFE_VAPOR -> ghost.soul.current <- ghost.soul.max
           | INCREASE_HEALTH_TEXT (increases_health, str) ->
             if increases_health then (
@@ -1516,6 +1531,9 @@ let update (game : game) (state : state) =
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
           | ADD_ITEM item_kind -> add_item item_kind
+          | UNSET_FLOOR -> game.ghost.entity.current_floor <- None
+          | ENTITY entity_step -> handle_entity_step ghost.entity entity_step
+          | PARTY party_step -> handle_party_ghost_step ghost.id (make_party ghost) party_step
         in
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
@@ -1596,18 +1614,13 @@ let update (game : game) (state : state) =
         (match next_step with
         | STEP general_step -> handle_general_step general_step
         | CURRENT_GHOST ghost_step -> handle_ghost_step game.ghost ghost_step
-        | GHOST (ghost_id, ghost_step) ->
-          let find_ghost () : ghost =
-            match List.assoc_opt ghost_id game.ghosts with
+        | GHOST (ghost_id, party_ghost_step) ->
+          let find_party_ghost () : party_ghost =
+            match List.assoc_opt ghost_id game.ghosts' with
             | Some ghost -> ghost
-            | None ->
-              if game.ghost.id = ghost_id then
-                game.ghost
-              else
-                failwithf "ghost_id %s needs to be the current_ghost, or should be in game.ghosts"
-                  (Show.ghost_id ghost_id)
+            | None -> failwithf "ghost_id %s needs in game.ghosts" (Show.ghost_id ghost_id)
           in
-          handle_ghost_step (find_ghost ()) ghost_step
+          handle_party_ghost_step ghost_id (find_party_ghost ()) party_ghost_step
         | NPC (target_npc_id, npc_step) ->
           let find_existing_npc () =
             match List.find_opt (fun (npc : npc) -> npc.id = target_npc_id) game.room.npcs with
@@ -2304,7 +2317,6 @@ let load_shared_textures (shared_texture_configs : (string * texture_config) lis
 let init
     (ghost_id : ghost_id)
     (textures : ghost_textures)
-    (in_party : bool)
     (action_config : (string * ghost_action_config) list)
     (start_pos : vector)
     (save_file : Json_t.save_file)
@@ -2343,7 +2355,6 @@ let init
 
   {
     id = ghost_id;
-    in_party;
     current = reset_current_status ();
     textures;
     children = [];
@@ -2402,17 +2413,22 @@ let init
       };
   }
 
-let init_uncontrolled ghost_id textures dest : uncontrolled_ghost =
-  {
-    textures;
-    entity =
+let init_party ghost_id textures start_pos in_party : party_ghost =
+  let w, h = get_scaled_texture_size ~scale:Config.scale.ghost textures.idle in
+  let dest = { pos = start_pos; w; h } in
+  let entity =
+    let entity' =
       Entity.create_for_sprite
         (Sprite.create
            (fmt "ghost-%s" (Show.ghost_id ghost_id))
            ~collision:(Some DEST) textures.idle dest)
         {
-          pos = clone_vector dest.pos;
+          pos = clone_vector start_pos;
           w = Config.ghost.width *. Config.scale.ghost;
           h = Config.ghost.height *. Config.scale.ghost;
-        };
-  }
+        }
+    in
+    Entity.hide entity';
+    entity'
+  in
+  { textures; entity; in_party }

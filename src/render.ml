@@ -586,6 +586,7 @@ let tick (state : state) =
       draw_texture texture dest 0
     in
 
+    (* TODO probably worth moving all these magic numbers into a config *)
     match interaction_text with
     | None -> ()
     | Some (ABILITY ability_text) ->
@@ -632,7 +633,7 @@ let tick (state : state) =
       List.iteri (display_paragraph config top_y_offset) ability_text.top_paragraphs;
       List.iteri (display_paragraph config bottom_y_offset) ability_text.bottom_paragraphs
     | Some (DIALOGUE (speaker_name, text')) ->
-      let margin_x = 150 in
+      let margin_x = 250 in
       let config : text_config =
         {
           margin_x;
@@ -996,12 +997,12 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
-    let draw_ghosts (ghosts_by_id : (ghost_id * ghost) list) =
-      let draw_ghost ((_, g) : ghost_id * ghost) =
-        draw_entity g.entity;
+    let draw_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
+      let draw_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
+        draw_entity party_ghost.entity;
         if state.debug.enabled then (
-          debug_rect g.entity.dest;
-          debug_rect_outline g.entity.sprite.dest)
+          debug_rect party_ghost.entity.dest;
+          debug_rect_outline party_ghost.entity.sprite.dest)
       in
       List.iter draw_ghost ghosts_by_id
     in
@@ -1153,7 +1154,7 @@ let tick (state : state) =
     draw_solid_tiles game.room camera_x camera_y state.frame.idx;
     draw_levers ();
     draw_npcs game.room.npcs;
-    draw_ghosts game.ghosts;
+    draw_ghosts game.ghosts';
     draw_ghost game.ghost;
     draw_enemies game.room.enemies;
     draw_object_trigger_indicators ();
