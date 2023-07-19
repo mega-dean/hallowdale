@@ -48,7 +48,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -92,7 +92,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -122,7 +122,7 @@
          "parallaxx":0.2,
          "parallaxy":0.2,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -152,7 +152,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -182,7 +182,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -212,7 +212,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -242,7 +242,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -272,7 +272,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -302,7 +302,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -331,7 +331,7 @@
          "name":"hidden-boss-doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -360,7 +360,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -389,7 +389,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -419,7 +419,7 @@
          "opacity":1,
          "parallaxx":1.2,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
@@ -448,7 +448,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":49,
          "x":0,
          "y":0
