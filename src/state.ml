@@ -70,6 +70,23 @@ let init () : state =
       }
   in
 
+  let platforms =
+    let load_platform_texture name =
+      (name, Sprite.build_texture_from_config
+        {
+          asset_dir = TILED;
+          character_name = "templates";
+          pose_name = name;
+          count = 1;
+          duration = { seconds = 0. };
+          x_offset = 0.;
+          y_offset = 0.;
+        })
+    in
+    (* FIXME read all .png files in assets/tiled/templates *)
+    List.map load_platform_texture ["88-bench"]
+  in
+
   let global =
     {
       lore = File.read_config "lore" Json_j.lore_file_of_string;
@@ -77,7 +94,7 @@ let init () : state =
       enemy_configs;
       npc_configs;
       textures =
-        { ability_outlines; damage; pickup_indicator; main_menu; door_lever; door_lever_struck };
+        { ability_outlines; damage; pickup_indicator; main_menu; door_lever; door_lever_struck; platforms };
     }
   in
 
@@ -503,6 +520,9 @@ let tick (state : state) =
         show_triggers game.room.triggers.cutscene;
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
+
+        state.debug.rects <-
+          List.map (fun r -> (Raylib.Color.orange, r)) game.room.platforms @ state.debug.rects;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         if state.should_save then (

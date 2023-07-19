@@ -104,6 +104,7 @@ let get_bench_collisions (room : room) (entity : entity) : (collision * rect) li
   let layers = List.filter (fun (l : layer) -> l.name = "benches") room.layers in
   get_tile_collisions layers entity
 
+(* FIXME also check room.platforms *)
 let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
   get_tile_collisions layers entity

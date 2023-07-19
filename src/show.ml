@@ -56,6 +56,7 @@ let asset_dir (asset_dir : asset_dir) =
   | GHOSTS -> "ghosts"
   | NPCS -> "npcs"
   | ENEMIES -> "enemies"
+  | TILED -> "tiled"
 
 let attack_direction (d : direction option) : string =
   match d with

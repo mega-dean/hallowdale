@@ -1152,6 +1152,9 @@ let tick (state : state) =
     Raylib.begin_mode_2d state.camera.raylib;
     draw_bg_tiles game.room camera_x camera_y state.frame.idx;
     draw_solid_tiles game.room camera_x camera_y state.frame.idx;
+    (* FIXME draw_floating_platforms
+       - maybe draw after ghost though
+    *)
     draw_levers ();
     draw_npcs game.room.npcs;
     draw_ghosts game.ghosts';

@@ -154,8 +154,7 @@ module Room = struct
     let x, y = Tile.tile_dest ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y) in
     { x; y }
 
-  let dest_from_coords (room : room) (coords : string) : vector =
-    dest_from_coords' room.json coords
+  let dest_from_coords (room : room) (coords : string) : vector = dest_from_coords' room.json coords
 
   let locate_by_coords (world : world) global_x global_y : room_id * room_location =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =
@@ -416,10 +415,18 @@ let load_tiles
   in
   Array.init json_tileset.tile_count load_tile
 
+(* FIXME this needs to handle "collection of object" tilesets, for template images *)
 let load_tilesets (room : Json_t.room) : (string * tileset) list =
   let load_tileset source' : (string * tileset) option =
     let parse_tileset (source : Json_t.tileset_source) : Json_t.tileset option =
-      if String.equal "../tilesets/world-map.json" source.source then
+      let ignore_tileset () =
+        if String.starts_with ~prefix:"../templates/" source.source then
+          tmp "ignoring templates file: %s" source.source;
+        (* templates are parsed separately *)
+        String.equal "../tilesets/world-map.json" source.source
+        || String.starts_with ~prefix:"../templates/" source.source
+      in
+      if ignore_tileset () then
         None
       else if not (String.starts_with ~prefix:"../tilesets/" source.source) then
         failwithf "bad tileset path '%s' (needs to be in assets/tiled/tilesets)" source.source
@@ -428,6 +435,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
           (* kinda weird that this path ends up including "/tilesets/../tilesets/" *)
           fmt "../assets/tiled/tilesets/%s" source.source
         in
+        tmp " ============================= reading full path: %s" full_path;
         Some (File.read full_path |> Json_j.tileset_of_string))
     in
 

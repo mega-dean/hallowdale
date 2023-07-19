@@ -21,6 +21,14 @@ type image_layer = {
   image : string;
 }
 
+(* FIXME
+type template = {
+   name : string;
+   w : float;
+   h : float;
+}
+ *)
+
 (* the Type_field adapter pulls out the "type" field from json
    from: { ..., "type": "some-type", ... }
    into: ["some-type", { ... }]
@@ -55,6 +63,7 @@ type tileset = {
   source <json name="image"> : string;
   columns : int;
   (* only tiles with custom collision rects have a config here *)
+  (* FIXME "tiles" is now being used for template images too, so this needs to be changed *)
   ~collisions <json name="tiles"> : collision list;
   tile_count <json name="tilecount"> : int;
 }

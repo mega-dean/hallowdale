@@ -97,6 +97,53 @@
          "y":0
         }, 
         {
+         "draworder":"topdown",
+         "id":29,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":9663,
+                 "height":30,
+                 "id":25,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":88,
+                 "x":63,
+                 "y":222
+                }, 
+                {
+                 "gid":9663,
+                 "height":30,
+                 "id":28,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":88,
+                 "x":45,
+                 "y":375
+                }, 
+                {
+                 "gid":9663,
+                 "height":30,
+                 "id":29,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":88,
+                 "x":27,
+                 "y":302
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -453,8 +500,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":29,
- "nextobjectid":17,
+ "nextlayerid":30,
+ "nextobjectid":31,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
@@ -483,6 +530,10 @@
         {
          "firstgid":9333,
          "source":"..\/tilesets\/floors.json"
+        }, 
+        {
+         "firstgid":9663,
+         "source":"..\/templates\/platforms.json"
         }],
  "tilewidth":24,
  "type":"map",

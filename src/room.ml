@@ -49,6 +49,7 @@ type room_params = {
   pickup_indicator_texture : texture;
   lever_texture : texture;
   respawn_pos : vector;
+  (* FIXME probably need to add platforms : rect list *)
 }
 
 let init (params : room_params) : room =
@@ -73,6 +74,7 @@ let init (params : room_params) : room =
   in
 
   let json_room = parse_room (fmt "%s.json" params.file_name) in
+  let platforms : rect list ref = ref [] in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : trigger list ref = ref [] in
   let lever_triggers : (sprite * int * trigger) list ref = ref [] in
@@ -98,6 +100,11 @@ let init (params : room_params) : room =
         (name, { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } })
       else
         (name, rect)
+    in
+
+    let make_platform (coll_rect : Json_t.coll_rect) =
+      (* CLEANUP make sure this is scaling by the right amount *)
+      platforms := Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h :: !platforms
     in
 
     let categorize (coll_rect : Json_t.coll_rect) =
@@ -273,6 +280,13 @@ let init (params : room_params) : room =
     match jl with
     | `OBJECT_LAYER json -> (
       match json.name with
+      (* FIXME add "floors"
+         - probably make a separate `categorize` fn, but reuse some of the functions defined in there
+         - needs to look up the corresponding texture from the name and set the (scaled) location/size
+         - set this to room.platforms
+         - might need to fix up some of the texture lookup/caching code so it doesn't keep reloading the same image multiple times
+      *)
+      | "platforms" -> List.iter make_platform json.objects
       | "triggers" -> List.iter categorize json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
@@ -492,6 +506,7 @@ let init (params : room_params) : room =
             (* always render a stub, even if it is an empty tile image *)
             config.h + 1
           in
+          (* CLEANUP use tileset_image instead of matching again *)
           match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
           | None -> failwith "no jugs tileset"
           | Some tileset ->
@@ -583,6 +598,7 @@ let init (params : room_params) : room =
     camera_bounds = create_camera_bounds json_room;
     exits = params.exits;
     respawn_pos = clone_vector params.respawn_pos;
+    platforms = !platforms;
     triggers =
       {
         camera = !camera_triggers;

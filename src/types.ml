@@ -163,7 +163,9 @@ type asset_dir =
   | GHOSTS
   | ENEMIES
   | NPCS
+  | TILED
 
+(* FIXME this isn't working very well for templates *)
 (* used to load textures to populate npc_texture_cache or ghost_textures *)
 type texture_config = {
   asset_dir : asset_dir;
@@ -1181,6 +1183,7 @@ type room = {
   camera_bounds : bounds;
   cache : room_cache;
   triggers : triggers;
+  platforms : rect list;
   enemies : (enemy_id * enemy) list;
   exits : rect list;
   mutable respawn_pos : vector;
@@ -1213,6 +1216,7 @@ type texture_cache = {
   main_menu : texture;
   door_lever : texture;
   door_lever_struck : texture;
+  platforms : (string * texture) list;
 }
 
 (* these are all things that are eager-loaded from json config files *)

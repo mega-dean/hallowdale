@@ -1,0 +1,24 @@
+{ "columns":0,
+ "grid":
+    {
+     "height":1,
+     "orientation":"orthogonal",
+     "width":1
+    },
+ "margin":0,
+ "name":"platforms",
+ "spacing":0,
+ "tilecount":1,
+ "tiledversion":"1.10.1",
+ "tileheight":30,
+ "tiles":[
+        {
+         "id":0,
+         "image":"88-bench.png",
+         "imageheight":30,
+         "imagewidth":88
+        }],
+ "tilewidth":88,
+ "type":"tileset",
+ "version":"1.10"
+}
