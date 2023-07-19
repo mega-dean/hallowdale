@@ -84,7 +84,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":155,
          "x":0,
          "y":0
@@ -258,10 +258,22 @@
                  "width":20.1817999999998,
                  "x":2642.1591,
                  "y":367
+                }, 
+                {
+                 "id":54,
+                 "template":"..\/templates\/testtempl2.tj",
+                 "x":1485.33333333333,
+                 "y":749.333333333333
+                }, 
+                {
+                 "id":55,
+                 "template":"..\/templates\/testtempl2.tj",
+                 "x":1568,
+                 "y":878.666666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1911,7 +1923,7 @@
          "y":0
         }],
  "nextlayerid":51,
- "nextobjectid":48,
+ "nextobjectid":56,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
