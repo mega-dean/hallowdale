@@ -61,9 +61,9 @@ let init
   let ghosts_file : ghosts_file = Ghost.read_config () in
   let use_json_config configs pose_name =
     let config =
-      match List.find_opt (fun (tc : texture_config) -> tc.pose_name = pose_name) configs with
+      match List.find_opt (fun (tc : texture_config) -> tc.path.pose_name = pose_name) configs with
       | None ->
-        let ghost_name = (List.nth configs 0).character_name in
+        let ghost_name = (List.nth configs 0).path.character_name in
         failwithf "could not find pose config in ghosts/config.json for '%s' for ghost %s" pose_name
           ghost_name
       | Some v -> v

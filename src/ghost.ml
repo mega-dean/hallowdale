@@ -17,9 +17,7 @@ let read_config () : ghosts_file =
   let parse_texture_config character_name ((pose_name, ghost_pose) : string * Json_t.texture_config)
       : texture_config =
     {
-      asset_dir = GHOSTS;
-      character_name;
-      pose_name;
+      path = { asset_dir = GHOSTS; character_name; pose_name };
       count = ghost_pose.count;
       duration = { seconds = ghost_pose.duration };
       x_offset = ghost_pose.x_offset |> Int.to_float;
@@ -2275,12 +2273,10 @@ let load_shared_textures (shared_texture_configs : (string * texture_config) lis
       match List.assoc_opt config_name' shared_texture_configs with
       | Some config ->
         (* the `with pose_name` is also because of the "nail" config naming *)
-        { config with pose_name }
+        { config with path = { config.path with pose_name } }
       | None ->
         {
-          asset_dir = GHOSTS;
-          character_name = "shared";
-          pose_name;
+          path = { asset_dir = GHOSTS; character_name = "shared"; pose_name };
           x_offset = 0.;
           y_offset = 0.;
           duration = { seconds = 0. };

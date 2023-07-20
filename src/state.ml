@@ -28,9 +28,7 @@ let init () : state =
     in
     Sprite.build_texture_from_config ~once
       {
-        asset_dir = NPCS;
-        character_name = "shared";
-        pose_name = name;
+        path = { asset_dir = NPCS; character_name = "shared"; pose_name = name };
         count = config.count;
         duration = { seconds = config.duration };
         x_offset = 0.;
@@ -46,9 +44,7 @@ let init () : state =
   let ability_outlines =
     Sprite.build_texture_from_config
       {
-        asset_dir = GHOSTS;
-        character_name = "shared";
-        pose_name = "ability-outlines";
+        path = { asset_dir = GHOSTS; character_name = "shared"; pose_name = "ability-outlines" };
         count = 1;
         duration = { seconds = 0. };
         x_offset = 0.;
@@ -60,9 +56,7 @@ let init () : state =
     let json_config = List.assoc "damage" shared_enemy_configs in
     Sprite.build_texture_from_config ~particle:true
       {
-        asset_dir = ENEMIES;
-        character_name = "shared";
-        pose_name = "damage";
+        path = { asset_dir = ENEMIES; character_name = "shared"; pose_name = "damage" };
         count = json_config.count;
         duration = { seconds = json_config.duration };
         x_offset = 0.;
@@ -71,14 +65,11 @@ let init () : state =
   in
 
   let platforms =
-    let texture-config = 
     let load_platform_texture name =
       ( name,
         Sprite.build_texture_from_config
           {
-            asset_dir = TILED;
-            character_name = "platforms";
-            pose_name = name;
+            path = { asset_dir = TILED; character_name = "platforms"; pose_name = name };
             count = 1;
             duration = { seconds = 0. };
             x_offset = 0.;
@@ -86,8 +77,8 @@ let init () : state =
           } )
     in
     let path =
-      Sprite.get_path 
-      (* CLEANUP maybe just expose Sprite.get_path *)fmt "../assets/%s/%s/" (Show.asset_dir TILED) 
+      (* this is a little duplicated with Sprite.get_path, but not worth consolidating *)
+      fmt "../assets/%s/%s/" (Show.asset_dir TILED) "platforms"
     in
 
     let check_file filename =
@@ -544,11 +535,7 @@ let tick (state : state) =
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
         state.debug.rects <-
-          List.map
-            (fun (s : sprite) ->
-              tmp "setting debug rect: %s" (Show.rect s.dest);
-              (Raylib.Color.orange, s.dest))
-            game.room.platforms
+          List.map (fun (s : sprite) -> (Raylib.Color.orange, s.dest)) game.room.platforms
           @ state.debug.rects;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)

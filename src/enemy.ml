@@ -49,7 +49,7 @@ let last_damage (enemy : enemy) : time =
   { at = !damage }
 
 let load_pose (texture_config : texture_config) : string * texture =
-  (texture_config.pose_name, Sprite.build_texture_from_config texture_config)
+  (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
 
 let set_pose (enemy : enemy) (pose_name : string) : unit =
   match List.assoc_opt pose_name enemy.textures with

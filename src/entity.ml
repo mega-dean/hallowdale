@@ -381,13 +381,11 @@ let to_texture_config asset_dir character_name ((pose_name, json) : string * Jso
     duration = { seconds = json.duration };
     x_offset = json.x_offset |> Int.to_float;
     y_offset = json.y_offset |> Int.to_float;
-    asset_dir;
-    character_name;
-    pose_name;
+    path = { asset_dir; character_name; pose_name };
   }
 
 let load_pose (texture_config : texture_config) : string * texture =
-  (texture_config.pose_name, Sprite.build_texture_from_config texture_config)
+  (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
 
 let create_from_textures
     ?(collision = None)
@@ -403,14 +401,14 @@ let create_from_textures
   let validate_configs_are_complete () =
     let get_filenames asset_dir char_name = File.ls (fmt "../assets/%s/%s" asset_dir char_name) in
     let config_names =
-      texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name)
+      texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
     in
-    let png_names = get_filenames (Show.asset_dir config.asset_dir) config.character_name in
+    let png_names = get_filenames (Show.asset_dir config.path.asset_dir) config.path.character_name in
 
     let validate_png_name png_name =
       if not (List.mem png_name config_names) then
         failwithf "found %s image '%s' that has no corresponding config in enemies.json"
-          config.character_name png_name
+          config.path.character_name png_name
     in
 
     let validate_config_name config_name =
@@ -420,19 +418,19 @@ let create_from_textures
           Str.first_chars config_name (String.length config_name - 4)
         in
         failwithf "found %s texture_config for '%s' that has no corresponding %s.png"
-          config.character_name short short)
+          config.path.character_name short short)
     in
     List.iter validate_png_name png_names;
     List.iter validate_config_name config_names
   in
   let initial_texture =
     match List.assoc_opt "idle" textures with
-    | None -> failwithf "could not find 'idle' texture for %s" config.character_name
+    | None -> failwithf "could not find 'idle' texture for %s" config.path.character_name
     | Some texture -> texture
   in
   let texture_config = List.nth texture_configs 0 in
   validate_configs_are_complete ();
-  ( create ~collision ~gravity_multiplier texture_config.character_name initial_texture entity_dest,
+  ( create ~collision ~gravity_multiplier texture_config.path.character_name initial_texture entity_dest,
     textures )
 
 let create_from_texture_configs

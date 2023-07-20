@@ -165,14 +165,18 @@ type asset_dir =
   | NPCS
   | TILED
 
-(* used to load textures to populate npc_texture_cache or ghost_textures *)
-type texture_config = {
+type texture_path = {
   asset_dir : asset_dir;
   (* this is either the npc name or the ghost name, capitalized like a variant name
      eg. BRITTA or LOCKER_BOY *)
   character_name : string;
   (* this is the name of the specific pose being loaded, corresponding to a .png file *)
   pose_name : string;
+}
+
+(* used to load textures to populate npc_texture_cache or ghost_textures *)
+type texture_config = {
+  path : texture_path;
   (* these values all come from the texture config in json *)
   x_offset : float;
   y_offset : float;
