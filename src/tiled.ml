@@ -415,16 +415,13 @@ let load_tiles
   in
   Array.init json_tileset.tile_count load_tile
 
-(* FIXME this needs to handle "collection of object" tilesets, for template images *)
 let load_tilesets (room : Json_t.room) : (string * tileset) list =
   let load_tileset source' : (string * tileset) option =
     let parse_tileset (source : Json_t.tileset_source) : Json_t.tileset option =
       let ignore_tileset () =
-        if String.starts_with ~prefix:"../templates/" source.source then
-          tmp "ignoring templates file: %s" source.source;
-        (* templates are parsed separately *)
+        (* the platforms tileset is parsed separately *)
         String.equal "../tilesets/world-map.json" source.source
-        || String.starts_with ~prefix:"../templates/" source.source
+        || String.starts_with ~prefix:"../platforms/" source.source
       in
       if ignore_tileset () then
         None
@@ -435,7 +432,6 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
           (* kinda weird that this path ends up including "/tilesets/../tilesets/" *)
           fmt "../assets/tiled/tilesets/%s" source.source
         in
-        tmp " ============================= reading full path: %s" full_path;
         Some (File.read full_path |> Json_j.tileset_of_string))
     in
 
@@ -487,10 +483,10 @@ let init_world (path : string) : (room_id * room_location) list =
   let rooms = List.map get_room_location json_world.global_maps in
   let files_in_rooms_dir = ref StrSet.empty in
   let add_to_set s =
-    if Str.last_chars s 5 = ".json" && not (String.equal s "template.json") then
+    if Str.last_chars s 5 = ".json" then
       files_in_rooms_dir := StrSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
   in
-  Sys.readdir (File.convert_path "../assets/tiled/rooms") |> Array.iter add_to_set;
+  File.ls "../assets/tiled/rooms" |> List.iter add_to_set;
   let filenames_without_files : str_set =
     StrSet.diff !filenames_in_world_file !files_in_rooms_dir
   in

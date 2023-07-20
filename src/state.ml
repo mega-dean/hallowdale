@@ -71,20 +71,34 @@ let init () : state =
   in
 
   let platforms =
+    let texture-config = 
     let load_platform_texture name =
-      (name, Sprite.build_texture_from_config
-        {
-          asset_dir = TILED;
-          character_name = "templates";
-          pose_name = name;
-          count = 1;
-          duration = { seconds = 0. };
-          x_offset = 0.;
-          y_offset = 0.;
-        })
+      ( name,
+        Sprite.build_texture_from_config
+          {
+            asset_dir = TILED;
+            character_name = "platforms";
+            pose_name = name;
+            count = 1;
+            duration = { seconds = 0. };
+            x_offset = 0.;
+            y_offset = 0.;
+          } )
     in
-    (* FIXME read all .png files in assets/tiled/templates *)
-    List.map load_platform_texture ["88-bench"]
+    let path =
+      Sprite.get_path 
+      (* CLEANUP maybe just expose Sprite.get_path *)fmt "../assets/%s/%s/" (Show.asset_dir TILED) 
+    in
+
+    let check_file filename =
+      let name, extension = Utils.split_at_first '.' filename in
+      if extension = "png" then
+        Some name
+      else
+        None
+    in
+    let texture_names = List.filter_map check_file (File.ls path) in
+    List.map load_platform_texture texture_names
   in
 
   let global =
@@ -94,7 +108,15 @@ let init () : state =
       enemy_configs;
       npc_configs;
       textures =
-        { ability_outlines; damage; pickup_indicator; main_menu; door_lever; door_lever_struck; platforms };
+        {
+          ability_outlines;
+          damage;
+          pickup_indicator;
+          main_menu;
+          door_lever;
+          door_lever_struck;
+          platforms;
+        };
     }
   in
 
@@ -522,7 +544,12 @@ let tick (state : state) =
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
         state.debug.rects <-
-          List.map (fun r -> (Raylib.Color.orange, r)) game.room.platforms @ state.debug.rects;
+          List.map
+            (fun (s : sprite) ->
+              tmp "setting debug rect: %s" (Show.rect s.dest);
+              (Raylib.Color.orange, s.dest))
+            game.room.platforms
+          @ state.debug.rects;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         if state.should_save then (

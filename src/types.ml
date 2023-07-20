@@ -165,7 +165,6 @@ type asset_dir =
   | NPCS
   | TILED
 
-(* FIXME this isn't working very well for templates *)
 (* used to load textures to populate npc_texture_cache or ghost_textures *)
 type texture_config = {
   asset_dir : asset_dir;
@@ -1183,7 +1182,7 @@ type room = {
   camera_bounds : bounds;
   cache : room_cache;
   triggers : triggers;
-  platforms : rect list;
+  platforms : sprite list;
   enemies : (enemy_id * enemy) list;
   exits : rect list;
   mutable respawn_pos : vector;

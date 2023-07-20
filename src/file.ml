@@ -6,6 +6,9 @@ let convert_path path_with_slashes =
   let filename_parts = String.split_on_char '/' path_with_slashes in
   List.fold_left Filename.concat "" filename_parts
 
+let ls (dir : string) : string list =
+  Sys.readdir (convert_path dir) |> Array.to_list
+
 let read (filename : string) : string =
   let filename' = convert_path filename in
   let ch = open_in_bin filename' in

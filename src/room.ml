@@ -49,7 +49,7 @@ type room_params = {
   pickup_indicator_texture : texture;
   lever_texture : texture;
   respawn_pos : vector;
-  (* FIXME probably need to add platforms : rect list *)
+  platforms : (string * texture) list;
 }
 
 let init (params : room_params) : room =
@@ -74,7 +74,7 @@ let init (params : room_params) : room =
   in
 
   let json_room = parse_room (fmt "%s.json" params.file_name) in
-  let platforms : rect list ref = ref [] in
+  let platforms : sprite list ref = ref [] in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : trigger list ref = ref [] in
   let lever_triggers : (sprite * int * trigger) list ref = ref [] in
@@ -102,9 +102,30 @@ let init (params : room_params) : room =
         (name, rect)
     in
 
-    let make_platform (coll_rect : Json_t.coll_rect) =
-      (* CLEANUP make sure this is scaling by the right amount *)
-      platforms := Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h :: !platforms
+    let make_platform idx (coll_rect : Json_t.coll_rect) =
+      if coll_rect.name = "" then failwith "platform rects need to have a name";
+      let texture_name = coll_rect.name in
+      let texture =
+        match List.assoc_opt texture_name params.platforms with
+        | None ->
+          failwithf "could not find platform %s, got %d platforms with names %s" texture_name
+            (List.length params.platforms)
+            (List.map fst params.platforms |> join)
+        | Some texture -> texture
+      in
+      (* let w, h = get_scaled_texture_size texture in *)
+      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      let sprite : sprite =
+        {
+          ident = fmt "%s_%d" texture_name idx;
+          dest;
+          texture;
+          facing_right = true;
+          (* this could be Some DEST, but they are checked directly *)
+          collision = None;
+        }
+      in
+      platforms := sprite :: !platforms
     in
 
     let categorize (coll_rect : Json_t.coll_rect) =
@@ -280,13 +301,7 @@ let init (params : room_params) : room =
     match jl with
     | `OBJECT_LAYER json -> (
       match json.name with
-      (* FIXME add "floors"
-         - probably make a separate `categorize` fn, but reuse some of the functions defined in there
-         - needs to look up the corresponding texture from the name and set the (scaled) location/size
-         - set this to room.platforms
-         - might need to fix up some of the texture lookup/caching code so it doesn't keep reloading the same image multiple times
-      *)
-      | "platforms" -> List.iter make_platform json.objects
+      | "platforms" -> List.iteri make_platform json.objects
       | "triggers" -> List.iter categorize json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
@@ -468,8 +483,8 @@ let init (params : room_params) : room =
   let cache =
     match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
     | None -> { jug_fragments_by_gid = []; tilesets_by_path }
-    | Some tileset_image ->
-      let jug_tileset_img = Tiled.Tileset.image tileset_image in
+    | Some tileset ->
+      let jug_tileset_img = Tiled.Tileset.image tileset in
 
       let make_stub width tile_x tile_y =
         (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
@@ -506,30 +521,25 @@ let init (params : room_params) : room =
             (* always render a stub, even if it is an empty tile image *)
             config.h + 1
           in
-          (* CLEANUP use tileset_image instead of matching again *)
-          match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
-          | None -> failwith "no jugs tileset"
-          | Some tileset ->
-            let get_coll_wh id : float * float =
-              (* id is (firstgid + idx) *)
-              match Tiled.get_object_collision tileset.json jug_firstgid id with
-              | None -> failwithf "expected one collision rect object, got 0 for gid %d" id
-              | Some coll_rect -> (coll_rect.w, coll_rect.h)
-            in
-            let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option
-                =
-              let w, h = get_coll_wh (jug_firstgid + collision.id) in
-              (* this check only supports the left column of wide jugs *)
-              if collision.id mod tileset.json.columns = tile_x then (
-                let y = (collision_idx |> Int.to_float) *. tileset.json.tile_h in
-                Some (make_fragment config.jug_name tile_x tile_y y w h))
-              else
-                None
-            in
-            let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
-            let collisions = List.filter in_this_column tileset.json.collisions in
-            let fragments = List.mapi build_fragment collisions in
-            fragments |> Utils.filter_somes
+          let get_coll_wh id : float * float =
+            (* id is (firstgid + idx) *)
+            match Tiled.get_object_collision tileset.json jug_firstgid id with
+            | None -> failwithf "expected one collision rect object, got 0 for gid %d" id
+            | Some coll_rect -> (coll_rect.w, coll_rect.h)
+          in
+          let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option =
+            let w, h = get_coll_wh (jug_firstgid + collision.id) in
+            (* this check only supports the left column of wide jugs *)
+            if collision.id mod tileset.json.columns = tile_x then (
+              let y = (collision_idx |> Int.to_float) *. tileset.json.tile_h in
+              Some (make_fragment config.jug_name tile_x tile_y y w h))
+            else
+              None
+          in
+          let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
+          let collisions = List.filter in_this_column tileset.json.collisions in
+          let fragments = List.mapi build_fragment collisions in
+          fragments |> Utils.filter_somes
         in
         if List.length fragments = 0 then
           failwithf
@@ -639,6 +649,7 @@ let change_current_room
         pickup_indicator_texture = state.global.textures.pickup_indicator;
         lever_texture = state.global.textures.door_lever;
         respawn_pos = ghost_start_pos;
+        platforms = state.global.textures.platforms;
       }
   in
   game.ghost.entity.current_floor <- None;

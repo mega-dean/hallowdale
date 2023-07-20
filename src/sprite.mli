@@ -5,6 +5,8 @@ val reset_texture : texture -> unit
 val advance_animation : float -> texture -> sprite -> unit
 val advance_or_despawn : float -> texture -> sprite -> sprite option
 
+val get_path : texture_config -> string
+
 val build_texture_from_config :
   ?scale:float -> ?particle:bool -> ?once:bool -> texture_config -> texture
 

@@ -162,6 +162,7 @@ let init
         pickup_indicator_texture = global.textures.pickup_indicator;
         lever_texture = global.textures.door_lever;
         respawn_pos = { x = save_file.respawn_x; y = save_file.respawn_y };
+        platforms = global.textures.platforms;
       }
   in
   room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;

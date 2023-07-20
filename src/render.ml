@@ -207,6 +207,9 @@ let draw_fg_tiles room camera_x camera_y frame_idx : unit =
   draw_tiles room camera_x camera_y frame_idx
     (List.filter (fun (layer : layer) -> layer.config.render.fg) room.layers)
 
+let draw_floating_platforms (room : room) camera_x camera_y frame_idx : unit =
+  List.iter draw_sprite room.platforms
+
 (* - lines are broken up into line_segments based on colors - this is three line_segments:
    I {{red}} said {{white}} "Betty Grable"
    - a line_segment belongs to a specific line, so it can't be split across multiple lines
@@ -1151,15 +1154,13 @@ let tick (state : state) =
     Raylib.clear_background game.room.area.bg_color;
     Raylib.begin_mode_2d state.camera.raylib;
     draw_bg_tiles game.room camera_x camera_y state.frame.idx;
-    draw_solid_tiles game.room camera_x camera_y state.frame.idx;
-    (* FIXME draw_floating_platforms
-       - maybe draw after ghost though
-    *)
     draw_levers ();
     draw_npcs game.room.npcs;
+    draw_solid_tiles game.room camera_x camera_y state.frame.idx;
     draw_ghosts game.ghosts';
     draw_ghost game.ghost;
     draw_enemies game.room.enemies;
+    draw_floating_platforms game.room camera_x camera_y state.frame.idx;
     draw_object_trigger_indicators ();
     draw_loose_projectiles ();
     draw_fg_tiles game.room camera_x camera_y state.frame.idx;

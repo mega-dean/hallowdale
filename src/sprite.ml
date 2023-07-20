@@ -86,6 +86,11 @@ let get_path (texture_config : texture_config) : string =
     (Show.asset_dir texture_config.asset_dir)
     texture_config.character_name texture_config.pose_name
 
+let get_path' (asset_dir) : string =
+  fmt "%s/%s/%s"
+    (Show.asset_dir texture_config.asset_dir)
+    texture_config.character_name texture_config.pose_name
+
 let build_texture'
     ?(scale = Config.scale.ghost)
     ?(particle = false)

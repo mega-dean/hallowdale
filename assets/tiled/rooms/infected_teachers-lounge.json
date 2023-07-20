@@ -48,7 +48,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -92,7 +92,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -104,38 +104,14 @@
                 {
                  "gid":9663,
                  "height":30,
-                 "id":25,
-                 "name":"",
+                 "id":36,
+                 "name":"88-bench",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":88,
-                 "x":63,
-                 "y":222
-                }, 
-                {
-                 "gid":9663,
-                 "height":30,
-                 "id":28,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":88,
-                 "x":45,
-                 "y":375
-                }, 
-                {
-                 "gid":9663,
-                 "height":30,
-                 "id":29,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":88,
-                 "x":27,
-                 "y":302
+                 "x":60.6666666666667,
+                 "y":255.666666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -169,7 +145,7 @@
          "parallaxx":0.2,
          "parallaxy":0.2,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -199,7 +175,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -229,7 +205,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -259,7 +235,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -289,7 +265,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -319,7 +295,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -349,7 +325,7 @@
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -378,7 +354,7 @@
          "name":"hidden-boss-doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -407,7 +383,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -436,7 +412,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -466,7 +442,7 @@
          "opacity":1,
          "parallaxx":1.2,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
@@ -495,13 +471,13 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":49,
          "x":0,
          "y":0
         }],
  "nextlayerid":30,
- "nextobjectid":31,
+ "nextobjectid":37,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
@@ -533,7 +509,7 @@
         }, 
         {
          "firstgid":9663,
-         "source":"..\/templates\/platforms.json"
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":24,
  "type":"map",

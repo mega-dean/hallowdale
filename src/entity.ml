@@ -86,6 +86,18 @@ let apply_v ?(debug = None) dt (e : entity) =
     else
       e.x_recoil <- None
 
+let get_platform_collisions (entity : entity) (platforms : sprite list) : (collision * rect) list =
+  let collisions : (collision * rect) list ref = ref [] in
+  let check_collision (sprite : sprite) =
+    match Collision.with_entity entity sprite.dest with
+    | None -> ()
+    | Some coll ->
+      (* TODO apply dynamic platform effects *)
+      collisions := (coll, sprite.dest) :: !collisions
+  in
+  List.iter check_collision platforms;
+  !collisions
+
 let get_tile_collisions (layers : layer list) (entity : entity) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (layer : layer) =
@@ -104,10 +116,9 @@ let get_bench_collisions (room : room) (entity : entity) : (collision * rect) li
   let layers = List.filter (fun (l : layer) -> l.name = "benches") room.layers in
   get_tile_collisions layers entity
 
-(* FIXME also check room.platforms *)
 let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
-  get_tile_collisions layers entity
+  get_tile_collisions layers entity @ get_platform_collisions entity room.platforms
 
 let get_water_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.water) room.layers in
@@ -390,9 +401,7 @@ let create_from_textures
     List.nth texture_configs 0
   in
   let validate_configs_are_complete () =
-    let get_filenames asset_dir char_name =
-      Sys.readdir (File.convert_path (fmt "../assets/%s/%s" asset_dir char_name)) |> Array.to_list
-    in
+    let get_filenames asset_dir char_name = File.ls (fmt "../assets/%s/%s" asset_dir char_name) in
     let config_names =
       texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.pose_name)
     in

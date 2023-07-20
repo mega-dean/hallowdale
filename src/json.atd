@@ -11,23 +11,23 @@ type tile_layer = {
   ~offset_y <ocaml default="0.0"> <json name="offsety"> : float;
 }
 
-type object_layer = {
-  name : string;
-  objects : coll_rect list;
-}
-
 type image_layer = {
   name : string;
   image : string;
 }
 
-(* FIXME
-type template = {
-   name : string;
-   w : float;
-   h : float;
+type object_layer = {
+  name : string;
+  objects : coll_rect list;
 }
- *)
+
+type coll_rect = {
+  name : string;
+  x : float;
+  y : float;
+  h <json name="height"> : float;
+  w <json name="width"> : float;
+}
 
 (* the Type_field adapter pulls out the "type" field from json
    from: { ..., "type": "some-type", ... }
@@ -38,14 +38,6 @@ type layer = [
     IMAGE_LAYER <json name="imagelayer"> of image_layer |
     OBJECT_LAYER <json name="objectgroup"> of object_layer
 ] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
-
-type coll_rect = {
-  name : string;
-  x : float;
-  y : float;
-  h <json name="height"> : float;
-  w <json name="width"> : float;
-}
 
 type object_group = {
   objects : coll_rect list;
@@ -63,7 +55,6 @@ type tileset = {
   source <json name="image"> : string;
   columns : int;
   (* only tiles with custom collision rects have a config here *)
-  (* FIXME "tiles" is now being used for template images too, so this needs to be changed *)
   ~collisions <json name="tiles"> : collision list;
   tile_count <json name="tilecount"> : int;
 }
