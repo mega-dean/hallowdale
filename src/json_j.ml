@@ -30,6 +30,7 @@ type tileset_source = Json_t.tileset_source = {
 }
 
 type coll_rect = Json_t.coll_rect = {
+  gid: int;
   name: string;
   x: float;
   y: float;
@@ -1358,6 +1359,17 @@ let write_coll_rect : _ -> coll_rect -> _ = (
   fun ob (x : coll_rect) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
+    if x.gid <> 0 then (
+      if !is_first then
+        is_first := false
+      else
+        Buffer.add_char ob ',';
+        Buffer.add_string ob "\"gid\":";
+      (
+        Yojson.Safe.write_int
+      )
+        ob x.gid;
+    );
     if !is_first then
       is_first := false
     else
@@ -1413,6 +1425,7 @@ let read_coll_rect = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
+    let field_gid = ref (0) in
     let field_name = ref (None) in
     let field_x = ref (None) in
     let field_y = ref (None) in
@@ -1430,18 +1443,26 @@ let read_coll_rect = (
             | 1 -> (
                 match String.unsafe_get s pos with
                   | 'x' -> (
-                      1
+                      2
                     )
                   | 'y' -> (
-                      2
+                      3
                     )
                   | _ -> (
                       -1
                     )
               )
+            | 3 -> (
+                if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
             | 4 -> (
                 if String.unsafe_get s pos = 'n' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' then (
-                  0
+                  1
                 )
                 else (
                   -1
@@ -1449,7 +1470,7 @@ let read_coll_rect = (
               )
             | 5 -> (
                 if String.unsafe_get s pos = 'w' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' then (
-                  4
+                  5
                 )
                 else (
                   -1
@@ -1457,7 +1478,7 @@ let read_coll_rect = (
               )
             | 6 -> (
                 if String.unsafe_get s pos = 'h' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'h' && String.unsafe_get s (pos+5) = 't' then (
-                  3
+                  4
                 )
                 else (
                   -1
@@ -1472,6 +1493,14 @@ let read_coll_rect = (
       (
         match i with
           | 0 ->
+            if not (Yojson.Safe.read_null_if_possible p lb) then (
+              field_gid := (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              );
+            )
+          | 1 ->
             field_name := (
               Some (
                 (
@@ -1479,7 +1508,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 1 ->
+          | 2 ->
             field_x := (
               Some (
                 (
@@ -1487,7 +1516,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 2 ->
+          | 3 ->
             field_y := (
               Some (
                 (
@@ -1495,7 +1524,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 3 ->
+          | 4 ->
             field_h := (
               Some (
                 (
@@ -1503,7 +1532,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 4 ->
+          | 5 ->
             field_w := (
               Some (
                 (
@@ -1527,18 +1556,26 @@ let read_coll_rect = (
               | 1 -> (
                   match String.unsafe_get s pos with
                     | 'x' -> (
-                        1
+                        2
                       )
                     | 'y' -> (
-                        2
+                        3
                       )
                     | _ -> (
                         -1
                       )
                 )
+              | 3 -> (
+                  if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 4 -> (
                   if String.unsafe_get s pos = 'n' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' then (
-                    0
+                    1
                   )
                   else (
                     -1
@@ -1546,7 +1583,7 @@ let read_coll_rect = (
                 )
               | 5 -> (
                   if String.unsafe_get s pos = 'w' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' then (
-                    4
+                    5
                   )
                   else (
                     -1
@@ -1554,7 +1591,7 @@ let read_coll_rect = (
                 )
               | 6 -> (
                   if String.unsafe_get s pos = 'h' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'h' && String.unsafe_get s (pos+5) = 't' then (
-                    3
+                    4
                   )
                   else (
                     -1
@@ -1569,6 +1606,14 @@ let read_coll_rect = (
         (
           match i with
             | 0 ->
+              if not (Yojson.Safe.read_null_if_possible p lb) then (
+                field_gid := (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                );
+              )
+            | 1 ->
               field_name := (
                 Some (
                   (
@@ -1576,7 +1621,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 1 ->
+            | 2 ->
               field_x := (
                 Some (
                   (
@@ -1584,7 +1629,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 2 ->
+            | 3 ->
               field_y := (
                 Some (
                   (
@@ -1592,7 +1637,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 3 ->
+            | 4 ->
               field_h := (
                 Some (
                   (
@@ -1600,7 +1645,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 4 ->
+            | 5 ->
               field_w := (
                 Some (
                   (
@@ -1617,6 +1662,7 @@ let read_coll_rect = (
     with Yojson.End_of_object -> (
         (
           {
+            gid = !field_gid;
             name = (match !field_name with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "name");
             x = (match !field_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x");
             y = (match !field_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y");

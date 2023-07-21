@@ -102,16 +102,40 @@
          "name":"platforms",
          "objects":[
                 {
-                 "gid":9663,
-                 "height":30,
-                 "id":36,
-                 "name":"88-bench",
+                 "gid":9668,
+                 "height":65,
+                 "id":37,
+                 "name":"fresh-coffee",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":88,
-                 "x":60.6666666666667,
-                 "y":255.666666666667
+                 "width":40,
+                 "x":128.076666666667,
+                 "y":249.4335
+                }, 
+                {
+                 "gid":9666,
+                 "height":35,
+                 "id":38,
+                 "name":"couch",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":52.4266666666666,
+                 "y":149.5665
+                }, 
+                {
+                 "gid":9670,
+                 "height":24,
+                 "id":39,
+                 "name":"drawers",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":196.906666666666,
+                 "y":192.5205
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -477,7 +501,7 @@
          "y":0
         }],
  "nextlayerid":30,
- "nextobjectid":37,
+ "nextobjectid":40,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

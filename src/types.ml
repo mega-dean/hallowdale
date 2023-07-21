@@ -973,6 +973,7 @@ type layer_render_config = {
 type layer_config = {
   render : layer_render_config;
   collides_with_ghost : bool;
+  (* FIXME remove *)
   hazard : bool;
   pogoable : bool;
   destroyable : bool;
@@ -1123,6 +1124,8 @@ type jug_config = {
 type room_cache = {
   jug_fragments_by_gid : (int * jug_fragments) list;
   tilesets_by_path : (string * tileset) list;
+  (* this is an image-based tileset, so it's treated uniquely in some ways *)
+  platform_textures : texture list;
 }
 
 type trigger = {
@@ -1185,8 +1188,6 @@ type room = {
   mutable idx_configs : (int * idx_config) list;
   camera_bounds : bounds;
   cache : room_cache;
-  triggers : triggers;
-  platforms : sprite list;
   enemies : (enemy_id * enemy) list;
   exits : rect list;
   mutable respawn_pos : vector;
@@ -1196,6 +1197,15 @@ type room = {
   mutable interaction_label : (string * rect) option;
   (* this is for projectiles that are spawned by enemies after they die *)
   mutable loose_projectiles : projectile list;
+  (* these things are built from object layers *)
+  triggers : triggers;
+  floors : rect list;
+  platforms : sprite list;
+  (* TODO maybe make a new type hazard with spikes/acid/etc *)
+  spikes : rect list;
+  acid : rect list;
+  (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
+  hazards : rect list;
 }
 
 (* these are all in pixels, scaled by Config.scale.room *)

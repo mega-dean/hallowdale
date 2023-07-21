@@ -7,18 +7,55 @@
     },
  "margin":0,
  "name":"platforms",
+ "objectalignment":"topleft",
  "spacing":0,
- "tilecount":1,
+ "tilecount":7,
  "tiledversion":"1.10.1",
- "tileheight":30,
+ "tileheight":72,
  "tiles":[
         {
-         "id":0,
-         "image":"88-bench.png",
-         "imageheight":30,
-         "imagewidth":88
+         "id":1,
+         "image":"atm.png",
+         "imageheight":44,
+         "imagewidth":24
+        }, 
+        {
+         "id":2,
+         "image":"cold-drinks.png",
+         "imageheight":72,
+         "imagewidth":46
+        }, 
+        {
+         "id":3,
+         "image":"couch.png",
+         "imageheight":35,
+         "imagewidth":72
+        }, 
+        {
+         "id":4,
+         "image":"file-cabinet.png",
+         "imageheight":64,
+         "imagewidth":24
+        }, 
+        {
+         "id":5,
+         "image":"fresh-coffee.png",
+         "imageheight":65,
+         "imagewidth":40
+        }, 
+        {
+         "id":6,
+         "image":"vending-machine.png",
+         "imageheight":65,
+         "imagewidth":44
+        }, 
+        {
+         "id":7,
+         "image":"drawers.png",
+         "imageheight":24,
+         "imagewidth":48
         }],
- "tilewidth":88,
+ "tilewidth":72,
  "type":"tileset",
  "version":"1.10"
 }

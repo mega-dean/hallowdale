@@ -208,6 +208,41 @@ module Room = struct
   let dest_wh (json_room : t) ?(scale = 1.) () : float * float =
     Tile.scale_dest_size json_room.tile_w json_room.tile_h ~scale
 
+  let look_up_platform (json_room : t) platform_textures_by_name (gid' : int) : string * texture =
+    let gid = Tile.raw_gid gid' in
+    let bits = Tile.transformation_bits gid' in
+    (* TODO get rid of this fn and just try accessing `tileset.tiles.(gid - firstgid)` for each
+       tileset_source, and rescue out-of-bounds *)
+    let platforms_tileset_source =
+      List.find
+        (fun (source : Json_t.tileset_source) ->
+          String.ends_with ~suffix:"platforms.json" source.source)
+        json_room.tileset_sources
+    in
+    let texture_name =
+      List.nth
+        [
+          (* CLEANUP this order is copied from the platforms.json tileset, so it should be read from there
+             - if it can't for some reason, it's still probably worth maintaining this list manually for now, since it removes the requirement for platforms to have names
+             - this could definitely be done for change_current_room, but initial room load will be tricky
+             -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init
+          *)
+          "atm";
+          "cold-drinks";
+          "couch";
+          "file-cabinet";
+          "fresh-coffee";
+          "vending-machine";
+          "drawers";
+        ]
+        (gid - platforms_tileset_source.firstgid - 1)
+    in
+    match List.assoc_opt texture_name platform_textures_by_name with
+    | None ->
+      failwithf "could not find platform %s, keys: %s" texture_name
+        (platform_textures_by_name |> List.map fst |> join)
+    | Some t -> (texture_name, t)
+
   let look_up_tile (json_room : t) ?(animation_offset = 0) room_cache (gid' : int) : texture * int =
     (* TODO this is checking all layers for transformations, even though it's only being used for jugs *)
     let gid = Tile.raw_gid gid' in
@@ -419,7 +454,9 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
   let load_tileset source' : (string * tileset) option =
     let parse_tileset (source : Json_t.tileset_source) : Json_t.tileset option =
       let ignore_tileset () =
-        (* the platforms tileset is parsed separately *)
+        (* the platforms tileset has to be parsed separately because Tiled uses the key "objects"
+           for different things, so image-based tilesets (like platforms) aren't compatible
+           with regular tilesets *)
         String.equal "../tilesets/world-map.json" source.source
         || String.starts_with ~prefix:"../platforms/" source.source
       in

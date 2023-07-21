@@ -86,6 +86,16 @@ let apply_v ?(debug = None) dt (e : entity) =
     else
       e.x_recoil <- None
 
+let get_rect_collisions (entity : entity) (rects : rect list) : (collision * rect) list =
+  let collisions : (collision * rect) list ref = ref [] in
+  let check_collision (rect : rect) =
+    match Collision.with_entity entity rect with
+    | None -> ()
+    | Some coll -> collisions := (coll, rect) :: !collisions
+  in
+  List.iter check_collision rects;
+  !collisions
+
 let get_platform_collisions (entity : entity) (platforms : sprite list) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (sprite : sprite) =
@@ -98,6 +108,7 @@ let get_platform_collisions (entity : entity) (platforms : sprite list) : (colli
   List.iter check_collision platforms;
   !collisions
 
+(* TODO could consolidate these *)
 let get_tile_collisions (layers : layer list) (entity : entity) : (collision * rect) list =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (layer : layer) =
@@ -118,22 +129,20 @@ let get_bench_collisions (room : room) (entity : entity) : (collision * rect) li
 
 let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
-  get_tile_collisions layers entity @ get_platform_collisions entity room.platforms
+  get_tile_collisions layers entity
+  @ get_platform_collisions entity room.platforms
+  @ get_rect_collisions entity room.floors
 
 let get_water_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.water) room.layers in
   get_tile_collisions layers entity
 
 let get_acid_collisions (room : room) (entity : entity) : (collision * rect) list =
-  let layers = List.filter (fun (l : layer) -> l.name = "acid") room.layers in
-  get_tile_collisions layers entity
+  get_rect_collisions entity room.acid
 
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
 let get_damage_collisions (room : room) (entity : entity) : (collision * rect) list =
-  let layers =
-    List.filter (fun (l : layer) -> l.config.hazard && not (l.name = "acid")) room.layers
-  in
-  get_tile_collisions layers entity
+  get_rect_collisions entity (room.hazards @ room.spikes)
 
 let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =
   let get_projectile_collision (projectile : projectile) =
@@ -403,7 +412,9 @@ let create_from_textures
     let config_names =
       texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
     in
-    let png_names = get_filenames (Show.asset_dir config.path.asset_dir) config.path.character_name in
+    let png_names =
+      get_filenames (Show.asset_dir config.path.asset_dir) config.path.character_name
+    in
 
     let validate_png_name png_name =
       if not (List.mem png_name config_names) then
@@ -430,7 +441,8 @@ let create_from_textures
   in
   let texture_config = List.nth texture_configs 0 in
   validate_configs_are_complete ();
-  ( create ~collision ~gravity_multiplier texture_config.path.character_name initial_texture entity_dest,
+  ( create ~collision ~gravity_multiplier texture_config.path.character_name initial_texture
+      entity_dest,
     textures )
 
 let create_from_texture_configs

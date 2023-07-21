@@ -517,6 +517,15 @@ let resolve_slash_collisions (state : state) (game : game) =
             game.room.progress.removed_idxs_by_layer)
     in
 
+    let maybe_pogo rect =
+      match Collision.with_slash' slash rect with
+      | None -> ()
+      | Some coll -> (
+        match coll.direction with
+        | DOWN -> pogo game.ghost
+        | _ -> ())
+    in
+
     (* destroyable and pogoable layers *)
     let resolve_colliding_layers (layer : layer) =
       if layer.config.destroyable then (
@@ -570,16 +579,8 @@ let resolve_slash_collisions (state : state) (game : game) =
         in
         List.iter resolve_tile_group layer.tile_groups;
         layer.tile_groups <- !new_tile_groups)
-      else if layer.config.pogoable then (
-        let resolve_tile_group (tile_group : tile_group) =
-          match Collision.with_slash' slash tile_group.dest with
-          | None -> ()
-          | Some coll -> (
-            match coll.direction with
-            | DOWN -> pogo game.ghost
-            | _ -> ())
-        in
-        List.iter resolve_tile_group layer.tile_groups)
+      else if layer.config.pogoable then
+        List.iter (fun (tile_group : tile_group) -> maybe_pogo tile_group.dest) layer.tile_groups
     in
 
     let resolve_lever ((lever_sprite, _, trigger) : sprite * int * trigger) =
@@ -616,6 +617,7 @@ let resolve_slash_collisions (state : state) (game : game) =
 
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
+    List.iter maybe_pogo game.room.spikes;
     List.iter resolve_enemy game.room.enemies
 
 let reset_current_status () =

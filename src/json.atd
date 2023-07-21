@@ -22,6 +22,7 @@ type object_layer = {
 }
 
 type coll_rect = {
+  ~gid : int;
   name : string;
   x : float;
   y : float;
@@ -39,6 +40,7 @@ type layer = [
     OBJECT_LAYER <json name="objectgroup"> of object_layer
 ] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
 
+(* FIXME see how polygons are exported (for collision shapes) *)
 type object_group = {
   objects : coll_rect list;
 }
@@ -54,7 +56,9 @@ type tileset = {
   tile_w <json name="tilewidth">  : float;
   source <json name="image"> : string;
   columns : int;
-  (* only tiles with custom collision rects have a config here *)
+  (* only tiles with custom collision rects have a config here
+     - this is also used for image-based tilesets' images
+  *)
   ~collisions <json name="tiles"> : collision list;
   tile_count <json name="tilecount"> : int;
 }

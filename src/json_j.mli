@@ -30,6 +30,7 @@ type tileset_source = Json_t.tileset_source = {
 }
 
 type coll_rect = Json_t.coll_rect = {
+  gid: int;
   name: string;
   x: float;
   y: float;

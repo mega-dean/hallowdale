@@ -263,8 +263,8 @@
             "fileName": "final_boss.json",
             "height": 720,
             "width": 720,
-            "x": 1776,
-            "y": -4248
+            "x": 0,
+            "y": -312
         },
         {
             "fileName": "computer_a.json",

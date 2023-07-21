@@ -5,6 +5,12 @@ open Controls
 
 (* this function initializes state and sets game_context to MAIN_MENU *)
 let init () : state =
+  let print_line s =
+    let left_line = String.make 10 '=' in
+    let right_line = String.make (90 - String.length s) '=' in
+    print "%s %s %s" left_line s right_line
+  in
+
   let world = Tiled.init_world "Deepnest_East" in
   let parse_texture_configs parse_name coll =
     let parse (name, config) = (parse_name "state.init" name, config) in
@@ -64,6 +70,7 @@ let init () : state =
       }
   in
 
+  print_line "loading platforms...";
   let platforms =
     let load_platform_texture name =
       ( name,
@@ -91,6 +98,7 @@ let init () : state =
     let texture_names = List.filter_map check_file (File.ls path) in
     List.map load_platform_texture texture_names
   in
+  print_line "done loading platforms";
 
   let global =
     {
@@ -114,7 +122,8 @@ let init () : state =
   let camera_target = Raylib.Vector2.create 0. 0. in
   let camera = Tiled.create_camera_at camera_target 0. in
 
-  print "initialized state\n=================\n";
+  print_line "done_initializing_state";
+
   {
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
@@ -536,6 +545,10 @@ let tick (state : state) =
 
         state.debug.rects <-
           List.map (fun (s : sprite) -> (Raylib.Color.orange, s.dest)) game.room.platforms
+          @ state.debug.rects;
+
+        state.debug.rects <-
+          List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors
           @ state.debug.rects;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)

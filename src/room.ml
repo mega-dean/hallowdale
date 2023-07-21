@@ -75,6 +75,10 @@ let init (params : room_params) : room =
 
   let json_room = parse_room (fmt "%s.json" params.file_name) in
   let platforms : sprite list ref = ref [] in
+  let floors : rect list ref = ref [] in
+  let spikes : rect list ref = ref [] in
+  let acid : rect list ref = ref [] in
+  let hazards : rect list ref = ref [] in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : trigger list ref = ref [] in
   let lever_triggers : (sprite * int * trigger) list ref = ref [] in
@@ -86,42 +90,59 @@ let init (params : room_params) : room =
   let respawn_triggers : (vector * trigger) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
+  let floor_rect rect =
+    {
+      pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
+      w = rect.w |> Float.floor;
+      h = rect.h |> Float.floor;
+    }
+  in
+
+  let tilesets_by_path = Tiled.load_tilesets json_room in
+
   let get_object_rects (jl : Json_t.layer) =
     let get_object_rect ?(floor = false) ?(hidden = false) name (coll_rect : Json_t.coll_rect) =
       let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       if floor then
-        ( name,
-          {
-            pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
-            w = rect.w |> Float.floor;
-            h = rect.h |> Float.floor;
-          } )
+        (name, floor_rect rect)
       else if hidden then
         (name, { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } })
       else
         (name, rect)
     in
 
+    let make_floor idx (coll_rect : Json_t.coll_rect) =
+      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      floors := dest :: !floors
+    in
+
+    let make_spikes idx (coll_rect : Json_t.coll_rect) =
+      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      spikes := dest :: !spikes
+    in
+
+    let make_hazard idx (coll_rect : Json_t.coll_rect) =
+      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      hazards := dest :: !hazards
+    in
+
+    let make_acid idx (coll_rect : Json_t.coll_rect) =
+      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      acid := dest :: !acid
+    in
+
     let make_platform idx (coll_rect : Json_t.coll_rect) =
-      if coll_rect.name = "" then failwith "platform rects need to have a name";
-      let texture_name = coll_rect.name in
-      let texture =
-        match List.assoc_opt texture_name params.platforms with
-        | None ->
-          failwithf "could not find platform %s, got %d platforms with names %s" texture_name
-            (List.length params.platforms)
-            (List.map fst params.platforms |> join)
-        | Some texture -> texture
+      let texture_name, texture =
+        Tiled.Room.look_up_platform json_room params.platforms coll_rect.gid
       in
-      (* let w, h = get_scaled_texture_size texture in *)
       let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       let sprite : sprite =
         {
           ident = fmt "%s_%d" texture_name idx;
-          dest;
+          dest = floor_rect dest;
           texture;
           facing_right = true;
-          (* this could be Some DEST, but they are checked directly *)
+          (* this could be Some DEST, but the rects are being checked directly like other floors *)
           collision = None;
         }
       in
@@ -286,6 +307,7 @@ let init (params : room_params) : room =
             coll_rect
           :: !enemy_rects
       | "respawn" ->
+        (* CLEANUP try using connected objects instead of parsing coordinates from the name *)
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "door-warp" ->
@@ -301,6 +323,10 @@ let init (params : room_params) : room =
     match jl with
     | `OBJECT_LAYER json -> (
       match json.name with
+      | "spikes" -> List.iteri make_spikes json.objects
+      | "acid" -> List.iteri make_acid json.objects
+      | "hazard" -> List.iteri make_hazard json.objects
+      | "floors" -> List.iteri make_floor json.objects
       | "platforms" -> List.iteri make_platform json.objects
       | "triggers" -> List.iter categorize json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
@@ -325,8 +351,6 @@ let init (params : room_params) : room =
     Enemy.create_from_rects !enemy_rects room_progress.finished_interactions params.enemy_configs
   in
   let npcs : npc list = Npc.create_from_rects !npc_rects params.npc_configs in
-
-  let tilesets_by_path = Tiled.load_tilesets json_room in
 
   let tile_layers =
     let layers = ref [] in
@@ -383,11 +407,10 @@ let init (params : room_params) : room =
               match layer_name with
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "water" -> [ "animated"; "water"; "fg" ]
-              | "floors" -> [ "collides" ]
+              | "floors" -> [ "fg" ]
               | "benches" -> [ "collides" ]
-              | "spikes" -> [ "hazard"; "pogoable" ]
-              | "hazard" -> [ "hazard" ]
-              | "acid" -> [ "animated"; "hazard" ]
+              | "hazard" -> [ "fg" ]
+              | "acid" -> [ "animated"; "fg" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
@@ -482,7 +505,7 @@ let init (params : room_params) : room =
 
   let cache =
     match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
-    | None -> { jug_fragments_by_gid = []; tilesets_by_path }
+    | None -> { jug_fragments_by_gid = []; tilesets_by_path; platform_textures = [] }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
 
@@ -561,7 +584,11 @@ let init (params : room_params) : room =
         List.map build configs
       in
 
-      { jug_fragments_by_gid = List.map make_jug metadata; tilesets_by_path }
+      {
+        jug_fragments_by_gid = List.map make_jug metadata;
+        tilesets_by_path;
+        platform_textures = [];
+      }
   in
 
   let create_camera_bounds (room : Json_t.room) =
@@ -609,6 +636,7 @@ let init (params : room_params) : room =
     exits = params.exits;
     respawn_pos = clone_vector params.respawn_pos;
     platforms = !platforms;
+    floors = !floors;
     triggers =
       {
         camera = !camera_triggers;
@@ -620,6 +648,9 @@ let init (params : room_params) : room =
         respawn = !respawn_triggers;
         shadows = !shadow_triggers;
       };
+    spikes = !spikes;
+    acid = !acid;
+    hazards = !hazards;
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
     npcs;
