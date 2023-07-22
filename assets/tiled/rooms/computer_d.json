@@ -84,7 +84,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -148,7 +148,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":26,
          "x":0,
          "y":0
@@ -213,7 +213,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":26,
          "x":0,
          "y":0
@@ -278,7 +278,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":26,
          "x":0,
          "y":0

@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":7,
+ "tilecount":13,
  "tiledversion":"1.10.1",
  "tileheight":72,
  "tiles":[
@@ -54,8 +54,44 @@
          "image":"drawers.png",
          "imageheight":24,
          "imagewidth":48
+        }, 
+        {
+         "id":8,
+         "image":"cart-wide.png",
+         "imageheight":27,
+         "imagewidth":96
+        }, 
+        {
+         "id":9,
+         "image":"cart.png",
+         "imageheight":27,
+         "imagewidth":55
+        }, 
+        {
+         "id":10,
+         "image":"small-chair.png",
+         "imageheight":21,
+         "imagewidth":24
+        }, 
+        {
+         "id":11,
+         "image":"desk.png",
+         "imageheight":19,
+         "imagewidth":85
+        }, 
+        {
+         "id":12,
+         "image":"drawers-tall.png",
+         "imageheight":48,
+         "imagewidth":48
+        }, 
+        {
+         "id":13,
+         "image":"file-cabinet-square.png",
+         "imageheight":45,
+         "imagewidth":40
         }],
- "tilewidth":72,
+ "tilewidth":96,
  "type":"tileset",
  "version":"1.10"
 }

@@ -973,7 +973,9 @@ type layer_render_config = {
 type layer_config = {
   render : layer_render_config;
   collides_with_ghost : bool;
-  (* FIXME remove *)
+  (* FIXME remove
+     - maybe not, acid doesn't really benefit from using objects so maybe just use tile_groups for it still
+  *)
   hazard : bool;
   pogoable : bool;
   destroyable : bool;

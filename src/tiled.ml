@@ -234,6 +234,12 @@ module Room = struct
           "fresh-coffee";
           "vending-machine";
           "drawers";
+          "cart-wide";
+          "cart";
+          "small-chair";
+          "desk";
+          "drawers-tall";
+          "file-cabinet-square";
         ]
         (gid - platforms_tileset_source.firstgid - 1)
     in
@@ -249,7 +255,7 @@ module Room = struct
     let bits = Tile.transformation_bits gid' in
     let get_tileset (source : Json_t.tileset_source) =
       match List.assoc_opt source.source room_cache.tilesets_by_path with
-      | None -> failwithf "could not find cached tileset %s" source.source
+      | None -> failwithf "could not find cached tileset %s, gid: %d" source.source gid'
       | Some t -> t
     in
     (* TODO get rid of this fn and just try accessing `tileset.tiles.(gid - firstgid)` for each
@@ -261,7 +267,12 @@ module Room = struct
         let tileset : tileset = get_tileset tileset_source in
         gid >= tileset_source.firstgid && gid < tileset_source.firstgid + tileset.json.tile_count)
     in
-    match List.find_opt gid_in_tileset json_room.tileset_sources with
+    let tileset_sources =
+      List.filter
+        (fun (source : Json_t.tileset_source) -> source.source <> "../platforms/platforms.json")
+        json_room.tileset_sources
+    in
+    match List.find_opt gid_in_tileset tileset_sources with
     | None -> failwithf "could not find gid %d in any tilesets" gid
     | Some tileset_source -> (
       let tileset = get_tileset tileset_source in

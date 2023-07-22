@@ -187,10 +187,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             "to scootenanny forwards.";
             "Use the chair to scootenanny quickly along the ground or through the air.";
           ]
-        (* TODO this only hides the chair when it is picked up, but it shows up again when the room is re-entered
-           - probably can fix this when adding indicators for interactions
-        *)
-        @ [ STEP (HIDE_LAYER "bg-iso2") ]
       | "double-bouncies" ->
         get_ability_steps "monarch_wings" 0. 4.
           [ "Consumed the"; "Double Bouncies." ]

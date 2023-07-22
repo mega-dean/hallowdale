@@ -1196,8 +1196,10 @@ let handle_debug_keys (game : game) (state : state) =
   else if holding_shift () then (
     if key_pressed DEBUG_1 then (* game.ghost.soul.current <- game.ghost.soul.max *)
       show_ghost_location () (* show_camera_location () *)
-    else if key_pressed DEBUG_2 then (* toggle_ability game.ghost "mantis_claw" *)
-      game.ghost.health.current <- game.ghost.health.current - 1
+    else if key_pressed DEBUG_2 then
+      (* toggle_ability game.ghost "mantis_claw" *)
+      (* game.ghost.health.current <- game.ghost.health.current - 1 *)
+      game.ghost.soul.current <- game.ghost.soul.max
     else if key_pressed DEBUG_3 then (* toggle_ability game.ghost "vengeful_spirit" *)
       print "ghost water is_some: %b" (Option.is_some game.ghost.current.water)
     else if key_pressed DEBUG_4 then (* toggle_ability game.ghost "desolate_dive" *)
