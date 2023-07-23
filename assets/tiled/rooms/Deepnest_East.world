@@ -31,8 +31,8 @@
         {
             "fileName": "forgotten_cafeteria.json",
             "height": 1272,
-            "width": 2784,
-            "x": 2544,
+            "width": 2856,
+            "x": 2472,
             "y": 1440
         },
         {
@@ -107,7 +107,7 @@
         },
         {
             "fileName": "beenz_2-a.json",
-            "height": 1584,
+            "height": 1608,
             "width": 816,
             "x": 936,
             "y": -648
@@ -199,8 +199,8 @@
         {
             "fileName": "basement_d.json",
             "height": 768,
-            "width": 3264,
-            "x": 360,
+            "width": 2952,
+            "x": 672,
             "y": 7032
         },
         {
@@ -233,10 +233,10 @@
         },
         {
             "fileName": "ac-repair_f.json",
-            "height": 384,
-            "width": 720,
-            "x": -1320,
-            "y": -4560
+            "height": 768,
+            "width": 2664,
+            "x": -1992,
+            "y": 7008
         },
         {
             "fileName": "ac-repair_b.json",
@@ -396,8 +396,8 @@
             "fileName": "forgotten_i.json",
             "height": 912,
             "width": 1608,
-            "x": -1248,
-            "y": 7008
+            "x": -1200,
+            "y": -5616
         },
         {
             "fileName": "basement_e.json",
@@ -430,8 +430,8 @@
         {
             "fileName": "city_d.json",
             "height": 816,
-            "width": 912,
-            "x": 2328,
+            "width": 1488,
+            "x": 1752,
             "y": -96
         },
         {
@@ -450,10 +450,10 @@
         },
         {
             "fileName": "basement_f.json",
-            "height": 288,
-            "width": 1200,
-            "x": 5424,
-            "y": 9720
+            "height": 408,
+            "width": 2520,
+            "x": -216,
+            "y": 2616
         },
         {
             "fileName": "ventways_hub.json",
