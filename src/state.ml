@@ -488,6 +488,8 @@ let update_menu_choice (menu : menu) frame_inputs =
   if frame_inputs.up.pressed then
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
 
+let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
+
 let tick (state : state) =
   (* TODO-3 add sound effects and music *)
   if not (holding_shift ()) then (
@@ -532,10 +534,10 @@ let tick (state : state) =
       | Some menu -> state'
       | None ->
         let show_triggers ?(color = Raylib.Color.blue) triggers =
-          state.debug.rects <- List.map (fun r -> (color, r.dest)) triggers @ state.debug.rects
+          add_debug_rects state (List.map (fun r -> (color, r.dest)) triggers)
         in
         let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
-          state.debug.rects <- List.map (fun (_, r) -> (color, r.dest)) triggers @ state.debug.rects
+          add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
         in
 
         show_triggers game.room.triggers.lore;
@@ -543,13 +545,16 @@ let tick (state : state) =
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
-        state.debug.rects <-
-          List.map (fun (s : sprite) -> (Raylib.Color.orange, s.dest)) game.room.platforms
-          @ state.debug.rects;
+        add_debug_rects state
+          (List.map (fun (s : sprite) -> (Raylib.Color.orange, s.dest)) game.room.platforms);
 
-        state.debug.rects <-
-          List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors
-          @ state.debug.rects;
+        add_debug_rects state
+          (List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors);
+
+        add_debug_rects state
+          (List.map
+             (fun (r : rect) -> (Raylib.Color.red, r))
+             (game.room.spikes @ game.room.hazards));
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         if state.should_save then (

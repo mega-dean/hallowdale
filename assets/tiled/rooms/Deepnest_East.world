@@ -37,10 +37,10 @@
         },
         {
             "fileName": "forgotten_stairwell.json",
-            "height": 1824,
+            "height": 1920,
             "width": 792,
             "x": 5328,
-            "y": 1416
+            "y": 1320
         },
         {
             "fileName": "trampoline_a.json",
@@ -53,29 +53,29 @@
             "fileName": "trampoline_b.json",
             "height": 480,
             "width": 960,
-            "x": 1536,
-            "y": -2832
+            "x": 13728,
+            "y": 4656
         },
         {
             "fileName": "trampoline_d.json",
             "height": 696,
             "width": 2256,
             "x": 6528,
-            "y": 1920
+            "y": 1944
         },
         {
             "fileName": "trampoline_dreamer.json",
-            "height": 1056,
-            "width": 2448,
-            "x": 10176,
+            "height": 1104,
+            "width": 2136,
+            "x": 10248,
             "y": 1824
         },
         {
             "fileName": "trampoline_c.json",
-            "height": 888,
-            "width": 2640,
+            "height": 1176,
+            "width": 1440,
             "x": 9336,
-            "y": 936
+            "y": 648
         },
         {
             "fileName": "beenz_1-a.json",
@@ -123,8 +123,8 @@
             "fileName": "beenz_2-c.json",
             "height": 432,
             "width": 2088,
-            "x": 14088,
-            "y": 2592
+            "x": 13800,
+            "y": 6072
         },
         {
             "fileName": "beenz_3-elevator.json",
@@ -207,15 +207,15 @@
             "fileName": "ac-repair_a.json",
             "height": 336,
             "width": 1608,
-            "x": 10344,
-            "y": 600
+            "x": 10176,
+            "y": 312
         },
         {
             "fileName": "ac-repair_c.json",
             "height": 1536,
             "width": 2472,
-            "x": 9480,
-            "y": -1704
+            "x": 9312,
+            "y": -1992
         },
         {
             "fileName": "ac-repair_e.json",
@@ -228,8 +228,8 @@
             "fileName": "ac-repair_d.json",
             "height": 1416,
             "width": 1800,
-            "x": 11952,
-            "y": -480
+            "x": 11784,
+            "y": -768
         },
         {
             "fileName": "ac-repair_f.json",
@@ -242,29 +242,22 @@
             "fileName": "ac-repair_b.json",
             "height": 480,
             "width": 2136,
-            "x": 9816,
-            "y": -24
+            "x": 9648,
+            "y": -312
         },
         {
             "fileName": "ac-repair_dreamer.json",
             "height": 768,
             "width": 1848,
-            "x": 14088,
-            "y": -1200
+            "x": 13920,
+            "y": -1488
         },
         {
             "fileName": "ac-repair_g.json",
             "height": 1152,
             "width": 2136,
-            "x": 11952,
-            "y": -1704
-        },
-        {
-            "fileName": "final_boss.json",
-            "height": 720,
-            "width": 720,
-            "x": 4848,
-            "y": -4152
+            "x": 11784,
+            "y": -1992
         },
         {
             "fileName": "computer_a.json",
@@ -317,10 +310,10 @@
         },
         {
             "fileName": "forgotten_a.json",
-            "height": 864,
-            "width": 768,
-            "x": -6000,
-            "y": -3864
+            "height": 1056,
+            "width": 1704,
+            "x": 16032,
+            "y": 1128
         },
         {
             "fileName": "library_d.json",
@@ -361,7 +354,7 @@
             "fileName": "trampoline_f.json",
             "height": 624,
             "width": 1248,
-            "x": 8928,
+            "x": 9000,
             "y": 2448
         },
         {
@@ -374,7 +367,7 @@
         {
             "fileName": "forgotten_c.json",
             "height": 1584,
-            "width": 1944,
+            "width": 1776,
             "x": 7536,
             "y": -2376
         },
@@ -387,17 +380,17 @@
         },
         {
             "fileName": "forgotten_h.json",
-            "height": 480,
-            "width": 1152,
-            "x": -3432,
-            "y": -5136
+            "height": 2184,
+            "width": 1416,
+            "x": 16296,
+            "y": 2496
         },
         {
             "fileName": "forgotten_i.json",
             "height": 912,
             "width": 1608,
-            "x": -1200,
-            "y": -5616
+            "x": 13368,
+            "y": 2400
         },
         {
             "fileName": "basement_e.json",
@@ -459,8 +452,8 @@
             "fileName": "ventways_hub.json",
             "height": 1080,
             "width": 1080,
-            "x": 5544,
-            "y": -3048
+            "x": 3768,
+            "y": 2928
         },
         {
             "fileName": "library_a.json",

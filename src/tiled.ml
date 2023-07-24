@@ -220,28 +220,37 @@ module Room = struct
         json_room.tileset_sources
     in
     let texture_name =
-      List.nth
-        [
-          (* CLEANUP this order is copied from the platforms.json tileset, so it should be read from there
-             - if it can't for some reason, it's still probably worth maintaining this list manually for now, since it removes the requirement for platforms to have names
-             - this could definitely be done for change_current_room, but initial room load will be tricky
-             -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init
-          *)
-          "atm";
-          "cold-drinks";
-          "couch";
-          "file-cabinet";
-          "fresh-coffee";
-          "vending-machine";
-          "drawers";
-          "cart-wide";
-          "cart";
-          "small-chair";
-          "desk";
-          "drawers-tall";
-          "file-cabinet-square";
-        ]
-        (gid - platforms_tileset_source.firstgid - 1)
+      match
+        List.nth_opt
+          [
+            (* CLEANUP this order is copied from the platforms.json tileset, so it should be read from there
+               - if it can't for some reason, it's still probably worth maintaining this list manually for now, since it removes the requirement for platforms to have names
+               - this could definitely be done for change_current_room, but initial room load will be tricky
+               -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init
+            *)
+            "atm";
+            "cold-drinks";
+            "couch";
+            "file-cabinet";
+            "fresh-coffee";
+            "vending-machine";
+            "drawers";
+            "cart-wide";
+            "cart";
+            "small-chair";
+            "desk";
+            "drawers-tall";
+            "file-cabinet-square";
+            "couch-wide";
+            "small-stool";
+            "bookshelf";
+            "bamboo";
+            "bamboo-wide";
+          ]
+          (gid - platforms_tileset_source.firstgid - 1)
+      with
+      | None -> failwith "need to add new platform texture name to list"
+      | Some name -> name
     in
     match List.assoc_opt texture_name platform_textures_by_name with
     | None ->

@@ -973,9 +973,6 @@ type layer_render_config = {
 type layer_config = {
   render : layer_render_config;
   collides_with_ghost : bool;
-  (* FIXME remove
-     - maybe not, acid doesn't really benefit from using objects so maybe just use tile_groups for it still
-  *)
   hazard : bool;
   pogoable : bool;
   destroyable : bool;
@@ -1126,8 +1123,6 @@ type jug_config = {
 type room_cache = {
   jug_fragments_by_gid : (int * jug_fragments) list;
   tilesets_by_path : (string * tileset) list;
-  (* this is an image-based tileset, so it's treated uniquely in some ways *)
-  platform_textures : texture list;
 }
 
 type trigger = {
@@ -1177,6 +1172,9 @@ type camera_state = {
 type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
+
+(* FIXME type platform *)
+
 
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death

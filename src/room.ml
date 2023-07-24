@@ -409,8 +409,9 @@ let init (params : room_params) : room =
               | "water" -> [ "animated"; "water"; "fg" ]
               | "floors" -> [ "fg" ]
               | "benches" -> [ "collides" ]
+              (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
-              | "acid" -> [ "animated"; "fg" ]
+              | "acid" -> [ "animated"; "hazard" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
@@ -505,7 +506,7 @@ let init (params : room_params) : room =
 
   let cache =
     match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
-    | None -> { jug_fragments_by_gid = []; tilesets_by_path; platform_textures = [] }
+    | None -> { jug_fragments_by_gid = []; tilesets_by_path }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
 
@@ -584,11 +585,7 @@ let init (params : room_params) : room =
         List.map build configs
       in
 
-      {
-        jug_fragments_by_gid = List.map make_jug metadata;
-        tilesets_by_path;
-        platform_textures = [];
-      }
+      { jug_fragments_by_gid = List.map make_jug metadata; tilesets_by_path }
   in
 
   let create_camera_bounds (room : Json_t.room) =

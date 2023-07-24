@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":13,
+ "tilecount":18,
  "tiledversion":"1.10.1",
  "tileheight":72,
  "tiles":[
@@ -90,8 +90,38 @@
          "image":"file-cabinet-square.png",
          "imageheight":45,
          "imagewidth":40
+        }, 
+        {
+         "id":14,
+         "image":"couch-wide.png",
+         "imageheight":28,
+         "imagewidth":120
+        }, 
+        {
+         "id":15,
+         "image":"small-stool.png",
+         "imageheight":22,
+         "imagewidth":19
+        }, 
+        {
+         "id":16,
+         "image":"bookshelf.png",
+         "imageheight":21,
+         "imagewidth":70
+        }, 
+        {
+         "id":17,
+         "image":"bamboo.png",
+         "imageheight":10,
+         "imagewidth":47
+        }, 
+        {
+         "id":18,
+         "image":"bamboo-wide.png",
+         "imageheight":10,
+         "imagewidth":63
         }],
- "tilewidth":96,
+ "tilewidth":120,
  "type":"tileset",
  "version":"1.10"
 }

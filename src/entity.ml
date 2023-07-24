@@ -102,7 +102,7 @@ let get_platform_collisions (entity : entity) (platforms : sprite list) : (colli
     match Collision.with_entity entity sprite.dest with
     | None -> ()
     | Some coll ->
-      (* TODO apply dynamic platform effects *)
+      (* FIXME check platform type and maybe update ghost *)
       collisions := (coll, sprite.dest) :: !collisions
   in
   List.iter check_collision platforms;
