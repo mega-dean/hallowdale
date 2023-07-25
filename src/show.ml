@@ -35,15 +35,21 @@ let disappearing_state (state : disappearing_state) =
   | TOUCHED f -> fmt "TOUCHED %f" f
   | INVISIBLE f -> fmt "INVISIBLE %f" f
 
-let platform_kind_opt (kind : platform_kind option) =
-  match kind with
-  | None -> "None"
-  | Some (DISAPPEARING state) -> fmt "DISAPPEARING (%s)" (disappearing_state state)
+let rotatable_state (state : rotatable_state) =
+  match state with
+  | UPRIGHT -> "UPRIGHT"
+  | TOUCHED f -> fmt "TOUCHED %f" f
+  | UPSIDE_DOWN f -> fmt "UPSIDE_DOWN %f" f
 
-(* CLEANUP  *)
 let platform_kind (kind : platform_kind) =
   match kind with
   | DISAPPEARING state -> fmt "DISAPPEARING (%s)" (disappearing_state state)
+  | ROTATABLE state -> fmt "ROTATABLE (%s)" (rotatable_state state)
+
+let platform_kind_opt (kind : platform_kind option) =
+  match kind with
+  | None -> "None"
+  | Some kind -> platform_kind kind
 
 let trigger_kind (kind : trigger_kind) =
   match kind with

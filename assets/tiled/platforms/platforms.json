@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":18,
+ "tilecount":19,
  "tiledversion":"1.10.1",
  "tileheight":72,
  "tiles":[
@@ -120,6 +120,12 @@
          "image":"bamboo-wide.png",
          "imageheight":10,
          "imagewidth":63
+        }, 
+        {
+         "id":19,
+         "image":"rotatable.png",
+         "imageheight":43,
+         "imagewidth":58
         }],
  "tilewidth":120,
  "type":"tileset",

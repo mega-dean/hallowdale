@@ -100,20 +100,18 @@ let get_platform_collisions (entity : entity) (platforms : platform list) : (col
     =
   let collisions : (collision * rect) list ref = ref [] in
   let check_collision (platform : platform) =
-    (* FIXME could match platform.kind here too, but they would still render on the screen
-       - so maybe hide them like Entity.hide
-    *)
     match Collision.with_entity entity platform.sprite.dest with
     | None -> ()
-    | Some coll ->
+    | Some coll -> (
       collisions := (coll, platform.sprite.dest) :: !collisions;
       match platform.kind with
       | None -> ()
       | Some (DISAPPEARING _) ->
         if coll.direction = UP then
           entity.current_platforms <- platform :: entity.current_platforms
-      (* | _ ->
-       *   entity.current_platforms <- platform :: entity.current_platforms *)
+      | Some (ROTATABLE _) ->
+        (* CLEANUP  *)
+        entity.current_platforms <- platform :: entity.current_platforms)
   in
   List.iter check_collision platforms;
   !collisions
@@ -152,7 +150,7 @@ let get_acid_collisions (room : room) (entity : entity) : (collision * rect) lis
 
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
 let get_damage_collisions (room : room) (entity : entity) : (collision * rect) list =
-  get_rect_collisions entity (room.hazards @ room.spikes)
+  get_rect_collisions entity (room.hazards @ room.spikes @ List.map snd room.platform_spikes)
 
 let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =
   let get_projectile_collision (projectile : projectile) =

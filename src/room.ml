@@ -76,6 +76,7 @@ let init (params : room_params) : room =
   let json_room = parse_room (fmt "%s.json" params.file_name) in
   let platforms : platform list ref = ref [] in
   let floors : rect list ref = ref [] in
+  let platform_spikes : ((int * int) * rect) list ref = ref [] in
   let spikes : rect list ref = ref [] in
   let acid : rect list ref = ref [] in
   let hazards : rect list ref = ref [] in
@@ -146,6 +147,20 @@ let init (params : room_params) : room =
           collision = None;
         }
       in
+      (match platform_kind with
+      | Some (ROTATABLE _) ->
+        let dest =
+          Tiled.scale_rect (coll_rect.x -. 1.)
+            (coll_rect.y +. (coll_rect.h /. 2.))
+            (coll_rect.w +. 2.) (coll_rect.h *. 0.55)
+        in
+        let coords =
+          ( coll_rect.x *. Config.scale.room |> Float.to_int,
+            coll_rect.y *. Config.scale.room |> Float.to_int )
+        in
+        tmp "saving platform_spikes with coords: %f, %f" coll_rect.x coll_rect.y;
+        platform_spikes := (coords, dest) :: !platform_spikes
+      | _ -> ());
       platforms := { sprite; kind = platform_kind } :: !platforms
     in
 
@@ -646,6 +661,7 @@ let init (params : room_params) : room =
         shadows = !shadow_triggers;
       };
     spikes = !spikes;
+    platform_spikes = !platform_spikes;
     acid = !acid;
     hazards = !hazards;
     layers = tile_layers;

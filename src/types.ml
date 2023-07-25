@@ -312,16 +312,25 @@ type disappearing_state =
   | TOUCHED of float
   | INVISIBLE of float
 
+type rotatable_state =
+  | UPRIGHT
+  | TOUCHED of float
+  | UPSIDE_DOWN of float
+
 type platform_kind =
-  (* CLEANUP maybe a better name than this *)
-  | DISAPPEARING of disappearing_state
-(* CLEANUP bool is the current state (but also need to track a float so this doesn't flip immediately either) *)
-(* | ROTATING of bool *)
-(* | CONVEYOR_BELT *)
+  | (* CLEANUP maybe call this DISAPPEARABLE/VANISHABLE/FOLDABLE/HIDABLE or something *)
+    DISAPPEARING of
+      disappearing_state
+  | ROTATABLE of rotatable_state
+(* CLEANUP not sure if this will need to be handled separately
+   | CONVEYOR_BELT
+*)
 
 type platform = {
   (* CLEANUP seems weird to make this mutable, but it's because the variant args need to change *)
-  (* FIXME maybe rename this to .state *)
+  (* CLEANUP maybe rename this to .state
+     - but it is kind-specific state, so maybe .kind is fine
+  *)
   mutable kind : platform_kind option;
   sprite : sprite;
 }
@@ -1215,11 +1224,16 @@ type room = {
   mutable interaction_label : (string * rect) option;
   (* this is for projectiles that are spawned by enemies after they die *)
   mutable loose_projectiles : projectile list;
-  (* these things are built from object layers *)
+  (* these things are built from object layers
+     CLEANUP probably enough of these now to make a separate `type objects`
+  *)
   triggers : triggers;
   floors : rect list;
   platforms : platform list;
-  (* TODO maybe make a new type hazard with spikes/acid/etc *)
+  (* string is platform name
+     - want to keep this in a separate list (rather than as a variant arg to ROTATABLE) so it doesn't have to be looked up every frame
+  *)
+  platform_spikes : ((int * int) * rect) list;
   spikes : rect list;
   acid : rect list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)

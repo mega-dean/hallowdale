@@ -77,7 +77,11 @@ let init () : state =
         Sprite.build_texture_from_config
           {
             path = { asset_dir = TILED; character_name = "platforms"; pose_name = name };
-            count = 1;
+            count =
+              (* FIXME change this for animated platforms
+                 - not sure how to do this, maybe use a config file like jugs.json does
+              *)
+              1;
             duration = { seconds = 0. };
             x_offset = 0.;
             y_offset = 0.;
@@ -306,40 +310,89 @@ let update_environment (game : game) (state : state) =
       loose_projectiles := projectile :: !loose_projectiles
   in
   let initiate_platform_reactions (platform : platform) =
-    (* FIXME check game.ghost.entity.current_platforms to initiate reactions
-       - need some way to delay the start of the reaction though, since the platforms shouldn't disappear immediately
-    *)
     match platform.kind with
-    | None -> ()
     | Some (DISAPPEARING VISIBLE) ->
       platform.kind <- Some (DISAPPEARING (TOUCHED (* CLEANUP  *) 0.9))
+    | Some (ROTATABLE UPRIGHT) -> platform.kind <- Some (ROTATABLE (TOUCHED (* CLEANUP  *) 0.9))
     | _ -> ()
   in
   let finish_platform_reactions (platform : platform) =
-    (* FIXME check all platforms to finish reactions *)
-    (match platform.kind with
+    let decrement_time ~continue ~change f =
+      let new_f = f -. state.frame.dt in
+      if new_f > 0. then
+        continue new_f
+      else
+        change new_f (* CLEANUP maybe have a hide_rect fn that Entity.hide can use *)
+    in
+
+    let handle_disappearing_platform (state' : disappearing_state) =
+      match state' with
+      | VISIBLE -> ()
+      | TOUCHED f ->
+        decrement_time
+          ~continue:(fun new_f ->
+            (* FIXME would be nice if the platform started shaking (or some visual feedback that it is touched) *)
+            platform.kind <- Some (DISAPPEARING (TOUCHED new_f)))
+          ~change:(fun new_f ->
+            platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
+            platform.kind <- Some (DISAPPEARING (INVISIBLE (* CLEANUP  *) 1.4)))
+          f
+      | INVISIBLE f ->
+        decrement_time
+          ~continue:(fun new_f -> platform.kind <- Some (DISAPPEARING (INVISIBLE new_f)))
+          ~change:(fun new_f ->
+            platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
+            platform.kind <- Some (DISAPPEARING VISIBLE))
+          f
+    in
+
+    let handle_rotatable_platform (state' : rotatable_state) =
+      let spikes =
+        let coords_x, coords_y =
+          (platform.sprite.dest.pos.x |> Float.to_int, platform.sprite.dest.pos.y |> Float.to_int)
+        in
+        match List.assoc_opt (coords_x, coords_y) game.room.platform_spikes with
+        | None -> failwith "rotatable platform needs spikes"
+        | Some s -> s
+      in
+      let set_texture name =
+        let texture =
+          match List.assoc_opt name state.global.textures.platforms with
+          | None -> failwithf "could not find texture with name %s" name
+          | Some t -> t
+        in
+        platform.sprite.texture <- texture
+      in
+      let spikes_rotation_dy =
+        (* this is specific to the rotating c-heart spikes (would have to look this up from texture.h to do it generically) *)
+        70.
+      in
+      match state' with
+      | UPRIGHT -> ()
+      | TOUCHED f ->
+        itmp "TOUCHED";
+        decrement_time
+          ~continue:(fun new_f -> platform.kind <- Some (ROTATABLE (TOUCHED new_f)))
+          ~change:(fun new_f ->
+            set_texture "rotatable-upside-down";
+            spikes.pos.y <- spikes.pos.y -. spikes_rotation_dy;
+            platform.kind <- Some (ROTATABLE (UPSIDE_DOWN 2.)))
+          f
+        (* FIXME add new step | ROTATING of float, animate the texture *)
+      | UPSIDE_DOWN f ->
+        itmp "UPSIDE_DOWN";
+        decrement_time
+          ~continue:(fun new_f -> platform.kind <- Some (ROTATABLE (UPSIDE_DOWN new_f)))
+          ~change:(fun new_f ->
+            spikes.pos.y <- spikes.pos.y +. spikes_rotation_dy;
+            set_texture "rotatable";
+            platform.kind <- Some (ROTATABLE UPRIGHT))
+          f
+    in
+    match platform.kind with
     | None -> ()
-    | Some (DISAPPEARING VISIBLE) -> ()
-    | Some (DISAPPEARING (TOUCHED f)) ->
-      let new_f = f -. state.frame.dt in
-      itmp "DISAPPEARING got new_f: %f" new_f;
-      if new_f > 0. then
-        platform.kind <- Some (DISAPPEARING (TOUCHED new_f))
-      else (
-        tmp "------------- platform is disappearing";
-        (* CLEANUP maybe have a hide_rect fn that Entity.hide can use *)
-        platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
-        platform.kind <- Some (DISAPPEARING (INVISIBLE (* CLEANUP  *) 1.4)))
-    | Some (DISAPPEARING (INVISIBLE f)) ->
-      let new_f = f -. state.frame.dt in
-      itmp "REAPPEARING got new_f: %f" new_f;
-      if new_f > 0. then
-        platform.kind <- Some (DISAPPEARING (INVISIBLE new_f))
-      else (
-        tmp "------------- platform is reappearing";
-        platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
-        platform.kind <- Some (DISAPPEARING VISIBLE)));
-    itmp "update_platform: got a platform: %s" (Show.sprite platform.sprite)
+    | Some (DISAPPEARING state') -> handle_disappearing_platform state'
+    | Some (ROTATABLE state') -> handle_rotatable_platform state'
   in
   List.iter initiate_platform_reactions game.ghost.entity.current_platforms;
   List.iter finish_platform_reactions game.room.platforms;
@@ -578,11 +631,16 @@ let tick (state : state) =
           add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
         in
 
+        itmp "got %d platform_spikes with rect: %s"
+          (List.length game.room.platform_spikes)
+          (List.map snd game.room.platform_spikes |> List.map (fun r -> Show.rect r) |> join);
+
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
+        (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         add_debug_rects state
           (List.map
              (fun (p : platform) -> (Raylib.Color.orange, p.sprite.dest))
@@ -594,13 +652,13 @@ let tick (state : state) =
         add_debug_rects state
           (List.map
              (fun (r : rect) -> (Raylib.Color.red, r))
-             (game.room.spikes @ game.room.hazards));
+             (game.room.spikes @ game.room.hazards @ List.map snd game.room.platform_spikes));
 
-        (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         if state.should_save then (
           Menu.save_game game state ignore;
           state.should_save <- false);
 
+        (* CLEANUP better place for this? *)
         game.ghost.entity.current_platforms <- [];
         state'
         |> Ghost.handle_debug_keys game

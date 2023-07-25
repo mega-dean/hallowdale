@@ -3,6 +3,11 @@ open Types.Utils
 
 [@@@ocaml.warning "-26-27-32"]
 
+let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room }
+
+let scale_rect x y w h =
+  { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
+
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
   match file_name with
@@ -220,40 +225,45 @@ module Room = struct
           String.ends_with ~suffix:"platforms.json" source.source)
         json_room.tileset_sources
     in
+
+    let platform_names =
+      [
+        (* CLEANUP this order is copied from the platforms.json tileset, so it should be read from there
+           - if it can't for some reason, it's still probably worth maintaining this list manually for now, since it removes the requirement for platforms to have names
+           - this could definitely be done for change_current_room, but initial room load will be tricky
+             -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init
+
+           - this will be harder to read from the file now that this has platform_kind too
+        *)
+        ("atm", None);
+        ("cold-drinks", None);
+        ("couch", None);
+        ("file-cabinet", None);
+        ("fresh-coffee", None);
+        ("vending-machine", None);
+        ("drawers", None);
+        ("cart-wide", None);
+        ("cart", None);
+        ("small-chair", None);
+        ("desk", None);
+        ("drawers-tall", None);
+        ("file-cabinet-square", None);
+        ("couch-wide", None);
+        ("small-stool", None);
+        ("bookshelf", None);
+        ("bamboo", Some (DISAPPEARING VISIBLE));
+        ("bamboo-wide", Some (DISAPPEARING VISIBLE));
+        ("rotatable", Some (ROTATABLE UPRIGHT));
+      ]
+    in
     let texture_name, platform_kind =
-      match
-        List.nth_opt
-          [
-            (* CLEANUP this order is copied from the platforms.json tileset, so it should be read from there
-               - if it can't for some reason, it's still probably worth maintaining this list manually for now, since it removes the requirement for platforms to have names
-               - this could definitely be done for change_current_room, but initial room load will be tricky
-               -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init
-            *)
-            ("atm", None);
-            ("cold-drinks", None);
-            ("couch", None);
-            ("file-cabinet", None);
-            ("fresh-coffee", None);
-            ("vending-machine", None);
-            ("drawers", None);
-            ("cart-wide", None);
-            ("cart", None);
-            ("small-chair", None);
-            ("desk", None);
-            ("drawers-tall", None);
-            ("file-cabinet-square", None);
-            ("couch-wide", None);
-            ("small-stool", None);
-            ("bookshelf", None);
-            ("bamboo", Some (DISAPPEARING VISIBLE));
-            ("bamboo-wide", Some (DISAPPEARING VISIBLE));
-            (* FIXME add ROTATING platform
-               - CONVEYOR will be harder because they are different sizes
-            *)
-          ]
+      match List.nth_opt platform_names (gid - platforms_tileset_source.firstgid - 1) with
+      | None ->
+        failwithf
+          "need to add new platform texture name to list (gid %d, firstgid %d, idx %d, length %d)"
+          gid platforms_tileset_source.firstgid
           (gid - platforms_tileset_source.firstgid - 1)
-      with
-      | None -> failwith "need to add new platform texture name to list"
+          (List.length platform_names)
       | Some name -> name
     in
     match List.assoc_opt texture_name platform_textures_by_name with
@@ -503,11 +513,6 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
       Some (source'.source, { json; tiles = load_tiles room json image source' })
   in
   List.filter_map load_tileset room.tileset_sources
-
-let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room }
-
-let scale_rect x y w h =
-  { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
 
 let create_camera_at v (shake : float) =
   let rotation = 0. in

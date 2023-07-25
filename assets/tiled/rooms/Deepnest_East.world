@@ -312,8 +312,8 @@
             "fileName": "forgotten_a.json",
             "height": 1056,
             "width": 1704,
-            "x": 16032,
-            "y": 1128
+            "x": 16152,
+            "y": 744
         },
         {
             "fileName": "library_d.json",
@@ -382,15 +382,15 @@
             "fileName": "forgotten_h.json",
             "height": 2184,
             "width": 1416,
-            "x": 16296,
-            "y": 2496
+            "x": 16944,
+            "y": 2040
         },
         {
             "fileName": "forgotten_i.json",
             "height": 912,
             "width": 1608,
-            "x": 13368,
-            "y": 2400
+            "x": 17064,
+            "y": 4368
         },
         {
             "fileName": "basement_e.json",

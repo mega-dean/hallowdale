@@ -617,6 +617,7 @@ let resolve_slash_collisions (state : state) (game : game) =
 
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
+    (* FIXME pogo platform spikes *)
     List.iter maybe_pogo game.room.spikes;
     List.iter resolve_enemy game.room.enemies
 
