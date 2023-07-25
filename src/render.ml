@@ -208,7 +208,10 @@ let draw_fg_tiles room camera_x camera_y frame_idx : unit =
     (List.filter (fun (layer : layer) -> layer.config.render.fg) room.layers)
 
 let draw_floating_platforms (room : room) camera_x camera_y frame_idx : unit =
-  List.iter draw_sprite room.platforms
+  List.iter
+    (fun (platform : platform) ->
+      (* CLEANUP this should take the tint of the current area *) draw_sprite platform.sprite)
+    room.platforms
 
 (* - lines are broken up into line_segments based on colors - this is three line_segments:
    I {{red}} said {{white}} "Betty Grable"

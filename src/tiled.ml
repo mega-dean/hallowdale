@@ -208,7 +208,8 @@ module Room = struct
   let dest_wh (json_room : t) ?(scale = 1.) () : float * float =
     Tile.scale_dest_size json_room.tile_w json_room.tile_h ~scale
 
-  let look_up_platform (json_room : t) platform_textures_by_name (gid' : int) : string * texture =
+  let look_up_platform (json_room : t) platform_textures_by_name (gid' : int) :
+      string * texture * platform_kind option =
     let gid = Tile.raw_gid gid' in
     let bits = Tile.transformation_bits gid' in
     (* TODO get rid of this fn and just try accessing `tileset.tiles.(gid - firstgid)` for each
@@ -219,7 +220,7 @@ module Room = struct
           String.ends_with ~suffix:"platforms.json" source.source)
         json_room.tileset_sources
     in
-    let texture_name =
+    let texture_name, platform_kind =
       match
         List.nth_opt
           [
@@ -228,24 +229,27 @@ module Room = struct
                - this could definitely be done for change_current_room, but initial room load will be tricky
                -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init
             *)
-            "atm";
-            "cold-drinks";
-            "couch";
-            "file-cabinet";
-            "fresh-coffee";
-            "vending-machine";
-            "drawers";
-            "cart-wide";
-            "cart";
-            "small-chair";
-            "desk";
-            "drawers-tall";
-            "file-cabinet-square";
-            "couch-wide";
-            "small-stool";
-            "bookshelf";
-            "bamboo";
-            "bamboo-wide";
+            ("atm", None);
+            ("cold-drinks", None);
+            ("couch", None);
+            ("file-cabinet", None);
+            ("fresh-coffee", None);
+            ("vending-machine", None);
+            ("drawers", None);
+            ("cart-wide", None);
+            ("cart", None);
+            ("small-chair", None);
+            ("desk", None);
+            ("drawers-tall", None);
+            ("file-cabinet-square", None);
+            ("couch-wide", None);
+            ("small-stool", None);
+            ("bookshelf", None);
+            ("bamboo", Some (DISAPPEARING VISIBLE));
+            ("bamboo-wide", Some (DISAPPEARING VISIBLE));
+            (* FIXME add ROTATING platform
+               - CONVEYOR will be harder because they are different sizes
+            *)
           ]
           (gid - platforms_tileset_source.firstgid - 1)
       with
@@ -256,7 +260,7 @@ module Room = struct
     | None ->
       failwithf "could not find platform %s, keys: %s" texture_name
         (platform_textures_by_name |> List.map fst |> join)
-    | Some t -> (texture_name, t)
+    | Some t -> (texture_name, t, platform_kind)
 
   let look_up_tile (json_room : t) ?(animation_offset = 0) room_cache (gid' : int) : texture * int =
     (* TODO this is checking all layers for transformations, even though it's only being used for jugs *)

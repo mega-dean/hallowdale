@@ -305,6 +305,44 @@ let update_environment (game : game) (state : state) =
     if keep_spawned then
       loose_projectiles := projectile :: !loose_projectiles
   in
+  let initiate_platform_reactions (platform : platform) =
+    (* FIXME check game.ghost.entity.current_platforms to initiate reactions
+       - need some way to delay the start of the reaction though, since the platforms shouldn't disappear immediately
+    *)
+    match platform.kind with
+    | None -> ()
+    | Some (DISAPPEARING VISIBLE) ->
+      platform.kind <- Some (DISAPPEARING (TOUCHED (* CLEANUP  *) 0.9))
+    | _ -> ()
+  in
+  let finish_platform_reactions (platform : platform) =
+    (* FIXME check all platforms to finish reactions *)
+    (match platform.kind with
+    | None -> ()
+    | Some (DISAPPEARING VISIBLE) -> ()
+    | Some (DISAPPEARING (TOUCHED f)) ->
+      let new_f = f -. state.frame.dt in
+      itmp "DISAPPEARING got new_f: %f" new_f;
+      if new_f > 0. then
+        platform.kind <- Some (DISAPPEARING (TOUCHED new_f))
+      else (
+        tmp "------------- platform is disappearing";
+        (* CLEANUP maybe have a hide_rect fn that Entity.hide can use *)
+        platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
+        platform.kind <- Some (DISAPPEARING (INVISIBLE (* CLEANUP  *) 1.4)))
+    | Some (DISAPPEARING (INVISIBLE f)) ->
+      let new_f = f -. state.frame.dt in
+      itmp "REAPPEARING got new_f: %f" new_f;
+      if new_f > 0. then
+        platform.kind <- Some (DISAPPEARING (INVISIBLE new_f))
+      else (
+        tmp "------------- platform is reappearing";
+        platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
+        platform.kind <- Some (DISAPPEARING VISIBLE)));
+    itmp "update_platform: got a platform: %s" (Show.sprite platform.sprite)
+  in
+  List.iter initiate_platform_reactions game.ghost.entity.current_platforms;
+  List.iter finish_platform_reactions game.room.platforms;
   List.iter update_fragment all_spawned_fragments;
   List.iter update_lever game.room.triggers.levers;
   List.iter update_projectile' game.room.loose_projectiles;
@@ -546,7 +584,9 @@ let tick (state : state) =
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
         add_debug_rects state
-          (List.map (fun (s : sprite) -> (Raylib.Color.orange, s.dest)) game.room.platforms);
+          (List.map
+             (fun (p : platform) -> (Raylib.Color.orange, p.sprite.dest))
+             game.room.platforms);
 
         add_debug_rects state
           (List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors);
@@ -560,6 +600,8 @@ let tick (state : state) =
         if state.should_save then (
           Menu.save_game game state ignore;
           state.should_save <- false);
+
+        game.ghost.entity.current_platforms <- [];
         state'
         |> Ghost.handle_debug_keys game
         |> Ghost.update game

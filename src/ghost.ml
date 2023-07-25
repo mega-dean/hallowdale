@@ -386,7 +386,7 @@ let make_c_dash_child ?(full = false) (ghost : ghost) : unit =
 let maybe_despawn_child (ghost : ghost) (child_kind, child) = ()
 
 let animate_and_despawn_children frame_time ghost : unit =
-  let advance (child_kind, child) =
+  let advance ((child_kind, child) : ghost_child_kind * ghost_child) =
     match child.sprite.texture.animation_src with
     | ONCE _ -> (
       match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
@@ -2135,14 +2135,15 @@ let update (game : game) (state : state) =
         else (
           game.ghost.current.wall <- None;
           if not (is_doing game.ghost (ATTACK RIGHT) state.frame.time) then (
-            let check_collision ((c : collision), wall) =
+            let check_collision ((c, wall) : collision * rect) =
               if (not (Entity.on_ground game.ghost.entity)) && Entity.descending game.ghost.entity
-              then
-                if high_enough_to_slide_on wall then (
+              then (
+                let wall_is_tall_enough = wall.h > game.ghost.entity.dest.h /. 2. in
+                if high_enough_to_slide_on wall && wall_is_tall_enough then (
                   match c.direction with
                   | LEFT -> set_pose' (WALL_SLIDING wall)
                   | RIGHT -> set_pose' (WALL_SLIDING wall)
-                  | _ -> ())
+                  | _ -> ()))
             in
             List.iter check_collision collisions))
     in

@@ -64,7 +64,7 @@ let set_facing (d : direction) (e : entity) =
 let apply_v ?(debug = None) dt (e : entity) =
   (match debug with
   | None -> ()
-  | Some context -> print " +++ %s +++ apply_v for %s" context (Show.entity_name e));
+  | Some context -> print " +++ %s +++ apply_v for %s" context (Show.entity e));
   (match e.y_recoil with
   | None -> e.dest.pos.y <- e.dest.pos.y +. (e.v.y *. dt)
   | Some recoil ->
@@ -96,14 +96,24 @@ let get_rect_collisions (entity : entity) (rects : rect list) : (collision * rec
   List.iter check_collision rects;
   !collisions
 
-let get_platform_collisions (entity : entity) (platforms : sprite list) : (collision * rect) list =
+let get_platform_collisions (entity : entity) (platforms : platform list) : (collision * rect) list
+    =
   let collisions : (collision * rect) list ref = ref [] in
-  let check_collision (sprite : sprite) =
-    match Collision.with_entity entity sprite.dest with
+  let check_collision (platform : platform) =
+    (* FIXME could match platform.kind here too, but they would still render on the screen
+       - so maybe hide them like Entity.hide
+    *)
+    match Collision.with_entity entity platform.sprite.dest with
     | None -> ()
     | Some coll ->
-      (* FIXME check platform type and maybe update ghost *)
-      collisions := (coll, sprite.dest) :: !collisions
+      collisions := (coll, platform.sprite.dest) :: !collisions;
+      match platform.kind with
+      | None -> ()
+      | Some (DISAPPEARING _) ->
+        if coll.direction = UP then
+          entity.current_platforms <- platform :: entity.current_platforms
+      (* | _ ->
+       *   entity.current_platforms <- platform :: entity.current_platforms *)
   in
   List.iter check_collision platforms;
   !collisions
@@ -364,6 +374,7 @@ let create
     current_floor = None;
     x_recoil = None;
     y_recoil = None;
+    current_platforms = [];
   }
 
 let create_for_sprite
@@ -381,6 +392,7 @@ let create_for_sprite
     current_floor = None;
     x_recoil = None;
     y_recoil = None;
+    current_platforms = [];
   }
 
 let to_texture_config asset_dir character_name ((pose_name, json) : string * Json_t.texture_config)

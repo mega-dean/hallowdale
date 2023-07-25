@@ -74,7 +74,7 @@ let init (params : room_params) : room =
   in
 
   let json_room = parse_room (fmt "%s.json" params.file_name) in
-  let platforms : sprite list ref = ref [] in
+  let platforms : platform list ref = ref [] in
   let floors : rect list ref = ref [] in
   let spikes : rect list ref = ref [] in
   let acid : rect list ref = ref [] in
@@ -132,7 +132,7 @@ let init (params : room_params) : room =
     in
 
     let make_platform idx (coll_rect : Json_t.coll_rect) =
-      let texture_name, texture =
+      let texture_name, texture, platform_kind =
         Tiled.Room.look_up_platform json_room params.platforms coll_rect.gid
       in
       let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
@@ -146,7 +146,7 @@ let init (params : room_params) : room =
           collision = None;
         }
       in
-      platforms := sprite :: !platforms
+      platforms := { sprite; kind = platform_kind } :: !platforms
     in
 
     let categorize (coll_rect : Json_t.coll_rect) =

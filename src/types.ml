@@ -306,6 +306,26 @@ let get_collision_shape (sprite : sprite) =
   | Some DEST -> shape_of_rect sprite.dest
   | Some (SHAPE shape) -> align_shape_with_parent_sprite sprite shape
 
+(* CLEANUP it may be inconvenient to work with nested variants like this *)
+type disappearing_state =
+  | VISIBLE
+  | TOUCHED of float
+  | INVISIBLE of float
+
+type platform_kind =
+  (* CLEANUP maybe a better name than this *)
+  | DISAPPEARING of disappearing_state
+(* CLEANUP bool is the current state (but also need to track a float so this doesn't flip immediately either) *)
+(* | ROTATING of bool *)
+(* | CONVEYOR_BELT *)
+
+type platform = {
+  (* CLEANUP seems weird to make this mutable, but it's because the variant args need to change *)
+  (* FIXME maybe rename this to .state *)
+  mutable kind : platform_kind option;
+  sprite : sprite;
+}
+
 type entity_config = {
   bounce : float;
   (* only using the negative here because "animate" sounds more like a verb than an adjective *)
@@ -320,9 +340,10 @@ type entity = {
   dest : rect;
   mutable v : vector;
   mutable update_pos : bool;
-  mutable current_floor : rect option;
   mutable x_recoil : recoil option;
   mutable y_recoil : recoil option;
+  mutable current_floor : rect option;
+  mutable current_platforms : platform list;
 }
 
 let of_Rect (r : Raylib.Rectangle.t) : rect =
@@ -1173,9 +1194,6 @@ type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
 
-(* FIXME type platform *)
-
-
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death
    - on duncan-killed, move current_interaction into finished_interactions
@@ -1200,7 +1218,7 @@ type room = {
   (* these things are built from object layers *)
   triggers : triggers;
   floors : rect list;
-  platforms : sprite list;
+  platforms : platform list;
   (* TODO maybe make a new type hazard with spikes/acid/etc *)
   spikes : rect list;
   acid : rect list;

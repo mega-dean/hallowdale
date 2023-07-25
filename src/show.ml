@@ -10,8 +10,8 @@ let line_mx_b (line : line) : string =
 let vector (v : vector) : string = fmt "(%0.1f, %0.1f)" v.x v.y
 let rect (r : rect) : string = fmt "[w: %0.1f, h: %0.1f, at (%0.1f, %0.1f)]" r.w r.h r.pos.x r.pos.y
 let int_list xs = List.map string_of_int xs
-let sprite_name (s : sprite) = s.ident
-let entity_name (e : entity) = sprite_name e.sprite
+let sprite (s : sprite) = s.ident
+let entity (e : entity) = sprite e.sprite
 let shape (shape : shape) = fmt "shape with %d edges" (List.length shape.edges)
 
 let shape_lines (shape : shape) =
@@ -28,6 +28,22 @@ let direction (d : direction) : string =
   | DOWN -> "down"
   | LEFT -> "left"
   | RIGHT -> "right"
+
+let disappearing_state (state : disappearing_state) =
+  match state with
+  | VISIBLE -> "VISIBLE"
+  | TOUCHED f -> fmt "TOUCHED %f" f
+  | INVISIBLE f -> fmt "INVISIBLE %f" f
+
+let platform_kind_opt (kind : platform_kind option) =
+  match kind with
+  | None -> "None"
+  | Some (DISAPPEARING state) -> fmt "DISAPPEARING (%s)" (disappearing_state state)
+
+(* CLEANUP  *)
+let platform_kind (kind : platform_kind) =
+  match kind with
+  | DISAPPEARING state -> fmt "DISAPPEARING (%s)" (disappearing_state state)
 
 let trigger_kind (kind : trigger_kind) =
   match kind with
@@ -122,7 +138,7 @@ let ghost_pose pose =
 let ghost_location (g : ghost) =
   print "ghost at %0.1f, %0.1f" g.entity.sprite.dest.pos.x g.entity.sprite.dest.pos.y
 
-let ghost_name (g : ghost) = fmt "ghost:%s" (entity_name g.entity)
+let ghost_name (g : ghost) = fmt "ghost:%s" (entity g.entity)
 
 let area_id id =
   match id with
@@ -335,7 +351,7 @@ let jug_config (config : jug_config) : string =
 
 let json_collision (collision : Json_t.collision) = fmt "id %d" collision.id
 let debug_change_ability name b = print "%s: %b -> %b" name b (not b)
-let npc_name (npc : npc) = fmt "npc(%s)" (entity_name npc.entity)
+let npc_name (npc : npc) = fmt "npc(%s)" (entity npc.entity)
 
 let enemy_id (e : enemy_id) : string =
   match e with
@@ -357,7 +373,7 @@ let npc_id (n : npc_id) : string =
   | SHIRLEY -> "SHIRLEY"
   | VICKI -> "VICKI"
 
-let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity_name enemy.entity)
+let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
 let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
 
 let main_menu_choice (choice : main_menu_choice) =
