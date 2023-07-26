@@ -29,7 +29,7 @@ let direction (d : direction) : string =
   | LEFT -> "left"
   | RIGHT -> "right"
 
-let disappearing_state (state : disappearing_state) =
+let disappearable_state (state : disappearable_state) =
   match state with
   | VISIBLE -> "VISIBLE"
   | TOUCHED f -> fmt "TOUCHED %f" f
@@ -44,7 +44,7 @@ let rotatable_state (state : rotatable_state) =
 
 let platform_kind (kind : platform_kind) =
   match kind with
-  | DISAPPEARING state -> fmt "DISAPPEARING (%s)" (disappearing_state state)
+  | DISAPPEARABLE state -> fmt "DISAPPEARABLE (%s)" (disappearable_state state)
   | ROTATABLE state -> fmt "ROTATABLE (%s)" (rotatable_state state)
 
 let platform_kind_opt (kind : platform_kind option) =

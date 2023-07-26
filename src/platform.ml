@@ -15,24 +15,20 @@ let set_texture (platform : platform) texture_cache name =
   in
   platform.sprite.texture <- texture
 
-let spikes_rotation_dy =
-  (* this is specific to the rotating c-heart spikes (would have to look this up from texture.h to do it generically) *)
-  70.
-
 let start_rotating platform game texture_cache =
   let spikes = get_spikes platform game in
-  spikes.pos.y <- spikes.pos.y -. spikes_rotation_dy;
+  spikes.pos.y <- spikes.pos.y -. Config.platform.rotatable_spikes_dy;
   platform.sprite.texture <- texture_cache.rotating_platform;
   platform.kind <- Some (ROTATABLE ROTATING_NOW)
 
 let finish_rotating platform game texture_cache =
   let spikes = get_spikes platform game in
   set_texture platform texture_cache "rotatable-upside-down";
-  (* CLEANUP this duration should come from a config *)
-  platform.kind <- Some (ROTATABLE (UPSIDE_DOWN 2.))
+  platform.kind <- Some (ROTATABLE (UPSIDE_DOWN Config.platform.rotatable_upside_down_time))
 
 let reset_rotation platform game texture_cache =
   let spikes = get_spikes platform game in
-  spikes.pos.y <- spikes.pos.y +. spikes_rotation_dy;
+  spikes.pos.y <- spikes.pos.y +. Config.platform.rotatable_spikes_dy;
+  platform.sprite.dest.pos.x <- platform.original_x;
   set_texture platform texture_cache "rotatable";
   platform.kind <- Some (ROTATABLE UPRIGHT)

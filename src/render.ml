@@ -210,7 +210,8 @@ let draw_fg_tiles room camera_x camera_y frame_idx : unit =
 let draw_floating_platforms (room : room) camera_x camera_y frame_idx : unit =
   List.iter
     (fun (platform : platform) ->
-      (* CLEANUP this should take the tint of the current area *) draw_sprite platform.sprite)
+      (* not sure if platforms should take the tint of the current area, since it makes them stand out from the bg less *)
+      draw_sprite ~tint:room.area.tint platform.sprite)
     room.platforms
 
 (* - lines are broken up into line_segments based on colors - this is three line_segments:

@@ -106,12 +106,10 @@ let get_platform_collisions (entity : entity) (platforms : platform list) : (col
       collisions := (coll, platform.sprite.dest) :: !collisions;
       match platform.kind with
       | None -> ()
-      | Some (DISAPPEARING _) ->
+      | Some (DISAPPEARABLE _) ->
         if coll.direction = UP then
           entity.current_platforms <- platform :: entity.current_platforms
-      | Some (ROTATABLE _) ->
-        (* CLEANUP  *)
-        entity.current_platforms <- platform :: entity.current_platforms)
+      | Some (ROTATABLE _) -> entity.current_platforms <- platform :: entity.current_platforms)
   in
   List.iter check_collision platforms;
   !collisions

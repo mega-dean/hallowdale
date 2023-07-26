@@ -76,6 +76,27 @@ let window : window_config =
     camera_motion_y = 12.;
   }
 
+type platform_config = {
+  disappearable_touched_time : float;
+  disappearable_invisible_time : float;
+  rotatable_touched_time : float;
+  rotatable_upside_down_time : float;
+  rotatable_spikes_dy : float;
+}
+
+(* not using json configs for these because there probably won't be any besides DISAPPEARABLE/ROTATABLE *)
+let platform =
+  {
+    disappearable_touched_time = 0.9;
+    disappearable_invisible_time = 1.4;
+    rotatable_touched_time = 0.9;
+    rotatable_upside_down_time = 2.;
+    rotatable_spikes_dy =
+      (* this is specific to the rotating c-heart spikes
+         (would have to look this up from texture height to do it generically) *)
+      70.;
+  }
+
 type ghost_config = {
   width : float;
   height : float;

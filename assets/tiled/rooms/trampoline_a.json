@@ -69,6 +69,17 @@
                  "width":468,
                  "x":308,
                  "y":118.666666666667
+                }, 
+                {
+                 "height":29,
+                 "id":81,
+                 "name":"npc:SHIRLEY",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":394.666666666667,
+                 "y":158.833333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -927,7 +938,7 @@
          "y":0
         }],
  "nextlayerid":21,
- "nextobjectid":81,
+ "nextobjectid":83,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

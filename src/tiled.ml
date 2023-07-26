@@ -251,8 +251,8 @@ module Room = struct
         ("couch-wide", None);
         ("small-stool", None);
         ("bookshelf", None);
-        ("bamboo", Some (DISAPPEARING VISIBLE));
-        ("bamboo-wide", Some (DISAPPEARING VISIBLE));
+        ("bamboo", Some (DISAPPEARABLE VISIBLE));
+        ("bamboo-wide", Some (DISAPPEARABLE VISIBLE));
         ("rotatable", Some (ROTATABLE UPRIGHT));
       ]
     in

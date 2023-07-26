@@ -156,7 +156,14 @@ let init (params : room_params) : room =
         in
         platform_spikes := (idx, dest) :: !platform_spikes
       | _ -> ());
-      platforms := { id = idx; sprite; kind = platform_kind } :: !platforms
+      platforms :=
+        {
+          id = idx;
+          original_x = coll_rect.x *. Config.scale.room;
+          sprite;
+          kind = platform_kind;
+        }
+        :: !platforms
     in
 
     let categorize (coll_rect : Json_t.coll_rect) =

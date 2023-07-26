@@ -318,17 +318,15 @@ let update_environment (game : game) (state : state) =
   in
   let initiate_platform_reactions (platform : platform) =
     match platform.kind with
-    | Some (DISAPPEARING VISIBLE) ->
-      platform.kind <- Some (DISAPPEARING (TOUCHED (* CLEANUP  *) 0.9))
-    | Some (ROTATABLE UPRIGHT) -> platform.kind <- Some (ROTATABLE (TOUCHED (* CLEANUP  *) 0.9))
+    | Some (DISAPPEARABLE VISIBLE) ->
+      platform.kind <- Some (DISAPPEARABLE (TOUCHED Config.platform.disappearable_touched_time))
+    | Some (ROTATABLE UPRIGHT) ->
+      platform.kind <- Some (ROTATABLE (TOUCHED Config.platform.rotatable_touched_time))
     | _ -> ()
   in
   let finish_platform_reactions (platform : platform) =
-    let shake_platform amount =
-      (* CLEANUP this causes the platform to drift over time
-         - could fix this for rotatable platforms by comparing with spikes dest
-         - maybe just keep track of original_dest for bamboo platforms too
-      *)
+    let shake_platform () =
+      let amount = 4. in
       if state.frame.idx mod 2 = 0 then
         platform.sprite.dest.pos.x <- platform.sprite.dest.pos.x +. amount
       else
@@ -340,58 +338,39 @@ let update_environment (game : game) (state : state) =
       if new_f > 0. then
         continue new_f
       else
-        change new_f (* CLEANUP maybe have a hide_rect fn that Entity.hide can use *)
+        change new_f
     in
 
-    let handle_disappearing_platform (state' : disappearing_state) =
+    let handle_disappearable_platform (state' : disappearable_state) =
       match state' with
       | VISIBLE -> ()
       | TOUCHED f ->
         decrement_time
           ~continue:(fun new_f ->
-            shake_platform 4.;
-            platform.kind <- Some (DISAPPEARING (TOUCHED new_f)))
+            shake_platform ();
+            platform.kind <- Some (DISAPPEARABLE (TOUCHED new_f)))
           ~change:(fun new_f ->
+            game.ghost.entity.current_floor <- None;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
-            platform.kind <- Some (DISAPPEARING (INVISIBLE (* CLEANUP  *) 1.4)))
+            platform.kind <-
+              Some (DISAPPEARABLE (INVISIBLE Config.platform.disappearable_invisible_time)))
           f
       | INVISIBLE f ->
         decrement_time
-          ~continue:(fun new_f -> platform.kind <- Some (DISAPPEARING (INVISIBLE new_f)))
+          ~continue:(fun new_f -> platform.kind <- Some (DISAPPEARABLE (INVISIBLE new_f)))
           ~change:(fun new_f ->
-            platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
-            platform.kind <- Some (DISAPPEARING VISIBLE))
+            platform.sprite.dest.pos.x <- platform.original_x;
+            platform.kind <- Some (DISAPPEARABLE VISIBLE))
           f
     in
 
     let handle_rotatable_platform (state' : rotatable_state) =
-      let spikes =
-        let coords_x, coords_y =
-          (platform.sprite.dest.pos.x |> Float.to_int, platform.sprite.dest.pos.y |> Float.to_int)
-        in
-        match List.assoc_opt platform.id game.room.platform_spikes with
-        | None -> failwith "rotatable platform needs spikes"
-        | Some s -> s
-      in
-      let set_texture name =
-        let texture =
-          match List.assoc_opt name state.global.textures.platforms with
-          | None -> failwithf "could not find texture with name %s" name
-          | Some t -> t
-        in
-        platform.sprite.texture <- texture
-      in
-      let spikes_rotation_dy =
-        (* this is specific to the rotating c-heart spikes (would have to look this up from texture.h to do it generically) *)
-        70.
-      in
-
       match state' with
       | UPRIGHT -> ()
       | TOUCHED f ->
         decrement_time
           ~continue:(fun new_f ->
-            shake_platform 4.;
+            shake_platform ();
             platform.kind <- Some (ROTATABLE (TOUCHED new_f)))
           ~change:(fun new_f -> Platform.start_rotating platform game state.global.textures)
           f
@@ -409,7 +388,7 @@ let update_environment (game : game) (state : state) =
     in
     match platform.kind with
     | None -> ()
-    | Some (DISAPPEARING state') -> handle_disappearing_platform state'
+    | Some (DISAPPEARABLE state') -> handle_disappearable_platform state'
     | Some (ROTATABLE state') -> handle_rotatable_platform state'
   in
   List.iter initiate_platform_reactions game.ghost.entity.current_platforms;
@@ -676,8 +655,6 @@ let tick (state : state) =
           Menu.save_game game state ignore;
           state.should_save <- false);
 
-        (* CLEANUP better place for this? *)
-        game.ghost.entity.current_platforms <- [];
         state'
         |> Ghost.handle_debug_keys game
         |> Ghost.update game

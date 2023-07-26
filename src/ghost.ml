@@ -1002,7 +1002,6 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   set_pose game.ghost (PERFORMING action_kind) state.frame.time
 
 let hazard_respawn (state : state) (game : game) =
-  (* CLEANUP also needs to cancel c-dash *)
   game.ghost.entity.current_floor <- None;
   Entity.unfreeze game.ghost.entity;
   state.camera.update_instantly <- true;
@@ -1743,10 +1742,9 @@ let update (game : game) (state : state) =
 
   let handle_c_dashing () : handled_action =
     let still_on_surface () =
+      (* TODO maybe make a fn for this - after moving to Entity *)
       (* this is used for things like disappearing platforms *)
-      Entity.on_ground game.ghost.entity
-      || (* TODO maybe make a fn for this - after moving to Entity *)
-      Option.is_some game.ghost.current.wall
+      Entity.on_ground game.ghost.entity || Option.is_some game.ghost.current.wall
     in
     let starting_charge () =
       (* attack direction is arbitrary *)
@@ -1762,9 +1760,7 @@ let update (game : game) (state : state) =
       is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.released
     in
     let still_charging () =
-      is_doing game.ghost C_DASH_CHARGE state.frame.time
-      && state.frame_inputs.c_dash.down
-      && still_on_surface ()
+      is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.down
     in
     let still_c_dashing () = is_doing game.ghost C_DASH state.frame.time in
     let still_cooling_down () = is_doing game.ghost C_DASH_COOLDOWN state.frame.time in
@@ -1783,7 +1779,7 @@ let update (game : game) (state : state) =
     let start_c_dash_or_cancel_charge () =
       let can_start_c_dash () =
         let down_since = state.frame.time -. game.ghost.history.charge_c_dash.started.at in
-        down_since > game.ghost.history.charge_c_dash.config.duration.seconds
+        still_on_surface () && down_since > game.ghost.history.charge_c_dash.config.duration.seconds
       in
 
       if can_start_c_dash () then (
@@ -1795,13 +1791,22 @@ let update (game : game) (state : state) =
         false)
     in
 
+    let cancel_c_dash () =
+      remove_child game.ghost C_DASH_CHARGE_CRYSTALS;
+      remove_child game.ghost C_DASH_WALL_CHARGE_CRYSTALS;
+      start_c_dash_or_cancel_charge ()
+    in
+
     let this_frame =
       if starting_charge () then (
         start_action state game C_DASH_CHARGE;
         true)
-      else if still_charging () then (
-        continue_action state game C_DASH_CHARGE;
-        true)
+      else if still_charging () then
+        if not (still_on_surface ()) then
+          cancel_c_dash ()
+        else (
+          continue_action state game C_DASH_CHARGE;
+          true)
       else if still_cooling_down () then (
         let action_kind =
           match game.ghost.current.wall with
@@ -1817,10 +1822,8 @@ let update (game : game) (state : state) =
         *)
         maybe_end_c_dash ();
         true)
-      else if released_charge () then (
-        remove_child game.ghost C_DASH_CHARGE_CRYSTALS;
-        remove_child game.ghost C_DASH_WALL_CHARGE_CRYSTALS;
-        start_c_dash_or_cancel_charge ())
+      else if released_charge () then
+        cancel_c_dash ()
       else
         false
     in
@@ -2065,6 +2068,12 @@ let update (game : game) (state : state) =
         | Some (damage, direction) -> start_action state game (TAKE_DAMAGE (damage, direction))
         | None -> ())
     in
+    (* CLEANUP this does not work well for rotating spike platforms, since the ghost can get stuck
+       - maybe make is_taking_hazard_damage a time instead of a bool
+
+       - this also breaks when dashing into spikes that are slightly inside a floor,
+       because it collides for a frame and then adjusts the ghost to outside the floor
+    *)
     let check_damage_collisions collisions =
       state.debug.rects <-
         List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
@@ -2091,7 +2100,7 @@ let update (game : game) (state : state) =
           if game.ghost.current.is_taking_hazard_damage && Option.is_some game.ghost.entity.y_recoil
           then (
             (* HACK this is just to get the ghost to continue colliding with the spikes, even if
-               they tried to pogo on the same frame they hit the spikes
+                 they tried to pogo on the same frame they hit the spikes
                - not really sure how else to check this, and it's working well enough
             *)
             game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y +. 10.;
@@ -2234,6 +2243,7 @@ let update (game : game) (state : state) =
         layer.hidden <- true)
   in
 
+  game.ghost.entity.current_platforms <- [];
   Entity.apply_v state.frame.dt game.ghost.entity;
 
   let new_vy =

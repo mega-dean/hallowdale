@@ -306,8 +306,7 @@ let get_collision_shape (sprite : sprite) =
   | Some DEST -> shape_of_rect sprite.dest
   | Some (SHAPE shape) -> align_shape_with_parent_sprite sprite shape
 
-(* CLEANUP it may be inconvenient to work with nested variants like this *)
-type disappearing_state =
+type disappearable_state =
   | VISIBLE
   | TOUCHED of float
   | INVISIBLE of float
@@ -315,25 +314,21 @@ type disappearing_state =
 type rotatable_state =
   | UPRIGHT
   | TOUCHED of float
-  | (* CLEANUP rename *) ROTATING_NOW
+  | ROTATING_NOW
   | UPSIDE_DOWN of float
 
 type platform_kind =
-  | (* CLEANUP maybe call this DISAPPEARABLE/VANISHABLE/FOLDABLE/HIDABLE or something *)
-    DISAPPEARING of
-      disappearing_state
+  | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
 (* CLEANUP not sure if this will need to be handled separately
    | CONVEYOR_BELT
 *)
 
 type platform = {
-  (* CLEANUP seems weird to make this mutable, but it's because the variant args need to change *)
-  (* CLEANUP maybe rename this to .state
-     - but it is kind-specific state, so maybe .kind is fine
-  *)
   (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)
   id : int;
+  (* this is used for resetting position after shaking *)
+  original_x : float;
   mutable kind : platform_kind option;
   sprite : sprite;
 }
@@ -1227,9 +1222,7 @@ type room = {
   mutable interaction_label : (string * rect) option;
   (* this is for projectiles that are spawned by enemies after they die *)
   mutable loose_projectiles : projectile list;
-  (* these things are built from object layers
-     CLEANUP probably enough of these now to make a separate `type objects`
-  *)
+  (* everything below is built from object layers *)
   triggers : triggers;
   floors : rect list;
   platforms : platform list;
