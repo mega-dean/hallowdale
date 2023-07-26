@@ -82,7 +82,7 @@
                 {
                  "height":50,
                  "id":16,
-                 "name":"arrive-at-shirley-island|warp:computer_a@16,10",
+                 "name":"cutscene:arrive-at-shirley-island|warp:computer_a@16,10",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -348,7 +348,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":18,
          "id":11,
-         "name":"!duncan-killed|bg-iso3",
+         "name":"!cutscene:duncan-killed|bg-iso3",
          "opacity":1,
          "parallaxx":0.9,
          "type":"tilelayer",

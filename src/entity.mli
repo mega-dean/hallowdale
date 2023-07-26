@@ -11,11 +11,11 @@ val hidden : entity -> bool
 val set_facing : direction -> entity -> unit
 val apply_v : ?debug:string option -> float -> entity -> unit
 val get_bench_collisions : room -> entity -> (collision * rect) list
-val get_conveyor_belt_collision : room -> entity -> (collision * rect * float) option
+val get_conveyor_belt_collision : room -> entity -> (collision * rect * vector) option
 val get_floor_collisions : room -> entity -> (collision * rect) list
 val get_water_collisions : room -> entity -> (collision * rect) list
 val get_acid_collisions : room -> entity -> (collision * rect) list
-val get_damage_collisions : room -> entity -> (collision * rect) list
+val get_damage_collisions : room -> entity -> (collision * rect) list * (collision * rect) list
 val get_loose_projectile_collisions : room -> entity -> (collision * projectile) list
 val update_pos : ?debug:string option -> room -> entity -> float -> unit
 val maybe_unset_current_floor : entity -> room -> unit

@@ -100,8 +100,19 @@
                  "type":"",
                  "visible":true,
                  "width":51,
-                 "x":4030.33333333333,
-                 "y":1032.66666666667
+                 "x":4027,
+                 "y":1082
+                }, 
+                {
+                 "height":29,
+                 "id":105,
+                 "name":"npc:SHIRLEY",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":514,
+                 "y":865.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -621,26 +632,37 @@
                  "y":1078.66666666667
                 }, 
                 {
-                 "height":54.6666666666665,
-                 "id":102,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":30.6666666666665,
-                 "x":3997.33333333333,
-                 "y":1098.66666666667
-                }, 
-                {
-                 "height":45.6666666666665,
+                 "height":46,
                  "id":104,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":105.666666666667,
-                 "x":4005.66666666667,
-                 "y":1069
+                 "width":119.333333333334,
+                 "x":3998.33333333333,
+                 "y":1116
+                }, 
+                {
+                 "height":375,
+                 "id":106,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36.5,
+                 "x":3312,
+                 "y":633
+                }, 
+                {
+                 "height":210.5,
+                 "id":107,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60.5,
+                 "x":3396,
+                 "y":760.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -944,7 +966,7 @@
                 {
                  "height":39.5,
                  "id":64,
-                 "name":"1",
+                 "name":"300",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -955,7 +977,7 @@
                 {
                  "height":39.5,
                  "id":65,
-                 "name":"-1",
+                 "name":"-300",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -966,7 +988,7 @@
                 {
                  "height":39.5,
                  "id":81,
-                 "name":"-1",
+                 "name":"-200",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -977,35 +999,13 @@
                 {
                  "height":36.25,
                  "id":82,
-                 "name":"-1",
+                 "name":"200",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":191.5,
                  "x":2412.5,
                  "y":540
-                }, 
-                {
-                 "height":360.5,
-                 "id":84,
-                 "name":"1",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":39,
-                 "x":3308.83333333333,
-                 "y":649.083333333333
-                }, 
-                {
-                 "height":213.166666666667,
-                 "id":85,
-                 "name":"1",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":39,
-                 "x":3396,
-                 "y":758.833333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1261,7 +1261,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":53,
          "id":23,
-         "name":"ability:computer-heart|doors",
+         "name":"ability:computer-heart|temporary-floors",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -1398,7 +1398,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":105,
+ "nextobjectid":108,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

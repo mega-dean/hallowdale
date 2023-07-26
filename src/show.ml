@@ -136,7 +136,7 @@ let ghost_pose pose =
   | AIRBORNE f -> fmt (if f >= 0. then "DESCENDING(%f)" else "ASCENDING(%f)") f
   | CRAWLING -> "CRAWLING"
   | IDLE -> "IDLE"
-  | LANDING _r -> "LANDING"
+  | LANDING (f, v) -> fmt "LANDING on %s with v %s" (rect f) (vector v)
   | READING -> "READING"
   | WALKING d -> fmt "WALKING (%s)" (direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"

@@ -349,10 +349,7 @@ type entity = {
   mutable x_recoil : recoil option;
   mutable y_recoil : recoil option;
   (* vector is usually 0, but is nonzero for conveyor belts *)
-  (* FIXME maybe do this
-     mutable current_floor : (rect * vector) option;
-  *)
-  mutable current_floor : rect option;
+  mutable current_floor : (rect * vector) option;
   mutable current_platforms : platform list;
 }
 
@@ -425,7 +422,7 @@ type ghost_pose =
   | AIRBORNE of float (* new_vy *)
   | CRAWLING
   | IDLE
-  | LANDING of rect
+  | LANDING of rect * vector (* floor, floor_v *)
   | READING
   | WALKING of direction
   | WALL_SLIDING of rect

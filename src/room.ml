@@ -168,7 +168,7 @@ let init (params : room_params) : room =
         :: !platforms
     in
 
-    let categorize (coll_rect : Json_t.coll_rect) =
+    let categorize_trigger (coll_rect : Json_t.coll_rect) =
       let name_prefix', name_suffix = Utils.split_at_first ':' coll_rect.name in
       let (blocking_interaction, name_prefix) : string option * string =
         Utils.split_at_first_opt '|' name_prefix'
@@ -348,7 +348,7 @@ let init (params : room_params) : room =
       | "floors" -> List.iteri make_floor json.objects
       | "platforms" -> List.iteri make_platform json.objects
       | "conveyor-belts" -> List.iteri make_conveyor_belt json.objects
-      | "triggers" -> List.iter categorize json.objects
+      | "triggers" -> List.iter categorize_trigger json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
     | `IMAGE_LAYER _
@@ -391,9 +391,7 @@ let init (params : room_params) : room =
           let (layer_name', hidden) : string * bool =
             match Utils.split_at_first_opt '|' json.name with
             | Some interaction_name, layer_name -> (
-              let finished name =
-                List.mem (fmt "cutscene_%s" name) room_progress.finished_interactions
-              in
+              let finished name = List.mem name room_progress.finished_interactions in
               match String.get interaction_name 0 with
               | '!' -> (layer_name, not (finished (Str.string_after interaction_name 1)))
               | _ -> (layer_name, finished interaction_name))
@@ -428,10 +426,16 @@ let init (params : room_params) : room =
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "water" -> [ "animated"; "water"; "fg" ]
               | "floors" -> [ "fg" ]
+              (* this is used for floors that are removed, like the breaking floor in King's Pass
+                 and the bridge in c-dash room *)
+              | "temporary-floors" -> [ "collides" ]
               | "benches" -> [ "collides" ]
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
               | "acid" -> [ "animated"; "hazard" ]
+              (* TODO probably add "conveyor-belt" tiles that are animated like acid
+                 - or maybe just rename "acid"->"animated" layer and use it for conveyor belts too
+              *)
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]

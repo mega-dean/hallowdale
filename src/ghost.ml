@@ -103,13 +103,14 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
   | RESPAWN ->
     failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
 
-(* FIXME see if this can use Entity.maybe_unset_current_floor
+(* CLEANUP see if this can use Entity.maybe_unset_current_floor
    - looks like the fn in Entity is for uncontrolled ghosts
 *)
+(* CLEANUP can this be consolidated with Entity.maybe_unset_current_floor ? *)
 let maybe_unset_current_floor (ghost : ghost) (room : room) =
   match ghost.entity.current_floor with
   | None -> ()
-  | Some floor ->
+  | Some (floor, v) ->
     let walked_over_edge =
       if not (Entity.above_floor ghost.entity floor) then (
         (* smoothly walk to adjacent floors by (temporarily) pushing the ghost down a pixel to
@@ -122,7 +123,7 @@ let maybe_unset_current_floor (ghost : ghost) (room : room) =
           true
         | Some (collision, floor) ->
           (* CLEANUP maybe add a fn Entity.set_current_floor with Zero.vector as default *)
-          ghost.entity.current_floor <- Some floor;
+          ghost.entity.current_floor <- Some (floor, Zero.vector ());
           false)
       else
         false
@@ -170,8 +171,10 @@ let pogo ghost =
    - updates y velocity for bonking head, but other velocity updates happen elsewhere (set_pose)
 *)
 (* TODO this is pretty similar to Entity.apply_collisions now, so it might make sense to combine them *)
-(* FIXME collisions arg should also have speed *)
-let apply_collisions (entity : entity) (collisions : (collision * rect) list) : unit =
+let apply_collisions
+    ?(floor_v = Zero.vector ())
+    (entity : entity)
+    (collisions : (collision * rect) list) : unit =
   let adjust_position ((coll, floor) : collision * rect) =
     let top_of r = r.pos.y in
     let bottom_of r = r.pos.y +. r.h in
@@ -181,7 +184,7 @@ let apply_collisions (entity : entity) (collisions : (collision * rect) list) : 
     | UP ->
       (* checks here prevent floor from being set for a single frame when jumping/pogoing over corners *)
       if Option.is_none entity.y_recoil then (
-        entity.current_floor <- Some floor;
+        entity.current_floor <- Some (floor, floor_v);
         entity.dest.pos.y <- top_of floor -. entity.dest.h)
     | DOWN ->
       entity.y_recoil <- None;
@@ -738,11 +741,7 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
     | FOCUS ->
       update_vx 0.;
       ghost.textures.focus
-    | TAKE_DAMAGE_AND_RESPAWN ->
-      (* TODO can't call this here for some reason, need to figure out when to deduct health for hazards
-         take_damage ghost;
-      *)
-      ghost.textures.take_damage
+    | TAKE_DAMAGE_AND_RESPAWN -> ghost.textures.take_damage
     | TAKE_DAMAGE (damage, direction) ->
       let x_recoil_speed =
         match direction with
@@ -786,9 +785,9 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       reset_standing_abilities ();
       update_vx 0.;
       ghost.textures.idle
-    | LANDING floor ->
+    | LANDING (floor, v) ->
       ghost.entity.v.y <- 0.;
-      ghost.entity.current_floor <- Some floor;
+      ghost.entity.current_floor <- Some (floor, v);
       ghost.current.can_dash <- true;
       ghost.current.can_flap <- true;
       ghost.textures.jump
@@ -983,6 +982,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         game.ghost.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
       Entity.freeze game.ghost.entity;
+      (* TODO handle dying *)
+      game.ghost.health.current <- game.ghost.health.current - 1;
       game.ghost.history.take_damage_and_respawn
     | TAKE_DAMAGE _ ->
       state.camera.shake <- 0.5;
@@ -1307,9 +1308,9 @@ let update (game : game) (state : state) =
             game.room.interaction_label <-
               (check_interact_key ();
                Some (label, trigger.dest)))
-        | Some bi ->
-          (* FIXME this only supports "cutscene" blocking interactions *)
-          if List.mem (fmt "cutscene:%s" bi) all_finished_interactions then (
+        | Some blocking_interaction_name ->
+          itmp "found blocking interaction name %s" blocking_interaction_name;
+          if List.mem blocking_interaction_name all_finished_interactions then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
       (match find_trigger_collision' game.ghost game.room.triggers.cutscene with
@@ -1954,7 +1955,7 @@ let update (game : game) (state : state) =
       | Some water ->
         if is_doing game.ghost FLAP state.frame.time then
           cancel_action state game FLAP)
-    | Some floor ->
+    | Some (floor, floor_v) ->
       if is_doing game.ghost FLAP state.frame.time then
         (* TODO need a check like this for current_wall too (to prevent extra height from buffering jump off wallslide) *)
         cancel_action state game FLAP
@@ -1968,7 +1969,7 @@ let update (game : game) (state : state) =
         *)
         (* if game.ghost.entity.v.y >= Config.ghost.max_vy then
          *   state.camera.shake <- 1.; *)
-        set_pose' (LANDING floor))
+        set_pose' (LANDING (floor, floor_v)))
   in
 
   let handle_attacking () =
@@ -2073,37 +2074,38 @@ let update (game : game) (state : state) =
         | Some (damage, direction) -> start_action state game (TAKE_DAMAGE (damage, direction))
         | None -> ())
     in
-    let check_damage_collisions collisions =
+    let check_damage_collisions hazard_collisions platform_spike_collisions =
       state.debug.rects <-
-        List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
+        List.map (fun c -> (Raylib.Color.red, snd c)) hazard_collisions @ state.debug.rects;
       let collisions' =
         if game.ghost.abilities.ismas_tear then
-          collisions
+          hazard_collisions
         else (
           let acid_collisions = Entity.get_acid_collisions game.room game.ghost.entity in
-          collisions @ acid_collisions)
+          hazard_collisions @ acid_collisions)
       in
       if List.length collisions' = 0 && not game.ghost.current.is_taking_hazard_damage then (
-        let projectile_collisions =
-          if is_vulnerable state game then
-            Entity.get_loose_projectile_collisions game.room game.ghost.entity
-          else
-            []
-        in
-        match List.nth_opt projectile_collisions 0 with
-        | Some (collision, projectile) ->
-          state.camera.shake <- 1.;
-          (* arbitrary direction *)
-          start_action state game (TAKE_DAMAGE (projectile.damage, UP))
-        | None ->
-          if game.ghost.current.is_taking_hazard_damage && Option.is_some game.ghost.entity.y_recoil
-          then (
-            (* HACK this is just to get the ghost to continue colliding with the spikes, even if
-                 they tried to pogo on the same frame they hit the spikes
-               - not really sure how else to check this, and it's working well enough
-            *)
-            game.ghost.entity.dest.pos.y <- game.ghost.entity.dest.pos.y +. 10.;
-            game.ghost.entity.y_recoil <- None))
+        match List.nth_opt platform_spike_collisions 0 with
+        | Some spike_collision -> start_action state game (TAKE_DAMAGE (1, UP))
+        | None -> (
+          let projectile_collisions =
+            if is_vulnerable state game then
+              Entity.get_loose_projectile_collisions game.room game.ghost.entity
+            else
+              []
+          in
+          match List.nth_opt projectile_collisions 0 with
+          | Some (collision, projectile) ->
+            state.camera.shake <- 1.;
+            (* arbitrary direction *)
+            start_action state game (TAKE_DAMAGE (projectile.damage, UP))
+          | None ->
+            (* TODO doesn't seem like this is working, can still "pogo" upwards while taking damage *)
+            if
+              game.ghost.current.is_taking_hazard_damage
+              && Option.is_some game.ghost.entity.y_recoil
+            then
+              game.ghost.entity.y_recoil <- None))
       else if is_doing game.ghost TAKE_DAMAGE_AND_RESPAWN state.frame.time then
         continue_action state game TAKE_DAMAGE_AND_RESPAWN
       else if game.ghost.current.is_taking_hazard_damage then (
@@ -2178,22 +2180,24 @@ let update (game : game) (state : state) =
             in
             List.iter check_collision collisions))
     in
-    let damage_collisions = Entity.get_damage_collisions game.room game.ghost.entity in
-    let floor_collisions' = Entity.get_floor_collisions game.room game.ghost.entity in
-    let bench_collisions = Entity.get_bench_collisions game.room game.ghost.entity in
-    let floor_collisions =
-      match Entity.get_conveyor_belt_collision game.room game.ghost.entity with
-      | None -> floor_collisions'
-      | Some (collision, rect, speed) ->
-        (* FIXME apply speed
-           - may not work here, since UP collisions are only registered on the frame that the ghost lands, not when they are standing
-           - maybe set state on the ghost, but would probably be complicated to unset that state
-
-           - might work to add speed to floor_collisions'
-        *)
-        tmp "applying conveyor belt speed %f" speed;
-        (collision, rect) :: floor_collisions'
+    let hazard_collisions, platform_spike_collisions' =
+      Entity.get_damage_collisions game.room game.ghost.entity
     in
+    let platform_spike_collisions =
+      if is_vulnerable state game then
+        platform_spike_collisions'
+      else
+        []
+    in
+
+    let floor_collisions' = Entity.get_floor_collisions game.room game.ghost.entity in
+    let floor_v, floor_collisions =
+      match Entity.get_conveyor_belt_collision game.room game.ghost.entity with
+      | None -> (Zero.vector (), floor_collisions')
+      | Some (collision, rect, floor_v) -> (floor_v, [ (collision, rect) ])
+    in
+
+    let bench_collisions = Entity.get_bench_collisions game.room game.ghost.entity in
     (* since these are collisions from above, they are only detected for the frame that the
        ghost collides (and then again the frame after, which is a bug)
     *)
@@ -2221,10 +2225,10 @@ let update (game : game) (state : state) =
     check_enemy_collisions ();
     state.debug.rects <-
       List.map (fun c -> (Raylib.Color.green, snd c)) floor_collisions @ state.debug.rects;
-    apply_collisions game.ghost.entity floor_collisions;
+    apply_collisions ~floor_v game.ghost.entity floor_collisions;
     handle_wall_sliding floor_collisions;
-    check_damage_collisions damage_collisions;
-    handle_c_dash_wall_collisions (floor_collisions @ damage_collisions)
+    check_damage_collisions hazard_collisions platform_spike_collisions;
+    handle_c_dash_wall_collisions (floor_collisions @ hazard_collisions)
   in
 
   let check_cooldowns cooldowns =
@@ -2257,6 +2261,16 @@ let update (game : game) (state : state) =
 
   game.ghost.entity.current_platforms <- [];
   Entity.apply_v state.frame.dt game.ghost.entity;
+  (match game.ghost.entity.current_floor with
+  | None -> ()
+  | Some (floor, v) ->
+    if v.x <> 0. then
+      itmp "applying floor v: %s" (Show.vector v);
+    let e = game.ghost.entity in
+    let dt = state.frame.dt in
+    (* CLEANUP duplicated from Entity.apply-v *)
+    e.dest.pos.y <- e.dest.pos.y +. (v.y *. dt);
+    e.dest.pos.x <- e.dest.pos.x +. (v.x *. dt));
 
   let new_vy =
     let vy' =

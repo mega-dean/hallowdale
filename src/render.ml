@@ -870,7 +870,7 @@ let tick (state : state) =
         draw_velocity game.ghost.entity;
         (match game.ghost.entity.current_floor with
         | None -> ()
-        | Some floor -> debug_rect ~r:0 ~g:0 ~b:200 floor);
+        | Some (floor, v) -> debug_rect ~r:0 ~g:0 ~b:200 floor);
         (match game.ghost.current.wall with
         | None -> ()
         | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall);

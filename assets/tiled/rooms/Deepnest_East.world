@@ -53,8 +53,8 @@
             "fileName": "trampoline_b.json",
             "height": 480,
             "width": 960,
-            "x": 13728,
-            "y": 4656
+            "x": 18936,
+            "y": 2784
         },
         {
             "fileName": "trampoline_d.json",
@@ -123,15 +123,15 @@
             "fileName": "beenz_2-c.json",
             "height": 432,
             "width": 2088,
-            "x": 13800,
-            "y": 6072
+            "x": 18840,
+            "y": 4248
         },
         {
             "fileName": "beenz_3-elevator.json",
             "height": 720,
             "width": 384,
-            "x": 14592,
-            "y": 5400
+            "x": 19248,
+            "y": 3384
         },
         {
             "fileName": "beenz_3-a.json",
@@ -144,8 +144,8 @@
             "fileName": "beenz_3-colo.json",
             "height": 720,
             "width": 960,
-            "x": 14016,
-            "y": 3672
+            "x": 18360,
+            "y": -456
         },
         {
             "fileName": "beenz_4-a.json",
@@ -158,8 +158,8 @@
             "fileName": "beenz_4-colo.json",
             "height": 960,
             "width": 960,
-            "x": 15120,
-            "y": 3672
+            "x": 18840,
+            "y": 504
         },
         {
             "fileName": "beenz_5-lounge.json",
@@ -361,8 +361,8 @@
             "fileName": "beenz_5-palace-grounds.json",
             "height": 720,
             "width": 960,
-            "x": 14976,
-            "y": 4680
+            "x": 18864,
+            "y": 1800
         },
         {
             "fileName": "forgotten_c.json",
@@ -452,8 +452,8 @@
             "fileName": "ventways_hub.json",
             "height": 1080,
             "width": 1080,
-            "x": 3768,
-            "y": 2928
+            "x": 5688,
+            "y": -2880
         },
         {
             "fileName": "library_a.json",

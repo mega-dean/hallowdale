@@ -209,6 +209,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             "to concentrate the force.";
             "Without an emotional component, computers will strip us of all humanity.";
           ]
+        @ [ STEP (HIDE_LAYER "temporary-floors") ]
       | "monkey-gas" ->
         get_ability_steps "howling_wraiths" 0. 6.
           [ "Consumed the"; "Monkey Knockout Gas." ]
@@ -228,6 +229,10 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     | "cutscene" -> (
       match trigger.name_suffix with
       | "kp-drop" ->
+        (* CLEANUP this isn't working anymore
+           - floor doesn't have a collision rect (need to use tile_group)
+           - it still disappears because of the HIDE_LAYER here
+        *)
         (* TODO starting an interaction resets ghost.v to 0, which looks a little weird when
            jumping into the trigger *)
         [ STEP (HIDE_LAYER "floors3"); CURRENT_GHOST UNSET_FLOOR ]
