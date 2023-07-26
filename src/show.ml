@@ -39,6 +39,7 @@ let rotatable_state (state : rotatable_state) =
   match state with
   | UPRIGHT -> "UPRIGHT"
   | TOUCHED f -> fmt "TOUCHED %f" f
+  | ROTATING_NOW -> "ROTATING_NOW"
   | UPSIDE_DOWN f -> fmt "UPSIDE_DOWN %f" f
 
 let platform_kind (kind : platform_kind) =

@@ -77,11 +77,7 @@ let init () : state =
         Sprite.build_texture_from_config
           {
             path = { asset_dir = TILED; character_name = "platforms"; pose_name = name };
-            count =
-              (* FIXME change this for animated platforms
-                 - not sure how to do this, maybe use a config file like jugs.json does
-              *)
-              1;
+            count = 1;
             duration = { seconds = 0. };
             x_offset = 0.;
             y_offset = 0.;
@@ -102,6 +98,16 @@ let init () : state =
     let texture_names = List.filter_map check_file (File.ls path) in
     List.map load_platform_texture texture_names
   in
+  let rotating_platform =
+    Sprite.build_texture_from_config ~once:true
+      {
+        path = { asset_dir = TILED; character_name = "platforms"; pose_name = "rotating" };
+        count = 5;
+        duration = { seconds = 0.02 };
+        x_offset = 0.;
+        y_offset = 0.;
+      }
+  in
   print_line "done loading platforms";
 
   let global =
@@ -119,6 +125,7 @@ let init () : state =
           door_lever;
           door_lever_struck;
           platforms;
+          rotating_platform;
         };
     }
   in
@@ -378,22 +385,26 @@ let update_environment (game : game) (state : state) =
         (* this is specific to the rotating c-heart spikes (would have to look this up from texture.h to do it generically) *)
         70.
       in
+
       match state' with
       | UPRIGHT -> ()
       | TOUCHED f ->
-        itmp "TOUCHED";
         decrement_time
           ~continue:(fun new_f ->
             shake_platform 4.;
             platform.kind <- Some (ROTATABLE (TOUCHED new_f)))
-          ~change:(fun new_f -> Platform.rotate ~upright:false platform game state.global.textures)
+          ~change:(fun new_f -> Platform.start_rotating platform game state.global.textures)
           f
-      (* CLEANUP add new step | ROTATING of float, animate the texture *)
+      | ROTATING_NOW -> (
+        match
+          Sprite.advance_or_despawn state.frame.time platform.sprite.texture platform.sprite
+        with
+        | None -> Platform.finish_rotating platform game state.global.textures
+        | Some s -> ())
       | UPSIDE_DOWN f ->
-        itmp "UPSIDE_DOWN";
         decrement_time
           ~continue:(fun new_f -> platform.kind <- Some (ROTATABLE (UPSIDE_DOWN new_f)))
-          ~change:(fun new_f -> Platform.rotate platform game state.global.textures)
+          ~change:(fun new_f -> Platform.reset_rotation platform game state.global.textures)
           f
     in
     match platform.kind with

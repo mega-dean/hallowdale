@@ -527,7 +527,8 @@ let resolve_slash_collisions (state : state) (game : game) =
           pogo game.ghost;
           let platform = List.find (fun (p : platform) -> p.id = id) game.room.platforms in
           match platform.kind with
-          | Some (ROTATABLE (UPSIDE_DOWN _)) -> Platform.rotate platform game state.global.textures
+          | Some (ROTATABLE (UPSIDE_DOWN _)) ->
+            Platform.reset_rotation platform game state.global.textures
           | _ -> ())
         | _ -> ())
     in
@@ -1001,7 +1002,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   set_pose game.ghost (PERFORMING action_kind) state.frame.time
 
 let hazard_respawn (state : state) (game : game) =
-  (* FIXME also needs to cancel c-dash *)
+  (* CLEANUP also needs to cancel c-dash *)
   game.ghost.entity.current_floor <- None;
   Entity.unfreeze game.ghost.entity;
   state.camera.update_instantly <- true;
@@ -1741,13 +1742,17 @@ let update (game : game) (state : state) =
   in
 
   let handle_c_dashing () : handled_action =
+    let still_on_surface () =
+      (* this is used for things like disappearing platforms *)
+      Entity.on_ground game.ghost.entity
+      || (* TODO maybe make a fn for this - after moving to Entity *)
+      Option.is_some game.ghost.current.wall
+    in
     let starting_charge () =
       (* attack direction is arbitrary *)
       game.ghost.abilities.crystal_heart
       && key_pressed_or_buffered C_DASH
-      && (Entity.on_ground game.ghost.entity
-         || (* TODO maybe make a fn for this - after moving to Entity *)
-         Option.is_some game.ghost.current.wall)
+      && still_on_surface ()
       && (not (is_doing game.ghost (ATTACK RIGHT) state.frame.time))
       && (not (is_casting state game))
       && (not game.ghost.current.is_c_dashing)
@@ -1757,7 +1762,9 @@ let update (game : game) (state : state) =
       is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.released
     in
     let still_charging () =
-      is_doing game.ghost C_DASH_CHARGE state.frame.time && state.frame_inputs.c_dash.down
+      is_doing game.ghost C_DASH_CHARGE state.frame.time
+      && state.frame_inputs.c_dash.down
+      && still_on_surface ()
     in
     let still_c_dashing () = is_doing game.ghost C_DASH state.frame.time in
     let still_cooling_down () = is_doing game.ghost C_DASH_COOLDOWN state.frame.time in
@@ -2058,8 +2065,7 @@ let update (game : game) (state : state) =
         | Some (damage, direction) -> start_action state game (TAKE_DAMAGE (damage, direction))
         | None -> ())
     in
-    let check_damage_collisions () =
-      let collisions = Entity.get_damage_collisions game.room game.ghost.entity in
+    let check_damage_collisions collisions =
       state.debug.rects <-
         List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
       let collisions' =
@@ -2164,6 +2170,7 @@ let update (game : game) (state : state) =
             in
             List.iter check_collision collisions))
     in
+    let damage_collisions = Entity.get_damage_collisions game.room game.ghost.entity in
     let floor_collisions = Entity.get_floor_collisions game.room game.ghost.entity in
     let bench_collisions = Entity.get_bench_collisions game.room game.ghost.entity in
     (* since these are collisions from above, they are only detected for the frame that the
@@ -2195,8 +2202,8 @@ let update (game : game) (state : state) =
       List.map (fun c -> (Raylib.Color.green, snd c)) floor_collisions @ state.debug.rects;
     apply_collisions game.ghost.entity floor_collisions;
     handle_wall_sliding floor_collisions;
-    check_damage_collisions ();
-    handle_c_dash_wall_collisions floor_collisions
+    check_damage_collisions damage_collisions;
+    handle_c_dash_wall_collisions (floor_collisions @ damage_collisions)
   in
 
   let check_cooldowns cooldowns =

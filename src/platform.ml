@@ -19,13 +19,20 @@ let spikes_rotation_dy =
   (* this is specific to the rotating c-heart spikes (would have to look this up from texture.h to do it generically) *)
   70.
 
-let rotate ?(upright = true) platform game texture_cache =
+let start_rotating platform game texture_cache =
   let spikes = get_spikes platform game in
-  if upright then (
-    spikes.pos.y <- spikes.pos.y +. spikes_rotation_dy;
-    set_texture platform texture_cache "rotatable";
-    platform.kind <- Some (ROTATABLE UPRIGHT))
-  else (
-    spikes.pos.y <- spikes.pos.y -. spikes_rotation_dy;
-    set_texture platform texture_cache "rotatable-upside-down";
-    platform.kind <- Some (ROTATABLE (UPSIDE_DOWN 2.)))
+  spikes.pos.y <- spikes.pos.y -. spikes_rotation_dy;
+  platform.sprite.texture <- texture_cache.rotating_platform;
+  platform.kind <- Some (ROTATABLE ROTATING_NOW)
+
+let finish_rotating platform game texture_cache =
+  let spikes = get_spikes platform game in
+  set_texture platform texture_cache "rotatable-upside-down";
+  (* CLEANUP this duration should come from a config *)
+  platform.kind <- Some (ROTATABLE (UPSIDE_DOWN 2.))
+
+let reset_rotation platform game texture_cache =
+  let spikes = get_spikes platform game in
+  spikes.pos.y <- spikes.pos.y +. spikes_rotation_dy;
+  set_texture platform texture_cache "rotatable";
+  platform.kind <- Some (ROTATABLE UPRIGHT)

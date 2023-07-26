@@ -64,13 +64,13 @@ let advance_animation (current_clock : float) next_texture (sprite : sprite) =
 
 type particle_animation = { should_despawn : bool }
 
-(* this always advances the animation, and returns None when the animation  *)
+(* this always advances the animation, and returns None when the animation should despawn *)
 let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : sprite option =
   let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) :
       particle_animation =
     match sprite.texture.animation_src with
     | STILL _ -> { should_despawn = false }
-    | LOOPED animation
+    | LOOPED animation -> failwith "can't despawn a LOOPED animation"
     | ONCE animation
     | PARTICLE animation ->
       let start_idx = get_current_frame_idx sprite.texture.animation_src in

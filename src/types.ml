@@ -315,6 +315,7 @@ type disappearing_state =
 type rotatable_state =
   | UPRIGHT
   | TOUCHED of float
+  | (* CLEANUP rename *) ROTATING_NOW
   | UPSIDE_DOWN of float
 
 type platform_kind =
@@ -1256,6 +1257,9 @@ type texture_cache = {
      - multiple sprites can still be rendered at separate dests, but they animations are synced
      - so creating a new damage sprite while one is on the screen will cause it to reset at the beginning
      - in practice this doesn't matter because the animation is so short, but it might cause problems for other cached textures
+
+     - this will cause problems for rotating platforms
+     - maybe just write a clone_texture function to spawn a new one
   *)
   damage : texture;
   ability_outlines : texture;
@@ -1264,6 +1268,8 @@ type texture_cache = {
   door_lever : texture;
   door_lever_struck : texture;
   platforms : (string * texture) list;
+  (* this is the only animated platform for now, maybe want a separate animated_platforms if more are added *)
+  rotating_platform : texture;
 }
 
 (* these are all things that are eager-loaded from json config files *)
@@ -1337,5 +1343,3 @@ type state = {
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
 let clone_time (t : time) : time = { at = t.at }
-
-
