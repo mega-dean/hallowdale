@@ -317,6 +317,17 @@ let update_environment (game : game) (state : state) =
     | _ -> ()
   in
   let finish_platform_reactions (platform : platform) =
+    let shake_platform amount =
+      (* CLEANUP this causes the platform to drift over time
+         - could fix this for rotatable platforms by comparing with spikes dest
+         - maybe just keep track of original_dest for bamboo platforms too
+      *)
+      if state.frame.idx mod 2 = 0 then
+        platform.sprite.dest.pos.x <- platform.sprite.dest.pos.x +. amount
+      else
+        platform.sprite.dest.pos.x <- platform.sprite.dest.pos.x -. amount
+    in
+
     let decrement_time ~continue ~change f =
       let new_f = f -. state.frame.dt in
       if new_f > 0. then
@@ -331,7 +342,7 @@ let update_environment (game : game) (state : state) =
       | TOUCHED f ->
         decrement_time
           ~continue:(fun new_f ->
-            (* FIXME would be nice if the platform started shaking (or some visual feedback that it is touched) *)
+            shake_platform 4.;
             platform.kind <- Some (DISAPPEARING (TOUCHED new_f)))
           ~change:(fun new_f ->
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
@@ -351,7 +362,7 @@ let update_environment (game : game) (state : state) =
         let coords_x, coords_y =
           (platform.sprite.dest.pos.x |> Float.to_int, platform.sprite.dest.pos.y |> Float.to_int)
         in
-        match List.assoc_opt (coords_x, coords_y) game.room.platform_spikes with
+        match List.assoc_opt platform.id game.room.platform_spikes with
         | None -> failwith "rotatable platform needs spikes"
         | Some s -> s
       in
@@ -372,21 +383,17 @@ let update_environment (game : game) (state : state) =
       | TOUCHED f ->
         itmp "TOUCHED";
         decrement_time
-          ~continue:(fun new_f -> platform.kind <- Some (ROTATABLE (TOUCHED new_f)))
-          ~change:(fun new_f ->
-            set_texture "rotatable-upside-down";
-            spikes.pos.y <- spikes.pos.y -. spikes_rotation_dy;
-            platform.kind <- Some (ROTATABLE (UPSIDE_DOWN 2.)))
+          ~continue:(fun new_f ->
+            shake_platform 4.;
+            platform.kind <- Some (ROTATABLE (TOUCHED new_f)))
+          ~change:(fun new_f -> Platform.rotate ~upright:false platform game state.global.textures)
           f
-        (* FIXME add new step | ROTATING of float, animate the texture *)
+      (* CLEANUP add new step | ROTATING of float, animate the texture *)
       | UPSIDE_DOWN f ->
         itmp "UPSIDE_DOWN";
         decrement_time
           ~continue:(fun new_f -> platform.kind <- Some (ROTATABLE (UPSIDE_DOWN new_f)))
-          ~change:(fun new_f ->
-            spikes.pos.y <- spikes.pos.y +. spikes_rotation_dy;
-            set_texture "rotatable";
-            platform.kind <- Some (ROTATABLE UPRIGHT))
+          ~change:(fun new_f -> Platform.rotate platform game state.global.textures)
           f
     in
     match platform.kind with

@@ -517,6 +517,21 @@ let resolve_slash_collisions (state : state) (game : game) =
             game.room.progress.removed_idxs_by_layer)
     in
 
+    let maybe_pogo_platform_spikes (id, rect) =
+      match Collision.with_slash' slash rect with
+      | None -> ()
+      | Some coll -> (
+        match coll.direction with
+        | DOWN -> (
+          (* always pogo, but only un-rotate the platform if it is upright *)
+          pogo game.ghost;
+          let platform = List.find (fun (p : platform) -> p.id = id) game.room.platforms in
+          match platform.kind with
+          | Some (ROTATABLE (UPSIDE_DOWN _)) -> Platform.rotate platform game state.global.textures
+          | _ -> ())
+        | _ -> ())
+    in
+
     let maybe_pogo rect =
       match Collision.with_slash' slash rect with
       | None -> ()
@@ -617,8 +632,8 @@ let resolve_slash_collisions (state : state) (game : game) =
 
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
-    (* FIXME pogo platform spikes *)
     List.iter maybe_pogo game.room.spikes;
+    List.iter maybe_pogo_platform_spikes game.room.platform_spikes;
     List.iter resolve_enemy game.room.enemies
 
 let reset_current_status () =
@@ -986,6 +1001,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   set_pose game.ghost (PERFORMING action_kind) state.frame.time
 
 let hazard_respawn (state : state) (game : game) =
+  (* FIXME also needs to cancel c-dash *)
   game.ghost.entity.current_floor <- None;
   Entity.unfreeze game.ghost.entity;
   state.camera.update_instantly <- true;

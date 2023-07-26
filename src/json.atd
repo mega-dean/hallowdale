@@ -40,7 +40,7 @@ type layer = [
     OBJECT_LAYER <json name="objectgroup"> of object_layer
 ] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
 
-(* FIXME see how polygons are exported (for collision shapes) *)
+(* TODO see how polygons are exported (for collision shapes) *)
 type object_group = {
   objects : coll_rect list;
 }

@@ -331,6 +331,8 @@ type platform = {
   (* CLEANUP maybe rename this to .state
      - but it is kind-specific state, so maybe .kind is fine
   *)
+  (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)
+  id : int;
   mutable kind : platform_kind option;
   sprite : sprite;
 }
@@ -1230,10 +1232,10 @@ type room = {
   triggers : triggers;
   floors : rect list;
   platforms : platform list;
-  (* string is platform name
+  (* int is the platform.id (which is just an int idx into room.objects, not corresponding to the coll_rect.id field)
      - want to keep this in a separate list (rather than as a variant arg to ROTATABLE) so it doesn't have to be looked up every frame
   *)
-  platform_spikes : ((int * int) * rect) list;
+  platform_spikes : (int * rect) list;
   spikes : rect list;
   acid : rect list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
@@ -1335,3 +1337,5 @@ type state = {
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
 let clone_time (t : time) : time = { at = t.at }
+
+
