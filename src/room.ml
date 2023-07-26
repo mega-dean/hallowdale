@@ -77,6 +77,7 @@ let init (params : room_params) : room =
   let platforms : platform list ref = ref [] in
   let floors : rect list ref = ref [] in
   let platform_spikes : (int * rect) list ref = ref [] in
+  let conveyor_belts : (rect * float) list ref = ref [] in
   let spikes : rect list ref = ref [] in
   let acid : rect list ref = ref [] in
   let hazards : rect list ref = ref [] in
@@ -132,7 +133,13 @@ let init (params : room_params) : room =
       acid := dest :: !acid
     in
 
+    let make_conveyor_belt idx (coll_rect : Json_t.coll_rect) =
+      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      conveyor_belts := (dest, coll_rect.name |> float_of_string) :: !conveyor_belts
+    in
+
     let make_platform idx (coll_rect : Json_t.coll_rect) =
+      (* CLEANUP duplicated *)
       let texture_name, texture, platform_kind =
         Tiled.Room.look_up_platform json_room params.platforms coll_rect.gid
       in
@@ -157,12 +164,7 @@ let init (params : room_params) : room =
         platform_spikes := (idx, dest) :: !platform_spikes
       | _ -> ());
       platforms :=
-        {
-          id = idx;
-          original_x = coll_rect.x *. Config.scale.room;
-          sprite;
-          kind = platform_kind;
-        }
+        { id = idx; original_x = coll_rect.x *. Config.scale.room; sprite; kind = platform_kind }
         :: !platforms
     in
 
@@ -345,6 +347,7 @@ let init (params : room_params) : room =
       | "hazard" -> List.iteri make_hazard json.objects
       | "floors" -> List.iteri make_floor json.objects
       | "platforms" -> List.iteri make_platform json.objects
+      | "conveyor-belts" -> List.iteri make_conveyor_belt json.objects
       | "triggers" -> List.iter categorize json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
@@ -664,6 +667,7 @@ let init (params : room_params) : room =
       };
     spikes = !spikes;
     platform_spikes = !platform_spikes;
+    conveyor_belts = !conveyor_belts;
     acid = !acid;
     hazards = !hazards;
     layers = tile_layers;

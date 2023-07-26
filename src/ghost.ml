@@ -103,6 +103,9 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
   | RESPAWN ->
     failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
 
+(* FIXME see if this can use Entity.maybe_unset_current_floor
+   - looks like the fn in Entity is for uncontrolled ghosts
+*)
 let maybe_unset_current_floor (ghost : ghost) (room : room) =
   match ghost.entity.current_floor with
   | None -> ()
@@ -118,6 +121,7 @@ let maybe_unset_current_floor (ghost : ghost) (room : room) =
           ghost.entity.dest.pos.y <- ghost.entity.dest.pos.y -. 1.;
           true
         | Some (collision, floor) ->
+          (* CLEANUP maybe add a fn Entity.set_current_floor with Zero.vector as default *)
           ghost.entity.current_floor <- Some floor;
           false)
       else
@@ -166,6 +170,7 @@ let pogo ghost =
    - updates y velocity for bonking head, but other velocity updates happen elsewhere (set_pose)
 *)
 (* TODO this is pretty similar to Entity.apply_collisions now, so it might make sense to combine them *)
+(* FIXME collisions arg should also have speed *)
 let apply_collisions (entity : entity) (collisions : (collision * rect) list) : unit =
   let adjust_position ((coll, floor) : collision * rect) =
     let top_of r = r.pos.y in
@@ -1303,7 +1308,7 @@ let update (game : game) (state : state) =
               (check_interact_key ();
                Some (label, trigger.dest)))
         | Some bi ->
-          (* this only supports "cutscene" blocking interactions *)
+          (* FIXME this only supports "cutscene" blocking interactions *)
           if List.mem (fmt "cutscene:%s" bi) all_finished_interactions then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
@@ -2174,8 +2179,21 @@ let update (game : game) (state : state) =
             List.iter check_collision collisions))
     in
     let damage_collisions = Entity.get_damage_collisions game.room game.ghost.entity in
-    let floor_collisions = Entity.get_floor_collisions game.room game.ghost.entity in
+    let floor_collisions' = Entity.get_floor_collisions game.room game.ghost.entity in
     let bench_collisions = Entity.get_bench_collisions game.room game.ghost.entity in
+    let floor_collisions =
+      match Entity.get_conveyor_belt_collision game.room game.ghost.entity with
+      | None -> floor_collisions'
+      | Some (collision, rect, speed) ->
+        (* FIXME apply speed
+           - may not work here, since UP collisions are only registered on the frame that the ghost lands, not when they are standing
+           - maybe set state on the ghost, but would probably be complicated to unset that state
+
+           - might work to add speed to floor_collisions'
+        *)
+        tmp "applying conveyor belt speed %f" speed;
+        (collision, rect) :: floor_collisions'
+    in
     (* since these are collisions from above, they are only detected for the frame that the
        ghost collides (and then again the frame after, which is a bug)
     *)

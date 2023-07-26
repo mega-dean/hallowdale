@@ -103,7 +103,7 @@ let init () : state =
       {
         path = { asset_dir = TILED; character_name = "platforms"; pose_name = "rotating" };
         count = 5;
-        duration = { seconds = 0.02 };
+        duration = { seconds = Config.platform.rotatable_anim_duration };
         x_offset = 0.;
         y_offset = 0.;
       }
@@ -638,6 +638,9 @@ let tick (state : state) =
           (List.map
              (fun (p : platform) -> (Raylib.Color.orange, p.sprite.dest))
              game.room.platforms);
+
+        add_debug_rects state
+          (List.map (fun (rect, _) -> (Raylib.Color.orange, rect)) game.room.conveyor_belts);
 
         add_debug_rects state
           (List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors);

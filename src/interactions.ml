@@ -197,17 +197,19 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
              outside of everything - a perfect moment. A silent moment. I call it the {{blue}} \
              World's Whisper.";
           ]
-      | "claw" ->
-        get_ability_steps "mantis_claw" 0. 4. [ "Taken the"; "Mantis Claw." ] [ "TODO claw" ]
-      | "starburns-dash" ->
+      | "reverse-danny-thomas" ->
+        get_ability_steps "mantis_claw" 0. 4.
+          [ "Learned the"; "Reverse Danny Thomas." ]
+          [ "Do you think this game's gotten a little out of hand?" ]
+      | "computer-heart" ->
         get_ability_steps "crystal_heart" 0. 5.
-          [ "Consumed the"; "Starburns Crystal." ]
+          [ "Consumed the"; "Computer Heart." ]
           [
             "Hold [ZL] while on the ground or clinging to a wall";
             "to concentrate the force.";
-            "Yeah, he uses some kind of crystal instead of deodorant.";
+            "Without an emotional component, computers will strip us of all humanity.";
           ]
-      | "ability:monkey-gas" ->
+      | "monkey-gas" ->
         get_ability_steps "howling_wraiths" 0. 6.
           [ "Consumed the"; "Monkey Knockout Gas." ]
           [
@@ -215,7 +217,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             "to unleash the Knockout Gas.";
             "Some kind of gas that knocks out monkeys.";
           ]
-      | "ability:shade-cloak" ->
+      | "shade-cloak" ->
         get_ability_steps "shade_cloak" 0. 7.
           [ "Consumed the"; "Shade Cloak." ]
           [

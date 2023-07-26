@@ -1024,7 +1024,7 @@ let tick (state : state) =
           match invincibility_kind with
           | TOOK_DAMAGE -> Color.create 255 255 255 a
           | DIVE_IFRAMES -> Color.create a a a 255
-          | SHADE_CLOAK -> Color.create 0 0 0 255)
+          | SHADE_CLOAK -> Color.create 0 100 200 255)
       in
 
       let draw_child ((child_kind, child) : ghost_child_kind * ghost_child) =

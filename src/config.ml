@@ -82,6 +82,7 @@ type platform_config = {
   rotatable_touched_time : float;
   rotatable_upside_down_time : float;
   rotatable_spikes_dy : float;
+  rotatable_anim_duration : float;
 }
 
 (* not using json configs for these because there probably won't be any besides DISAPPEARABLE/ROTATABLE *)
@@ -95,6 +96,7 @@ let platform =
       (* this is specific to the rotating c-heart spikes
          (would have to look this up from texture height to do it generically) *)
       70.;
+    rotatable_anim_duration = 0.05;
   }
 
 type ghost_config = {

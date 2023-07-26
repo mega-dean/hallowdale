@@ -206,8 +206,8 @@
             "duration": 0.1
         }],
         ["shade-cloak-sparkles", {
-            "count": 7,
-            "duration": 0.23 // total duration of this particle should be the same as shade-cloak cooldown (1.5s)
+            "count": 21,
+            "duration": 0.076666 // total duration of this particle should be the same as shade-cloak cooldown (1.5s)
         }]
     ],
 

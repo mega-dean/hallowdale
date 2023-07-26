@@ -61,6 +61,7 @@ let set_facing (d : direction) (e : entity) =
   | LEFT -> e.sprite.facing_right <- false
   | _ -> failwithf "Entity.set_facing bad direction %s" (Show.direction d)
 
+(* FIXME this should add current_floor velocity *)
 let apply_v ?(debug = None) dt (e : entity) =
   (match debug with
   | None -> ()
@@ -128,10 +129,20 @@ let get_tile_collisions (layers : layer list) (entity : entity) : (collision * r
   List.iter check_collision layers;
   !collisions
 
-(* TODO consolidate these *)
 let get_bench_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.name = "benches") room.layers in
   get_tile_collisions layers entity
+
+let get_conveyor_belt_collision (room : room) (entity : entity) : (collision * rect * float) option
+    =
+  let collisions : (collision * rect * float) list ref = ref [] in
+  let check_collision ((rect, speed) : rect * float) =
+    match Collision.with_entity entity rect with
+    | None -> ()
+    | Some coll -> collisions := (coll, rect, speed) :: !collisions
+  in
+  List.iter check_collision room.conveyor_belts;
+  List.nth_opt !collisions 0
 
 let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
@@ -148,6 +159,7 @@ let get_acid_collisions (room : room) (entity : entity) : (collision * rect) lis
 
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
 let get_damage_collisions (room : room) (entity : entity) : (collision * rect) list =
+  (* FIXME don't check platform_spikes here - they are treated like enemy damage (ie no hazard respawn) *)
   get_rect_collisions entity (room.hazards @ room.spikes @ List.map snd room.platform_spikes)
 
 let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =
@@ -170,7 +182,8 @@ let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * r
         if e.config.bounce < 0.01 then
           (* this is a little weird, but the floor shouldn't be set for fragments
              (because it forces the new_vy to be 0.) *)
-          e.current_floor <- Some floor;
+          (* FIXME e.current_floor <- Some (floor, Zero.vector ()); *)
+          e.current_floor <- Some (floor);
         e.dest.pos.y <- top_of floor -. e.dest.h);
       if abs_float e.v.x < 10. then (
         e.v.y <- 0.;
@@ -236,7 +249,7 @@ let update_enemy_pos
 let maybe_unset_current_floor (entity : entity) (room : room) =
   match entity.current_floor with
   | None -> ()
-  | Some floor ->
+  | Some (floor) ->
     let walked_over_edge =
       if not (above_floor entity floor) then (
         (* smoothly walk to adjacent floors by (temporarily) pushing the ghost down a pixel to
@@ -248,7 +261,7 @@ let maybe_unset_current_floor (entity : entity) (room : room) =
           entity.dest.pos.y <- entity.dest.pos.y -. 1.;
           true
         | Some (collision, floor) ->
-          entity.current_floor <- Some floor;
+          entity.current_floor <- Some (floor);
           false)
       else
         false

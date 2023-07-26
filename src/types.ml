@@ -317,12 +317,11 @@ type rotatable_state =
   | ROTATING_NOW
   | UPSIDE_DOWN of float
 
+(* conveyor belts don't need to be platforms because they don't change state, they just
+   have a constant effect on the ghost when colliding *)
 type platform_kind =
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
-(* TODO not sure if this will need to be handled separately
-   | CONVEYOR_BELT
-*)
 
 type platform = {
   (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)
@@ -349,6 +348,10 @@ type entity = {
   mutable update_pos : bool;
   mutable x_recoil : recoil option;
   mutable y_recoil : recoil option;
+  (* vector is usually 0, but is nonzero for conveyor belts *)
+  (* FIXME maybe do this
+     mutable current_floor : (rect * vector) option;
+  *)
   mutable current_floor : rect option;
   mutable current_platforms : platform list;
 }
@@ -1231,6 +1234,7 @@ type room = {
   *)
   platform_spikes : (int * rect) list;
   spikes : rect list;
+  conveyor_belts : (rect * float) list;
   acid : rect list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
   hazards : rect list;
