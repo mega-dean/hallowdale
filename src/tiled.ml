@@ -228,7 +228,7 @@ module Room = struct
 
     let platform_names =
       [
-        (* CLEANUP this order is copied from the platforms.json tileset, so it should be read from there
+        (* TODO this order is copied from the platforms.json tileset, so it should be read from there
            - if it can't for some reason, it's still probably worth maintaining this list manually for now, since it removes the requirement for platforms to have names
            - this could definitely be done for change_current_room, but initial room load will be tricky
              -- actually maybe not, maybe just read the file and call the Json_j.tileset_of_string fn directly in Room.init

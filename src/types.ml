@@ -320,7 +320,7 @@ type rotatable_state =
 type platform_kind =
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
-(* CLEANUP not sure if this will need to be handled separately
+(* TODO not sure if this will need to be handled separately
    | CONVEYOR_BELT
 *)
 

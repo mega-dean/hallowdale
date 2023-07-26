@@ -2068,12 +2068,6 @@ let update (game : game) (state : state) =
         | Some (damage, direction) -> start_action state game (TAKE_DAMAGE (damage, direction))
         | None -> ())
     in
-    (* CLEANUP this does not work well for rotating spike platforms, since the ghost can get stuck
-       - maybe make is_taking_hazard_damage a time instead of a bool
-
-       - this also breaks when dashing into spikes that are slightly inside a floor,
-       because it collides for a frame and then adjusts the ghost to outside the floor
-    *)
     let check_damage_collisions collisions =
       state.debug.rects <-
         List.map (fun c -> (Raylib.Color.red, snd c)) collisions @ state.debug.rects;
@@ -2084,7 +2078,7 @@ let update (game : game) (state : state) =
           let acid_collisions = Entity.get_acid_collisions game.room game.ghost.entity in
           collisions @ acid_collisions)
       in
-      if List.length collisions' = 0 then (
+      if List.length collisions' = 0 && not game.ghost.current.is_taking_hazard_damage then (
         let projectile_collisions =
           if is_vulnerable state game then
             Entity.get_loose_projectile_collisions game.room game.ghost.entity

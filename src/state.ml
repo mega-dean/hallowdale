@@ -628,10 +628,6 @@ let tick (state : state) =
           add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
         in
 
-        itmp "got %d platform_spikes with rect: %s"
-          (List.length game.room.platform_spikes)
-          (List.map snd game.room.platform_spikes |> List.map (fun r -> Show.rect r) |> join);
-
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
         show_triggers game.room.triggers.d_nail;

@@ -324,7 +324,7 @@ let init (params : room_params) : room =
             coll_rect
           :: !enemy_rects
       | "respawn" ->
-        (* CLEANUP try using connected objects instead of parsing coordinates from the name *)
+        (* TODO try using connected objects instead of parsing coordinates from the name *)
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "door-warp" ->
