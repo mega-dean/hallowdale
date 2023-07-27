@@ -13,6 +13,7 @@ let parse_name context name : enemy_id =
   | "FISH" -> FISH
   | "FROG" -> FROG
   | "ELECTRICITY" -> ELECTRICITY
+  | "WIRED_ELECTRICITY" -> WIRED_ELECTRICITY
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
 let last_performed_action (enemy : enemy) : string * float =
@@ -247,6 +248,7 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
     | FROG -> ()
     | FISH
     | PENGUIN
+    | WIRED_ELECTRICITY
     | ELECTRICITY ->
       ()));
   set_pose enemy !pose_name
@@ -405,6 +407,7 @@ let maybe_take_damage
     | PENGUIN
     | DUNCAN
     | FISH
+    | WIRED_ELECTRICITY
     | ELECTRICITY ->
       ()
   in
@@ -611,6 +614,13 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         set_pose enemy "idle-descending")
       else
         set_pose enemy "idle")
+  | WIRED_ELECTRICITY ->
+    ()
+    (* FIXME  *)
+    (* let last_shock = action_started_at enemy "shock" in
+     * let shock_dt = (\* needs to be > 2.2 *\) 4. in
+     * if last_shock.at < state.frame.time -. shock_dt then
+     *   set_electricity_action enemy `SHOCK state.frame.time [] *)
   | ELECTRICITY ->
     let last_shock = action_started_at enemy "shock" in
     let shock_dt = (* needs to be > 2.2 *) 4. in

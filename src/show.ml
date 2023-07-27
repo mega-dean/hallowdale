@@ -368,6 +368,7 @@ let enemy_id (e : enemy_id) : string =
   | FISH -> "FISH"
   | FROG -> "FROG"
   | ELECTRICITY -> "ELECTRICITY"
+  | WIRED_ELECTRICITY -> "WIRED_ELECTRICITY"
 
 let npc_id (n : npc_id) : string =
   match n with

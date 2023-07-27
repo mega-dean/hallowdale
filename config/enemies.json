@@ -202,6 +202,35 @@
                     "duration": 0.2
                 }]
             ]
+        }],
+
+        [ "WIRED_ELECTRICITY", {
+            "health": 1,
+            "w": 0,
+            "h": 0,
+            "kind": "enemy",
+            "gravity_multiplier": 0.0,
+            "can_take_damage": false,
+            "dream_nail": {
+                "vulnerable": false
+            },
+            "texture_configs": [
+                ["idle", {
+                    "count": 1,
+                    "duration": 0.2
+                }],
+                ["charging", {
+                    "count": 3,
+                    "duration": 0.2,
+                    // FIXME
+                    "x_offset": 55,
+                    "y_offset": 85
+                }],
+                ["beam", {
+                    "count": 3,
+                    "duration": 0.2
+                }]
+            ]
         }]
 
     ],

@@ -113,6 +113,17 @@
                  "width":24,
                  "x":514,
                  "y":865.5
+                }, 
+                {
+                 "height":24,
+                 "id":108,
+                 "name":"enemy:WIRED_ELECTRICITY",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":23,
+                 "x":3850.5,
+                 "y":1046.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1398,7 +1409,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":108,
+ "nextobjectid":109,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",

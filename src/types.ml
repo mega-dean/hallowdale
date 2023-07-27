@@ -479,6 +479,7 @@ type enemy_id =
   | FISH
   | FROG
   | ELECTRICITY
+  | WIRED_ELECTRICITY
 
 type weapon = {
   name : string;
