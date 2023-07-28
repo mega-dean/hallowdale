@@ -254,6 +254,7 @@ module Room = struct
         ("bamboo", Some (DISAPPEARABLE VISIBLE));
         ("bamboo-wide", Some (DISAPPEARABLE VISIBLE));
         ("rotatable", Some (ROTATABLE UPRIGHT));
+        ("bench", None);
       ]
     in
     let texture_name, platform_kind =

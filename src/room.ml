@@ -424,7 +424,6 @@ let init (params : room_params) : room =
             let configs =
               match layer_name with
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
-              | "water" -> [ "animated"; "water"; "fg" ]
               | "floors" -> [ "fg" ]
               (* this is used for floors that are removed, like the breaking floor in King's Pass
                  and the bridge in c-dash room *)
@@ -432,7 +431,9 @@ let init (params : room_params) : room =
               | "benches" -> [ "collides" ]
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
+              (* FIXME fix acid/water collisions *)
               | "acid" -> [ "animated"; "hazard" ]
+              | "water" -> [ "animated"; "water"; "fg" ]
               (* TODO probably add "conveyor-belt" tiles that are animated like acid
                  - or maybe just rename "acid"->"animated" layer and use it for conveyor belts too
               *)
@@ -562,6 +563,10 @@ let init (params : room_params) : room =
         entity
       in
 
+      (* FIXME update for new tile size
+         - width will definitely be wrong - maybe update the configs, but maybe just multiply by 2 here
+         - fragments may be messed up
+      *)
       let make_jug (config : jug_config) : int * jug_fragments =
         let fragments : entity list =
           let tile_x = config.tile_x in

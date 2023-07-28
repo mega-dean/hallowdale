@@ -1,0 +1,212 @@
+{ "columns":88,
+ "image":"terrains12.png",
+ "imageheight":720,
+ "imagewidth":1056,
+ "margin":0,
+ "name":"terrains12",
+ "spacing":0,
+ "tilecount":5280,
+ "tiledversion":"1.10.1",
+ "tileheight":12,
+ "tilewidth":12,
+ "type":"tileset",
+ "version":"1.10",
+ "wangsets":[
+        {
+         "colors":[
+                {
+                 "color":"#ff0000",
+                 "name":"shadow",
+                 "probability":1,
+                 "tile":-1
+                }, 
+                {
+                 "color":"#00ff00",
+                 "name":"floor",
+                 "probability":1,
+                 "tile":-1
+                }, 
+                {
+                 "color":"#0000ff",
+                 "name":"surface",
+                 "probability":1,
+                 "tile":-1
+                }],
+         "name":"mixed",
+         "tile":-1,
+         "type":"mixed",
+         "wangtiles":[
+                {
+                 "tileid":3257,
+                 "wangid":[0, 0, 2, 0, 2, 0, 0, 0]
+                }, 
+                {
+                 "tileid":3258,
+                 "wangid":[0, 0, 2, 0, 0, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3259,
+                 "wangid":[0, 0, 2, 0, 0, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3260,
+                 "wangid":[0, 0, 0, 0, 2, 0, 2, 0]
+                }]
+        }, 
+        {
+         "colors":[
+                {
+                 "color":"#ff0000",
+                 "name":"shadow",
+                 "probability":1,
+                 "tile":-1
+                }, 
+                {
+                 "color":"#00ff00",
+                 "name":"floor",
+                 "probability":1,
+                 "tile":-1
+                }],
+         "name":"corner",
+         "tile":-1,
+         "type":"corner",
+         "wangtiles":[
+                {
+                 "tileid":3085,
+                 "wangid":[0, 2, 0, 2, 0, 2, 0, 2]
+                }, 
+                {
+                 "tileid":3257,
+                 "wangid":[0, 2, 0, 1, 0, 2, 0, 2]
+                }, 
+                {
+                 "tileid":3259,
+                 "wangid":[0, 2, 0, 1, 0, 1, 0, 2]
+                }, 
+                {
+                 "tileid":3260,
+                 "wangid":[0, 2, 0, 2, 0, 1, 0, 2]
+                }, 
+                {
+                 "tileid":3433,
+                 "wangid":[0, 1, 0, 1, 0, 2, 0, 2]
+                }, 
+                {
+                 "tileid":3435,
+                 "wangid":[0, 1, 0, 1, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":3436,
+                 "wangid":[0, 2, 0, 2, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":3521,
+                 "wangid":[0, 1, 0, 2, 0, 2, 0, 2]
+                }, 
+                {
+                 "tileid":3523,
+                 "wangid":[0, 1, 0, 2, 0, 2, 0, 1]
+                }, 
+                {
+                 "tileid":3524,
+                 "wangid":[0, 2, 0, 2, 0, 2, 0, 1]
+                }, 
+                {
+                 "tileid":3696,
+                 "wangid":[0, 1, 0, 2, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":3701,
+                 "wangid":[0, 1, 0, 1, 0, 2, 0, 1]
+                }, 
+                {
+                 "tileid":4136,
+                 "wangid":[0, 2, 0, 1, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":4141,
+                 "wangid":[0, 1, 0, 1, 0, 1, 0, 2]
+                }]
+        }, 
+        {
+         "colors":[
+                {
+                 "color":"#ff0000",
+                 "name":"shadow",
+                 "probability":1,
+                 "tile":-1
+                }, 
+                {
+                 "color":"#00ff00",
+                 "name":"floor",
+                 "probability":1,
+                 "tile":-1
+                }, 
+                {
+                 "color":"#0000ff",
+                 "name":"surface",
+                 "probability":1,
+                 "tile":-1
+                }],
+         "name":"edge",
+         "tile":-1,
+         "type":"edge",
+         "wangtiles":[
+                {
+                 "tileid":3257,
+                 "wangid":[3, 0, 2, 0, 2, 0, 3, 0]
+                }, 
+                {
+                 "tileid":3259,
+                 "wangid":[3, 0, 2, 0, 1, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3260,
+                 "wangid":[3, 0, 3, 0, 2, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3345,
+                 "wangid":[2, 0, 1, 0, 2, 0, 3, 0]
+                }, 
+                {
+                 "tileid":3347,
+                 "wangid":[1, 0, 1, 0, 1, 0, 1, 0]
+                }, 
+                {
+                 "tileid":3348,
+                 "wangid":[2, 0, 3, 0, 2, 0, 1, 0]
+                }, 
+                {
+                 "tileid":3521,
+                 "wangid":[2, 0, 2, 0, 3, 0, 3, 0]
+                }, 
+                {
+                 "tileid":3523,
+                 "wangid":[1, 0, 2, 0, 3, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3524,
+                 "wangid":[2, 0, 3, 0, 3, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3696,
+                 "wangid":[1, 0, 2, 0, 2, 0, 1, 0]
+                }, 
+                {
+                 "tileid":3701,
+                 "wangid":[1, 0, 1, 0, 2, 0, 2, 0]
+                }, 
+                {
+                 "tileid":3875,
+                 "wangid":[3, 0, 3, 0, 3, 0, 3, 0]
+                }, 
+                {
+                 "tileid":4136,
+                 "wangid":[2, 0, 2, 0, 1, 0, 1, 0]
+                }, 
+                {
+                 "tileid":4141,
+                 "wangid":[2, 0, 1, 0, 1, 0, 2, 0]
+                }]
+        }]
+}

@@ -322,6 +322,7 @@ type rotatable_state =
 type platform_kind =
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
+  (* TODO maybe add | BENCH *)
 
 type platform = {
   (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)

@@ -14,6 +14,7 @@ module Draw = struct
   let circle_v = draw_circle_v
   let rect_lines = draw_rectangle_lines_ex
   let rect = draw_rectangle
+    (* FIXME need to rename this now that I'm using actual Raylib draw_image *)
   let image = draw_texture_pro
   let line_ex = draw_line_ex
 end
@@ -169,6 +170,7 @@ let draw_tiled_layer
           in
           let w, h = Tiled.Room.dest_wh room.json () in
           let dest = { pos = { x; y }; w; h } in
+          (* FIXME instead of drawing texture, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
     let draw_spawned_fragment (f : entity) =
