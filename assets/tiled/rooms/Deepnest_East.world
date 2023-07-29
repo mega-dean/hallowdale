@@ -482,6 +482,13 @@
             "width": 1440,
             "x": 864,
             "y": 3384
+        },
+        {
+            "fileName": "forgotten_deans-pass12.json",
+            "height": 1584,
+            "width": 3720,
+            "x": -4020,
+            "y": 2460
         }
     ],
     "onlyShowAdjacentMaps": false,

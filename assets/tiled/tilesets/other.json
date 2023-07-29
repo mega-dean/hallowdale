@@ -10,37 +10,5 @@
  "tileheight":24,
  "tilewidth":24,
  "type":"tileset",
- "version":"1.10",
- "wangsets":[
-        {
-         "colors":[
-                {
-                 "color":"#ff0000",
-                 "name":"shadows'",
-                 "probability":1,
-                 "tile":-1
-                }, 
-                {
-                 "color":"#0000ff",
-                 "name":"floors",
-                 "probability":1,
-                 "tile":-1
-                }, 
-                {
-                 "color":"#00aaff",
-                 "name":"offset-floors",
-                 "probability":1,
-                 "tile":-1
-                }, 
-                {
-                 "color":"#00ff7f",
-                 "name":"surface",
-                 "probability":1,
-                 "tile":-1
-                }],
-         "name":"shadows",
-         "tile":-1,
-         "type":"corner",
-         "wangtiles":[]
-        }]
+ "version":"1.10"
 }
