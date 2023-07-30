@@ -14,8 +14,7 @@ let new_game () : Json_t.save_file =
     (* there aren't any hazards in king's pass for new games, so respawn_pos doesn't matter *)
     respawn_x = 0.;
     respawn_y = 0.;
-    (* FIXME room_name = "forgotten_deans-pass"; *)
-    room_name = "forgotten_deans-pass12";
+    room_name = "forgotten_deans-pass";
     abilities =
       {
         (* movement *)

@@ -4,29 +4,8 @@
             "fileName": "forgotten_deans-pass.json",
             "height": 1584,
             "width": 3720,
-            "x": 12024,
-            "y": 4848
-        },
-        {
-            "fileName": "infected_teachers-lounge.json",
-            "height": 432,
-            "width": 1176,
-            "x": -240,
-            "y": 792
-        },
-        {
-            "fileName": "infected_a.json",
-            "height": 1272,
-            "width": 864,
-            "x": 936,
-            "y": 960
-        },
-        {
-            "fileName": "infected_b.json",
-            "height": 720,
-            "width": 2880,
-            "x": 1800,
-            "y": 720
+            "x": -3960,
+            "y": 816
         },
         {
             "fileName": "forgotten_cafeteria.json",
@@ -484,11 +463,11 @@
             "y": 3384
         },
         {
-            "fileName": "forgotten_deans-pass12.json",
-            "height": 1584,
-            "width": 3720,
-            "x": -3960,
-            "y": 816
+            "fileName": "infected_a.json",
+            "height": 432,
+            "width": 1176,
+            "x": -240,
+            "y": 792
         }
     ],
     "onlyShowAdjacentMaps": false,

@@ -1,0 +1,96 @@
+{ "columns":44,
+ "image":"world-map12.png",
+ "imageheight":360,
+ "imagewidth":528,
+ "margin":0,
+ "name":"world-map12",
+ "spacing":0,
+ "tilecount":1320,
+ "tiledversion":"1.10.1",
+ "tileheight":12,
+ "tilewidth":12,
+ "type":"tileset",
+ "version":"1.10",
+ "wangsets":[
+        {
+         "colors":[
+                {
+                 "color":"#ffaa00",
+                 "name":"orange",
+                 "probability":1,
+                 "tile":-1
+                }],
+         "name":"world-map",
+         "tile":-1,
+         "type":"corner",
+         "wangtiles":[
+                {
+                 "tileid":121,
+                 "wangid":[0, 0, 0, 1, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":122,
+                 "wangid":[0, 0, 0, 1, 0, 1, 0, 0]
+                }, 
+                {
+                 "tileid":123,
+                 "wangid":[0, 0, 0, 0, 0, 1, 0, 0]
+                }, 
+                {
+                 "tileid":165,
+                 "wangid":[0, 1, 0, 1, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":166,
+                 "wangid":[0, 1, 0, 1, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":167,
+                 "wangid":[0, 0, 0, 0, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":209,
+                 "wangid":[0, 1, 0, 0, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":210,
+                 "wangid":[0, 1, 0, 0, 0, 0, 0, 1]
+                }, 
+                {
+                 "tileid":211,
+                 "wangid":[0, 0, 0, 0, 0, 0, 0, 1]
+                }, 
+                {
+                 "tileid":253,
+                 "wangid":[0, 1, 0, 0, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":254,
+                 "wangid":[0, 1, 0, 0, 0, 0, 0, 1]
+                }, 
+                {
+                 "tileid":255,
+                 "wangid":[0, 1, 0, 1, 0, 0, 0, 1]
+                }, 
+                {
+                 "tileid":297,
+                 "wangid":[0, 0, 0, 0, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":299,
+                 "wangid":[0, 1, 0, 1, 0, 0, 0, 0]
+                }, 
+                {
+                 "tileid":341,
+                 "wangid":[0, 0, 0, 1, 0, 1, 0, 1]
+                }, 
+                {
+                 "tileid":342,
+                 "wangid":[0, 0, 0, 1, 0, 1, 0, 0]
+                }, 
+                {
+                 "tileid":343,
+                 "wangid":[0, 1, 0, 1, 0, 1, 0, 0]
+                }]
+        }]
+}
