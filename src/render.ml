@@ -84,8 +84,10 @@ let draw_texture
     | _n -> (r, 0.)
   in
   let tile_size =
-    (* TODO should probably pass in tile_w/tile_h from room.json, but they are all 24 so this works for now *)
-    24. *. Config.scale.room
+    (* FIXME maybe move to a config
+       ... except now it _really_ won't change, so maybe not
+    *)
+    12. *. Config.scale.room
   in
   let dest' =
     match rotation with

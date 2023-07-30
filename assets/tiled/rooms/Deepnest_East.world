@@ -4,8 +4,8 @@
             "fileName": "forgotten_deans-pass.json",
             "height": 1584,
             "width": 3720,
-            "x": -3960,
-            "y": 816
+            "x": 12024,
+            "y": 4848
         },
         {
             "fileName": "infected_teachers-lounge.json",
@@ -487,8 +487,8 @@
             "fileName": "forgotten_deans-pass12.json",
             "height": 1584,
             "width": 3720,
-            "x": -4020,
-            "y": 2460
+            "x": -3960,
+            "y": 816
         }
     ],
     "onlyShowAdjacentMaps": false,

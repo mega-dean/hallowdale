@@ -55,6 +55,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "final_boss" -> (FINAL, BOSS)
   | "forgotten_cafeteria" -> (FORGOTTEN_CLASSROOMS, FC_CAFETERIA)
   | "forgotten_deans-pass" -> (FORGOTTEN_CLASSROOMS, FC_DEANS_PASS)
+  | "forgotten_deans-pass12" -> (FORGOTTEN_CLASSROOMS, FC_DEANS_PASS)
   | "forgotten_stairwell" -> (FORGOTTEN_CLASSROOMS, FC_STAIRWELL)
   | "forgotten_a" -> (FORGOTTEN_CLASSROOMS, FC_A)
   | "forgotten_b" -> (FORGOTTEN_CLASSROOMS, FC_B)
@@ -493,6 +494,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
            for different things, so image-based tilesets (like platforms) aren't compatible
            with regular tilesets *)
         String.equal "../tilesets/world-map.json" source.source
+        || String.equal ":/automap-tiles.tsx" source.source
         || String.starts_with ~prefix:"../platforms/" source.source
       in
       if ignore_tileset () then

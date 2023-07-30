@@ -45,14 +45,16 @@ type window_config = {
 }
 
 let window : window_config =
-  let tile_size = 24 in
+  (* let tile_size = 24 in *)
+  let tile_size = 12 in
   let tiles (x_tiles, y_tiles) =
     (*
        - if this is not an exact multiple of tile_size, pixels get distorted when the camera isn't moving
     *)
     (x_tiles * tile_size * scale.roomi, y_tiles * tile_size * scale.roomi)
   in
-  let width, height = tiles (22, 12) in
+  (* let width, height = tiles (22, 12) in *)
+  let width, height = tiles (44, 24) in
   let fps =
     (* 960 *)
     (* 480 *)

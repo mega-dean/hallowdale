@@ -458,7 +458,8 @@ let init (params : room_params) : room =
               | "close-fg" -> [ "fg"; "shaded" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
               | "bg-jugs" -> [ "bg"; "destroyable"; "pogoable" ]
-              | unknown -> failwithf "unknown layer name '%s' in room %s" unknown params.file_name
+              | unknown ->
+                failwithf "unknown layer name '%s' in room %s" unknown params.file_name
             in
 
             let build_config config_parts =
@@ -519,7 +520,7 @@ let init (params : room_params) : room =
             json.name
         else
           layer_names := json.name :: !layer_names;
-        if List.mem json.name [ "world-map"; "camera-reference" ] then
+        if List.mem json.name [ "world-map"; "camera-reference"; "floors-reference" ] then
           ()
         else
           add_new_layer ()

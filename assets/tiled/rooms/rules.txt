@@ -1,0 +1,5 @@
+automapping/reset.tmj
+automapping/draw-floors.tmj
+automapping/draw-walls.tmj
+automapping/draw-hanging-shadows.tmj
+automapping/draw-top-corners.tmj
