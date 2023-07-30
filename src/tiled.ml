@@ -8,6 +8,7 @@ let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room 
 let scale_rect x y w h =
   { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
 
+(* FIXME update this list *)
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
   match file_name with
@@ -64,17 +65,16 @@ let parse_room_filename source file_name : area_id * room_id =
   | "forgotten_g" -> (FORGOTTEN_CLASSROOMS, FC_G)
   | "forgotten_h" -> (FORGOTTEN_CLASSROOMS, FC_H)
   | "forgotten_i" -> (FORGOTTEN_CLASSROOMS, FC_I)
-  (* FIXME should only need ~4 infected rooms *)
   | "infected_a" -> (INFECTED_CLASSROOMS, IC_A)
   | "infected_b" -> (INFECTED_CLASSROOMS, IC_B)
   | "infected_c" -> (* TODO move to forgotten_ *) (INFECTED_CLASSROOMS, IC_C)
   | "infected_d" -> (INFECTED_CLASSROOMS, IC_D)
-  | "infected_e" -> (INFECTED_CLASSROOMS, IC_E)
-  | "infected_f" -> (INFECTED_CLASSROOMS, IC_F)
-  | "infected_teachers-lounge" -> (INFECTED_CLASSROOMS, IC_TEACHERS_LOUNGE)
-  | "infected_g" -> (INFECTED_CLASSROOMS, IC_G)
-  | "infected_h" -> (INFECTED_CLASSROOMS, IC_H)
-  | "infected_i" -> (INFECTED_CLASSROOMS, IC_I)
+  (* | "infected_e" -> (INFECTED_CLASSROOMS, IC_E)
+   * | "infected_f" -> (INFECTED_CLASSROOMS, IC_F)
+   * | "infected_teachers-lounge" -> (INFECTED_CLASSROOMS, IC_TEACHERS_LOUNGE)
+   * | "infected_g" -> (INFECTED_CLASSROOMS, IC_G)
+   * | "infected_h" -> (INFECTED_CLASSROOMS, IC_H)
+   * | "infected_i" -> (INFECTED_CLASSROOMS, IC_I) *)
   | "library_a" -> (LIBRARY, LIB_A)
   | "library_b" -> (LIBRARY, LIB_B)
   | "library_c" -> (LIBRARY, LIB_C)

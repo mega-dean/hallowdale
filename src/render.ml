@@ -164,6 +164,9 @@ let draw_tiled_layer
                 (* TODO this should probably just use an animated sprite instead of
                    this weird animation_offset for the tile gid
                 *)
+                (* FIXME probably needs `mod 16` now
+                   - probably will be more complicated that that since it needs to skip every-other tile
+                *)
                 4 * frame_idx / Config.window.fps mod 8
               else
                 0

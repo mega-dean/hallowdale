@@ -8,13 +8,6 @@
             "y": 816
         },
         {
-            "fileName": "forgotten_cafeteria.json",
-            "height": 1272,
-            "width": 2856,
-            "x": 2472,
-            "y": 1440
-        },
-        {
             "fileName": "forgotten_stairwell.json",
             "height": 1920,
             "width": 792,
@@ -83,13 +76,6 @@
             "width": 504,
             "x": 6672,
             "y": 4632
-        },
-        {
-            "fileName": "beenz_2-a.json",
-            "height": 1608,
-            "width": 816,
-            "x": 936,
-            "y": -648
         },
         {
             "fileName": "beenz_2-b.json",
@@ -288,13 +274,6 @@
             "y": 5736
         },
         {
-            "fileName": "forgotten_a.json",
-            "height": 1056,
-            "width": 1704,
-            "x": 16152,
-            "y": 744
-        },
-        {
             "fileName": "library_d.json",
             "height": 480,
             "width": 960,
@@ -317,10 +296,10 @@
         },
         {
             "fileName": "infected_c.json",
-            "height": 888,
-            "width": 4632,
-            "x": 2904,
-            "y": -1488
+            "height": 1272,
+            "width": 864,
+            "x": 936,
+            "y": 960
         },
         {
             "fileName": "trampoline_e.json",
@@ -468,6 +447,27 @@
             "width": 1176,
             "x": -240,
             "y": 792
+        },
+        {
+            "fileName": "infected_b.json",
+            "height": 720,
+            "width": 2880,
+            "x": 1800,
+            "y": 720
+        },
+        {
+            "fileName": "infected_d.json",
+            "height": 1608,
+            "width": 816,
+            "x": 936,
+            "y": -648
+        },
+        {
+            "fileName": "forgotten_a.json",
+            "height": 1272,
+            "width": 2856,
+            "x": 2472,
+            "y": 1440
         }
     ],
     "onlyShowAdjacentMaps": false,

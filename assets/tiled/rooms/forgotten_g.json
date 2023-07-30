@@ -8,7 +8,7 @@
          "name":"bg-reference",
          "opacity":1,
          "type":"imagelayer",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -46,7 +46,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":118,
          "x":0,
          "y":0
@@ -58,7 +58,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -96,7 +96,7 @@
          "name":"floors2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":118,
          "x":0,
          "y":0
@@ -135,7 +135,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":118,
          "x":0,
          "y":0
