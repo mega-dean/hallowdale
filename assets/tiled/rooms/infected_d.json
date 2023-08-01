@@ -8,7 +8,7 @@
          "name":"bg-reference",
          "opacity":1,
          "type":"imagelayer",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -152,7 +152,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":68,
          "x":0,
          "y":0
@@ -297,7 +297,7 @@
          "name":"floors-reference",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":68,
          "x":0,
          "y":0

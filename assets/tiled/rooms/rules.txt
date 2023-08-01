@@ -7,6 +7,6 @@ automapping/draw-top-corners.tmj
 # this draws a box around the room, which is helpful for
 # simple rooms, but inconvenient for complicated ones:
 
-# automapping/create-world-map.tmj
-# automapping/draw-world-map.tmj
-# automapping/fix-world-map-corners.tmj
+automapping/create-world-map.tmj
+automapping/draw-world-map.tmj
+automapping/fix-world-map-corners.tmj
