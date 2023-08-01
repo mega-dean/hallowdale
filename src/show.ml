@@ -157,6 +157,7 @@ let area_id id =
   | FORGOTTEN_CLASSROOMS -> "forgotten"
   | INFECTED_CLASSROOMS -> "infected"
   | MEOW_MEOW_BEENZ -> "beenz"
+  | OUTLANDS -> "outlands"
   | TRAMPOLINEPATH -> "trampoline"
   | LIBRARY -> "library"
   | VENTWAYS -> "ventways"

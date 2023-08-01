@@ -458,8 +458,7 @@ let init (params : room_params) : room =
               | "close-fg" -> [ "fg"; "shaded" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
               | "bg-jugs" -> [ "bg"; "destroyable"; "pogoable" ]
-              | unknown ->
-                failwithf "unknown layer name '%s' in room %s" unknown params.file_name
+              | unknown -> failwithf "unknown layer name '%s' in room %s" unknown params.file_name
             in
 
             let build_config config_parts =
@@ -635,6 +634,7 @@ let init (params : room_params) : room =
       | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
       | BASEMENT -> Raylib.Color.create 50 20 50 255
       | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
+      | OUTLANDS -> (* FIXME  *) Raylib.Color.create 121 121 40 255
       | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
       | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
       | VENTWAYS -> Raylib.Color.create 129 129 129 255

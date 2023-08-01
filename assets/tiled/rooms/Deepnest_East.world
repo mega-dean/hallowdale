@@ -15,235 +15,11 @@
             "y": 1944
         },
         {
-            "fileName": "beenz_1-a.json",
-            "height": 480,
-            "width": 1440,
-            "x": 8712,
-            "y": 4464
-        },
-        {
-            "fileName": "beenz_outlands-a.json",
-            "height": 2688,
-            "width": 1536,
-            "x": 7176,
-            "y": 2712
-        },
-        {
-            "fileName": "beenz_outlands-b.json",
-            "height": 744,
-            "width": 1032,
-            "x": 6144,
-            "y": 3888
-        },
-        {
-            "fileName": "beenz_outlands-c.json",
-            "height": 816,
-            "width": 504,
-            "x": 6672,
-            "y": 4632
-        },
-        {
-            "fileName": "beenz_2-b.json",
-            "height": 1248,
-            "width": 1056,
-            "x": 6120,
-            "y": 2640
-        },
-        {
-            "fileName": "beenz_2-c.json",
-            "height": 432,
-            "width": 2088,
-            "x": 18840,
-            "y": 4248
-        },
-        {
-            "fileName": "beenz_3-elevator.json",
-            "height": 720,
-            "width": 384,
-            "x": 19248,
-            "y": 3384
-        },
-        {
-            "fileName": "beenz_3-a.json",
-            "height": 456,
-            "width": 3336,
-            "x": -4680,
-            "y": 5784
-        },
-        {
-            "fileName": "beenz_3-colo.json",
-            "height": 720,
-            "width": 960,
-            "x": 18360,
-            "y": -456
-        },
-        {
-            "fileName": "beenz_4-a.json",
-            "height": 456,
-            "width": 3216,
-            "x": -4536,
-            "y": 5064
-        },
-        {
-            "fileName": "beenz_4-colo.json",
-            "height": 960,
-            "width": 960,
-            "x": 18840,
-            "y": 504
-        },
-        {
-            "fileName": "beenz_5-lounge.json",
-            "height": 1248,
-            "width": 1584,
-            "x": 8712,
-            "y": 3216
-        },
-        {
-            "fileName": "basement_c.json",
-            "height": 2088,
-            "width": 744,
-            "x": 7272,
-            "y": 6048
-        },
-        {
             "fileName": "basement_abyss-climb.json",
             "height": 4368,
             "width": 1800,
             "x": 3624,
             "y": 5664
-        },
-        {
-            "fileName": "basement_a.json",
-            "height": 2880,
-            "width": 672,
-            "x": 5424,
-            "y": 3240
-        },
-        {
-            "fileName": "basement_b.json",
-            "height": 768,
-            "width": 1824,
-            "x": 5448,
-            "y": 6384
-        },
-        {
-            "fileName": "basement_d.json",
-            "height": 768,
-            "width": 2952,
-            "x": 672,
-            "y": 7032
-        },
-        {
-            "fileName": "ac-repair_a.json",
-            "height": 336,
-            "width": 1608,
-            "x": 10176,
-            "y": 312
-        },
-        {
-            "fileName": "ac-repair_c.json",
-            "height": 1536,
-            "width": 2472,
-            "x": 9312,
-            "y": -1992
-        },
-        {
-            "fileName": "ac-repair_e.json",
-            "height": 2496,
-            "width": 1200,
-            "x": -7080,
-            "y": -3156
-        },
-        {
-            "fileName": "ac-repair_d.json",
-            "height": 1416,
-            "width": 1800,
-            "x": 11784,
-            "y": -768
-        },
-        {
-            "fileName": "ac-repair_f.json",
-            "height": 768,
-            "width": 2664,
-            "x": -1992,
-            "y": 7008
-        },
-        {
-            "fileName": "ac-repair_b.json",
-            "height": 480,
-            "width": 2136,
-            "x": 9648,
-            "y": -312
-        },
-        {
-            "fileName": "ac-repair_dreamer.json",
-            "height": 768,
-            "width": 1848,
-            "x": 13920,
-            "y": -1488
-        },
-        {
-            "fileName": "ac-repair_g.json",
-            "height": 1152,
-            "width": 2136,
-            "x": 11784,
-            "y": -1992
-        },
-        {
-            "fileName": "computer_a.json",
-            "height": 720,
-            "width": 1536,
-            "x": -1320,
-            "y": 5016
-        },
-        {
-            "fileName": "computer_d.json",
-            "height": 1296,
-            "width": 624,
-            "x": 2304,
-            "y": 2712
-        },
-        {
-            "fileName": "computer_e.json",
-            "height": 696,
-            "width": 3192,
-            "x": 864,
-            "y": 4392
-        },
-        {
-            "fileName": "computer_f.json",
-            "height": 360,
-            "width": 1992,
-            "x": -3336,
-            "y": 6480
-        },
-        {
-            "fileName": "computer_b.json",
-            "height": 1272,
-            "width": 4128,
-            "x": -552,
-            "y": 5736
-        },
-        {
-            "fileName": "computer_dreamer.json",
-            "height": 912,
-            "width": 1800,
-            "x": -6336,
-            "y": 4512
-        },
-        {
-            "fileName": "computer_c.json",
-            "height": 1272,
-            "width": 792,
-            "x": -1344,
-            "y": 5736
-        },
-        {
-            "fileName": "library_d.json",
-            "height": 480,
-            "width": 960,
-            "x": -744,
-            "y": 4128
         },
         {
             "fileName": "infected_c.json",
@@ -253,39 +29,11 @@
             "y": 960
         },
         {
-            "fileName": "beenz_5-palace-grounds.json",
-            "height": 720,
-            "width": 960,
-            "x": 18864,
-            "y": 1800
-        },
-        {
             "fileName": "forgotten_i.json",
             "height": 912,
             "width": 1608,
             "x": 17064,
             "y": 4368
-        },
-        {
-            "fileName": "basement_e.json",
-            "height": 576,
-            "width": 2952,
-            "x": 6096,
-            "y": 5472
-        },
-        {
-            "fileName": "city_c.json",
-            "height": 600,
-            "width": 2280,
-            "x": -168,
-            "y": -2736
-        },
-        {
-            "fileName": "basement_f.json",
-            "height": 408,
-            "width": 2520,
-            "x": -216,
-            "y": 2616
         },
         {
             "fileName": "ventways_hub.json",
@@ -295,32 +43,11 @@
             "y": -3312
         },
         {
-            "fileName": "library_a.json",
-            "height": 600,
-            "width": 1656,
-            "x": -6744,
-            "y": 552
-        },
-        {
-            "fileName": "library_b.json",
-            "height": 2664,
-            "width": 1872,
-            "x": -6408,
-            "y": 1152
-        },
-        {
             "fileName": "library_c.json",
             "height": 768,
             "width": 1368,
             "x": 4056,
             "y": 4584
-        },
-        {
-            "fileName": "library_e.json",
-            "height": 600,
-            "width": 1440,
-            "x": 864,
-            "y": 3384
         },
         {
             "fileName": "infected_a.json",
@@ -464,10 +191,255 @@
         },
         {
             "fileName": "forgotten_f.json",
-            "height": 2496,
+            "height": 1212,
+            "width": 852,
+            "x": -4164,
+            "y": -396
+        },
+        {
+            "fileName": "forgotten_h.json",
+            "height": 1512,
             "width": 1200,
-            "x": -4512,
-            "y": -1680
+            "x": -4608,
+            "y": -1992
+        },
+        {
+            "fileName": "ac-repair_a.json",
+            "height": 480,
+            "width": 2136,
+            "x": 9648,
+            "y": -324
+        },
+        {
+            "fileName": "ac-repair_c.json",
+            "height": 1416,
+            "width": 1800,
+            "x": 11784,
+            "y": -756
+        },
+        {
+            "fileName": "ac-repair_d.json",
+            "height": 1536,
+            "width": 2472,
+            "x": 9312,
+            "y": -1980
+        },
+        {
+            "fileName": "ac-repair_b.json",
+            "height": 336,
+            "width": 1596,
+            "x": 10188,
+            "y": 312
+        },
+        {
+            "fileName": "ac-repair_e.json",
+            "height": 1152,
+            "width": 2136,
+            "x": 11784,
+            "y": -1968
+        },
+        {
+            "fileName": "ac-repair_f.json",
+            "height": 768,
+            "width": 1836,
+            "x": 13920,
+            "y": -1464
+        },
+        {
+            "fileName": "outlands_a.json",
+            "height": 1248,
+            "width": 1056,
+            "x": 6120,
+            "y": 2640
+        },
+        {
+            "fileName": "outlands_b.json",
+            "height": 732,
+            "width": 1056,
+            "x": 6120,
+            "y": 3888
+        },
+        {
+            "fileName": "outlands_c.json",
+            "height": 816,
+            "width": 504,
+            "x": 6672,
+            "y": 4620
+        },
+        {
+            "fileName": "outlands_d.json",
+            "height": 2688,
+            "width": 1536,
+            "x": 7176,
+            "y": 2712
+        },
+        {
+            "fileName": "outlands_e.json",
+            "height": 444,
+            "width": 1332,
+            "x": 8712,
+            "y": 4560
+        },
+        {
+            "fileName": "beenz_a.json",
+            "height": 1248,
+            "width": 1584,
+            "x": 8712,
+            "y": 3312
+        },
+        {
+            "fileName": "basement_a.json",
+            "height": 2880,
+            "width": 672,
+            "x": 5424,
+            "y": 3240
+        },
+        {
+            "fileName": "basement_e.json",
+            "height": 576,
+            "width": 2940,
+            "x": 6096,
+            "y": 5472
+        },
+        {
+            "fileName": "basement_c.json",
+            "height": 2076,
+            "width": 732,
+            "x": 7272,
+            "y": 6048
+        },
+        {
+            "fileName": "basement_b.json",
+            "height": 768,
+            "width": 1824,
+            "x": 5448,
+            "y": 6396
+        },
+        {
+            "fileName": "basement_d.json",
+            "height": 4368,
+            "width": 1788,
+            "x": 3636,
+            "y": 5676
+        },
+        {
+            "fileName": "computer_a.json",
+            "height": 768,
+            "width": 2952,
+            "x": 684,
+            "y": 7056
+        },
+        {
+            "fileName": "computer_b.json",
+            "height": 1272,
+            "width": 4128,
+            "x": -552,
+            "y": 5736
+        },
+        {
+            "fileName": "computer_c.json",
+            "height": 1272,
+            "width": 792,
+            "x": -1344,
+            "y": 5736
+        },
+        {
+            "fileName": "computer_f.json",
+            "height": 720,
+            "width": 1536,
+            "x": -1320,
+            "y": 5016
+        },
+        {
+            "fileName": "computer_g.json",
+            "height": 456,
+            "width": 3336,
+            "x": -4680,
+            "y": 6456
+        },
+        {
+            "fileName": "computer_h.json",
+            "height": 756,
+            "width": 2652,
+            "x": -1968,
+            "y": 7008
+        },
+        {
+            "fileName": "computer_i.json",
+            "height": 444,
+            "width": 3204,
+            "x": -4524,
+            "y": 5052
+        },
+        {
+            "fileName": "computer_k.json",
+            "height": 912,
+            "width": 1800,
+            "x": -6324,
+            "y": 4548
+        },
+        {
+            "fileName": "computer_m.json",
+            "height": 360,
+            "width": 2004,
+            "x": -3348,
+            "y": 5820
+        },
+        {
+            "fileName": "library_f.json",
+            "height": 1848,
+            "width": 648,
+            "x": 216,
+            "y": 3744
+        },
+        {
+            "fileName": "library_d.json",
+            "height": 480,
+            "width": 960,
+            "x": -744,
+            "y": 4056
+        },
+        {
+            "fileName": "library_g.json",
+            "height": 696,
+            "width": 3192,
+            "x": 864,
+            "y": 4776
+        },
+        {
+            "fileName": "library_h.json",
+            "height": 1284,
+            "width": 612,
+            "x": 2304,
+            "y": 2712
+        },
+        {
+            "fileName": "library_e.json",
+            "height": 600,
+            "width": 1440,
+            "x": 864,
+            "y": 3384
+        },
+        {
+            "fileName": "library_i.json",
+            "height": 408,
+            "width": 2520,
+            "x": -2304,
+            "y": 3648
+        },
+        {
+            "fileName": "library_a.json",
+            "height": 612,
+            "width": 1644,
+            "x": -6336,
+            "y": 1056
+        },
+        {
+            "fileName": "library_b.json",
+            "height": 2664,
+            "width": 1872,
+            "x": -6012,
+            "y": 1668
         }
     ],
     "onlyShowAdjacentMaps": false,
