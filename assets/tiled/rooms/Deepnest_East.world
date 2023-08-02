@@ -204,13 +204,6 @@
             "y": -1932
         },
         {
-            "fileName": "ac-repair_a.json",
-            "height": 480,
-            "width": 2136,
-            "x": 9648,
-            "y": -324
-        },
-        {
             "fileName": "ac-repair_c.json",
             "height": 1416,
             "width": 1800,
@@ -268,10 +261,10 @@
         },
         {
             "fileName": "outlands_d.json",
-            "height": 2688,
+            "height": 2724,
             "width": 1536,
             "x": 7176,
-            "y": 2712
+            "y": 2676
         },
         {
             "fileName": "outlands_e.json",
@@ -395,9 +388,9 @@
         {
             "fileName": "library_d.json",
             "height": 480,
-            "width": 960,
-            "x": -744,
-            "y": 4056
+            "width": 1464,
+            "x": -1248,
+            "y": 4128
         },
         {
             "fileName": "library_g.json",
