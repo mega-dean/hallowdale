@@ -8,5 +8,5 @@ automapping/draw-top-corners.tmj
 # simple rooms, but inconvenient for complicated ones:
 
 automapping/create-world-map.tmj
-automapping/draw-world-map.tmj
-automapping/fix-world-map-corners.tmj
+# automapping/draw-world-map.tmj
+# automapping/fix-world-map-corners.tmj
