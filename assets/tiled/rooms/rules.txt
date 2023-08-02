@@ -1,12 +1,33 @@
-automapping/reset.tmj
-automapping/draw-floors.tmj
-automapping/draw-walls.tmj
-automapping/draw-hanging-shadows.tmj
-automapping/draw-top-corners.tmj
 
-# this draws a box around the room, which is helpful for
-# simple rooms, but inconvenient for complicated ones:
+### draws floors with shadows over them
 
-automapping/create-world-map.tmj
-# automapping/draw-world-map.tmj
-# automapping/fix-world-map-corners.tmj
+# automapping/reset.tmj
+# automapping/draw-floors.tmj
+# automapping/draw-walls.tmj
+# automapping/draw-hanging-shadows.tmj
+# automapping/draw-top-corners.tmj
+
+
+
+
+### draws lava/walls based on bg-walls
+### - this one works manually: select a region and repeatedly apply
+### it until it looks right
+
+automapping/draw-lava-walls.tmj
+automapping/draw-lava-corners.tmj
+automapping/extend-lava-floors.tmj
+
+
+### FIXME eventually this can map area-specific tiles based on map name
+automapping/reset-bg-tiles.tmj
+# automapping/apply-bg-tiles.tmj
+
+
+
+
+
+
+
+
+# _

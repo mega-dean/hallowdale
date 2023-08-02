@@ -15,25 +15,11 @@
             "y": 1944
         },
         {
-            "fileName": "basement_abyss-climb.json",
-            "height": 4368,
-            "width": 1800,
-            "x": 3624,
-            "y": 5664
-        },
-        {
             "fileName": "infected_c.json",
             "height": 1272,
             "width": 864,
             "x": 936,
             "y": 960
-        },
-        {
-            "fileName": "forgotten_i.json",
-            "height": 912,
-            "width": 1608,
-            "x": 17064,
-            "y": 4368
         },
         {
             "fileName": "ventways_hub.json",
@@ -404,7 +390,7 @@
             "height": 1284,
             "width": 612,
             "x": 2304,
-            "y": 2712
+            "y": 2700
         },
         {
             "fileName": "library_e.json",

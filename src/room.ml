@@ -519,7 +519,12 @@ let init (params : room_params) : room =
             json.name
         else
           layer_names := json.name :: !layer_names;
-        if List.mem json.name [ "world-map"; "camera-reference"; "floors-reference" ] then
+        let reference_layer () =
+          String.length json.name > 10 && Str.last_chars json.name 10 = "-reference"
+        in
+        (* tmp " --------------------- got json.name: %s" json.name;
+         * tmp " --------------------- bool: %b" (json.name = "world-map"); *)
+        if json.name = "world-map" || reference_layer () then
           ()
         else
           add_new_layer ()
@@ -715,7 +720,10 @@ let change_current_room
   game.ghost.entity.current_floor <- None;
   game.ghost.current.wall <- None;
   game.ghost.spawned_vengeful_spirits <- [];
+  (* FIXME seems like handle_transitions is finding the correct room, but spawning at the wrong location *)
+  tmp "got ghost_start_pos: %s" (Show.vector ghost_start_pos);
   game.ghost.entity.dest.pos <- ghost_start_pos;
+  (* game.ghost.entity.dest.pos <- { x = ghost_start_pos.x *. 2.; y = ghost_start_pos.y *. 2.}; *)
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
      - not really sure about ^this comment, I don't know if different tileset order would break the
@@ -736,6 +744,10 @@ let get_global_pos (current_pos : vector) (room_location : room_location) : vect
 let handle_transitions (state : state) (game : game) =
   let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
     let room_location = List.assoc room_id world in
+    tmp "handling transition with room_location: w %f, h %f, global x %f, y %f" room_location.w
+      room_location.h room_location.global_x room_location.global_y;
+    tmp "global x %f, y %f" global.x global.y;
+
     { x = global.x -. room_location.global_x; y = global.y -. room_location.global_y }
   in
   let colliding exit_rect =
@@ -760,6 +772,7 @@ let handle_transitions (state : state) (game : game) =
         Tiled.Room.locate_by_coords state.world global_x global_y
       in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
+      tmp "got start_pos': %s" (Show.vector start_pos');
       let start_pos : vector =
         (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen
            - TODO I think this is broken when exiting a room below (falling)

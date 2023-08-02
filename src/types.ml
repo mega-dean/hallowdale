@@ -1044,10 +1044,11 @@ type area_id =
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
-  bg_color : Raylib.Color.t; (* TODO add bg/skybox _image *)
+  bg_color : Raylib.Color.t; (* FIXME add bg/skybox _image *)
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
+(* FIXME need to update these *)
 type room_id =
   (* AC_REPAIR_ANNEX *)
   | AC_DREAMER
