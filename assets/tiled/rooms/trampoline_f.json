@@ -5,7 +5,7 @@
         {
          "id":2,
          "image":"..\/hk-reference\/soul-master.png",
-         "name":"bg-reference",
+         "name":"ref:hk",
          "opacity":1,
          "type":"imagelayer",
          "visible":false,
@@ -130,7 +130,7 @@
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
          "height":52,
          "id":1,
-         "name":"floors-reference",
+         "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
          "visible":false,

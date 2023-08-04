@@ -69,6 +69,8 @@ module Utils = struct
 
   (* returns a random element from xs *)
   let sample xs = List.nth xs (Random.int (List.length xs))
+
+  let starts_with () = ()
 end
 
 (* TODO maybe add type hdirection = LEFT | RIGHT for things that only can be horizontal *)

@@ -1,22 +1,22 @@
 
 ############ draws floors with shadows over them ############
 
-# automapping/reset.tmj
-# automapping/draw-floors.tmj
-# automapping/draw-walls.tmj
-# automapping/draw-hanging-shadows.tmj
-# automapping/draw-top-corners.tmj
+# automapping/floors-reset.tmj
+# automapping/floors-draw-tops.tmj
+# automapping/floors-draw-sides.tmj
+# automapping/floors-draw-hanging-shadows.tmj
+# automapping/floors-draw-top-corners.tmj
 
 
 ############ draws lava/walls based on bg-walls ############
 
-automapping/draw-lava-walls.tmj
+automapping/bg-draw-walls.tmj
 
 ### select a region and repeatedly apply until it looks right
-automapping/draw-lava-corners.tmj
+automapping/bg-draw-iso.tmj
+# automapping/bg-extend-iso.tmj
 
 
-automapping/extend-lava-floors.tmj
 
 
 ### FIXME eventually this can map area-specific tiles based on map name

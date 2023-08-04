@@ -5,7 +5,7 @@
         {
          "id":2,
          "image":"..\/hk-reference\/big-flukes.png",
-         "name":"bg-reference",
+         "name":"ref:hk",
          "opacity":1,
          "type":"imagelayer",
          "visible":true,

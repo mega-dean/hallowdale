@@ -519,12 +519,9 @@ let init (params : room_params) : room =
             json.name
         else
           layer_names := json.name :: !layer_names;
-        let reference_layer () =
-          String.length json.name > 10 && Str.last_chars json.name 10 = "-reference"
-        in
-        (* tmp " --------------------- got json.name: %s" json.name;
-         * tmp " --------------------- bool: %b" (json.name = "world-map"); *)
-        if json.name = "world-map" || reference_layer () then
+        let reference_layer () = String.starts_with ~prefix:"ref:" json.name in
+        let auto_layer () = String.starts_with ~prefix:"auto:" json.name in
+        if json.name = "world-map" || reference_layer () || auto_layer () then
           ()
         else
           add_new_layer ()

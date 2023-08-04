@@ -36,7 +36,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":10,
          "id":4,
-         "name":"input_floors-reference",
+         "name":"input_auto:floors",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -84,7 +84,7 @@
                 {
                  "height":6,
                  "id":2,
-                 "name":"copy the green blocked-out tiles from floors-reference to floors",
+                 "name":"copy the green blocked-out tiles from auto:floors to floors",
                  "rotation":0,
                  "type":"",
                  "visible":true,

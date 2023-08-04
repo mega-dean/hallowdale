@@ -5,7 +5,7 @@
         {
          "id":2,
          "image":"..\/hk-reference\/collector-top.png",
-         "name":"bg-reference",
+         "name":"ref:hk",
          "opacity":1,
          "type":"imagelayer",
          "visible":true,
@@ -278,7 +278,7 @@
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
          "height":126,
          "id":1,
-         "name":"floors-reference",
+         "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
          "visible":false,
