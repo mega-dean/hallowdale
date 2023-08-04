@@ -231,7 +231,7 @@
          "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":71,
          "x":0,
          "y":0
@@ -343,7 +343,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":71,
          "x":0,
          "y":0

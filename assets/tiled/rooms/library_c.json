@@ -72,7 +72,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":114,
          "x":0,
          "y":0
@@ -83,7 +83,7 @@
          "name":"ref:hk",
          "opacity":1,
          "type":"imagelayer",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -159,7 +159,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":114,
          "x":0,
          "y":0
@@ -236,7 +236,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":114,
          "x":0,
          "y":0

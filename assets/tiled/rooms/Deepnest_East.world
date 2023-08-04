@@ -75,7 +75,7 @@
             "height": 480,
             "width": 2664,
             "x": 6120,
-            "y": 1464
+            "y": 1440
         },
         {
             "fileName": "trampoline_g.json",
@@ -201,7 +201,7 @@
             "height": 1536,
             "width": 2472,
             "x": 9312,
-            "y": -1980
+            "y": -1992
         },
         {
             "fileName": "ac-repair_b.json",
