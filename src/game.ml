@@ -6,6 +6,12 @@ let save_file_path idx = fmt "saves/%d.json" idx
 
 let new_game () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 100. } in
+  let b =
+    (* newgame *)
+    (* false *)
+    (* newgameplus *)
+    true
+  in
   {
     ghost_id = "BRITTA";
     ghosts_in_party = [ "BRITTA" ];
@@ -18,12 +24,19 @@ let new_game () : Json_t.save_file =
     abilities =
       {
         (* movement *)
-        mothwing_cloak = false;
-        mantis_claw = false;
-        crystal_heart = false;
-        monarch_wings = true;
-        shade_cloak = false;
-        ismas_tear = false;
+        mothwing_cloak = b;
+        mantis_claw = b;
+        crystal_heart = b;
+        monarch_wings = b;
+        shade_cloak = b;
+        ismas_tear = b;
+        (* mothwing_cloak = true;
+         * mantis_claw = true;
+         * crystal_heart = true;
+         * monarch_wings = true;
+         * shade_cloak = true;
+         * ismas_tear = true; *)
+
         (* spells *)
         vengeful_spirit = false;
         desolate_dive = false;
