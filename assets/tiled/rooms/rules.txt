@@ -1,7 +1,9 @@
 
 ############ draws floors with shadows over them ############
-# this gets reset fully every time, so this can run every automap
+# these can be run every automap
 automapping/floors-reset.tmj
+automapping/camera-draw-ref.tmj
+automapping/camera-cleanup.tmj
 automapping/floors-draw-tops.tmj
 automapping/floors-draw-sides.tmj
 automapping/floors-draw-hanging-shadows.tmj
@@ -9,13 +11,11 @@ automapping/floors-draw-top-corners.tmj
 
 
 ############ draws lava/walls based on bg-walls ############
+# these can break when applied incorrectly
+automapping/bg-draw-walls.tmj
 
-# automapping/bg-draw-walls.tmj
-
-### select a region and repeatedly apply until it looks right
 # automapping/bg-draw-iso.tmj
 # automapping/bg-extend-iso.tmj
-
 
 
 
