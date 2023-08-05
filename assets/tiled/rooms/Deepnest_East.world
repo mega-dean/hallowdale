@@ -22,13 +22,6 @@
             "y": 960
         },
         {
-            "fileName": "ventways_hub.json",
-            "height": 1080,
-            "width": 1080,
-            "x": 5472,
-            "y": -4440
-        },
-        {
             "fileName": "library_c.json",
             "height": 768,
             "width": 1368,
@@ -201,7 +194,7 @@
             "height": 1536,
             "width": 2472,
             "x": 9312,
-            "y": -1992
+            "y": -1980
         },
         {
             "fileName": "ac-repair_b.json",
@@ -303,10 +296,10 @@
         },
         {
             "fileName": "computer_a.json",
-            "height": 768,
-            "width": 2952,
-            "x": 684,
-            "y": 7056
+            "height": 444,
+            "width": 960,
+            "x": 2676,
+            "y": 7236
         },
         {
             "fileName": "computer_b.json",
@@ -338,9 +331,9 @@
         },
         {
             "fileName": "computer_h.json",
-            "height": 756,
-            "width": 2652,
-            "x": -1968,
+            "height": 444,
+            "width": 2124,
+            "x": -1860,
             "y": 7008
         },
         {

@@ -1,6 +1,6 @@
 
 ############ draws floors with shadows over them ############
-
+# this gets reset fully every time, so this can run every automap
 automapping/floors-reset.tmj
 automapping/floors-draw-tops.tmj
 automapping/floors-draw-sides.tmj

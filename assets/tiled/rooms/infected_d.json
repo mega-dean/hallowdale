@@ -8,7 +8,7 @@
          "name":"ref:hk",
          "opacity":1,
          "type":"imagelayer",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -152,7 +152,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":68,
          "x":0,
          "y":0
@@ -649,17 +649,6 @@
                  "y":852
                 }, 
                 {
-                 "height":0,
-                 "id":36,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":600,
-                 "y":912
-                }, 
-                {
                  "height":48,
                  "id":37,
                  "name":"",
@@ -871,13 +860,13 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":68,
          "x":0,
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":46,
+ "nextobjectid":49,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
