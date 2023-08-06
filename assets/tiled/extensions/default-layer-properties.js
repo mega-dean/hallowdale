@@ -72,3 +72,58 @@ setDefaultLayerProperties.text = "Set Default Layer Properties";
 tiled.extendMenu("Layer", [
   { action: "SetDefaultLayerProperties", before: "SelectPreviousLayer" },
 ]);
+
+
+
+
+
+
+
+/*
+ * this is adapted from the find-layer-by-id.js example in the Tiled repo
+ */
+
+function findLayerByName(thing, name) {
+  for (let i = thing.layerCount - 1; i >= 0; i--) {
+    const layer = thing.layerAt(i);
+    if (layer.name === name) {
+      return layer;
+    }
+
+    if (layer.isGroupLayer) {
+      const l = findLayerByName(layer, name);
+      if (l) {
+        return l;
+      }
+    }
+  }
+
+  return null;
+}
+
+let selectLayerByName = tiled.registerAction("SelectLayerByName", function(/* action */) {
+  const map = tiled.activeAsset;
+  if (!map.isTileMap) {
+    tiled.alert("Not a tile map!");
+    return;
+  }
+
+  let name = tiled.prompt("Please enter a layer name:");
+  if (name == "") {
+    return;
+  }
+
+  const layer = findLayerByName(map, name);
+  if (!layer) {
+    tiled.alert("Failed to find a layer with Name " + name);
+    return;
+  }
+
+  map.currentLayer = layer;
+});
+selectLayerByName.text = "Select Layer by Name";
+selectLayerByName.shortcut = "Ctrl+L";
+
+tiled.extendMenu("Layer", [
+  { action: "SelectLayerByName", before: "SelectPreviousLayer" },
+]);

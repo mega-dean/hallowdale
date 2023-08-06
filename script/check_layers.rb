@@ -53,8 +53,10 @@ with_walls, without_walls = jsons.partition do |json|
 end
 
 puts "got #{with_walls.count} with walls,  #{without_walls.count} without walls"
-with_walls.each do |json|
-  puts json['filename']
+without_walls.each do |json|
+  # if json['filename'].start_with?('outlands_')
+    puts json['filename']
+  # end
 end
 
 # floors.sort_by{|k, v| v}.each do |name, count|
