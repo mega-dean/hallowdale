@@ -1,36 +1,6 @@
 
 // this sets some properties based on layer name
 
-/// <reference types="@mapeditor/tiled-api" />
-
-/*
- * find-layer-by-id.js
- *
- * This extension adds a 'Select Layer by ID' (Ctrl+Shift+L) action to the
- * Layer menu, which can be used to quickly jump to and select a layer when
- * you know its ID.
- */
-
-/* global tiled */
-
-function findLayerById(thing, id) {
-  for (let i = thing.layerCount - 1; i >= 0; i--) {
-    const layer = thing.layerAt(i);
-    if (layer.id == id) {
-      return layer;
-    }
-
-    if (layer.isGroupLayer) {
-      const l = findLayerById(layer, id);
-      if (l) {
-        return l;
-      }
-    }
-  }
-
-  return null;
-}
-
 
 let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties", function(/* action */) {
   const map = tiled.activeAsset;
@@ -38,14 +8,6 @@ let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties"
     tiled.alert("Not a tile map!");
     return;
   }
-  console.log('running');
-
-  // let id = tiled.prompt("Please enter a layer ID:");
-  // if (id == "") {
-  //   return;
-  // }
-
-  // id = Number(id);
 
   let parallaxProps = {
     "ref:camera": 0.0,
@@ -56,21 +18,73 @@ let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties"
     // TODO fg layers
   };
 
+  let layersToLock = [
+    "ref:camera",
+    // TODO fg layers
+  ];
+
   for (let i = map.layerCount - 1; i >= 0; i--) {
     const layer = map.layerAt(i);
-    // propsByLayer[layer.name] = props[layer.name] || {};
+
     if (parallaxProps[layer.name] !== undefined) {
       // tiled.alert("layer: " + layer.name);
       layer.parallaxFactor.x = parallaxProps[layer.name];
       layer.parallaxFactor.y = parallaxProps[layer.name];
+    }
+
+    if (layersToLock.includes(layer.name)) {
+      layer.locked = true;
     }
   }
 
 });
 setDefaultLayerProperties.text = "Set Default Layer Properties";
 
+
+let OnlyShowWorldMap = tiled.registerAction("OnlyShowWorldMap", function(/* action */) {
+  const map = tiled.activeAsset;
+
+  for (let i = map.layerCount - 1; i >= 0; i--) {
+    const layer = map.layerAt(i);
+
+    layer.visible = (layer.name === "world-map");
+  }
+});
+OnlyShowWorldMap.text = "Only Show World Map";
+OnlyShowWorldMap.shortcut = "Ctrl+Alt+W";
+
 tiled.extendMenu("Layer", [
   { action: "SetDefaultLayerProperties", before: "SelectPreviousLayer" },
+  { action: "OnlyShowWorldMap", before: "SelectPreviousLayer" },
+]);
+
+
+let RepeatedAutomap = tiled.registerAction("RepeatedAutomap", function(/* action */) {
+  let count = tiled.prompt("Please enter the number of times to automap:");
+  if (count == "") {
+    return;
+  }
+
+  const map = tiled.activeAsset;
+  count = Number(count);
+  for (let i = 0; i < count; i++) {
+    map.autoMap();
+  }
+
+
+
+  // for (let i = map.layerCount - 1; i >= 0; i--) {
+  //   const layer = map.layerAt(i);
+
+  //   layer.visible = (layer.name === "world-map");
+  // }
+});
+RepeatedAutomap.text = "Repeated Automap";
+RepeatedAutomap.shortcut = "Ctrl+Alt+A";
+
+tiled.extendMenu("Layer", [
+  { action: "SetDefaultLayerProperties", before: "SelectPreviousLayer" },
+  { action: "RepeatedAutomap", before: "SelectPreviousLayer" },
 ]);
 
 

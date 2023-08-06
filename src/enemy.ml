@@ -615,12 +615,8 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       else
         set_pose enemy "idle")
   | WIRED_ELECTRICITY ->
+    (* TODO  *)
     ()
-    (* FIXME  *)
-    (* let last_shock = action_started_at enemy "shock" in
-     * let shock_dt = (\* needs to be > 2.2 *\) 4. in
-     * if last_shock.at < state.frame.time -. shock_dt then
-     *   set_electricity_action enemy `SHOCK state.frame.time [] *)
   | ELECTRICITY ->
     let last_shock = action_started_at enemy "shock" in
     let shock_dt = (* needs to be > 2.2 *) 4. in

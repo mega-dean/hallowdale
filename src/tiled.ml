@@ -8,7 +8,7 @@ let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room 
 let scale_rect x y w h =
   { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
 
-(* FIXME update this list *)
+(* FIXME-9 update this list *)
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
   match file_name with
@@ -90,9 +90,9 @@ let parse_room_filename source file_name : area_id * room_id =
    * | "trampoline_g" -> (TRAMPOLINEPATH, TP_G)
    *)
 
-  (* FIXME  *)
+  (* FIXME-9  *)
   | "ventways_hub" -> (VENTWAYS, VENT_HUB)
-  (* FIXME  *)
+  (* FIXME-9  *)
   | "ac-repair_b" -> (AC_REPAIR_ANNEX, FC_A)
   | "ac-repair_c" -> (AC_REPAIR_ANNEX, FC_A)
   | "ac-repair_d" -> (AC_REPAIR_ANNEX, FC_A)
@@ -607,7 +607,12 @@ let init_world (path : string) : (room_id * room_location) list =
     ( room_id,
       {
         filename;
-        (* FIXME these are maybe wrong *)
+        (* FIXME-8 these are maybe wrong
+           - seems like they might have a problem with negative coordinates
+           -- might be the opposite - only breaks when x > something (maybe 0)
+           - eg. can go up from kp drop and then right, and the transition works fine, but
+             the next right transition gets messed up (like kp big door)
+        *)
         global_x = (global_map.x |> Int.to_float) *. Config.scale.room;
         global_y = (global_map.y |> Int.to_float) *. Config.scale.room;
         w = (global_map.w_in_pixels |> Int.to_float) *. Config.scale.room;

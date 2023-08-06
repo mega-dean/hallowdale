@@ -14,7 +14,7 @@ module Draw = struct
   let circle_v = draw_circle_v
   let rect_lines = draw_rectangle_lines_ex
   let rect = draw_rectangle
-    (* FIXME need to rename this now that I'm using actual Raylib draw_image *)
+  (* TODO-7 rename this *)
   let image = draw_texture_pro
   let line_ex = draw_line_ex
 end
@@ -84,9 +84,6 @@ let draw_texture
     | _n -> (r, 0.)
   in
   let tile_size =
-    (* FIXME maybe move to a config
-       ... except now it _really_ won't change, so maybe not
-    *)
     12. *. Config.scale.room
   in
   let dest' =
@@ -164,7 +161,7 @@ let draw_tiled_layer
                 (* TODO this should probably just use an animated sprite instead of
                    this weird animation_offset for the tile gid
                 *)
-                (* FIXME probably needs `mod 16` now
+                (* FIXME-6 probably needs `mod 16` now
                    - probably will be more complicated that that since it needs to skip every-other tile
                 *)
                 4 * frame_idx / Config.window.fps mod 8
@@ -175,7 +172,7 @@ let draw_tiled_layer
           in
           let w, h = Tiled.Room.dest_wh room.json () in
           let dest = { pos = { x; y }; w; h } in
-          (* FIXME instead of drawing texture, use image_draw on the render buffer *)
+          (* TODO-7 instead of drawing texture, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
     let draw_spawned_fragment (f : entity) =

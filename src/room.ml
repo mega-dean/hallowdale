@@ -431,7 +431,7 @@ let init (params : room_params) : room =
               | "benches" -> [ "collides" ]
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
-              (* FIXME fix acid/water collisions *)
+              (* FIXME-5 fix acid/water collisions *)
               | "acid" -> [ "animated"; "hazard" ]
               | "water" -> [ "animated"; "water"; "fg" ]
               (* TODO probably add "conveyor-belt" tiles that are animated like acid
@@ -565,7 +565,7 @@ let init (params : room_params) : room =
         entity
       in
 
-      (* FIXME update for new tile size
+      (* FIXME-3 update for new tile size
          - width will definitely be wrong - maybe update the configs, but maybe just multiply by 2 here
          - fragments may be messed up
       *)
@@ -717,7 +717,14 @@ let change_current_room
   game.ghost.entity.current_floor <- None;
   game.ghost.current.wall <- None;
   game.ghost.spawned_vengeful_spirits <- [];
-  (* FIXME seems like handle_transitions is finding the correct room, but spawning at the wrong location *)
+  (* FIXME-8 seems like handle_transitions is finding the correct room, but spawning at the wrong location
+     - problem is only when global_x is in a certain range
+     - transition right of kp doesn't work
+     - neither does transition right to resting grounds
+     - but, transition right into blue lake _does_ work, even though it is further to the right than both of those
+     - maybe it is area-based, because transitioning right out of blue lake into trampolinepath does break
+     -- seems like this is it - moved (infected) resting grounds to one of the forgotten rooms and it broke there
+  *)
   tmp "got ghost_start_pos: %s" (Show.vector ghost_start_pos);
   game.ghost.entity.dest.pos <- ghost_start_pos;
   (* game.ghost.entity.dest.pos <- { x = ghost_start_pos.x *. 2.; y = ghost_start_pos.y *. 2.}; *)
