@@ -52,10 +52,10 @@ with_walls, without_walls = jsons.partition do |json|
   end
 end
 
-puts "got #{with_walls.count} with walls,  #{without_walls.count} without walls"
+puts "#{without_walls.count} left without walls:"
 without_walls.each do |json|
   # if json['filename'].start_with?('outlands_')
-    puts json['filename']
+    puts "  #{json['filename']}"
   # end
 end
 

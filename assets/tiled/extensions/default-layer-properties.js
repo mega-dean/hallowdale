@@ -59,25 +59,33 @@ tiled.extendMenu("Layer", [
 ]);
 
 
-let RepeatedAutomap = tiled.registerAction("RepeatedAutomap", function(/* action */) {
-  let count = tiled.prompt("Please enter the number of times to automap:");
-  if (count == "") {
-    return;
-  }
+// let RepeatedAutomap = tiled.registerAction("RepeatedAutomap", function(/* action */) {
+//   let count = tiled.prompt("Please enter the number of times to automap:");
+//   if (count == "") {
+//     return;
+//   }
+//
+//   const map = tiled.activeAsset;
+//   count = Number(count);
+//   for (let i = 0; i < count; i++) {
+//     map.autoMap();
+//   }
+// });
+// RepeatedAutomap.text = "Repeated Automap";
+// // RepeatedAutomap.shortcut = "Ctrl+Alt+A";
+// //
+// tiled.extendMenu("Layer", [
+//   { action: "SetDefaultLayerProperties", before: "SelectPreviousLayer" },
+//   { action: "RepeatedAutomap", before: "SelectPreviousLayer" },
+// ]);
+//
+//
 
+let RepeatedAutomap = tiled.registerAction("RepeatedAutomap", function(/* action */) {
   const map = tiled.activeAsset;
-  count = Number(count);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 10; i++) {
     map.autoMap();
   }
-
-
-
-  // for (let i = map.layerCount - 1; i >= 0; i--) {
-  //   const layer = map.layerAt(i);
-
-  //   layer.visible = (layer.name === "world-map");
-  // }
 });
 RepeatedAutomap.text = "Repeated Automap";
 RepeatedAutomap.shortcut = "Ctrl+Alt+A";
