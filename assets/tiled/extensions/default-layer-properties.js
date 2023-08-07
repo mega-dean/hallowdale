@@ -47,7 +47,12 @@ let OnlyShowWorldMap = tiled.registerAction("OnlyShowWorldMap", function(/* acti
   for (let i = map.layerCount - 1; i >= 0; i--) {
     const layer = map.layerAt(i);
 
-    layer.visible = (layer.name === "world-map");
+    if (layer.name === "world-map") {
+      layer.visible = true;
+      map.currentLayer = layer;
+    } else {
+      layer.visible = false;
+    }
   }
 });
 OnlyShowWorldMap.text = "Only Show World Map";

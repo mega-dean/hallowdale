@@ -1309,7 +1309,6 @@ let update (game : game) (state : state) =
               (check_interact_key ();
                Some (label, trigger.dest)))
         | Some blocking_interaction_name ->
-          itmp "found blocking interaction name %s" blocking_interaction_name;
           if List.mem blocking_interaction_name all_finished_interactions then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
@@ -2264,8 +2263,6 @@ let update (game : game) (state : state) =
   (match game.ghost.entity.current_floor with
   | None -> ()
   | Some (floor, v) ->
-    if v.x <> 0. then
-      itmp "applying floor v: %s" (Show.vector v);
     let e = game.ghost.entity in
     let dt = state.frame.dt in
     (* CLEANUP duplicated from Entity.apply-v *)

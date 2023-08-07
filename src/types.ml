@@ -1041,7 +1041,6 @@ type area_id =
   | TRAMPOLINEPATH
   | VENTWAYS
   | LIBRARY
-  | FINAL (* only used for final boss fight *)
 
 type area = {
   id : area_id;
@@ -1053,84 +1052,64 @@ type area = {
 (* FIXME-9 need to update these *)
 type room_id =
   (* AC_REPAIR_ANNEX *)
-  | AC_DREAMER
-  | AC_A
   | AC_B
   | AC_C
   | AC_D
   | AC_E
   | AC_F
-  | AC_G
   (* BASEMENT *)
-  | BASE_ABYSS_CLIMB
   | BASE_A
   | BASE_B
   | BASE_C
   | BASE_D
   | BASE_E
-  | BASE_F
   (* CITY_OF_CHAIRS *)
-  | CC_A
-  | CC_B
-  | CC_C
-  | CC_D
-  | CC_E
+  | CITY_A
+  | CITY_B
+  | CITY_D
+  | CITY_E
   (* COMPUTER_WING *)
-  | CW_DREAMER
-  | CW_A
-  | CW_B
-  | CW_C
-  | CW_D
-  | CW_E
-  | CW_F
+  | CPU_A
+  | CPU_B
+  | CPU_C
+  | CPU_F
+  | CPU_G
+  | CPU_H
+  | CPU_I
+  | CPU_K
+  | CPU_M
   (* FORGOTTEN_CLASSROOMS *)
-  | FC_DEANS_PASS
-  | FC_CAFETERIA
-  | FC_STAIRWELL
-  | FC_A
-  | FC_B
-  | FC_C
-  | FC_D
-  | FC_E
-  | FC_F
-  | FC_G
-  | FC_H
-  | FC_I
+  | FORG_DEANS_PASS
+  | FORG_A
+  | FORG_B
+  | FORG_C
+  | FORG_D
+  | FORG_E
+  | FORG_F
+  | FORG_G
+  | FORG_H
   (* INFECTED_CLASSROOMS *)
-  | IC_TEACHERS_LOUNGE
-  | IC_A
-  | IC_B
-  | IC_C
-  | IC_D
-  | IC_E
-  | IC_F
-  | IC_G
-  | IC_H
-  | IC_I
+  | INF_A
+  | INF_B
+  | INF_C
+  | INF_D
   (* MEOW_MEOW_BEENZ *)
-  | MMB_1_A
-  | MMB_2_A
-  | MMB_2_B
-  | MMB_2_C
-  | MMB_3_ELEVATOR
-  | MMB_3_A
-  | MMB_3_COLO
-  | MMB_4_A
-  | MMB_4_COLO
-  | MMB_5_LOUNGE
-  | MMB_5_PALACE_GROUNDS
-  | MMB_OUTLANDS_A
-  | MMB_OUTLANDS_B
-  | MMB_OUTLANDS_C
+  | MMB_A
+  (* OUTLANDS *)
+  | OUT_A
+  | OUT_B
+  | OUT_C
+  | OUT_D
+  | OUT_E
   (* TRAMPOLINEPATH *)
-  | TP_DREAMER
-  | TP_A
-  | TP_B
-  | TP_C
-  | TP_D
-  | TP_E
-  | TP_F
-  | TP_G
+  | TRAMP_A
+  | TRAMP_B
+  | TRAMP_C
+  | TRAMP_D
+  | TRAMP_E
+  | TRAMP_F
+  | TRAMP_G
+  | TRAMP_H
   (* VENTWAYS *)
   | VENT_HUB
   (* LIBRARY *)
@@ -1139,8 +1118,10 @@ type room_id =
   | LIB_C
   | LIB_D
   | LIB_E
-  (* FINAL *)
-  | BOSS
+  | LIB_F
+  | LIB_G
+  | LIB_H
+  | LIB_I
 
 type jug_fragments = {
   stub : texture option;

@@ -50,7 +50,7 @@ let update_menu_choice (menu : menu) frame_inputs =
   if frame_inputs.up.pressed then
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
 
-let save_game (game : game) (state : state) (after_fn : state -> unit) =
+let save_game ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress game;
   let save_file : Json_t.save_file =
     let ghosts' = game.ghosts' in
@@ -65,7 +65,7 @@ let save_game (game : game) (state : state) (after_fn : state -> unit) =
       ghost_y = game.ghost.entity.dest.pos.y;
       respawn_x = game.room.respawn_pos.x;
       respawn_y = game.room.respawn_pos.y;
-      room_name = Tiled.Room.get_filename' game.room.area.id game.room.id;
+      room_name = Tiled.Room.get_filename game.room;
       abilities = game.ghost.abilities;
       progress = game.progress;
       weapons = List.map fst game.ghost.weapons;
@@ -103,7 +103,7 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
         (* TODO unload textures *)
         state.pause_menu <- None;
-        save_game game state (fun state ->
+        save_game game state ~after_fn:(fun state ->
             state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
       | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Ghost.equip_weapon game.ghost weapon_name
       | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
