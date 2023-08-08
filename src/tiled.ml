@@ -8,7 +8,6 @@ let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room 
 let scale_rect x y w h =
   { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
 
-(* FIXME-9 update this list *)
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
   match file_name with
@@ -27,7 +26,6 @@ let parse_room_filename source file_name : area_id * room_id =
   | "city_b" -> (CITY_OF_CHAIRS, CITY_B)
   | "city_d" -> (CITY_OF_CHAIRS, CITY_D)
   | "city_e" -> (CITY_OF_CHAIRS, CITY_E)
-  (* FIXME-9  *)
   | "computer_a" -> (COMPUTER_WING, CPU_A)
   | "computer_b" -> (COMPUTER_WING, CPU_B)
   | "computer_c" -> (COMPUTER_WING, CPU_C)
@@ -72,7 +70,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "trampoline_f" -> (TRAMPOLINEPATH, TRAMP_F)
   | "trampoline_g" -> (TRAMPOLINEPATH, TRAMP_G)
   | "trampoline_h" -> (TRAMPOLINEPATH, TRAMP_H)
-  (* FIXME-9  *)
+  (* TODO add this again *)
   | "ventways_hub" -> (VENTWAYS, VENT_HUB)
   | _ -> failwithf "bad file name '%s' (from %s)" file_name source
 

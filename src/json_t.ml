@@ -67,6 +67,8 @@ type texture_config = {
   y_offset: int
 }
 
+type texture_configs = (string * texture_config) list
+
 type room_progress = {
   mutable removed_idxs_by_layer: (string * int list) list;
   mutable finished_interactions: string list;
@@ -137,8 +139,6 @@ type jug_metadata = { name: string; x: int; w: int; h: int }
 
 type jug_metadata_file = jug_metadata list
 
-type ghost_texture_configs = (string * texture_config) list
-
 type ghost_action = {
   duration: float;
   cooldown: float;
@@ -147,8 +147,9 @@ type ghost_action = {
 }
 
 type ghosts_file = {
-  individual_textures: (string * ghost_texture_configs) list;
-  shared_textures: (string * texture_config) list;
+  head_textures_by_ghost: (string * texture_configs) list;
+  body_textures: texture_configs;
+  shared_textures: texture_configs;
   actions: (string * ghost_action) list
 }
 
@@ -169,7 +170,7 @@ type enemy_config = {
   can_take_damage: bool;
   dream_nail: enemy_dream_nail_config;
   props: (string * float) list;
-  texture_configs: (string * texture_config) list
+  texture_configs: texture_configs
 }
 
 type enemies_file = {

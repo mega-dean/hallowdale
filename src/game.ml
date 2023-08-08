@@ -71,6 +71,7 @@ let init
     (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
+  (* FIXME probably will have to update this *)
   let ghosts_file : ghosts_file = Ghost.read_config () in
   let use_json_config configs pose_name =
     let config =
@@ -84,11 +85,12 @@ let init
     Sprite.build_texture_from_config config
   in
 
-  let britta_configs = List.assoc BRITTA ghosts_file.textures in
-  let jeff_configs = List.assoc JEFF ghosts_file.textures in
-  let abed_configs = List.assoc ABED ghosts_file.textures in
-  let troy_configs = List.assoc TROY ghosts_file.textures in
-  let annie_configs = List.assoc ANNIE ghosts_file.textures in
+  (* FIXME rename head_configs ? *)
+  let britta_configs = List.assoc BRITTA ghosts_file.head_textures_by_ghost in
+  let jeff_configs = List.assoc JEFF ghosts_file.head_textures_by_ghost in
+  let abed_configs = List.assoc ABED ghosts_file.head_textures_by_ghost in
+  let troy_configs = List.assoc TROY ghosts_file.head_textures_by_ghost in
+  let annie_configs = List.assoc ANNIE ghosts_file.head_textures_by_ghost in
 
   let britta_ghost_textures : ghost_textures =
     {
@@ -109,10 +111,32 @@ let init
     }
   in
 
+  let load_head_texture name =
+    let configs =
+      (* FIXME  *)
+      britta_configs
+    in
+    use_json_config configs name
+  in
+
+  let britta_head_textures : ghost_head_textures =
+    {
+      cast = load_head_texture "cast";
+      look_down = load_head_texture "look-down";
+      look_up = load_head_texture "look-up";
+      idle = load_head_texture "idle";
+      read = load_head_texture "read";
+      take_damage = load_head_texture "take-damage";
+      walk = load_head_texture "walk";
+      wall_slide = load_head_texture "wall-slide";
+    }
+  in
+
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
   let make_ghost id (party_ghost : party_ghost) : ghost =
-    Ghost.init id party_ghost.textures ghosts_file.actions (clone_vector start_pos) save_file
-      global.weapons shared_ghost_textures
+    (* FIXME different heads per ghost *)
+    Ghost.init id party_ghost.textures britta_head_textures ghosts_file.actions
+      (clone_vector start_pos) save_file global.weapons shared_ghost_textures
   in
 
   let ghosts' : (ghost_id * party_ghost) list =

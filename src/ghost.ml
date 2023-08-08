@@ -14,14 +14,14 @@ let parse_name name : ghost_id =
 
 let read_config () : ghosts_file =
   let ghost_file : Json_t.ghosts_file = File.read_config "ghosts" Json_j.ghosts_file_of_string in
-  let parse_texture_config character_name ((pose_name, ghost_pose) : string * Json_t.texture_config)
+  let parse_texture_config character_name ((pose_name, config) : string * Json_t.texture_config)
       : texture_config =
     {
       path = { asset_dir = GHOSTS; character_name; pose_name };
-      count = ghost_pose.count;
-      duration = { seconds = ghost_pose.duration };
-      x_offset = ghost_pose.x_offset |> Int.to_float;
-      y_offset = ghost_pose.y_offset |> Int.to_float;
+      count = config.count;
+      duration = { seconds = config.duration };
+      x_offset = config.x_offset |> Int.to_float;
+      y_offset = config.y_offset |> Int.to_float;
     }
   in
   let parse_ghost_texture
@@ -41,12 +41,19 @@ let read_config () : ghosts_file =
     in
     (parse_name ghost_id_str, texture_configs)
   in
-  let textures = List.map parse_ghost_texture ghost_file.individual_textures in
+  let head_textures_by_ghost = List.map parse_ghost_texture ghost_file.head_textures_by_ghost in
   let shared_textures : (string * texture_config) list =
     let parse_texture_config' (s, tc) : string * texture_config =
       (s, parse_texture_config "shared" (s, tc))
     in
     List.map parse_texture_config' ghost_file.shared_textures
+  in
+  (* CLEANUP duplicated *)
+  let body_textures : (string * texture_config) list =
+    let parse_texture_config' (s, tc) : string * texture_config =
+      (s, parse_texture_config "body" (s, tc))
+    in
+    List.map parse_texture_config' ghost_file.body_textures
   in
   let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
     ( name,
@@ -59,7 +66,7 @@ let read_config () : ghosts_file =
   let actions : (string * ghost_action_config) list =
     List.map parse_ghost_action ghost_file.actions
   in
-  { actions; textures; shared_textures }
+  { actions; head_textures_by_ghost; body_textures; shared_textures }
 
 let available_ghost_ids ghosts : ghost_id list =
   ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
@@ -106,7 +113,6 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
 (* CLEANUP see if this can use Entity.maybe_unset_current_floor
    - looks like the fn in Entity is for uncontrolled ghosts
 *)
-(* CLEANUP can this be consolidated with Entity.maybe_unset_current_floor ? *)
 let maybe_unset_current_floor (ghost : ghost) (room : room) =
   match ghost.entity.current_floor with
   | None -> ()
@@ -669,7 +675,7 @@ let take_damage (ghost : ghost) (damage : int) =
     ghost.health.current <- ghost.health.max
 
 (* state updates for current pose, texture animation, and sprite *)
-let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
+let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame_time : float) =
   let update_vx multiplier =
     let mult = if ghost.entity.sprite.facing_right then multiplier else -1. *. multiplier in
     ghost.entity.v.x <- mult *. Config.ghost.vx
@@ -684,64 +690,64 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
     Entity.set_facing_right ~allow_vertical ghost.entity direction
   in
 
-  let handle_cast (spell_kind : spell_kind) =
+  let handle_cast (spell_kind : spell_kind) : texture * ghost_body_texture =
     match spell_kind with
     | VENGEFUL_SPIRIT ->
       Entity.recoil_backwards ghost.entity
         { speed = 80.; time_left = { seconds = 0.16666 }; reset_v = true };
       ghost.entity.v.y <- 0.;
-      ghost.textures.cast
-    | DESOLATE_DIVE -> ghost.textures.dive
+      (ghost.head_textures.cast, bodies.cast)
+    | DESOLATE_DIVE -> (ghost.head_textures.look_up, bodies.dive)
     | HOWLING_WRAITHS ->
       ghost.entity.v.x <- 0.;
       ghost.entity.v.y <- 0.;
-      ghost.textures.cast
+      (ghost.head_textures.cast, bodies.cast)
   in
 
-  let handle_action_kind action_kind =
+  let handle_action_kind action_kind : texture * ghost_body_texture =
     match action_kind with
     | ATTACK direction ->
       (* handle_attacking is called after handle_walking, so this allows the ghost to walk backwards while attacking *)
       set_facing_right direction;
-      ghost.textures.nail
+      (ghost.head_textures.idle, bodies.nail)
     | DREAM_NAIL ->
       update_vx 0.;
-      ghost.textures.nail
+      (ghost.head_textures.idle, bodies.nail)
     | C_DASH_WALL_COOLDOWN ->
       update_vx 0.;
       ghost.entity.v.y <- 0.;
-      ghost.textures.wall_slide
+      (ghost.head_textures.wall_slide, bodies.wall_slide)
     | C_DASH_COOLDOWN ->
       update_vx (3. -. (4. *. (frame_time -. ghost.history.c_dash_cooldown.started.at)));
       ghost.entity.v.y <- 0.;
       (* TODO new image/texture for this *)
-      ghost.textures.cast
+      (ghost.head_textures.cast, bodies.cast)
     | C_DASH ->
       ghost.entity.v.y <- 0.;
       update_vx 3.;
-      ghost.textures.dash
+      (ghost.head_textures.idle, bodies.dash)
     | C_DASH_CHARGE ->
       update_vx 0.;
       ghost.entity.v.y <- 0.;
-      ghost.textures.focus
+      (ghost.head_textures.look_down, bodies.focus)
     | SHADE_DASH
     | DASH ->
       ghost.current.can_dash <- false;
       ghost.entity.v.y <- 0.;
       update_vx 2.;
-      ghost.textures.dash
+      (ghost.head_textures.idle, bodies.dash)
     | CAST DESOLATE_DIVE ->
       update_vx 0.;
       ghost.entity.v.y <- Config.ghost.dive_vy;
-      ghost.textures.dive
+      (ghost.head_textures.look_up, bodies.dive)
     | CAST spell_kind -> handle_cast spell_kind
     | DIVE_COOLDOWN ->
       update_vx 0.;
-      ghost.textures.dive
+      (ghost.head_textures.look_up, bodies.dive)
     | FOCUS ->
       update_vx 0.;
-      ghost.textures.focus
-    | TAKE_DAMAGE_AND_RESPAWN -> ghost.textures.take_damage
+      (ghost.head_textures.look_down, bodies.focus)
+    | TAKE_DAMAGE_AND_RESPAWN -> (ghost.head_textures.take_damage, bodies.take_damage)
     | TAKE_DAMAGE (damage, direction) ->
       let x_recoil_speed =
         match direction with
@@ -756,48 +762,49 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       take_damage ghost damage;
       (* from recoiling upwards *)
       ghost.entity.current_floor <- None;
-      ghost.textures.take_damage
+      (ghost.head_textures.take_damage, bodies.take_damage)
     | JUMP ->
       ghost.entity.v.y <- Config.ghost.jump_vy;
       ghost.entity.current_floor <- None;
-      ghost.textures.jump
+      (ghost.head_textures.idle, bodies.jump)
     | WALL_KICK ->
       ghost.entity.v.y <- Config.ghost.wall_jump_vy;
       update_vx 1.;
-      ghost.textures.jump
-    | FLAP -> ghost.textures.flap
+      (ghost.head_textures.idle, bodies.jump)
+    | FLAP ->
+      (ghost.head_textures.idle, bodies.flap)
   in
 
-  let next_texture : texture =
+  let (head_texture, body_texture) : texture * ghost_body_texture =
     match new_pose with
     | PERFORMING action_kind -> handle_action_kind action_kind
     | AIRBORNE new_vy ->
       ghost.entity.v.y <- new_vy;
       ghost.entity.current_floor <- None;
       if ghost.entity.v.y > Config.physics.jump_fall_threshold then
-        ghost.textures.fall
+        (ghost.head_textures.idle, bodies.fall)
       else
-        ghost.textures.jump
+        (ghost.head_textures.idle, bodies.jump)
     | CRAWLING ->
       update_vx 0.;
-      ghost.textures.crawl
+      (ghost.head_textures.idle, bodies.crawl)
     | IDLE ->
       reset_standing_abilities ();
       update_vx 0.;
-      ghost.textures.idle
+      (ghost.head_textures.idle, bodies.idle)
     | LANDING (floor, v) ->
       ghost.entity.v.y <- 0.;
       ghost.entity.current_floor <- Some (floor, v);
       ghost.current.can_dash <- true;
       ghost.current.can_flap <- true;
-      ghost.textures.jump
+      (ghost.head_textures.idle, bodies.jump)
     | READING ->
       update_vx 0.;
-      ghost.textures.read
+      (ghost.head_textures.read, bodies.read)
     | WALKING direction ->
       reset_standing_abilities ();
       Entity.walk ghost.entity direction;
-      ghost.textures.walk
+      (ghost.head_textures.walk, bodies.walk)
     | WALL_SLIDING wall ->
       let wall_to_the_left = wall.pos.x < ghost.entity.sprite.dest.pos.x in
       ghost.entity.sprite.facing_right <- wall_to_the_left;
@@ -810,16 +817,17 @@ let set_pose ghost (new_pose : ghost_pose) (frame_time : float) =
       update_vx 0.;
       ghost.current.can_dash <- true;
       ghost.current.can_flap <- true;
-      ghost.textures.wall_slide
+      (ghost.head_textures.wall_slide, bodies.wall_slide)
     | SWIMMING rect ->
       ghost.current.can_dash <- true;
       ghost.current.can_flap <- true;
       ghost.current.water <- Some rect;
       ghost.entity.v.y <- 0.;
       (* TODO add swimming texture *)
-      ghost.textures.fall
+      (ghost.head_textures.idle, bodies.fall)
   in
-  Entity.update_sprite_texture ghost.entity next_texture
+  ghost.head <- head_texture;
+  Entity.update_sprite_texture ghost.entity body_texture.texture'
 
 let past_cooldown ?(debug = false) pose_frames frame_time : bool =
   pose_frames.blocked_until.at < frame_time
@@ -1005,7 +1013,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   action.started <- { at = state.frame.time };
   action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
-  set_pose game.ghost (PERFORMING action_kind) state.frame.time
+  set_pose game.ghost (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
 
 let hazard_respawn (state : state) (game : game) =
   game.ghost.entity.current_floor <- None;
@@ -1063,7 +1071,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
   | C_DASH_WALL_COOLDOWN
   | ATTACK _ ->
     ());
-  set_pose game.ghost (PERFORMING action_kind) state.frame.time
+  set_pose game.ghost (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
 
 let is_doing (ghost : ghost) (action_kind : ghost_action_kind) (frame_time : float) : bool =
   let check_action action =
@@ -1256,9 +1264,9 @@ let update (game : game) (state : state) =
     in
     input.pressed || input_buffered ()
   in
-  let set_pose' (pose : ghost_pose) = set_pose game.ghost pose state.frame.time in
+  let set_pose' (pose : ghost_pose) = set_pose game.ghost pose state.global.textures.ghost_bodies state.frame.time in
   let set_interaction_pose' (ghost : ghost) (pose : ghost_pose) =
-    set_pose ghost pose state.frame.time
+    set_pose ghost pose state.global.textures.ghost_bodies state.frame.time
   in
 
   (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
@@ -2375,6 +2383,7 @@ let load_shared_textures (shared_texture_configs : (string * texture_config) lis
 let init
     (ghost_id : ghost_id)
     (textures : ghost_textures)
+    (head_textures : ghost_head_textures)
     (action_config : (string * ghost_action_config) list)
     (start_pos : vector)
     (save_file : Json_t.save_file)
@@ -2416,6 +2425,8 @@ let init
     current = reset_current_status ();
     textures;
     children = [];
+    head = head_textures.idle;
+    head_textures;
     history =
       {
         cast_dive = make_action "cast-dive";
@@ -2471,7 +2482,7 @@ let init
       };
   }
 
-let init_party ghost_id textures start_pos in_party : party_ghost =
+let init_party ghost_id (textures : ghost_textures) start_pos in_party : party_ghost =
   let w, h = get_scaled_texture_size ~scale:Config.scale.ghost textures.idle in
   let dest = { pos = start_pos; w; h } in
   let entity =

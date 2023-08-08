@@ -17,16 +17,17 @@ val get_invincibility_kind : state -> game -> invincibility_kind option
 val is_vulnerable : state -> game -> bool
 val handle_debug_keys : game -> state -> state
 val update : game -> state -> state
-val load_shared_textures : (string * texture_config) list -> shared_textures
+val load_shared_textures : (string * texture_config) list -> ghost_shared_textures
 
 val init :
   ghost_id ->
   ghost_textures ->
+  ghost_head_textures ->
   (string * ghost_action_config) list ->
   vector ->
   Json_t.save_file ->
   (string * Json_t.weapon) list ->
-  shared_textures ->
+  ghost_shared_textures ->
   ghost
 
 val init_party : ghost_id -> ghost_textures -> vector -> bool -> party_ghost

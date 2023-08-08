@@ -565,7 +565,7 @@ let init (params : room_params) : room =
         entity
       in
 
-      (* FIXME-3 update for new tile size
+      (* TODO-3 fix jugs for new tile size
          - width will definitely be wrong - maybe update the configs, but maybe just multiply by 2 here
          - fragments may be messed up
       *)
@@ -636,11 +636,11 @@ let init (params : room_params) : room =
       | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
       | BASEMENT -> Raylib.Color.create 50 20 50 255
       | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
-      | OUTLANDS -> (* FIXME *) Raylib.Color.create 121 121 40 255
+      | OUTLANDS -> (* CLEANUP *) Raylib.Color.create 121 121 40 255
       | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
       | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
       | VENTWAYS -> Raylib.Color.create 129 129 129 255
-      | LIBRARY -> (* FIXME pink *) Raylib.Color.create 2 89 2 255
+      | LIBRARY -> (* CLEANUP pink *) Raylib.Color.create 2 89 2 255
     in
     {
       id = area_id;

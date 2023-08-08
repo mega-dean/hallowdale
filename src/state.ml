@@ -23,6 +23,7 @@ let init () : state =
   let enemy_configs = parse_texture_configs Enemy.parse_name enemies_file.enemies in
   let shared_enemy_configs = enemies_file.shared_textures in
 
+  let ghosts_file = File.read_config "ghosts" Json_j.ghosts_file_of_string in
   let npcs_file = File.read_config "npcs" Json_j.npcs_file_of_string in
   let npc_configs = parse_texture_configs Npc.parse_name npcs_file.npcs in
 
@@ -56,6 +57,58 @@ let init () : state =
         x_offset = 0.;
         y_offset = 0.;
       }
+  in
+
+  (* CLEANUP duplicated from platforms *)
+  let ghost_bodies : ghost_body_textures =
+    let load_ghost_body_texture name : ghost_body_texture =
+      let config =
+        let key =
+          match name with
+          | "nail-up"
+          | "nail-down" ->
+            "nail"
+          | _ -> name
+        in
+        (* CLEANUP duplicated from npcs_file *)
+        match List.assoc_opt key ghosts_file.body_textures with
+        | Some c -> c
+        | None ->
+          if key = name then
+            failwithf "missing config for '%s' in config/ghosts.json" key
+          else
+            failwithf "missing config for '%s' (from name '%s') in config/ghosts.json" key name
+      in
+      { texture' =
+      Sprite.build_texture_from_config
+        {
+          path = { asset_dir = GHOSTS; character_name = "body"; pose_name = name };
+          count = config.count;
+          duration = { seconds = config.duration };
+          x_offset = config.x_offset |> Int.to_float;
+          y_offset = config.y_offset |> Int.to_float;
+        };
+        (* FIXME not sure about this *)
+        x_offset = config.x_offset |> Int.to_float;
+        y_offset = config.y_offset |> Int.to_float;
+      }
+    in
+    {
+      cast = load_ghost_body_texture "cast";
+      crawl = load_ghost_body_texture "crawl";
+      dash = load_ghost_body_texture "dash";
+      dive = load_ghost_body_texture "dive";
+      fall = load_ghost_body_texture "fall";
+      flap = load_ghost_body_texture "flap";
+      focus = load_ghost_body_texture "focus";
+      idle = load_ghost_body_texture "idle";
+      jump = load_ghost_body_texture "jump";
+      nail = load_ghost_body_texture "nail";
+      read = load_ghost_body_texture "read";
+      take_damage = load_ghost_body_texture "take-damage";
+      walk = load_ghost_body_texture "walk";
+      wall_slide = load_ghost_body_texture "wall-slide";
+    }
   in
 
   let damage =
@@ -126,6 +179,7 @@ let init () : state =
           door_lever_struck;
           platforms;
           rotating_platform;
+          ghost_bodies;
         };
     }
   in

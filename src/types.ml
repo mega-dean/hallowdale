@@ -69,7 +69,6 @@ module Utils = struct
 
   (* returns a random element from xs *)
   let sample xs = List.nth xs (Random.int (List.length xs))
-
   let starts_with () = ()
 end
 
@@ -324,7 +323,7 @@ type rotatable_state =
 type platform_kind =
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
-  (* TODO maybe add | BENCH *)
+(* TODO maybe add | BENCH *)
 
 type platform = {
   (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)
@@ -369,31 +368,6 @@ type collision = {
   direction : direction;
 }
 
-(* TODO remove this type and use a (ghost_action * texture) list *)
-(* non-ghost-specific textures that will be needed for any ghost *)
-type shared_textures = {
-  (* TODO add separate dream_nail texture / collision shape *)
-  slash : texture;
-  upslash : texture;
-  downslash : texture;
-  shine : texture;
-  health : texture;
-  vengeful_cushion : texture;
-  desolate_dive : texture;
-  dive_shockwave : texture;
-  howling_wraiths : texture;
-  energon_pod : texture;
-  focus_sparkles : texture;
-  c_dash_crystals : texture;
-  (* TODO this is temporary, eventually combine it with c_dash_crystals and rotate *)
-  c_dash_wall_crystals : texture;
-  (* TODO these might be temporary, could try to just reuse the last frame of c_dash_crystals *)
-  c_dash_crystals_full : texture;
-  c_dash_wall_crystals_full : texture;
-  c_dash_whoosh : texture;
-  shade_cloak_sparkles : texture;
-}
-
 type spell_kind =
   | VENGEFUL_SPIRIT
   | DESOLATE_DIVE
@@ -430,24 +404,6 @@ type ghost_pose =
   | WALKING of direction
   | WALL_SLIDING of rect
   | SWIMMING of rect
-
-(* TODO maybe this should be (ghost_pose * texture) list now, but we need to match against ghost_pose anyway to apply side-effects *)
-type ghost_textures = {
-  cast : texture;
-  crawl : texture;
-  dash : texture;
-  dive : texture;
-  fall : texture;
-  flap : texture;
-  focus : texture;
-  idle : texture;
-  jump : texture;
-  nail : texture;
-  read : texture;
-  take_damage : texture;
-  walk : texture;
-  wall_slide : texture;
-}
 
 type ghost_id =
   | ABED
@@ -932,25 +888,130 @@ type invincibility_kind =
 
 (* this is very similar to Json_t.ghosts_file, but it eg. parses ghost names into ghost_id for the key of .textures *)
 type ghosts_file = {
-  textures : (ghost_id * texture_config list) list;
+  head_textures_by_ghost : (ghost_id * texture_config list) list;
+  body_textures : (string * texture_config) list;
   actions : (string * ghost_action_config) list;
   shared_textures : (string * texture_config) list;
 }
 
+(* FIXME remove *)
+type ghost_textures = {
+  cast : texture;
+  crawl : texture;
+  dash : texture;
+  dive : texture;
+  fall : texture;
+  flap : texture;
+  focus : texture;
+  idle : texture;
+  jump : texture;
+  nail : texture;
+  read : texture;
+  take_damage : texture;
+  walk : texture;
+  wall_slide : texture;
+}
+
+type ghost_body_texture = {
+  texture' : texture;
+  x_offset : float;
+  y_offset : float;
+}
+
+type ghost_body_textures = {
+  cast : ghost_body_texture;
+  crawl : ghost_body_texture;
+  dash : ghost_body_texture;
+  dive : ghost_body_texture;
+  fall : ghost_body_texture;
+  flap : ghost_body_texture;
+  focus : ghost_body_texture;
+  idle : ghost_body_texture;
+  jump : ghost_body_texture;
+  nail : ghost_body_texture;
+  read : ghost_body_texture;
+  take_damage : ghost_body_texture;
+  walk : ghost_body_texture;
+  wall_slide : ghost_body_texture;
+}
+
+(* FIXME will probably also need separate field to keep track of the offsets
+   - eg. a lot of poses will use the .idle head, but at different offsets
+*)
+type ghost_head_textures = {
+  look_down : texture;
+  (* fall : texture; *)
+  (* focus : texture; *)
+  look_up : texture;
+  (* flap : texture; *)
+  (* dive : texture; *)
+
+  (* idle *)
+  idle : texture;
+  (* crawl : texture; *)
+  (* dash : texture; *)
+  (* jump : texture; *)
+  (* nail : texture; *)
+
+  (* read *)
+  read : texture;
+  (* take-damage *)
+  take_damage : texture;
+  (* walk *)
+  walk : texture;
+  cast : texture;
+  (* wall-slide *)
+  wall_slide : texture;
+}
+
 (* this is for the ghosts that are not being controlled right now *)
 type party_ghost = {
+  (* FIXME  *)
   textures : ghost_textures;
   entity : entity;
   mutable in_party : bool;
 }
 
+(* CLEANUP too many ghost_*_textures types, combine them somehow *)
+(* non-ghost-specific textures that will be needed for any ghost *)
+type ghost_shared_textures = {
+  (* TODO add separate dream_nail texture / collision shape *)
+  slash : texture;
+  upslash : texture;
+  downslash : texture;
+  shine : texture;
+  health : texture;
+  vengeful_cushion : texture;
+  desolate_dive : texture;
+  dive_shockwave : texture;
+  howling_wraiths : texture;
+  energon_pod : texture;
+  focus_sparkles : texture;
+  c_dash_crystals : texture;
+  (* TODO this is temporary, eventually combine it with c_dash_crystals and rotate *)
+  c_dash_wall_crystals : texture;
+  (* TODO these might be temporary, could try to just reuse the last frame of c_dash_crystals *)
+  c_dash_crystals_full : texture;
+  c_dash_wall_crystals_full : texture;
+  c_dash_whoosh : texture;
+  shade_cloak_sparkles : texture;
+}
+
 type ghost = {
   mutable current : current_status;
-  (* TODO-6 use separate textures for ghost head vs body *)
-  shared_textures : shared_textures;
+  (* FIXME-3 use separate textures for ghost head vs body
+     - remove ghost_textures from individual ghosts, since that will become body_textures
+     - add head_textures
+  *)
+  shared_textures : ghost_shared_textures;
   history : ghost_action_history;
   id : ghost_id;
+  (* the entity.texture is the ghost body *)
   mutable entity : entity;
+  (* FIXME probably want a variant for head_kind *)
+  mutable head : texture;
+  head_textures : ghost_head_textures;
+  (* FIXME remove - this is covered by head_textures (and body_textures will be stored in global cache) *)
   mutable textures : ghost_textures;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
@@ -1045,11 +1106,13 @@ type area_id =
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
-  bg_color : Raylib.Color.t; (* FIXME-7 add bg/skybox _image *)
+  (* FIXME-7 change this to bg/skybox _image
+     - maybe just add a global_texture (until this is area-specific)
+  *)
+  bg_color : Raylib.Color.t;
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
-(* FIXME-9 need to update these *)
 type room_id =
   (* AC_REPAIR_ANNEX *)
   | AC_B
@@ -1251,6 +1314,7 @@ type texture_cache = {
   platforms : (string * texture) list;
   (* this is the only animated platform for now, maybe want a separate animated_platforms if more are added *)
   rotating_platform : texture;
+  ghost_bodies : ghost_body_textures;
 }
 
 (* these are all things that are eager-loaded from json config files *)

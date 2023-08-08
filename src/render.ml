@@ -14,21 +14,24 @@ module Draw = struct
   let circle_v = draw_circle_v
   let rect_lines = draw_rectangle_lines_ex
   let rect = draw_rectangle
+
   (* TODO-7 rename this *)
   let image = draw_texture_pro
   let line_ex = draw_line_ex
 end
 
-(* adjusts sign of w based on sprite.facing_right *)
-let src_Rect (s : sprite) : Raylib.Rectangle.t =
-  let src = get_src s.texture in
+let src_Rect' (texture : texture) facing_right : Raylib.Rectangle.t =
+  let src = get_src texture in
   let w =
-    if s.facing_right then
+    if facing_right then
       abs_float src.w
     else
       -1. *. abs_float src.w
   in
   Raylib.Rectangle.create src.pos.x src.pos.y w src.h
+
+(* adjusts sign of w based on sprite.facing_right *)
+let src_Rect (s : sprite) : Raylib.Rectangle.t = src_Rect' s.texture s.facing_right
 
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
   let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
@@ -83,9 +86,7 @@ let draw_texture
     | 7 -> ({ r with w = -1. *. r.w }, 90.)
     | _n -> (r, 0.)
   in
-  let tile_size =
-    12. *. Config.scale.room
-  in
+  let tile_size = 12. *. Config.scale.room in
   let dest' =
     match rotation with
     | 0. -> dest |> to_Rect
@@ -100,8 +101,23 @@ let draw_texture
 (* this function should only be used by sprites that don't have an entity
    - when an entity is present, use draw_entity because it corrects the sprite position before rendering
 *)
-let draw_sprite ?(debug = false) ?(tint = Color.create 255 255 255 255) (sprite : sprite) =
-  let dest = sprite.dest |> to_Rect in
+let draw_sprite
+    ?(debug = false)
+    ?(tint = Color.create 255 255 255 255)
+    ?(offset = None)
+    (sprite : sprite) =
+  let dest =
+    let dest' =
+      match offset with
+      | None -> sprite.dest
+      | Some offset ->
+        {
+          sprite.dest with
+          pos = { x = offset.x +. sprite.dest.pos.x; y = offset.y +. sprite.dest.pos.y };
+        }
+    in
+    dest' |> to_Rect
+  in
   Draw.image sprite.texture.image (src_Rect sprite) dest (Raylib.Vector2.create 0. 0.) 0. tint;
   match sprite.collision with
   | Some (SHAPE shape) ->
@@ -109,10 +125,14 @@ let draw_sprite ?(debug = false) ?(tint = Color.create 255 255 255 255) (sprite 
       debug_shape_outline sprite shape
   | _ -> ()
 
-let draw_entity ?(debug = false) ?(tint = Color.create 255 255 255 255) (e : entity) =
+let draw_entity
+    ?(debug = false)
+    ?(tint = Color.create 255 255 255 255)
+    ?(offset = None)
+    (e : entity) =
   (* drawing entity and drawing sprite are the same thing since sprite.dest is updated every frame to match entity.dest *)
   Entity.adjust_sprite_dest e;
-  draw_sprite ~debug ~tint e.sprite
+  draw_sprite ~debug ~tint ~offset e.sprite
 
 let center (r : rect) : Raylib.Vector2.t =
   Raylib.Vector2.create (r.pos.x +. (r.w /. 2.)) (r.pos.y +. (r.h /. 2.))
@@ -158,11 +178,8 @@ let draw_tiled_layer
           let texture, transformations =
             let animation_offset =
               if layer.config.animated then
-                (* TODO this should probably just use an animated sprite instead of
+                (* FIXME-5 this should probably just use an animated sprite instead of
                    this weird animation_offset for the tile gid
-                *)
-                (* FIXME-6 probably needs `mod 16` now
-                   - probably will be more complicated that that since it needs to skip every-other tile
                 *)
                 4 * frame_idx / Config.window.fps mod 8
               else
@@ -859,7 +876,7 @@ let tick (state : state) =
     in
 
     let draw_debug_info () =
-      let draw_ghost_debug () =
+      let draw_debug_ghost () =
         let s = game.ghost.entity.sprite in
         if game.ghost.entity.sprite.facing_right then
           Draw.rect
@@ -887,7 +904,7 @@ let tick (state : state) =
           List.iter (fun (tg : tile_group) -> debug_rect_outline tg.dest) l.tile_groups)
         game.room.layers;
       List.iter (fun (_color, rect) -> debug_rect' _color rect) state.debug.rects;
-      draw_ghost_debug ()
+      draw_debug_ghost ()
     in
 
     let draw_frame_inputs () =
@@ -1008,16 +1025,18 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
+    (* FIXME draw head (after entity.texture)  *)
     let draw_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
-      let draw_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
+      let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
         draw_entity party_ghost.entity;
         if state.debug.enabled then (
           debug_rect party_ghost.entity.dest;
           debug_rect_outline party_ghost.entity.sprite.dest)
       in
-      List.iter draw_ghost ghosts_by_id
+      List.iter draw_party_ghost ghosts_by_id
     in
 
+    (* FIXME draw head (after entity.texture)  *)
     let draw_ghost (ghost : ghost) =
       let tint =
         match Ghost.get_invincibility_kind state game with
@@ -1087,7 +1106,34 @@ let tick (state : state) =
       in
       draw_sprite shine_sprite;
       List.iter draw_child children_behind;
-      draw_entity ~tint ghost.entity;
+      (* FIXME look up body offset *)
+      draw_entity ~tint ~offset:(Some { x = 0.; y = 30. }) ghost.entity;
+      (* CLEANUP duplicated from draw_sprite *)
+      let head_dest =
+        (* FIXME w/h is wrong *)
+        let dest' =
+          {
+            pos =
+              (* FIXME this needs to consider body offset too ? *)
+              {
+                (* x = ghost.entity.dest.pos.x +. ghost.head.x_offset -. 30.;
+                 * y = ghost.entity.dest.pos.y +. ghost.head.y_offset -. 30.; *)
+                (* x = ghost.entity.dest.pos.x +. 22.;
+                 * y = ghost.entity.dest.pos.y +. 30.; *)
+                (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
+                x = ghost.entity.dest.pos.x -. 20.;
+                y = ghost.entity.dest.pos.y -. 27.;
+              };
+            w = 40. *. Config.scale.ghost;
+            h = 40. *. Config.scale.ghost;
+          }
+        in
+        dest' |> to_Rect
+      in
+      Draw.image ghost.head.image
+        (src_Rect' ghost.head ghost.entity.sprite.facing_right)
+        head_dest (Raylib.Vector2.create 0. 0.) 0. tint;
+      (* draw_texture ~tint ghost.head ghost.entity.dest 0; *)
       List.iter draw_child children_in_front
     in
 
@@ -1157,8 +1203,7 @@ let tick (state : state) =
     in
 
     Raylib.begin_drawing ();
-    (* bright green to make tile seams more obvious *)
-    (* Raylib.clear_background (Color.create 0 255 0 255); *)
+    (* Raylib.clear_background (Color.create 128 128 128 255); *)
     Raylib.clear_background game.room.area.bg_color;
     Raylib.begin_mode_2d state.camera.raylib;
     draw_bg_tiles game.room camera_x camera_y state.frame.idx;
