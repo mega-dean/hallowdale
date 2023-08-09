@@ -21,7 +21,7 @@ val load_shared_textures : (string * texture_config) list -> ghost_shared_textur
 
 val init :
   ghost_id ->
-  ghost_textures ->
+  texture ->
   ghost_head_textures ->
   (string * ghost_action_config) list ->
   vector ->
@@ -30,4 +30,4 @@ val init :
   ghost_shared_textures ->
   ghost
 
-val init_party : ghost_id -> ghost_textures -> vector -> bool -> party_ghost
+val init_party : ghost_id -> ghost_head_textures -> texture -> vector -> bool -> party_ghost

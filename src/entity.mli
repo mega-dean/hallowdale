@@ -32,7 +32,7 @@ val get_center : entity -> vector
 val set_facing_right : ?allow_vertical:bool -> entity -> direction -> unit
 val update_vx : entity -> float -> unit
 val walk : entity -> direction -> unit
-val adjust_sprite_dest : entity -> unit
+val adjust_sprite_dest : ?skip_coll_offset:bool -> entity -> unit
 val update_sprite_texture : entity -> texture -> unit
 val clone : entity -> entity
 

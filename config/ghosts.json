@@ -1,9 +1,10 @@
 {
-    // the offsets for these are "distance from top-left corner to neck"
+    // the offsets for these are "distance from top-left corner to neck", and render.ml adjusts the
+    // head/body to line up
     "body_textures": [
         ["idle", {
-            // "x_offset": 2,
-            // "y_offset": 3
+            "x_offset": 9,
+            "y_offset": 2
         }],
         ["read", {
             "x_offset": 3,
@@ -22,15 +23,15 @@
             // "x_offset": 18
         }],
         ["walk", {
-            "count": 8
-            // "x_offset": 20,
-            // "y_offset": 3
+            "count": 8,
+            "x_offset": -6,
+            "y_offset": 0
         }],
         ["fall", {
             "count": 2,
-            "duration": 0.05,
-            "x_offset": 22,
-            "y_offset": 5
+            "duration": 0.15,
+            "x_offset": -5,
+            "y_offset": -3
         }],
         ["flap", {
             "count": 2,
@@ -39,15 +40,15 @@
             // "y_offset": 3
         }],
         ["cast", {
-            "count": 2
-            // "x_offset": 4,
-            // "y_offset": 3
+            "count": 2,
+            "x_offset": -20,
+            "y_offset": -30
         }],
         ["dash", {
             "count": 2,
-            "duration": 0.05
-            // "x_offset": 20,
-            // "y_offset": 3
+            "duration": 0.05,
+            "x_offset": -20,
+            "y_offset": -3
         }],
         ["dive", {
             "count": 2,
@@ -63,7 +64,8 @@
         ["take-damage", {
         }],
         ["wall-slide", {
-            "y_offset": 7
+            "x_offset": 10,
+            "y_offset": -27
         }]
     ],
 

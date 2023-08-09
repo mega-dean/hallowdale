@@ -143,9 +143,9 @@ let ghost_pose pose =
   | SWIMMING _ -> "SWIMMING"
 
 let ghost_location (g : ghost) =
-  print "ghost at %0.1f, %0.1f" g.entity.sprite.dest.pos.x g.entity.sprite.dest.pos.y
+  print "ghost at %0.1f, %0.1f" g.ghost'.entity.sprite.dest.pos.x g.ghost'.entity.sprite.dest.pos.y
 
-let ghost_name (g : ghost) = fmt "ghost:%s" (entity g.entity)
+let ghost_name (g : ghost) = fmt "ghost:%s" (entity g.ghost'.entity)
 
 let area_id id =
   match id with
@@ -385,7 +385,7 @@ let menu_ghost_id (game : game option) id =
   | None -> failwith "need to have a game to show weapons menu"
   | Some game' -> (
     let show name =
-      if id = game'.ghost.id then
+      if id = game'.ghost.ghost'.id then
         fmt "{{blue}} %s" name
       else
         name

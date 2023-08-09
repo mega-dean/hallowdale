@@ -55,14 +55,14 @@ let save_game ?(after_fn = ignore) (game : game) (state : state) =
   let save_file : Json_t.save_file =
     let ghosts' = game.ghosts' in
     {
-      ghost_id = Show.ghost_id game.ghost.id;
+      ghost_id = Show.ghost_id game.ghost.ghost'.id;
       ghosts_in_party =
         (* game.ghosts only has the uncontrolled ghosts, but save_file.ghosts_in_party
            should include the current ghost's id
         *)
-        [ game.ghost.id ] @ Ghost.available_ghost_ids ghosts' |> List.map Show.ghost_id;
-      ghost_x = game.ghost.entity.dest.pos.x;
-      ghost_y = game.ghost.entity.dest.pos.y;
+        [ game.ghost.ghost'.id ] @ Ghost.available_ghost_ids ghosts' |> List.map Show.ghost_id;
+      ghost_x = game.ghost.ghost'.entity.dest.pos.x;
+      ghost_y = game.ghost.ghost'.entity.dest.pos.y;
       respawn_x = game.room.respawn_pos.x;
       respawn_y = game.room.respawn_pos.y;
       room_name = Tiled.Room.get_filename game.room;
@@ -107,7 +107,7 @@ let update_pause_menu (game : game) (state : state) : state =
             state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
       | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Ghost.equip_weapon game.ghost weapon_name
       | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
-        if game.ghost.id <> ghost_id then
+        if game.ghost.ghost'.id <> ghost_id then
           Ghost.swap_current_ghost state game ghost_id
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
@@ -134,10 +134,10 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
          TODO can maybe improve this, since it can still be off if the camera is bounded
       *)
       Tiled.create_camera_at
-        (Raylib.Vector2.create game.ghost.entity.dest.pos.x game.ghost.entity.dest.pos.y)
+        (Raylib.Vector2.create game.ghost.ghost'.entity.dest.pos.x game.ghost.ghost'.entity.dest.pos.y)
         0.;
     if is_new_game then (
-      Entity.freeze game.ghost.entity;
+      Entity.freeze game.ghost.ghost'.entity;
       state.screen_fade <- Some 255;
       let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
       Ghost.maybe_begin_interaction state game trigger);

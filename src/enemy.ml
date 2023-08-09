@@ -442,7 +442,7 @@ let time_ago (enemy : enemy) (action_name : string) (clock : time) : duration =
   { seconds = clock.at -. performed.at }
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
-  let ghost_pos = game.ghost.entity.dest.pos in
+  let ghost_pos = game.ghost.ghost'.entity.dest.pos in
   let still_doing (action_name : string) (duration : float) : bool =
     (* TODO maybe look up duration by name by adding json props like `action-name_duration` *)
     let started = action_started_at enemy action_name in
@@ -573,7 +573,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
           [ ("ghost_x", ghost_pos.x); ("ghost_y", ghost_pos.y) ];
         let should_explode =
           enemy.floor_collision_this_frame
-          || Collision.between_entities enemy.entity game.ghost.entity
+          || Collision.between_entities enemy.entity game.ghost.ghost'.entity
           (* TODO maybe check slash collisions too *)
         in
         if should_explode then (

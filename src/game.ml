@@ -71,7 +71,6 @@ let init
     (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
-  (* FIXME probably will have to update this *)
   let ghosts_file : ghosts_file = Ghost.read_config () in
   let use_json_config configs pose_name =
     let config =
@@ -85,36 +84,16 @@ let init
     Sprite.build_texture_from_config config
   in
 
-  (* FIXME rename head_configs ? *)
-  let britta_configs = List.assoc BRITTA ghosts_file.head_textures_by_ghost in
-  let jeff_configs = List.assoc JEFF ghosts_file.head_textures_by_ghost in
-  let abed_configs = List.assoc ABED ghosts_file.head_textures_by_ghost in
-  let troy_configs = List.assoc TROY ghosts_file.head_textures_by_ghost in
-  let annie_configs = List.assoc ANNIE ghosts_file.head_textures_by_ghost in
-
-  let britta_ghost_textures : ghost_textures =
-    {
-      cast = use_json_config britta_configs "cast";
-      crawl = use_json_config britta_configs "crawl";
-      dash = use_json_config britta_configs "dash";
-      dive = use_json_config britta_configs "dive";
-      fall = use_json_config britta_configs "fall";
-      flap = use_json_config britta_configs "flap";
-      focus = use_json_config britta_configs "focus";
-      idle = use_json_config britta_configs "idle";
-      jump = use_json_config britta_configs "jump";
-      nail = use_json_config britta_configs "nail";
-      read = use_json_config britta_configs "read";
-      take_damage = use_json_config britta_configs "take-damage";
-      walk = use_json_config britta_configs "walk";
-      wall_slide = use_json_config britta_configs "wall-slide";
-    }
-  in
+  let britta_head_configs = List.assoc BRITTA ghosts_file.head_textures_by_ghost in
+  let jeff_head_configs = List.assoc JEFF ghosts_file.head_textures_by_ghost in
+  let abed_head_configs = List.assoc ABED ghosts_file.head_textures_by_ghost in
+  let troy_head_configs = List.assoc TROY ghosts_file.head_textures_by_ghost in
+  let annie_head_configs = List.assoc ANNIE ghosts_file.head_textures_by_ghost in
 
   let load_head_texture name =
     let configs =
-      (* FIXME  *)
-      britta_configs
+      (* TODO add other heads *)
+      britta_head_configs
     in
     use_json_config configs name
   in
@@ -132,56 +111,25 @@ let init
     }
   in
 
+  let idle_texture = global.textures.ghost_bodies.idle.texture' in
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
   let make_ghost id (party_ghost : party_ghost) : ghost =
-    (* FIXME different heads per ghost *)
-    Ghost.init id party_ghost.textures britta_head_textures ghosts_file.actions
+    (* TODO add other heads *)
+    Ghost.init id idle_texture britta_head_textures ghosts_file.actions
       (clone_vector start_pos) save_file global.weapons shared_ghost_textures
   in
 
   let ghosts' : (ghost_id * party_ghost) list =
     let make_party_ghost id config : ghost_id * party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
-      (id, Ghost.init_party id config { x = 1000.; y = 1000. } in_party)
+      (id, Ghost.init_party id config idle_texture { x = 1000.; y = 1000. } in_party)
     in
     [
-      make_party_ghost BRITTA britta_ghost_textures;
-      make_party_ghost ABED
-        {
-          britta_ghost_textures with
-          dash = use_json_config abed_configs "dash";
-          fall = use_json_config abed_configs "fall";
-          idle = use_json_config abed_configs "idle";
-          jump = use_json_config abed_configs "jump";
-          walk = use_json_config abed_configs "walk";
-        };
-      make_party_ghost TROY
-        {
-          britta_ghost_textures with
-          dash = use_json_config troy_configs "dash";
-          dive = use_json_config troy_configs "dive";
-          fall = use_json_config troy_configs "fall";
-          idle = use_json_config troy_configs "idle";
-          jump = use_json_config troy_configs "jump";
-          walk = use_json_config troy_configs "walk";
-        };
-      make_party_ghost ANNIE
-        {
-          britta_ghost_textures with
-          idle = use_json_config annie_configs "idle";
-          nail = use_json_config annie_configs "nail";
-          walk = use_json_config annie_configs "walk";
-        };
-      make_party_ghost JEFF
-        {
-          britta_ghost_textures with
-          crawl = use_json_config jeff_configs "crawl";
-          fall = use_json_config jeff_configs "fall";
-          idle = use_json_config jeff_configs "idle";
-          jump = use_json_config jeff_configs "jump";
-          nail = use_json_config jeff_configs "nail";
-          walk = use_json_config jeff_configs "walk";
-        };
+      make_party_ghost BRITTA britta_head_textures;
+      make_party_ghost ABED britta_head_textures;
+      make_party_ghost TROY britta_head_textures;
+      make_party_ghost ANNIE britta_head_textures;
+      make_party_ghost JEFF britta_head_textures;
     ]
   in
 
@@ -207,7 +155,7 @@ let init
   let current_ghost_id = Ghost.parse_name save_file.ghost_id in
   let party_ghost = List.assoc current_ghost_id ghosts' in
   let ghost = make_ghost current_ghost_id party_ghost in
-  ghost.entity.update_pos <- true;
+  ghost.ghost'.entity.update_pos <- true;
   Ghost.equip_weapon ghost save_file.current_weapon;
 
   {

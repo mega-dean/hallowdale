@@ -104,16 +104,25 @@ let draw_texture
 let draw_sprite
     ?(debug = false)
     ?(tint = Color.create 255 255 255 255)
-    ?(offset = None)
+    ?(render_offset = None)
     (sprite : sprite) =
   let dest =
     let dest' =
-      match offset with
+      match render_offset with
       | None -> sprite.dest
       | Some offset ->
         {
           sprite.dest with
-          pos = { x = offset.x +. sprite.dest.pos.x; y = offset.y +. sprite.dest.pos.y };
+          pos =
+            {
+              x =
+                (* CLEANUP probably duplicated with adjust_sprite_dest *)
+                (if sprite.facing_right then
+                   sprite.dest.pos.x +. offset.x
+                else
+                  sprite.dest.pos.x -. offset.x);
+              y = offset.y +. sprite.dest.pos.y;
+            };
         }
     in
     dest' |> to_Rect
@@ -128,11 +137,11 @@ let draw_sprite
 let draw_entity
     ?(debug = false)
     ?(tint = Color.create 255 255 255 255)
-    ?(offset = None)
+    ?(render_offset = None)
     (e : entity) =
   (* drawing entity and drawing sprite are the same thing since sprite.dest is updated every frame to match entity.dest *)
-  Entity.adjust_sprite_dest e;
-  draw_sprite ~debug ~tint ~offset e.sprite
+  Entity.adjust_sprite_dest ~skip_coll_offset:(Option.is_some render_offset) e;
+  draw_sprite ~debug ~tint ~render_offset e.sprite
 
 let center (r : rect) : Raylib.Vector2.t =
   Raylib.Vector2.create (r.pos.x +. (r.w /. 2.)) (r.pos.y +. (r.h /. 2.))
@@ -877,8 +886,8 @@ let tick (state : state) =
 
     let draw_debug_info () =
       let draw_debug_ghost () =
-        let s = game.ghost.entity.sprite in
-        if game.ghost.entity.sprite.facing_right then
+        let s = game.ghost.ghost'.entity.sprite in
+        if game.ghost.ghost'.entity.sprite.facing_right then
           Draw.rect
             (s.dest.pos.x +. s.dest.w |> Float.to_int)
             (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
@@ -888,15 +897,15 @@ let tick (state : state) =
             (s.dest.pos.x -. s.dest.w |> Float.to_int)
             (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
             (s.dest.w |> Float.to_int) 4 Color.green;
-        draw_velocity game.ghost.entity;
-        (match game.ghost.entity.current_floor with
+        draw_velocity game.ghost.ghost'.entity;
+        (match game.ghost.ghost'.entity.current_floor with
         | None -> ()
         | Some (floor, v) -> debug_rect ~r:0 ~g:0 ~b:200 floor);
         (match game.ghost.current.wall with
         | None -> ()
         | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall);
-        debug_rect_outline ~size:2. ~color:Color.green game.ghost.entity.sprite.dest;
-        debug_rect_outline ~size:3. ~color:Color.yellow game.ghost.entity.dest
+        debug_rect_outline ~size:2. ~color:Color.green game.ghost.ghost'.entity.sprite.dest;
+        debug_rect_outline ~size:3. ~color:Color.yellow game.ghost.ghost'.entity.dest
       in
 
       List.iter
@@ -1028,15 +1037,14 @@ let tick (state : state) =
     (* FIXME draw head (after entity.texture)  *)
     let draw_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
       let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
-        draw_entity party_ghost.entity;
+        draw_entity party_ghost.ghost'.entity;
         if state.debug.enabled then (
-          debug_rect party_ghost.entity.dest;
-          debug_rect_outline party_ghost.entity.sprite.dest)
+          debug_rect party_ghost.ghost'.entity.dest;
+          debug_rect_outline party_ghost.ghost'.entity.sprite.dest)
       in
       List.iter draw_party_ghost ghosts_by_id
     in
 
-    (* FIXME draw head (after entity.texture)  *)
     let draw_ghost (ghost : ghost) =
       let tint =
         match Ghost.get_invincibility_kind state game with
@@ -1052,10 +1060,10 @@ let tick (state : state) =
 
       let draw_child ((child_kind, child) : ghost_child_kind * ghost_child) =
         let get_child_pos child_w child_h =
-          Entity.get_child_pos ghost.entity child.relative_pos child_w child_h
+          Entity.get_child_pos ghost.ghost'.entity child.relative_pos child_w child_h
         in
         let draw_child_sprite (sprite : sprite) tint =
-          sprite.facing_right <- ghost.entity.sprite.facing_right;
+          sprite.facing_right <- ghost.ghost'.entity.sprite.facing_right;
           sprite.dest.pos <- get_child_pos sprite.dest.w sprite.dest.h;
           draw_sprite ~tint sprite
         in
@@ -1093,7 +1101,7 @@ let tick (state : state) =
           texture = game.ghost.shared_textures.shine;
           dest =
             {
-              pos = Entity.get_child_pos ghost.entity (ALIGNED (CENTER, CENTER)) size size;
+              pos = Entity.get_child_pos ghost.ghost'.entity (ALIGNED (CENTER, CENTER)) size size;
               w = size;
               h = size;
             };
@@ -1106,23 +1114,21 @@ let tick (state : state) =
       in
       draw_sprite shine_sprite;
       List.iter draw_child children_behind;
-      (* FIXME look up body offset *)
-      draw_entity ~tint ~offset:(Some { x = 0.; y = 30. }) ghost.entity;
+
+      let render_offset =
+        Some { x = ghost.ghost'.body_render_offset.x -. 9.; y = ghost.ghost'.body_render_offset.y +. 28. }
+      in
+
+      draw_entity ~tint ~render_offset ghost.ghost'.entity;
       (* CLEANUP duplicated from draw_sprite *)
       let head_dest =
-        (* FIXME w/h is wrong *)
         let dest' =
           {
             pos =
-              (* FIXME this needs to consider body offset too ? *)
               {
-                (* x = ghost.entity.dest.pos.x +. ghost.head.x_offset -. 30.;
-                 * y = ghost.entity.dest.pos.y +. ghost.head.y_offset -. 30.; *)
-                (* x = ghost.entity.dest.pos.x +. 22.;
-                 * y = ghost.entity.dest.pos.y +. 30.; *)
-                (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
-                x = ghost.entity.dest.pos.x -. 20.;
-                y = ghost.entity.dest.pos.y -. 27.;
+                (* CLEANUP these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
+                x = ghost.ghost'.entity.dest.pos.x -. 20.;
+                y = ghost.ghost'.entity.dest.pos.y -. 27.;
               };
             w = 40. *. Config.scale.ghost;
             h = 40. *. Config.scale.ghost;
@@ -1130,10 +1136,9 @@ let tick (state : state) =
         in
         dest' |> to_Rect
       in
-      Draw.image ghost.head.image
-        (src_Rect' ghost.head ghost.entity.sprite.facing_right)
+      Draw.image ghost.ghost'.head.image
+        (src_Rect' ghost.ghost'.head ghost.ghost'.entity.sprite.facing_right)
         head_dest (Raylib.Vector2.create 0. 0.) 0. tint;
-      (* draw_texture ~tint ghost.head ghost.entity.dest 0; *)
       List.iter draw_child children_in_front
     in
 

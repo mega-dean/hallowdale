@@ -713,10 +713,10 @@ let change_current_room
         platforms = state.global.textures.platforms;
       }
   in
-  game.ghost.entity.current_floor <- None;
+  game.ghost.ghost'.entity.current_floor <- None;
   game.ghost.current.wall <- None;
   game.ghost.spawned_vengeful_spirits <- [];
-  game.ghost.entity.dest.pos <- ghost_start_pos;
+  game.ghost.ghost'.entity.dest.pos <- ghost_start_pos;
   (* game.ghost.entity.dest.pos <- { x = ghost_start_pos.x *. 2.; y = ghost_start_pos.y *. 2.}; *)
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
@@ -742,7 +742,7 @@ let handle_transitions (state : state) (game : game) =
   in
   let colliding exit_rect =
     (* TODO this might not be working sometimes with the new collision detection *)
-    Collision.with_entity game.ghost.entity exit_rect
+    Collision.with_entity game.ghost.ghost'.entity exit_rect
   in
   match List.find_map colliding game.room.exits with
   | None -> false
@@ -753,7 +753,9 @@ let handle_transitions (state : state) (game : game) =
     else (
       let cr = collision.rect in
       let current_room_location = List.assoc game.room.id state.world in
-      let global_ghost_pos = get_global_pos game.ghost.entity.dest.pos current_room_location in
+      let global_ghost_pos =
+        get_global_pos game.ghost.ghost'.entity.dest.pos current_room_location
+      in
       let target_room_id, room_location =
         let global_x, global_y =
           ( cr.pos.x +. (cr.w /. 2.) +. current_room_location.global_x,
@@ -769,13 +771,13 @@ let handle_transitions (state : state) (game : game) =
         *)
         match collision.direction with
         | LEFT ->
-          game.ghost.entity.sprite.facing_right <- true;
-          { start_pos' with x = start_pos'.x +. game.ghost.entity.dest.w }
+          game.ghost.ghost'.entity.sprite.facing_right <- true;
+          { start_pos' with x = start_pos'.x +. game.ghost.ghost'.entity.dest.w }
         | RIGHT ->
-          game.ghost.entity.sprite.facing_right <- false;
-          { start_pos' with x = start_pos'.x -. game.ghost.entity.dest.w }
-        | UP -> { start_pos' with y = start_pos'.y +. game.ghost.entity.dest.h }
-        | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.entity.dest.h }
+          game.ghost.ghost'.entity.sprite.facing_right <- false;
+          { start_pos' with x = start_pos'.x -. game.ghost.ghost'.entity.dest.w }
+        | UP -> { start_pos' with y = start_pos'.y +. game.ghost.ghost'.entity.dest.h }
+        | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.ghost'.entity.dest.h }
       in
 
       change_current_room state game room_location start_pos;

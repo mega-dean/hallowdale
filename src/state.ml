@@ -79,18 +79,17 @@ let init () : state =
           else
             failwithf "missing config for '%s' (from name '%s') in config/ghosts.json" key name
       in
-      { texture' =
-      Sprite.build_texture_from_config
-        {
-          path = { asset_dir = GHOSTS; character_name = "body"; pose_name = name };
-          count = config.count;
-          duration = { seconds = config.duration };
-          x_offset = config.x_offset |> Int.to_float;
-          y_offset = config.y_offset |> Int.to_float;
-        };
-        (* FIXME not sure about this *)
-        x_offset = config.x_offset |> Int.to_float;
-        y_offset = config.y_offset |> Int.to_float;
+      {
+        texture' =
+          Sprite.build_texture_from_config
+            {
+              path = { asset_dir = GHOSTS; character_name = "body"; pose_name = name };
+              count = config.count;
+              duration = { seconds = config.duration };
+              x_offset = config.x_offset |> Int.to_float;
+              y_offset = config.y_offset |> Int.to_float;
+            };
+        render_offset = { x = config.x_offset |> Int.to_float; y = config.y_offset |> Int.to_float };
       }
     in
     {
@@ -231,7 +230,7 @@ let update_camera (game : game) (state : state) =
   let subject =
     match state.camera.subject with
     | GHOST ->
-      let e = game.ghost.entity in
+      let e = game.ghost.ghost'.entity in
       let offset = (* TODO move to config *) 50. in
       if e.sprite.facing_right then
         { e.dest.pos with x = e.dest.pos.x +. offset }
@@ -404,7 +403,7 @@ let update_environment (game : game) (state : state) =
             shake_platform ();
             platform.kind <- Some (DISAPPEARABLE (TOUCHED new_f)))
           ~change:(fun new_f ->
-            game.ghost.entity.current_floor <- None;
+            game.ghost.ghost'.entity.current_floor <- None;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
               Some (DISAPPEARABLE (INVISIBLE Config.platform.disappearable_invisible_time)))
@@ -445,7 +444,7 @@ let update_environment (game : game) (state : state) =
     | Some (DISAPPEARABLE state') -> handle_disappearable_platform state'
     | Some (ROTATABLE state') -> handle_rotatable_platform state'
   in
-  List.iter initiate_platform_reactions game.ghost.entity.current_platforms;
+  List.iter initiate_platform_reactions game.ghost.ghost'.entity.current_platforms;
   List.iter finish_platform_reactions game.room.platforms;
   List.iter update_fragment all_spawned_fragments;
   List.iter update_lever game.room.triggers.levers;
@@ -477,11 +476,11 @@ let update_enemies (game : game) (state : state) =
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
         if Ghost.is_vulnerable state game then (
-          match Collision.with_entity game.ghost.entity projectile.entity.dest with
+          match Collision.with_entity game.ghost.ghost'.entity projectile.entity.dest with
           | None -> ()
           | Some c ->
             (* TODO add collision shape to enemy projectiles *)
-            if Collision.between_entities game.ghost.entity projectile.entity then
+            if Collision.between_entities game.ghost.ghost'.entity projectile.entity then
               Ghost.start_action state game (TAKE_DAMAGE (projectile.damage, c.direction))))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
@@ -559,10 +558,10 @@ let update_npcs (game : game) (state : state) =
   in
 
   let update_ghost ((_id, ghost) : ghost_id * party_ghost) =
-    Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
-    if ghost.entity.update_pos then (
-      Entity.update_pos game.room ghost.entity state.frame.dt;
-      Entity.maybe_unset_current_floor ghost.entity game.room)
+    Sprite.advance_animation state.frame.time ghost.ghost'.entity.sprite.texture ghost.ghost'.entity.sprite;
+    if ghost.ghost'.entity.update_pos then (
+      Entity.update_pos game.room ghost.ghost'.entity state.frame.dt;
+      Entity.maybe_unset_current_floor ghost.ghost'.entity game.room)
   in
 
   List.iter update_ghost game.ghosts';

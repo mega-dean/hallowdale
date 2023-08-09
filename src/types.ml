@@ -914,8 +914,7 @@ type ghost_textures = {
 
 type ghost_body_texture = {
   texture' : texture;
-  x_offset : float;
-  y_offset : float;
+  render_offset : vector;
 }
 
 type ghost_body_textures = {
@@ -935,41 +934,15 @@ type ghost_body_textures = {
   wall_slide : ghost_body_texture;
 }
 
-(* FIXME will probably also need separate field to keep track of the offsets
-   - eg. a lot of poses will use the .idle head, but at different offsets
-*)
 type ghost_head_textures = {
   look_down : texture;
-  (* fall : texture; *)
-  (* focus : texture; *)
   look_up : texture;
-  (* flap : texture; *)
-  (* dive : texture; *)
-
-  (* idle *)
   idle : texture;
-  (* crawl : texture; *)
-  (* dash : texture; *)
-  (* jump : texture; *)
-  (* nail : texture; *)
-
-  (* read *)
   read : texture;
-  (* take-damage *)
   take_damage : texture;
-  (* walk *)
   walk : texture;
   cast : texture;
-  (* wall-slide *)
   wall_slide : texture;
-}
-
-(* this is for the ghosts that are not being controlled right now *)
-type party_ghost = {
-  (* FIXME  *)
-  textures : ghost_textures;
-  entity : entity;
-  mutable in_party : bool;
 }
 
 (* CLEANUP too many ghost_*_textures types, combine them somehow *)
@@ -997,22 +970,39 @@ type ghost_shared_textures = {
   shade_cloak_sparkles : texture;
 }
 
-type ghost = {
-  mutable current : current_status;
-  (* FIXME-3 use separate textures for ghost head vs body
-     - remove ghost_textures from individual ghosts, since that will become body_textures
-     - add head_textures
-  *)
-  shared_textures : ghost_shared_textures;
-  history : ghost_action_history;
-  id : ghost_id;
-  (* the entity.texture is the ghost body *)
-  mutable entity : entity;
-  (* FIXME probably want a variant for head_kind *)
+(* CLEANUP rename
+*)
+type ghost' = {
+  mutable id : ghost_id;
+
   mutable head : texture;
   head_textures : ghost_head_textures;
+  (* the entity.texture is the ghost body *)
+  entity : entity;
+  mutable body_render_offset : vector;
+}
+(* this is for the ghosts that are not being controlled right now *)
+(* FIXME this seems like a bad idea now, maybe go back to a list of ghosts *)
+type party_ghost = {
+  ghost' : ghost';
+  mutable in_party : bool;
+}
+
+type ghost = {
+  mutable current : current_status;
+  shared_textures : ghost_shared_textures;
+  history : ghost_action_history;
+
+  mutable ghost' : ghost';
+
+  (* mutable id : ghost_id; *)
+  (* mutable entity : entity; *)
+  (* mutable body_render_offset : vector; *)
+  (* mutable head : texture; *)
+  (* don't need a head_render_offset because all head images are 40px by 40px *)
+  (* mutable head_textures : ghost_head_textures; *)
   (* FIXME remove - this is covered by head_textures (and body_textures will be stored in global cache) *)
-  mutable textures : ghost_textures;
+  (* mutable textures : ghost_textures; *)
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
   mutable abilities : Json_t.ghost_abilities;
@@ -1338,6 +1328,7 @@ type game = {
   (* this should include a party_ghost for the currently-controlled ghost, so it should
      always be a list of all five ghosts
   *)
+  (* CLEANUP rename *)
   mutable ghosts' : (ghost_id * party_ghost) list;
   mutable room : room;
   interaction : Interaction.t;

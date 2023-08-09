@@ -335,16 +335,17 @@ let walk (entity : entity) (direction : direction) : unit =
   update_vx entity 1.
 
 (* called once per frame to align sprite.dest position with entity.dest position *)
-let adjust_sprite_dest (e : entity) =
-  e.sprite.dest.pos.y <- e.dest.pos.y -. e.sprite.texture.coll_offset.y;
+let adjust_sprite_dest ?(skip_coll_offset = false) (e : entity) =
+  let offset = if skip_coll_offset then Zero.vector () else e.sprite.texture.coll_offset in
+  e.sprite.dest.pos.y <- e.dest.pos.y -. offset.y;
   if e.sprite.facing_right then
-    e.sprite.dest.pos.x <- e.dest.pos.x -. e.sprite.texture.coll_offset.x
+    e.sprite.dest.pos.x <- e.dest.pos.x -. offset.x
   else
-    e.sprite.dest.pos.x <-
-      e.dest.pos.x -. (e.sprite.dest.w -. e.dest.w -. e.sprite.texture.coll_offset.x)
+    e.sprite.dest.pos.x <- e.dest.pos.x -. (e.sprite.dest.w -. e.dest.w -. offset.x)
 
 let update_sprite_texture (entity : entity) (texture : texture) =
   entity.sprite.texture <- texture;
+  (* CLEANUP this may not be doing anything anymore, since sprite dest gets adjusted in render.ml *)
   entity.sprite.dest <- Sprite.make_dest entity.sprite.dest.pos.x entity.sprite.dest.pos.y texture
 
 let clone (orig : entity) : entity =
