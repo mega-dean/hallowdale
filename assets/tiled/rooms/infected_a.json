@@ -101,7 +101,7 @@
          "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":98,
          "x":0,
          "y":0
@@ -445,7 +445,7 @@
  "nextobjectid":14,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.10.1",
+ "tiledversion":"1.10.2",
  "tileheight":12,
  "tilesets":[
         {

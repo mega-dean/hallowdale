@@ -687,7 +687,12 @@ let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame
     | ATTACK direction ->
       (* handle_attacking is called after handle_walking, so this allows the ghost to walk backwards while attacking *)
       set_facing_right direction;
-      (ghost.ghost'.head_textures.idle, bodies.nail)
+      let head =
+        match direction with
+        | UP -> ghost.ghost'.head_textures.look_up
+        | _ -> ghost.ghost'.head_textures.idle
+      in
+      (head, bodies.nail)
     | DREAM_NAIL ->
       update_vx 0.;
       (ghost.ghost'.head_textures.idle, bodies.nail)
