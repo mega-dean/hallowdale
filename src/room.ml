@@ -770,5 +770,16 @@ let handle_transitions (state : state) (game : game) =
         | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.ghost'.entity.dest.h }
       in
 
+      let get_music area_id =
+        List.find
+          (fun (area_music : area_music) -> List.mem area_id area_music.areas)
+          state.area_musics
+      in
+      let current_area_music = get_music game.room.area.id in
+      let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
+      let target_area_music = get_music target_area_id in
+      if current_area_music.name <> target_area_music.name then (
+        Raylib.seek_music_stream target_area_music.music 0.;
+        state.music <- target_area_music);
       change_current_room state game room_location start_pos;
       true)

@@ -416,6 +416,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
           match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
           | None -> ()
           | Some c ->
+            (* TODO add dream nail sound *)
             let text =
               if List.length enemy.json.dream_nail.dialogues = 0 then
                 "I have no dreams."
@@ -450,6 +451,9 @@ let check_dream_nail_collisions (state : state) (game : game) =
     List.iter resolve_enemy game.room.enemies;
     List.iter resolve_trigger game.room.triggers.d_nail
 
+(* FIXME move this probably to types.ml *)
+let play_sound state sound_name = Raylib.play_sound (List.assoc sound_name state.global.sounds)
+
 let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.ghost with
   | None -> check_dream_nail_collisions state game
@@ -459,6 +463,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         match Collision.with_slash slash enemy.entity.sprite with
         | None -> ()
         | Some collision ->
+          play_sound state "punch";
           if
             Enemy.maybe_take_damage state enemy game.ghost.history.nail.started NAIL
               (get_damage game.ghost NAIL) collision
@@ -508,6 +513,7 @@ let resolve_slash_collisions (state : state) (game : game) =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
+        play_sound state "sword_hit";
         match coll.direction with
         | DOWN -> (
           (* always pogo, but only un-rotate the platform if it is upright *)
@@ -520,10 +526,11 @@ let resolve_slash_collisions (state : state) (game : game) =
         | _ -> ())
     in
 
-    let maybe_pogo rect =
+    let maybe_pogo sound_name rect =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
+        play_sound state sound_name;
         match coll.direction with
         | DOWN -> pogo game.ghost
         | _ -> ())
@@ -584,7 +591,9 @@ let resolve_slash_collisions (state : state) (game : game) =
         List.iter resolve_tile_group layer.tile_groups;
         layer.tile_groups <- !new_tile_groups)
       else if layer.config.pogoable then
-        List.iter (fun (tile_group : tile_group) -> maybe_pogo tile_group.dest) layer.tile_groups
+        List.iter
+          (fun (tile_group : tile_group) -> maybe_pogo "pot_break" tile_group.dest)
+          layer.tile_groups
     in
 
     let resolve_lever ((lever_sprite, _, trigger) : sprite * int * trigger) =
@@ -621,7 +630,7 @@ let resolve_slash_collisions (state : state) (game : game) =
 
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
-    List.iter maybe_pogo game.room.spikes;
+    List.iter (maybe_pogo "sword_hit") game.room.spikes;
     List.iter maybe_pogo_platform_spikes game.room.platform_spikes;
     List.iter resolve_enemy game.room.enemies
 
@@ -897,6 +906,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   let action : ghost_action =
     match action_kind with
     | ATTACK direction ->
+      play_sound state "nail-swing";
+
       let relative_pos =
         match direction with
         | UP -> ALIGNED (CENTER, BOTTOM)
@@ -918,16 +929,21 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.history.nail
     | DREAM_NAIL -> game.ghost.history.dream_nail
     | C_DASH_WALL_COOLDOWN ->
+      (* FIXME stop playing c-dash sound *)
       game.ghost.ghost'.entity.sprite.facing_right <-
         not game.ghost.ghost'.entity.sprite.facing_right;
       game.ghost.current.is_c_dashing <- false;
       remove_child game.ghost C_DASH_WHOOSH;
       game.ghost.history.c_dash_wall_cooldown
     | C_DASH_COOLDOWN ->
+      (* FIXME stop playing c-dash sound *)
       game.ghost.current.is_c_dashing <- false;
       game.ghost.children <- List.remove_assoc C_DASH_WHOOSH game.ghost.children;
       game.ghost.history.c_dash_cooldown
     | C_DASH ->
+      (* FIXME this probably won't work as a sound, needs to be a music stream that repeats
+      *)
+      play_sound state "spray";
       (* state.camera.shake <- 1.; *)
       game.ghost.current.is_c_dashing <- true;
       game.ghost.current.is_charging_c_dash <- false;
@@ -946,7 +962,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       make_c_dash_child game.ghost;
       game.ghost.history.charge_c_dash
     | SHADE_DASH -> game.ghost.history.shade_dash
-    | DASH -> game.ghost.history.dash
+    | DASH ->
+      play_sound state "dash";
+      game.ghost.history.dash
     | CAST spell_kind -> (
       game.ghost.soul.current <- game.ghost.soul.current - Config.action.soul_per_cast;
       match spell_kind with
@@ -1520,7 +1538,7 @@ let update (game : game) (state : state) =
                 failwithf "bad interaction pose '%s' for party ghost %s" (Show.ghost_pose pose)
                   (Show.ghost_id ghost_id)
             in
-            set_new_body_texture party_ghost.ghost' body_texture;
+            set_new_body_texture party_ghost.ghost' body_texture
           in
           match step with
           | ADD_TO_PARTY -> party_ghost.in_party <- true
@@ -2448,7 +2466,6 @@ let init
             };
       };
     current = reset_current_status ();
-    (* textures; *)
     children = [];
     history =
       {

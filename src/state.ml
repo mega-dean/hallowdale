@@ -161,6 +161,29 @@ let init () : state =
   in
   print_line "done loading platforms";
 
+  (* FIXME load all sounds *)
+  let load_sound name =
+    (name, Raylib.load_sound (fmt "../assets/audio/sound-effects/%s.ogg" name))
+  in
+
+  let sounds =
+    List.map load_sound
+      [
+        "punch";
+        "nail-swing";
+        "sword_hit";
+        "pot_break";
+        "spray";
+        "alarmswitch";
+        "cancel";
+        "click";
+        "confirm";
+        "menu_close";
+        "menu_expand";
+        "dash";
+      ]
+  in
+
   let global =
     {
       lore = File.read_config "lore" Json_j.lore_file_of_string;
@@ -180,6 +203,7 @@ let init () : state =
           ghost_bodies;
           skybox;
         };
+      sounds;
     }
   in
 
@@ -188,7 +212,35 @@ let init () : state =
 
   print_line "done_initializing_state";
 
+  (* CLEANUP use the fn for building asset paths instead of hardcoding these *)
+  let load_music name intro loop areas =
+    let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
+    Raylib.play_music_stream music;
+    { name; music; areas; intro_time = { seconds = intro }; loop_time = { seconds = loop } }
+  in
+
+  let area_musics : area_music list =
+    [
+      (* TODO figure out the loop times for these *)
+      load_music "as-i-lay-me-down" 0. Float.max_float [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
+      load_music "daybreak" 0. Float.max_float [ AC_REPAIR_ANNEX ];
+      load_music "ending" 0. Float.max_float [ COMPUTER_WING ];
+      load_music "greendale" 0. Float.max_float [ LIBRARY; MEOW_MEOW_BEENZ ];
+      load_music "kiss-from-a-rose" 0. Float.max_float [ CITY_OF_CHAIRS; OUTLANDS ];
+      load_music "mash-theme" 0. Float.max_float [ BASEMENT ];
+      load_music "somewhere-out-there" 0. Float.max_float [ TRAMPOLINEPATH ];
+    ]
+  in
+
   {
+    music = (* this gets set in menu.ml when a game is loaded/started *)
+            List.nth area_musics 0;
+    menu_music =
+      (List.find
+         (fun am -> am.name = (* CLEANUP maybe rename the file main-menu.ogg *) "ending")
+         area_musics)
+        .music;
+    area_musics;
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
     should_save = false;
@@ -654,7 +706,6 @@ let update_menu_choice (menu : menu) frame_inputs =
 let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
 
 let tick (state : state) =
-  (* TODO-3 add sound effects and music *)
   if not (holding_shift ()) then (
     if Controls.key_pressed DEBUG_3 then
       if state.debug.show_frame_inputs then (
@@ -675,8 +726,17 @@ let tick (state : state) =
   match state.game_context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
+    Raylib.update_music_stream state.menu_music;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
   | IN_PROGRESS game ->
+    (* CLEANUP this doesn't work very well with room transitions
+       - maybe need to check difference in state.frame.time and seek forward
+    *)
+    if Raylib.get_music_time_played state.music.music > state.music.loop_time.seconds then
+      Raylib.seek_music_stream state.music.music
+        (Utils.bound 0.1 state.music.intro_time.seconds Float.max_float);
+
+    Raylib.update_music_stream state.music.music;
     if game.debug_paused then
       if key_pressed DEBUG_2 then
         state
@@ -711,15 +771,18 @@ let tick (state : state) =
             in
             List.map show_party_ghost game.ghosts' |> join ~sep:"\n"
           in
-          tmp "current ghost:  %s at %s"
+          itmp "current ghost:  %s at %s"
             (Show.ghost_id game.ghost.ghost'.id)
             (Show.vector game.ghost.ghost'.entity.dest.pos);
-          tmp "party ghosts:\n%s" party_ghosts);
+          itmp "party ghosts:\n%s" party_ghosts);
 
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
+
+        if state.frame_inputs.dream_nail.pressed then
+          Raylib.set_music_volume state.music.music 0.;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         add_debug_rects state

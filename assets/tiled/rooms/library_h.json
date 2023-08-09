@@ -245,8 +245,30 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":51,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":9,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":32,
+                 "id":37,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":116,
+                 "y":109
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -365,7 +387,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":51,
          "x":0,
          "y":0
@@ -483,7 +505,7 @@
          "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":51,
          "x":0,
          "y":0
@@ -1090,8 +1112,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":9,
- "nextobjectid":37,
+ "nextlayerid":10,
+ "nextobjectid":38,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

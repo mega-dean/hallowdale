@@ -18,6 +18,8 @@ let pause_menu ghost_count : menu =
     current_choice_idx = 0;
   }
 
+(* FIXME add settings_menu with options for changing music/sound volume *)
+
 let save_files_menu () : menu =
   {
     choices =
@@ -101,6 +103,9 @@ let update_pause_menu (game : game) (state : state) : state =
         state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
       | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.ghosts')
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
+        (* CLEANUP there may be a better place to put this *)
+        Raylib.seek_music_stream state.music.music 0.;
+        Raylib.seek_music_stream state.menu_music 0.;
         (* TODO unload textures *)
         state.pause_menu <- None;
         save_game game state ~after_fn:(fun state ->
@@ -134,13 +139,15 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
          TODO can maybe improve this, since it can still be off if the camera is bounded
       *)
       Tiled.create_camera_at
-        (Raylib.Vector2.create game.ghost.ghost'.entity.dest.pos.x game.ghost.ghost'.entity.dest.pos.y)
+        (Raylib.Vector2.create game.ghost.ghost'.entity.dest.pos.x
+           game.ghost.ghost'.entity.dest.pos.y)
         0.;
     if is_new_game then (
       Entity.freeze game.ghost.ghost'.entity;
       state.screen_fade <- Some 255;
       let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
       Ghost.maybe_begin_interaction state game trigger);
+    state.music <- List.find (fun am -> List.mem game.room.area.id am.areas) state.area_musics;
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in

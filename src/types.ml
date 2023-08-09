@@ -955,13 +955,13 @@ type ghost_shared_textures = {
 
 type ghost' = {
   mutable id : ghost_id;
-
   mutable head : texture;
   head_textures : ghost_head_textures;
   (* the entity.texture is the ghost body *)
   entity : entity;
   mutable body_render_offset : vector;
 }
+
 (* this is for the ghosts that are not being controlled right now *)
 (* TODO this seems like a bad idea now, maybe go back to a list of ghosts *)
 type party_ghost = {
@@ -973,9 +973,7 @@ type ghost = {
   mutable current : current_status;
   shared_textures : ghost_shared_textures;
   history : ghost_action_history;
-
   mutable ghost' : ghost';
-
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
   mutable abilities : Json_t.ghost_abilities;
@@ -1066,11 +1064,20 @@ type area_id =
   | VENTWAYS
   | LIBRARY
 
+type area_music = {
+  name : string;
+  (* FIXME rename this *)
+  music : Raylib.Music.t;
+  areas : area_id list;
+  (* FIXME not sure about the names, maybe loop_start/end works better *)
+  intro_time : duration;
+  loop_time : duration;
+}
+
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
   bg_color : Raylib.Color.t;
-  (* skybox_tint : Raylib.Color.t; *)
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
@@ -1286,6 +1293,8 @@ type global_cache = {
   (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
+  (* FIXME maybe add sound_id *)
+  sounds : (string * Raylib.Sound.t) list;
 }
 
 type debug = {
@@ -1345,6 +1354,11 @@ type state = {
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
   global : global_cache;
+  (* FIXME since this isn't used for menu music anymore, this can move to game *)
+  mutable music : area_music;
+  menu_music : Raylib.Music.t;
+  (* CLEANUP rename *)
+  area_musics : area_music list;
 }
 
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
