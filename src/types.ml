@@ -321,6 +321,8 @@ type rotatable_state =
 (* conveyor belts don't need to be platforms because they don't change state, they just
    have a constant effect on the ghost when colliding *)
 type platform_kind =
+  (* this is only used for the floor in kp that disappears permanently *)
+  | TEMPORARY of disappearable_state
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
 (* TODO maybe add | BENCH *)
@@ -894,24 +896,6 @@ type ghosts_file = {
   shared_textures : (string * texture_config) list;
 }
 
-(* FIXME remove *)
-type ghost_textures = {
-  cast : texture;
-  crawl : texture;
-  dash : texture;
-  dive : texture;
-  fall : texture;
-  flap : texture;
-  focus : texture;
-  idle : texture;
-  jump : texture;
-  nail : texture;
-  read : texture;
-  take_damage : texture;
-  walk : texture;
-  wall_slide : texture;
-}
-
 type ghost_body_texture = {
   texture' : texture;
   render_offset : vector;
@@ -945,7 +929,6 @@ type ghost_head_textures = {
   wall_slide : texture;
 }
 
-(* CLEANUP too many ghost_*_textures types, combine them somehow *)
 (* non-ghost-specific textures that will be needed for any ghost *)
 type ghost_shared_textures = {
   (* TODO add separate dream_nail texture / collision shape *)
@@ -970,8 +953,6 @@ type ghost_shared_textures = {
   shade_cloak_sparkles : texture;
 }
 
-(* CLEANUP rename
-*)
 type ghost' = {
   mutable id : ghost_id;
 
@@ -982,7 +963,7 @@ type ghost' = {
   mutable body_render_offset : vector;
 }
 (* this is for the ghosts that are not being controlled right now *)
-(* FIXME this seems like a bad idea now, maybe go back to a list of ghosts *)
+(* TODO this seems like a bad idea now, maybe go back to a list of ghosts *)
 type party_ghost = {
   ghost' : ghost';
   mutable in_party : bool;
@@ -995,14 +976,6 @@ type ghost = {
 
   mutable ghost' : ghost';
 
-  (* mutable id : ghost_id; *)
-  (* mutable entity : entity; *)
-  (* mutable body_render_offset : vector; *)
-  (* mutable head : texture; *)
-  (* don't need a head_render_offset because all head images are 40px by 40px *)
-  (* mutable head_textures : ghost_head_textures; *)
-  (* FIXME remove - this is covered by head_textures (and body_textures will be stored in global cache) *)
-  (* mutable textures : ghost_textures; *)
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
   mutable abilities : Json_t.ghost_abilities;
@@ -1096,10 +1069,8 @@ type area_id =
 type area = {
   id : area_id;
   tint : Raylib.Color.t;
-  (* FIXME-7 change this to bg/skybox _image
-     - maybe just add a global_texture (until this is area-specific)
-  *)
   bg_color : Raylib.Color.t;
+  (* skybox_tint : Raylib.Color.t; *)
 }
 
 (* it seems weird to have the area_id embedded in the name, but it's for room names that are shared *)
@@ -1272,7 +1243,6 @@ type room = {
   platform_spikes : (int * rect) list;
   spikes : rect list;
   conveyor_belts : (rect * float) list;
-  acid : rect list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
   hazards : rect list;
 }
@@ -1304,6 +1274,7 @@ type texture_cache = {
   platforms : (string * texture) list;
   (* this is the only animated platform for now, maybe want a separate animated_platforms if more are added *)
   rotating_platform : texture;
+  skybox : texture;
   ghost_bodies : ghost_body_textures;
 }
 
@@ -1328,7 +1299,7 @@ type game = {
   (* this should include a party_ghost for the currently-controlled ghost, so it should
      always be a list of all five ghosts
   *)
-  (* CLEANUP rename *)
+  (* TODO maybe use a party_ghost list *)
   mutable ghosts' : (ghost_id * party_ghost) list;
   mutable room : room;
   interaction : Interaction.t;

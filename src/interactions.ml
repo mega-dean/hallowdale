@@ -228,14 +228,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
-      | "kp-drop" ->
-        (* CLEANUP this isn't working anymore
-           - floor doesn't have a collision rect (need to use tile_group)
-           - it still disappears because of the HIDE_LAYER here
-        *)
-        (* TODO starting an interaction resets ghost.v to 0, which looks a little weird when
-           jumping into the trigger *)
-        [ STEP (HIDE_LAYER "floors3"); CURRENT_GHOST UNSET_FLOOR ]
       | "arrive-at-shirley-island" ->
         [
           NPC (NEIL, ENTITY (SET_FACING LEFT));

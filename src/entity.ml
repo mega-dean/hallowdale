@@ -106,6 +106,7 @@ let get_platform_collisions (entity : entity) (platforms : platform list) : (col
       collisions := (coll, platform.sprite.dest) :: !collisions;
       match platform.kind with
       | None -> ()
+      | Some (TEMPORARY _)
       | Some (DISAPPEARABLE _) ->
         if coll.direction = UP then
           entity.current_platforms <- platform :: entity.current_platforms
@@ -156,7 +157,8 @@ let get_water_collisions (room : room) (entity : entity) : (collision * rect) li
   get_tile_collisions layers entity
 
 let get_acid_collisions (room : room) (entity : entity) : (collision * rect) list =
-  get_rect_collisions entity room.acid
+  let layers = List.filter (fun (l : layer) -> l.name = "acid") room.layers in
+  get_tile_collisions layers entity
 
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
 let get_damage_collisions (room : room) (entity : entity) =
@@ -183,7 +185,6 @@ let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * r
         if e.config.bounce < 0.01 then
           (* this is a little weird, but the floor shouldn't be set for fragments
              (because it forces the new_vy to be 0.) *)
-          (* CLEANUP make sure this is right - should always be zero because this isn't used for ghost *)
           e.current_floor <- Some (floor, Zero.vector ());
         e.dest.pos.y <- top_of floor -. e.dest.h);
       if abs_float e.v.x < 10. then (
@@ -345,7 +346,7 @@ let adjust_sprite_dest ?(skip_coll_offset = false) (e : entity) =
 
 let update_sprite_texture (entity : entity) (texture : texture) =
   entity.sprite.texture <- texture;
-  (* CLEANUP this may not be doing anything anymore, since sprite dest gets adjusted in render.ml *)
+  (* this is needed to adjust the w/h *)
   entity.sprite.dest <- Sprite.make_dest entity.sprite.dest.pos.x entity.sprite.dest.pos.y texture
 
 let clone (orig : entity) : entity =

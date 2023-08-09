@@ -113,10 +113,10 @@ let init
 
   let idle_texture = global.textures.ghost_bodies.idle.texture' in
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
-  let make_ghost id (party_ghost : party_ghost) : ghost =
+  let make_ghost (party_ghost : party_ghost) : ghost =
     (* TODO add other heads *)
-    Ghost.init id idle_texture britta_head_textures ghosts_file.actions
-      (clone_vector start_pos) save_file global.weapons shared_ghost_textures
+    Ghost.init party_ghost.ghost'.id idle_texture party_ghost.ghost'.head_textures
+      ghosts_file.actions (clone_vector start_pos) save_file global.weapons shared_ghost_textures
   in
 
   let ghosts' : (ghost_id * party_ghost) list =
@@ -154,7 +154,8 @@ let init
 
   let current_ghost_id = Ghost.parse_name save_file.ghost_id in
   let party_ghost = List.assoc current_ghost_id ghosts' in
-  let ghost = make_ghost current_ghost_id party_ghost in
+  let ghost = make_ghost party_ghost in
+
   ghost.ghost'.entity.update_pos <- true;
   Ghost.equip_weapon ghost save_file.current_weapon;
 

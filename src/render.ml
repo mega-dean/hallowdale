@@ -116,7 +116,6 @@ let draw_sprite
           pos =
             {
               x =
-                (* CLEANUP probably duplicated with adjust_sprite_dest *)
                 (if sprite.facing_right then
                    sprite.dest.pos.x +. offset.x
                 else
@@ -187,7 +186,7 @@ let draw_tiled_layer
           let texture, transformations =
             let animation_offset =
               if layer.config.animated then
-                (* FIXME-5 this should probably just use an animated sprite instead of
+                (* TODO this should probably just use an animated sprite instead of
                    this weird animation_offset for the tile gid
                 *)
                 4 * frame_idx / Config.window.fps mod 8
@@ -846,6 +845,13 @@ let tick (state : state) =
   | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
   | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
   | IN_PROGRESS game ->
+    let draw_skybox tint =
+      (* TODO could add some parallax scrolling here, but this won't be visible very often *)
+      let src = get_src state.global.textures.skybox in
+      let dest = { pos = { x = camera_x; y = camera_y }; w = src.w; h = src.h } in
+      draw_texture ~tint state.global.textures.skybox dest 0
+    in
+
     let draw_object_trigger_indicators () =
       List.iter
         (fun (sprite : sprite) ->
@@ -1034,10 +1040,32 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
-    (* FIXME draw head (after entity.texture)  *)
+    let draw_ghost_head ~tint ghost' =
+      let head_dest =
+        let dest' =
+          {
+            pos =
+              {
+                (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
+                x = ghost'.entity.dest.pos.x -. 20.;
+                y = ghost'.entity.dest.pos.y -. 27.;
+              };
+            w = 40. *. Config.scale.ghost;
+            h = 40. *. Config.scale.ghost;
+          }
+        in
+        dest' |> to_Rect
+      in
+      Draw.image ghost'.head.image
+        (src_Rect' ghost'.head ghost'.entity.sprite.facing_right)
+        head_dest (Raylib.Vector2.create 0. 0.) 0. tint
+    in
+
     let draw_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
       let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
         draw_entity party_ghost.ghost'.entity;
+        (* TODO this isn't working *)
+        draw_ghost_head ~tint:Color.raywhite party_ghost.ghost';
         if state.debug.enabled then (
           debug_rect party_ghost.ghost'.entity.dest;
           debug_rect_outline party_ghost.ghost'.entity.sprite.dest)
@@ -1116,29 +1144,15 @@ let tick (state : state) =
       List.iter draw_child children_behind;
 
       let render_offset =
-        Some { x = ghost.ghost'.body_render_offset.x -. 9.; y = ghost.ghost'.body_render_offset.y +. 28. }
+        Some
+          {
+            x = ghost.ghost'.body_render_offset.x -. 9.;
+            y = ghost.ghost'.body_render_offset.y +. 28.;
+          }
       in
 
       draw_entity ~tint ~render_offset ghost.ghost'.entity;
-      (* CLEANUP duplicated from draw_sprite *)
-      let head_dest =
-        let dest' =
-          {
-            pos =
-              {
-                (* CLEANUP these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
-                x = ghost.ghost'.entity.dest.pos.x -. 20.;
-                y = ghost.ghost'.entity.dest.pos.y -. 27.;
-              };
-            w = 40. *. Config.scale.ghost;
-            h = 40. *. Config.scale.ghost;
-          }
-        in
-        dest' |> to_Rect
-      in
-      Draw.image ghost.ghost'.head.image
-        (src_Rect' ghost.ghost'.head ghost.ghost'.entity.sprite.facing_right)
-        head_dest (Raylib.Vector2.create 0. 0.) 0. tint;
+      draw_ghost_head ~tint ghost.ghost';
       List.iter draw_child children_in_front
     in
 
@@ -1211,6 +1225,7 @@ let tick (state : state) =
     (* Raylib.clear_background (Color.create 128 128 128 255); *)
     Raylib.clear_background game.room.area.bg_color;
     Raylib.begin_mode_2d state.camera.raylib;
+    draw_skybox game.room.area.tint;
     draw_bg_tiles game.room camera_x camera_y state.frame.idx;
     draw_levers ();
     draw_npcs game.room.npcs;

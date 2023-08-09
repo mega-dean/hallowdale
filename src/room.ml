@@ -79,7 +79,6 @@ let init (params : room_params) : room =
   let platform_spikes : (int * rect) list ref = ref [] in
   let conveyor_belts : (rect * float) list ref = ref [] in
   let spikes : rect list ref = ref [] in
-  let acid : rect list ref = ref [] in
   let hazards : rect list ref = ref [] in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : trigger list ref = ref [] in
@@ -128,18 +127,12 @@ let init (params : room_params) : room =
       hazards := dest :: !hazards
     in
 
-    let make_acid idx (coll_rect : Json_t.coll_rect) =
-      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      acid := dest :: !acid
-    in
-
     let make_conveyor_belt idx (coll_rect : Json_t.coll_rect) =
       let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       conveyor_belts := (dest, coll_rect.name |> float_of_string) :: !conveyor_belts
     in
 
     let make_platform idx (coll_rect : Json_t.coll_rect) =
-      (* CLEANUP duplicated *)
       let texture_name, texture, platform_kind =
         Tiled.Room.look_up_platform json_room params.platforms coll_rect.gid
       in
@@ -343,7 +336,6 @@ let init (params : room_params) : room =
     | `OBJECT_LAYER json -> (
       match json.name with
       | "spikes" -> List.iteri make_spikes json.objects
-      | "acid" -> List.iteri make_acid json.objects
       | "hazard" -> List.iteri make_hazard json.objects
       | "floors" -> List.iteri make_floor json.objects
       | "platforms" -> List.iteri make_platform json.objects
@@ -431,7 +423,6 @@ let init (params : room_params) : room =
               | "benches" -> [ "collides" ]
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
-              (* FIXME-5 fix acid/water collisions *)
               | "acid" -> [ "animated"; "hazard" ]
               | "water" -> [ "animated"; "water"; "fg" ]
               (* TODO probably add "conveyor-belt" tiles that are animated like acid
@@ -636,11 +627,11 @@ let init (params : room_params) : room =
       | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
       | BASEMENT -> Raylib.Color.create 50 20 50 255
       | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
-      | OUTLANDS -> (* CLEANUP *) Raylib.Color.create 121 121 40 255
+      | OUTLANDS -> Raylib.Color.create 121 121 40 255
       | COMPUTER_WING -> Raylib.Color.create 63 93 57 255
       | AC_REPAIR_ANNEX -> Raylib.Color.create 83 129 129 255
       | VENTWAYS -> Raylib.Color.create 129 129 129 255
-      | LIBRARY -> (* CLEANUP pink *) Raylib.Color.create 2 89 2 255
+      | LIBRARY -> Raylib.Color.create 162 89 82 255
     in
     {
       id = area_id;
@@ -679,7 +670,6 @@ let init (params : room_params) : room =
     spikes = !spikes;
     platform_spikes = !platform_spikes;
     conveyor_belts = !conveyor_belts;
-    acid = !acid;
     hazards = !hazards;
     layers = tile_layers;
     enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;

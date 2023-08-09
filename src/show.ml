@@ -44,6 +44,7 @@ let rotatable_state (state : rotatable_state) =
 
 let platform_kind (kind : platform_kind) =
   match kind with
+  | TEMPORARY state -> fmt "TEMPORARY (%s)" (disappearable_state state)
   | DISAPPEARABLE state -> fmt "DISAPPEARABLE (%s)" (disappearable_state state)
   | ROTATABLE state -> fmt "ROTATABLE (%s)" (rotatable_state state)
 

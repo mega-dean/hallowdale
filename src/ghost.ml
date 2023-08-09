@@ -42,18 +42,17 @@ let read_config () : ghosts_file =
     (parse_name ghost_id_str, texture_configs)
   in
   let head_textures_by_ghost = List.map parse_ghost_texture ghost_file.head_textures_by_ghost in
-  let shared_textures : (string * texture_config) list =
+  let load_textures name textures =
     let parse_texture_config' (s, tc) : string * texture_config =
-      (s, parse_texture_config "shared" (s, tc))
+      (s, parse_texture_config name (s, tc))
     in
-    List.map parse_texture_config' ghost_file.shared_textures
+    List.map parse_texture_config' textures
   in
-  (* CLEANUP duplicated *)
+  let shared_textures : (string * texture_config) list =
+    load_textures "shared" ghost_file.shared_textures
+  in
   let body_textures : (string * texture_config) list =
-    let parse_texture_config' (s, tc) : string * texture_config =
-      (s, parse_texture_config "body" (s, tc))
-    in
-    List.map parse_texture_config' ghost_file.body_textures
+    load_textures "body" ghost_file.body_textures
   in
   let parse_ghost_action ((name, json_ghost_action) : string * Json_t.ghost_action) =
     ( name,
@@ -109,34 +108,6 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
   | SHADOW
   | RESPAWN ->
     failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
-
-(* CLEANUP see if this can use Entity.maybe_unset_current_floor
-   - looks like the fn in Entity is for uncontrolled ghosts
-*)
-let maybe_unset_current_floor (ghost : ghost) (room : room) =
-  match ghost.ghost'.entity.current_floor with
-  | None -> ()
-  | Some (floor, v) ->
-    let walked_over_edge =
-      if not (Entity.above_floor ghost.ghost'.entity floor) then (
-        (* smoothly walk to adjacent floors by (temporarily) pushing the ghost down a pixel to
-           check Entity.get_floor_collisions
-        *)
-        ghost.ghost'.entity.dest.pos.y <- ghost.ghost'.entity.dest.pos.y +. 1.;
-        match List.nth_opt (Entity.get_floor_collisions room ghost.ghost'.entity) 0 with
-        | None ->
-          ghost.ghost'.entity.dest.pos.y <- ghost.ghost'.entity.dest.pos.y -. 1.;
-          true
-        | Some (collision, floor) ->
-          (* CLEANUP maybe add a fn Entity.set_current_floor with Zero.vector as default *)
-          ghost.ghost'.entity.current_floor <- Some (floor, Zero.vector ());
-          false)
-      else
-        false
-    in
-    let jumping_over_edge = ghost.ghost'.entity.v.y < 0. in
-    if walked_over_edge || jumping_over_edge then
-      ghost.ghost'.entity.current_floor <- None
 
 let find_trigger_collision' ghost (triggers : trigger list) =
   let colliding rt = Option.is_some (Collision.with_entity ghost.ghost'.entity rt.dest) in
@@ -598,9 +569,10 @@ let resolve_slash_collisions (state : state) (game : game) =
                 if door_health.hits > 1 then (
                   (* TODO this isn't quite working - the fragments are spawning on top of the door and not moving *)
                   let make_random_fragment _n = Utils.sample tile_group.fragments in
-                  let random_fragments = List.init (Random.int 3) make_random_fragment in
-                  layer.spawned_fragments <-
-                    List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
+                  (* TODO-3 this probably broke when tile size changed *)
+                  (* let random_fragments = List.init (Random.int 3) make_random_fragment in
+                   * layer.spawned_fragments <-
+                   *   List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments; *)
                   door_health.hits <- door_health.hits - 1;
                   new_tile_groups := tile_group :: !new_tile_groups)
                 else
@@ -676,6 +648,10 @@ let take_damage (ghost : ghost) (damage : int) =
     *)
     ghost.health.current <- ghost.health.max
 
+let set_new_body_texture ghost' body_texture =
+  ghost'.body_render_offset <- body_texture.render_offset;
+  Entity.update_sprite_texture ghost'.entity body_texture.texture'
+
 (* state updates for current pose, texture animation, and sprite *)
 let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame_time : float) =
   let update_vx multiplier =
@@ -737,7 +713,6 @@ let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame
       ghost.current.can_dash <- false;
       ghost.ghost'.entity.v.y <- 0.;
       update_vx 2.;
-      (* CLEANUP update the dash texture to be different from fall (probably just different offset) *)
       (ghost.ghost'.head_textures.idle, bodies.dash)
     | CAST DESOLATE_DIVE ->
       update_vx 0.;
@@ -829,11 +804,7 @@ let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame
       (ghost.ghost'.head_textures.idle, bodies.fall)
   in
   ghost.ghost'.head <- head_texture;
-  ghost.ghost'.body_render_offset <- body_texture.render_offset;
-  (* CLEANUP remove this
-     - probably remove the whole function and replace with .texture <- _
-  *)
-  Entity.update_sprite_texture ghost.ghost'.entity body_texture.texture'
+  set_new_body_texture ghost.ghost' body_texture
 
 let past_cooldown ?(debug = false) pose_frames frame_time : bool =
   pose_frames.blocked_until.at < frame_time
@@ -1116,11 +1087,9 @@ let is_casting (state : state) (game : game) =
   || game.ghost.current.is_diving
   || is_doing game.ghost (CAST HOWLING_WRAITHS) state.frame.time
 
-(* CLEANUP probably don't need this fn anymore *)
 let make_party ?(in_party = true) (ghost : ghost) : party_ghost =
   { ghost' = ghost.ghost'; in_party }
 
-(* FIXME this isn't correct anymore - should also be updating .id since party_ghosts are separate type *)
 let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_ghost_id =
   match List.assoc_opt target_ghost_id game.ghosts' with
   | None -> failwithf "could not find other ghost %s" (Show.ghost_id target_ghost_id)
@@ -1130,18 +1099,28 @@ let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_g
 
     (* TODO test locker-boys cutscene for MAKE_CURRENT_GHOST *)
     (* MAKE_CURRENT_GHOST uses this fn during interactions to update game.ghost, but shouldn't swap places *)
+    (* TODO
+       - something about this is breaking ghost movement
+       - the ghost is moving twice as fast when ghost.ghost' is one of the party ghosts (ie same entity)
+       - apply_v is still only being called once per frame
+       - putting this at the end of Game.init causes the problem to happen at startup:
+
+       ghost.ghost' <- party_ghost.ghost';
+       Entity.unhide_at ghost.ghost'.entity (clone_vector start_pos);
+
+       - so that should probably always happen, and fix whatever is causing the double-movement
+       - also, the party_ghost head isn't rendering at the right place
+    *)
     if swap_pos then (
-      Entity.unhide_at new_ghost.ghost'.entity current_pos;
+      Entity.unhide_at new_ghost.ghost'.entity (clone_vector current_pos);
       new_ghost.ghost'.entity.sprite.facing_right <- old_ghost.ghost'.entity.sprite.facing_right;
-      new_ghost.ghost'.entity.v <- old_ghost.ghost'.entity.v;
+      new_ghost.ghost'.entity.v <- clone_vector old_ghost.ghost'.entity.v;
 
+      itmp "hiding ghost at %s" (Show.vector old_ghost.ghost'.entity.dest.pos);
       Entity.hide old_ghost.ghost'.entity;
+      itmp " ---------- hidden ghost: %s" (Show.vector old_ghost.ghost'.entity.dest.pos);
       old_ghost.ghost'.entity.current_floor <- None);
-
     game.ghost.ghost' <- new_ghost.ghost'
-
-(* game.ghost.ghost'.head_textures <- new_ghost.ghost'.head_textures;
- * game.ghost.ghost'.entity <- new_ghost.ghost'.entity *)
 
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   let new_val v =
@@ -1214,7 +1193,9 @@ let handle_debug_keys (game : game) (state : state) =
     print "camera at: %f, %f" (Raylib.Vector2.x v) (Raylib.Vector2.y v)
   in
   let show_ghost_location () =
-    print "ghost at %s" (Show.vector game.ghost.ghost'.entity.dest.pos)
+    print "ghost %s at %s"
+      (Show.ghost_id game.ghost.ghost'.id)
+      (Show.vector game.ghost.ghost'.entity.dest.pos)
   in
   let show_full_ghost_location () =
     let room_location = List.assoc game.room.id state.world in
@@ -1534,9 +1515,7 @@ let update (game : game) (state : state) =
                 failwithf "bad interaction pose '%s' for party ghost %s" (Show.ghost_pose pose)
                   (Show.ghost_id ghost_id)
             in
-            (* FIXME duplicated in set_pose *)
-            party_ghost.ghost'.body_render_offset <- body_texture.render_offset;
-            Entity.update_sprite_texture party_ghost.ghost'.entity body_texture.texture'
+            set_new_body_texture party_ghost.ghost' body_texture;
           in
           match step with
           | ADD_TO_PARTY -> party_ghost.in_party <- true
@@ -1705,7 +1684,6 @@ let update (game : game) (state : state) =
           start_action ~debug:true state game (CAST spell_kind);
           true
         in
-        (* CLEANUP cast howl/dive isn't working *)
         let can_howl () =
           game.ghost.abilities.howling_wraiths
           && past_cooldown game.ghost.history.cast_wraiths state.frame.time
@@ -2109,6 +2087,7 @@ let update (game : game) (state : state) =
           hazard_collisions
         else (
           let acid_collisions = Entity.get_acid_collisions game.room game.ghost.ghost'.entity in
+          tmp "got %d acid collisions" (List.length acid_collisions);
           hazard_collisions @ acid_collisions)
       in
       if List.length collisions' = 0 && not game.ghost.current.is_taking_hazard_damage then (
@@ -2290,14 +2269,15 @@ let update (game : game) (state : state) =
   in
 
   game.ghost.ghost'.entity.current_platforms <- [];
-  Entity.apply_v state.frame.dt game.ghost.ghost'.entity;
+  Entity.apply_v
+    ~debug:(if state.debug.enabled then Some (fmt "%d" state.frame.idx) else None)
+    state.frame.dt game.ghost.ghost'.entity;
   (match game.ghost.ghost'.entity.current_floor with
   | None -> ()
   | Some (floor, v) ->
     let e = game.ghost.ghost'.entity in
     let dt = state.frame.dt in
-    (* CLEANUP duplicated from Entity.apply-v *)
-    e.dest.pos.y <- e.dest.pos.y +. (v.y *. dt);
+    (* only need to update x here because conveyor belts are only horizontal *)
     e.dest.pos.x <- e.dest.pos.x +. (v.x *. dt));
 
   let new_vy =
@@ -2351,7 +2331,7 @@ let update (game : game) (state : state) =
 
   animate_and_despawn_children state.frame.time game.ghost;
   handle_collisions ();
-  maybe_unset_current_floor game.ghost game.room;
+  Entity.maybe_unset_current_floor game.ghost.ghost'.entity game.room;
   Sprite.advance_animation state.frame.time game.ghost.ghost'.entity.sprite.texture
     game.ghost.ghost'.entity.sprite;
   state
@@ -2418,10 +2398,6 @@ let init
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
     | Some config -> config
   in
-  (* FIXME this won't work now that head/body are separate
-     - previously this was taking image height and animation frame width
-     - can probably just hardcode this now
-  *)
   let dest = Sprite.make_dest start_pos.x start_pos.y idle_texture in
   let make_action (config_name : string) : ghost_action =
     {

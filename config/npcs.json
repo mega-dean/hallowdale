@@ -107,6 +107,12 @@
                 "duration": 0.06
             }
         ],
+        [ "skybox",
+          {
+              "count": 1,
+              "duration": 0.0
+          }
+        ],
         [ "door-lever",
           {
               "count": 1,

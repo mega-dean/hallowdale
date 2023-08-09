@@ -9,8 +9,8 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":20,
- "tiledversion":"1.10.1",
+ "tilecount":21,
+ "tiledversion":"1.10.2",
  "tileheight":72,
  "tiles":[
         {
@@ -132,8 +132,14 @@
          "image":"bench.png",
          "imageheight":24,
          "imagewidth":72
+        }, 
+        {
+         "id":21,
+         "image":"kp-drop.png",
+         "imageheight":60,
+         "imagewidth":264
         }],
- "tilewidth":120,
+ "tilewidth":264,
  "type":"tileset",
  "version":"1.10"
 }

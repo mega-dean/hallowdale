@@ -4,7 +4,6 @@ val parse_name : string -> ghost_id
 val read_config : unit -> ghosts_file
 val available_ghost_ids : (ghost_id * party_ghost) list -> ghost_id list
 val maybe_begin_interaction : state -> game -> trigger -> unit
-val maybe_unset_current_floor : ghost -> room -> unit
 val find_trigger_collision' : ghost -> trigger list -> trigger option
 val get_spell_sprite : ghost -> (sprite * time) option
 val get_damage : ghost -> damage_kind -> int

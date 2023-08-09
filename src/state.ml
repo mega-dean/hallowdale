@@ -47,6 +47,7 @@ let init () : state =
   let door_lever = build_shared_npc_texture "door-lever" in
   let pickup_indicator = build_shared_npc_texture "pickup-indicator" in
   let main_menu = build_shared_npc_texture "main-menu" in
+  let skybox = build_shared_npc_texture "skybox" in
 
   let ability_outlines =
     Sprite.build_texture_from_config
@@ -59,7 +60,6 @@ let init () : state =
       }
   in
 
-  (* CLEANUP duplicated from platforms *)
   let ghost_bodies : ghost_body_textures =
     let load_ghost_body_texture name : ghost_body_texture =
       let config =
@@ -70,7 +70,6 @@ let init () : state =
             "nail"
           | _ -> name
         in
-        (* CLEANUP duplicated from npcs_file *)
         match List.assoc_opt key ghosts_file.body_textures with
         | Some c -> c
         | None ->
@@ -179,6 +178,7 @@ let init () : state =
           platforms;
           rotating_platform;
           ghost_bodies;
+          skybox;
         };
     }
   in
@@ -371,6 +371,8 @@ let update_environment (game : game) (state : state) =
   in
   let initiate_platform_reactions (platform : platform) =
     match platform.kind with
+    | Some (TEMPORARY VISIBLE) ->
+      platform.kind <- Some (TEMPORARY (TOUCHED Config.platform.disappearable_touched_time))
     | Some (DISAPPEARABLE VISIBLE) ->
       platform.kind <- Some (DISAPPEARABLE (TOUCHED Config.platform.disappearable_touched_time))
     | Some (ROTATABLE UPRIGHT) ->
@@ -392,6 +394,24 @@ let update_environment (game : game) (state : state) =
         continue new_f
       else
         change new_f
+    in
+
+    (* TODO this respawns the floor when the room is exited *)
+    let handle_temporary_platform (state' : disappearable_state) =
+      match state' with
+      | VISIBLE -> ()
+      | TOUCHED f ->
+        decrement_time
+          ~continue:(fun new_f ->
+            shake_platform ();
+            platform.kind <- Some (TEMPORARY (TOUCHED new_f)))
+          ~change:(fun new_f ->
+            game.ghost.ghost'.entity.current_floor <- None;
+            platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
+            platform.kind <-
+              Some (TEMPORARY (INVISIBLE Config.platform.disappearable_invisible_time)))
+          f
+      | INVISIBLE f -> ()
     in
 
     let handle_disappearable_platform (state' : disappearable_state) =
@@ -441,6 +461,7 @@ let update_environment (game : game) (state : state) =
     in
     match platform.kind with
     | None -> ()
+    | Some (TEMPORARY state') -> handle_temporary_platform state'
     | Some (DISAPPEARABLE state') -> handle_disappearable_platform state'
     | Some (ROTATABLE state') -> handle_rotatable_platform state'
   in
@@ -558,7 +579,8 @@ let update_npcs (game : game) (state : state) =
   in
 
   let update_ghost ((_id, ghost) : ghost_id * party_ghost) =
-    Sprite.advance_animation state.frame.time ghost.ghost'.entity.sprite.texture ghost.ghost'.entity.sprite;
+    Sprite.advance_animation state.frame.time ghost.ghost'.entity.sprite.texture
+      ghost.ghost'.entity.sprite;
     if ghost.ghost'.entity.update_pos then (
       Entity.update_pos game.room ghost.ghost'.entity state.frame.dt;
       Entity.maybe_unset_current_floor ghost.ghost'.entity game.room)
@@ -680,6 +702,19 @@ let tick (state : state) =
         let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
           add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
         in
+
+        if state.debug.enabled then (
+          let party_ghosts =
+            let show_party_ghost ((_, p) : ghost_id * party_ghost) =
+              fmt "got party ghost %s at %s" (Show.ghost_id p.ghost'.id)
+                (Show.vector p.ghost'.entity.dest.pos)
+            in
+            List.map show_party_ghost game.ghosts' |> join ~sep:"\n"
+          in
+          tmp "current ghost:  %s at %s"
+            (Show.ghost_id game.ghost.ghost'.id)
+            (Show.vector game.ghost.ghost'.entity.dest.pos);
+          tmp "party ghosts:\n%s" party_ghosts);
 
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
