@@ -101,7 +101,6 @@ let init
 
   let britta_head_textures : ghost_head_textures =
     {
-      cast = load_head_texture "cast";
       look_down = load_head_texture "look-down";
       look_up = load_head_texture "look-up";
       idle = load_head_texture "idle";

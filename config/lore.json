@@ -74,13 +74,13 @@
     // ac repair
     ["Heart of a Hero", "It's up to you not to waste it like I did."],
     // computer wing
-    ["Racquel's Emotional Components", ""],
+    ["", ""],
     // forgotten classrooms (Dean's office)
     ["Priority Registration", "Talk him through the hunger, {{orange}} Abed."],
     // trampolinepath
     ["Lost Season 1", "It represents {{blue}} lack of payoff."],
     // mmb
-    ["", ""],
+    ["Pierce's Tiara", "It is the same tiara I used to wear when my mother would verbally assault me for not being a little girl."],
     // white palace
     ["Mr. Whitney Original", "You want it when?"]
 ]

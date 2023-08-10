@@ -224,7 +224,7 @@ let init () : state =
   let area_musics : area_music list =
     [
       (* TODO figure out the loop times for these *)
-      load_music "as-i-lay-me-down" 0. Float.max_float [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
+      load_music "as-i-lay-me-down" 72.128 171.947 [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
       load_music "daybreak" 0. Float.max_float [ AC_REPAIR_ANNEX ];
       load_music "ending" 0. Float.max_float [ COMPUTER_WING ];
       load_music "greendale" 0. Float.max_float [ LIBRARY; MEOW_MEOW_BEENZ ];
@@ -723,9 +723,10 @@ let tick (state : state) =
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
-    if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then
+    if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then (
+      tmp "looping";
       Raylib.seek_music_stream game.music.t
-        (Utils.bound 0.1 game.music.loop_start.at Float.max_float);
+        (Utils.bound 0.1 game.music.loop_start.at Float.max_float));
     Raylib.update_music_stream game.music.t;
 
     if game.debug_paused then

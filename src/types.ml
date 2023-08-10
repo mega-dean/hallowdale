@@ -943,7 +943,6 @@ type ghost_head_textures = {
   read : texture;
   take_damage : texture;
   walk : texture;
-  cast : texture;
   wall_slide : texture;
 }
 

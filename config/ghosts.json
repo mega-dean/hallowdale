@@ -64,7 +64,7 @@
         ["take-damage", {
         }],
         ["wall-slide", {
-            "x_offset": 10,
+            "x_offset": 9,
             "y_offset": -27
         }]
     ],

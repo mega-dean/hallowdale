@@ -4,7 +4,7 @@
 An homage to Hollow Knight.
 
 ![main menu screenshot](./assets/main-menu-screenshot.png)
-![world map screenshot](./world-map.png)
+![world map screenshot](./assets/world-map.png)
 
 ### Project goals
 

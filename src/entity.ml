@@ -62,9 +62,6 @@ let set_facing (d : direction) (e : entity) =
   | _ -> failwithf "Entity.set_facing bad direction %s" (Show.direction d)
 
 let apply_v ?(debug = None) dt (e : entity) =
-  (match debug with
-  | None -> ()
-  | Some context -> print " +++ %s +++ apply_v for %s" context (Show.entity e));
   (match e.y_recoil with
   | None -> e.dest.pos.y <- e.dest.pos.y +. (e.v.y *. dt)
   | Some recoil ->
