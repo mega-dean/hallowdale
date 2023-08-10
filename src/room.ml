@@ -779,7 +779,7 @@ let handle_transitions (state : state) (game : game) =
       let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
       let target_area_music = get_music target_area_id in
       if current_area_music.name <> target_area_music.name then (
-        Raylib.seek_music_stream target_area_music.music 0.;
-        state.music <- target_area_music);
+        Raylib.seek_music_stream target_area_music.t 0.;
+        game.music <- target_area_music);
       change_current_room state game room_location start_pos;
       true)

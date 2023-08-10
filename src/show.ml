@@ -367,7 +367,21 @@ let pause_menu_choice (choice : pause_menu_choice) =
   | CONTINUE -> "Continue"
   | CHANGE_GHOST -> "Change Ghost"
   | CHANGE_WEAPON -> "Change Weapon"
+  | SETTINGS -> "Settings"
   | QUIT_TO_MAIN_MENU -> "Save and Quit"
+
+let settings_menu_choice (choice : settings_menu_choice) =
+  match choice with
+  | MUSIC -> "Music"
+  | SOUND_EFFECTS -> "Sound Effects"
+  | BACK -> "Back"
+
+let change_setting _setting choice =
+  match choice with
+  (* this looks pretty terrible, but it works for now *)
+  | INCREASE -> "louder"
+  | DECREASE -> "quieter"
+  | BACK -> "Back"
 
 let change_weapon_menu_choice (game : game option) (choice : change_weapon_menu_choice) =
   match game with
@@ -410,3 +424,5 @@ let menu_choice (game : game option) (choice : menu_choice) =
   | PAUSE_MENU choice -> pause_menu_choice choice
   | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice game choice
   | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice game choice
+  | SETTINGS_MENU choice -> settings_menu_choice choice
+  | CHANGE_SETTING (setting, choice) -> change_setting setting choice

@@ -161,7 +161,6 @@ let init () : state =
   in
   print_line "done loading platforms";
 
-  (* FIXME load all sounds *)
   let load_sound name =
     (name, Raylib.load_sound (fmt "../assets/audio/sound-effects/%s.ogg" name))
   in
@@ -178,8 +177,8 @@ let init () : state =
         "cancel";
         "click";
         "confirm";
-        "menu_close";
-        "menu_expand";
+        "menu-close";
+        "menu-expand";
         "dash";
       ]
   in
@@ -212,11 +211,14 @@ let init () : state =
 
   print_line "done_initializing_state";
 
-  (* CLEANUP use the fn for building asset paths instead of hardcoding these *)
+  (* TODO this should get saved to the save file instead of resetting every time *)
+  let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
+
   let load_music name intro loop areas =
     let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
+    Raylib.set_music_volume music settings.music_volume;
     Raylib.play_music_stream music;
-    { name; music; areas; intro_time = { seconds = intro }; loop_time = { seconds = loop } }
+    { name; t = music; areas; loop_start = { at = intro }; loop_end = { at = loop } }
   in
 
   let area_musics : area_music list =
@@ -233,13 +235,7 @@ let init () : state =
   in
 
   {
-    music = (* this gets set in menu.ml when a game is loaded/started *)
-            List.nth area_musics 0;
-    menu_music =
-      (List.find
-         (fun am -> am.name = (* CLEANUP maybe rename the file main-menu.ogg *) "ending")
-         area_musics)
-        .music;
+    menu_music = (List.find (fun am -> am.name = "greendale") area_musics).t;
     area_musics;
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
@@ -273,6 +269,7 @@ let init () : state =
       };
     debug = { enabled = false; show_frame_inputs = true; rects = [] };
     global;
+    settings;
   }
 
 let update_camera (game : game) (state : state) =
@@ -697,12 +694,6 @@ let update_frame_inputs (state : state) : state =
   update_frame_input INTERACT state.frame_inputs.interact;
   state
 
-let update_menu_choice (menu : menu) frame_inputs =
-  if frame_inputs.down.pressed then
-    menu.current_choice_idx <- Int.min (menu.current_choice_idx + 1) (List.length menu.choices - 1);
-  if frame_inputs.up.pressed then
-    menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
-
 let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
 
 let tick (state : state) =
@@ -729,14 +720,14 @@ let tick (state : state) =
     Raylib.update_music_stream state.menu_music;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
   | IN_PROGRESS game ->
-    (* CLEANUP this doesn't work very well with room transitions
+    (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
-    if Raylib.get_music_time_played state.music.music > state.music.loop_time.seconds then
-      Raylib.seek_music_stream state.music.music
-        (Utils.bound 0.1 state.music.intro_time.seconds Float.max_float);
+    if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then
+      Raylib.seek_music_stream game.music.t
+        (Utils.bound 0.1 game.music.loop_start.at Float.max_float);
+    Raylib.update_music_stream game.music.t;
 
-    Raylib.update_music_stream state.music.music;
     if game.debug_paused then
       if key_pressed DEBUG_2 then
         state
@@ -780,9 +771,6 @@ let tick (state : state) =
         show_triggers game.room.triggers.cutscene;
         show_triggers game.room.triggers.d_nail;
         show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
-
-        if state.frame_inputs.dream_nail.pressed then
-          Raylib.set_music_volume state.music.music 0.;
 
         (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
         add_debug_rects state

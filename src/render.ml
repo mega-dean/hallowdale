@@ -749,6 +749,8 @@ let tick (state : state) =
         | CHANGE_WEAPON_MENU _ -> (150, 50)
         | CHANGE_GHOST_MENU _ -> (150, 50)
         | MAIN_MENU _ -> (50, 360)
+        | SETTINGS_MENU _ -> (250, 220)
+        | CHANGE_SETTING _ -> (250, 220)
         | SAVE_FILES _ -> (50, 200)
       in
 

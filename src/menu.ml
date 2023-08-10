@@ -12,13 +12,40 @@ let pause_menu ghost_count : menu =
         Some (PAUSE_MENU CONTINUE);
         (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
         Some (PAUSE_MENU CHANGE_WEAPON);
+        Some (PAUSE_MENU SETTINGS);
         Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
       ]
       |> Utils.filter_somes;
     current_choice_idx = 0;
   }
 
-(* FIXME add settings_menu with options for changing music/sound volume *)
+let settings_menu () : menu =
+  {
+    choices = [ SETTINGS_MENU MUSIC; SETTINGS_MENU SOUND_EFFECTS; SETTINGS_MENU BACK ];
+    current_choice_idx = 0;
+  }
+
+let music_menu () : menu =
+  {
+    choices =
+      [
+        CHANGE_SETTING (MUSIC, INCREASE);
+        CHANGE_SETTING (MUSIC, DECREASE);
+        CHANGE_SETTING (MUSIC, BACK);
+      ];
+    current_choice_idx = 0;
+  }
+
+let sound_effects_menu () : menu =
+  {
+    choices =
+      [
+        CHANGE_SETTING (SOUND_EFFECTS, INCREASE);
+        CHANGE_SETTING (SOUND_EFFECTS, DECREASE);
+        CHANGE_SETTING (SOUND_EFFECTS, BACK);
+      ];
+    current_choice_idx = 0;
+  }
 
 let save_files_menu () : menu =
   {
@@ -46,11 +73,13 @@ let change_weapon_menu (weapon_names : string list) : menu =
   let weapon_choices = List.map (fun name -> CHANGE_WEAPON_MENU (EQUIP_WEAPON name)) weapon_names in
   { choices = weapon_choices @ [ CHANGE_WEAPON_MENU BACK ]; current_choice_idx = 0 }
 
-let update_menu_choice (menu : menu) frame_inputs =
-  if frame_inputs.down.pressed then
-    menu.current_choice_idx <- Int.min (menu.current_choice_idx + 1) (List.length menu.choices - 1);
-  if frame_inputs.up.pressed then
-    menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1)
+let update_menu_choice (menu : menu) state =
+  if state.frame_inputs.down.pressed then (
+    play_sound state "click";
+    menu.current_choice_idx <- Int.min (menu.current_choice_idx + 1) (List.length menu.choices - 1));
+  if state.frame_inputs.up.pressed then (
+    play_sound state "click";
+    menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1))
 
 let save_game ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress game;
@@ -86,15 +115,38 @@ let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
     | None ->
+      play_sound state "menu-expand";
       state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts')))
-    | Some _ -> state.pause_menu <- None);
+    | Some _ ->
+      play_sound state "menu-close";
+      state.pause_menu <- None);
 
   (match state.pause_menu with
   | None -> ()
   | Some menu ->
-    update_menu_choice menu state.frame_inputs;
+    update_menu_choice menu state;
+    let get_new_volume increase v =
+      Utils.bound 0.
+        (if increase then
+           v +. 0.1
+        else
+          v -. 0.1)
+        2.
+    in
+    let change_music_volume increase =
+      let new_volume = get_new_volume increase state.settings.music_volume in
+      state.settings.music_volume <- new_volume;
+      Raylib.set_music_volume game.music.t new_volume
+    in
+
+    let change_sound_effects_volume increase =
+      let new_volume = get_new_volume increase state.settings.sound_effects_volume in
+      state.settings.sound_effects_volume <- new_volume
+    in
 
     if state.frame_inputs.jump.pressed then (
+      (* TODO this plays the confirm sound even when selecting "Back" *)
+      play_sound state "confirm";
       match List.nth menu.choices menu.current_choice_idx with
       | PAUSE_MENU CONTINUE ->
         state.pause_menu <- None;
@@ -103,8 +155,7 @@ let update_pause_menu (game : game) (state : state) : state =
         state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
       | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.ghosts')
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
-        (* CLEANUP there may be a better place to put this *)
-        Raylib.seek_music_stream state.music.music 0.;
+        Raylib.seek_music_stream game.music.t 0.;
         Raylib.seek_music_stream state.menu_music 0.;
         (* TODO unload textures *)
         state.pause_menu <- None;
@@ -114,14 +165,23 @@ let update_pause_menu (game : game) (state : state) : state =
       | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
         if game.ghost.ghost'.id <> ghost_id then
           Ghost.swap_current_ghost state game ghost_id
+      | SETTINGS_MENU BACK
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
         state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts')))
+      | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (settings_menu ())
+      | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (music_menu ())
+      | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (sound_effects_menu ())
+      | CHANGE_SETTING (MUSIC, INCREASE) -> change_music_volume true
+      | CHANGE_SETTING (MUSIC, DECREASE) -> change_music_volume false
+      | CHANGE_SETTING (SOUND_EFFECTS, INCREASE) -> change_sound_effects_volume true
+      | CHANGE_SETTING (SOUND_EFFECTS, DECREASE) -> change_sound_effects_volume false
+      | CHANGE_SETTING (_, BACK) -> state.pause_menu <- Some (settings_menu ())
       | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
 
 let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : state =
-  update_menu_choice menu state.frame_inputs;
+  update_menu_choice menu state;
 
   let load_file save_file_idx =
     let (save_file, is_new_game) : Json_t.save_file * bool =
@@ -132,7 +192,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       | 4 -> save_slots.slot_4
       | _ -> failwithf "bad save file idx: %d" save_file_idx
     in
-    let game = Game.init save_file state.global state.world save_file_idx in
+    let game = Game.init save_file state.global state.area_musics state.world save_file_idx in
     state.camera.update_instantly <- true;
     state.camera.raylib <-
       (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
@@ -147,12 +207,12 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       state.screen_fade <- Some 255;
       let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
       Ghost.maybe_begin_interaction state game trigger);
-    state.music <- List.find (fun am -> List.mem game.room.area.id am.areas) state.area_musics;
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in
 
   if state.frame_inputs.jump.pressed then (
+    play_sound state "confirm";
     match List.nth menu.choices menu.current_choice_idx with
     | MAIN_MENU START_GAME -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
     | MAIN_MENU QUIT ->

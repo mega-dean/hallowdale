@@ -138,7 +138,7 @@ let build_texture_from_config
     ?(once = false)
     (texture_config : texture_config) : texture =
   let path = get_path texture_config.path in
-  let image = Types.load_image path in
+  let image = load_image path in
   build_texture' ~scale ~particle ~once texture_config image
 
 let build_texture_from_image

@@ -30,7 +30,7 @@
         ["fall", {
             "count": 2,
             "duration": 0.15,
-            "x_offset": -5,
+            "x_offset": -10,
             "y_offset": -3
         }],
         ["flap", {

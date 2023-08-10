@@ -451,9 +451,6 @@ let check_dream_nail_collisions (state : state) (game : game) =
     List.iter resolve_enemy game.room.enemies;
     List.iter resolve_trigger game.room.triggers.d_nail
 
-(* FIXME move this probably to types.ml *)
-let play_sound state sound_name = Raylib.play_sound (List.assoc sound_name state.global.sounds)
-
 let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.ghost with
   | None -> check_dream_nail_collisions state game
@@ -929,21 +926,20 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.history.nail
     | DREAM_NAIL -> game.ghost.history.dream_nail
     | C_DASH_WALL_COOLDOWN ->
-      (* FIXME stop playing c-dash sound *)
+      (* TODO stop playing c-dash sound *)
       game.ghost.ghost'.entity.sprite.facing_right <-
         not game.ghost.ghost'.entity.sprite.facing_right;
       game.ghost.current.is_c_dashing <- false;
       remove_child game.ghost C_DASH_WHOOSH;
       game.ghost.history.c_dash_wall_cooldown
     | C_DASH_COOLDOWN ->
-      (* FIXME stop playing c-dash sound *)
+      (* TODO stop playing c-dash sound *)
       game.ghost.current.is_c_dashing <- false;
       game.ghost.children <- List.remove_assoc C_DASH_WHOOSH game.ghost.children;
       game.ghost.history.c_dash_cooldown
     | C_DASH ->
-      (* FIXME this probably won't work as a sound, needs to be a music stream that repeats
-      *)
-      play_sound state "spray";
+      (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
+      (* play_sound state "spray"; *)
       (* state.camera.shake <- 1.; *)
       game.ghost.current.is_c_dashing <- true;
       game.ghost.current.is_charging_c_dash <- false;
@@ -961,8 +957,11 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.current.is_charging_c_dash <- true;
       make_c_dash_child game.ghost;
       game.ghost.history.charge_c_dash
-    | SHADE_DASH -> game.ghost.history.shade_dash
+    | SHADE_DASH ->
+      play_sound state "dash";
+      game.ghost.history.shade_dash
     | DASH ->
+      (* TODO the dash sound should have the footsteps at the end when the ghost lands *)
       play_sound state "dash";
       game.ghost.history.dash
     | CAST spell_kind -> (
@@ -996,6 +995,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.ghost.health.current <- game.ghost.health.current - 1;
       game.ghost.history.take_damage_and_respawn
     | TAKE_DAMAGE _ ->
+      (* TODO separate sound for this *)
+      play_sound state "punch";
       state.camera.shake <- 0.5;
       game.ghost.history.take_damage
     | DIVE_COOLDOWN -> game.ghost.history.dive_cooldown
@@ -2110,7 +2111,6 @@ let update (game : game) (state : state) =
           hazard_collisions
         else (
           let acid_collisions = Entity.get_acid_collisions game.room game.ghost.ghost'.entity in
-          tmp "got %d acid collisions" (List.length acid_collisions);
           hazard_collisions @ acid_collisions)
       in
       if List.length collisions' = 0 && not game.ghost.current.is_taking_hazard_damage then (

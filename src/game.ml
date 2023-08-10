@@ -67,6 +67,7 @@ let load_all_save_slots () : save_slots =
 let init
     (save_file : Json_t.save_file)
     (global : global_cache)
+    (area_musics : area_music list)
     (world : world)
     (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
@@ -152,6 +153,8 @@ let init
   in
   room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;
 
+  let music = List.find (fun am -> List.mem room.area.id am.areas) area_musics in
+
   let current_ghost_id = Ghost.parse_name save_file.ghost_id in
   let party_ghost = List.assoc current_ghost_id ghosts' in
   let ghost = make_ghost party_ghost in
@@ -163,6 +166,7 @@ let init
     ghost;
     ghosts';
     room;
+    music;
     interaction =
       {
         steps = [];

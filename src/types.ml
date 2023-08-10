@@ -123,6 +123,11 @@ end
 (* the raw image file that a texture can source from *)
 type image = Raylib.Texture.t
 
+(* TODO use something like this instead of hardcoding "../assets/" everywhere
+   let asset_path asset_dir path =
+     (fmt "../assets/tiled/%s" path)
+*)
+
 let load_tiled_asset path = Raylib.load_texture (fmt "../assets/tiled/%s" path)
 
 let load_image path : image =
@@ -466,6 +471,7 @@ type pause_menu_choice =
   | CONTINUE
   | CHANGE_GHOST
   | CHANGE_WEAPON
+  | SETTINGS
   | QUIT_TO_MAIN_MENU
 
 type change_weapon_menu_choice =
@@ -476,11 +482,23 @@ type change_ghost_menu_choice =
   | USE_GHOST of ghost_id
   | BACK
 
+type settings_menu_choice =
+  | MUSIC
+  | SOUND_EFFECTS
+  | BACK
+
+type change_setting_choice =
+  | INCREASE
+  | DECREASE
+  | BACK
+
 type menu_choice =
   | PAUSE_MENU of pause_menu_choice
   | CHANGE_WEAPON_MENU of change_weapon_menu_choice
   | CHANGE_GHOST_MENU of change_ghost_menu_choice
   | MAIN_MENU of main_menu_choice
+  | SETTINGS_MENU of settings_menu_choice
+  | CHANGE_SETTING of (settings_menu_choice * change_setting_choice)
   | SAVE_FILES of save_files_choice
 
 type menu = {
@@ -1066,12 +1084,10 @@ type area_id =
 
 type area_music = {
   name : string;
-  (* FIXME rename this *)
-  music : Raylib.Music.t;
+  t : Raylib.Music.t;
   areas : area_id list;
-  (* FIXME not sure about the names, maybe loop_start/end works better *)
-  intro_time : duration;
-  loop_time : duration;
+  loop_start : time;
+  loop_end : time;
 }
 
 type area = {
@@ -1293,7 +1309,7 @@ type global_cache = {
   (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
-  (* FIXME maybe add sound_id *)
+  (* TODO could add sound_id instead of using strings *)
   sounds : (string * Raylib.Sound.t) list;
 }
 
@@ -1311,6 +1327,7 @@ type game = {
   (* TODO maybe use a party_ghost list *)
   mutable ghosts' : (ghost_id * party_ghost) list;
   mutable room : room;
+  mutable music : area_music;
   interaction : Interaction.t;
   (* string is room uuid *)
   mutable progress : (string * Json_t.room_progress) list;
@@ -1342,6 +1359,11 @@ type frame_info = {
 
 type world = (room_id * room_location) list
 
+type settings = {
+  mutable music_volume : float;
+  mutable sound_effects_volume : float;
+}
+
 type state = {
   mutable game_context : game_context;
   world : world;
@@ -1354,12 +1376,16 @@ type state = {
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
   global : global_cache;
-  (* FIXME since this isn't used for menu music anymore, this can move to game *)
-  mutable music : area_music;
   menu_music : Raylib.Music.t;
-  (* CLEANUP rename *)
   area_musics : area_music list;
+  settings : settings;
 }
+
+(* TODO probably should just move this to a new file, even if it's the only thing there *)
+let play_sound state sound_name =
+  let sound = List.assoc sound_name state.global.sounds in
+  Raylib.set_sound_volume sound state.settings.sound_effects_volume;
+  Raylib.play_sound sound
 
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
