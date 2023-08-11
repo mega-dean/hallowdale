@@ -82,7 +82,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":152,
          "x":0,
          "y":0
@@ -311,7 +311,7 @@
          "name":"auto:floors",
          "opacity":0.43,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":152,
          "x":0,
          "y":0
@@ -983,7 +983,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -1057,7 +1057,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":152,
          "x":0,
          "y":0

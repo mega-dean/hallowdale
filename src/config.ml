@@ -122,7 +122,7 @@ let ghost : ghost_config =
   {
     width;
     height;
-    max_vy = 1000.;
+    max_vy = 1100.;
     dive_vy = 1600.;
     vx = 400.;
     jump_vy;

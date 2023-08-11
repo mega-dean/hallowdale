@@ -228,9 +228,9 @@ let init () : state =
       load_music "daybreak" 0. Float.max_float [ AC_REPAIR_ANNEX ];
       load_music "ending" 0. Float.max_float [ COMPUTER_WING ];
       load_music "greendale" 0. Float.max_float [ LIBRARY; MEOW_MEOW_BEENZ ];
-      load_music "kiss-from-a-rose" 0. Float.max_float [ CITY_OF_CHAIRS; OUTLANDS ];
-      load_music "mash-theme" 0. Float.max_float [ BASEMENT ];
-      load_music "somewhere-out-there" 0. Float.max_float [ TRAMPOLINEPATH ];
+      load_music "kiss-from-a-rose" 22.255 73.545 [ CITY_OF_CHAIRS; OUTLANDS ];
+      load_music "mash-theme" 0. 75.451 [ BASEMENT ];
+      load_music "somewhere-out-there" 35.306 93.553 [ TRAMPOLINEPATH ];
     ]
   in
 

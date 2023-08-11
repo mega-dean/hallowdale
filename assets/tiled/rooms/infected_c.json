@@ -124,7 +124,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":72,
          "x":0,
          "y":0
@@ -1162,7 +1162,7 @@
          "name":"acid",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":72,
          "x":0,
          "y":0
@@ -1279,7 +1279,7 @@
          "name":"water",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":72,
          "x":0,
          "y":0

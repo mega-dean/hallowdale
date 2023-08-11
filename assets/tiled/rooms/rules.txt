@@ -11,13 +11,13 @@ automapping/floors-draw-top-corners.tmj
 
 
 ############ draws lava/walls based on bg-walls ############
-automapping/bg-draw-walls.tmj
 
 # these have to be applied manually when creating a room, but needs to be commented out
 # after auto:iso is finished
 
-automapping/bg-draw-iso.tmj
-automapping/bg-extend-iso.tmj
+# automapping/draw-auto-iso.tmj
+# automapping/draw-auto-iso-corners.tmj
+# automapping/extend-auto-iso-corners.tmj
 
 
 
@@ -26,6 +26,16 @@ automapping/bg-extend-iso.tmj
 # automapping/apply-bg-tiles.tmj
 
 
+[trampoline_*]
+automapping/reset-bg-tiles.tmj
+automapping/apply-bg-tiles.tmj
+automapping/bg-draw-grass-corners.tmj
+automapping/bg-draw-grass-edges.tmj
+automapping/bg-fill-grass.tmj
+
+[outlands_*]
+automapping/reset-bg-tiles.tmj
+automapping/bg-draw-fences.tmj
 
 
 

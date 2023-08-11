@@ -91,30 +91,21 @@ let init
   let troy_head_configs = List.assoc TROY ghosts_file.head_textures_by_ghost in
   let annie_head_configs = List.assoc ANNIE ghosts_file.head_textures_by_ghost in
 
-  let load_head_texture name =
-    let configs =
-      (* TODO add other heads *)
-      britta_head_configs
-    in
-    use_json_config configs name
-  in
-
   let britta_head_textures : ghost_head_textures =
     {
-      look_down = load_head_texture "look-down";
-      look_up = load_head_texture "look-up";
-      idle = load_head_texture "idle";
-      read = load_head_texture "read";
-      take_damage = load_head_texture "take-damage";
-      walk = load_head_texture "walk";
-      wall_slide = load_head_texture "wall-slide";
+      look_down = use_json_config britta_head_configs "look-down";
+      look_up = use_json_config britta_head_configs "look-up";
+      idle = use_json_config britta_head_configs "idle";
+      read = use_json_config britta_head_configs "read";
+      take_damage = use_json_config britta_head_configs "take-damage";
+      walk = use_json_config britta_head_configs "walk";
+      wall_slide = use_json_config britta_head_configs "wall-slide";
     }
   in
 
   let idle_texture = global.textures.ghost_bodies.idle.texture' in
   let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
   let make_ghost (party_ghost : party_ghost) : ghost =
-    (* TODO add other heads *)
     Ghost.init party_ghost.ghost'.id idle_texture party_ghost.ghost'.head_textures
       ghosts_file.actions (clone_vector start_pos) save_file global.weapons shared_ghost_textures
   in

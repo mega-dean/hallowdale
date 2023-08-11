@@ -113,8 +113,8 @@
                 // - the y-offset can be "how many pixels from the bottom of neck to bottom of image" (for things like Britta's hair, which hangs below
                 // maybe make all the offsets "distance from neck"
 
-                "x_offset": 17,
-                "y_offset": 25
+                "x_offset": 1,
+                "y_offset": 2
             }],
             ["walk", {
             }],
