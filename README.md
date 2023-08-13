@@ -15,7 +15,7 @@ An homage to Hollow Knight.
 
 1. install `opam`
 2. use `opam` to install `ocaml` version 4.13
-3. use `opam` to install dependencies: `opam install dune yojson atdgen raylib ppx_expect ocamlformat atdgen`
+3. use `opam` to install dependencies: `opam install dune yojson atdgen raylib ppx_expect ocamlformat`
 
 ### Scripts
 

@@ -1,0 +1,46 @@
+name: build
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build-and-test:
+    name: build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        ocaml-compiler:
+          - 4.13.1
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Re-synchronize the package index files on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - run: opam pin -n .
+
+      - run: opam install . --deps-only
+
+      - run: opam exec -- dune build --profile release
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: hallowdale-${{ matrix.os }}
+          path: |
+            _build/default/bin/main.exe

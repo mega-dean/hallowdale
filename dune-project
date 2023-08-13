@@ -7,6 +7,20 @@
 (source
  (github mega-dean/hallowdale))
 
+(package
+ (name hallowdale)
+ (synopsis "An homage to Hollow Knight")
+ (depends
+  atdgen
+  dune
+  ocamlformat
+  ppx_expect
+  raylib
+  yojson
+  FIXME
+  )
+ )
+
 (authors "mega-dean")
 (maintainers "mega-dean")
 
