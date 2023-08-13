@@ -17,7 +17,6 @@
   ppx_expect
   raylib
   yojson
-  FIXME
   )
  )
 
