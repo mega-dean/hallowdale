@@ -1,0 +1,5 @@
+# these are for all "normal" areas that don't have custom bg-iso-walls layers
+
+automapping/bg-draw-wall-corners.tmj
+automapping/bg-draw-wall-edges.tmj
+automapping/bg-fill-wall.tmj

@@ -171,6 +171,7 @@ let init () : state =
         "punch";
         "nail-swing";
         "sword_hit";
+        "nail-hit-metal";
         "pot_break";
         "spray";
         "alarmswitch";

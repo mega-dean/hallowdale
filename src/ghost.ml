@@ -510,7 +510,7 @@ let resolve_slash_collisions (state : state) (game : game) =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
-        play_sound state "sword_hit";
+        play_sound state "nail-hit-metal";
         match coll.direction with
         | DOWN -> (
           (* always pogo, but only un-rotate the platform if it is upright *)
@@ -627,7 +627,7 @@ let resolve_slash_collisions (state : state) (game : game) =
 
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
-    List.iter (maybe_pogo "sword_hit") game.room.spikes;
+    List.iter (maybe_pogo "nail-hit-metal") game.room.spikes;
     List.iter maybe_pogo_platform_spikes game.room.platform_spikes;
     List.iter resolve_enemy game.room.enemies
 

@@ -48,7 +48,7 @@ end
 
 with_walls, without_walls = jsons.partition do |json|
   json['layers'].any? do |layer|
-    layer['name'] == 'auto:walls'
+    layer['name'] == 'bg-iso-walls'
   end
 end
 
