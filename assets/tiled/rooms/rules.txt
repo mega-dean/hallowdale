@@ -32,7 +32,9 @@ automapping/bg-draw-grass-edges.tmj
 automapping/bg-fill-grass.tmj
 
 [outlands_*]
-automapping/bg-draw-fences.tmj
+automapping/bg-draw-fence-corners.tmj
+automapping/bg-draw-fence-edges.tmj
+automapping/bg-fill-fence.tmj
 
 
 # 
