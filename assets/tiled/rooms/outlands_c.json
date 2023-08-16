@@ -8,7 +8,7 @@
          "name":"ref:hk",
          "opacity":1,
          "type":"imagelayer",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -86,7 +86,7 @@
          "name":"world-map",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":42,
          "x":0,
          "y":0

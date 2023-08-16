@@ -58,7 +58,7 @@
          "name":"output2_bg-iso-walls",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":20,
          "x":0,
          "y":0
@@ -119,7 +119,7 @@
          "name":"output1_bg-iso-walls",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":20,
          "x":0,
          "y":0
@@ -180,7 +180,7 @@
          "name":"input_bg-iso-walls",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":20,
          "x":0,
          "y":0
@@ -241,7 +241,7 @@
          "name":"input_auto:walls",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":20,
          "x":0,
          "y":0
@@ -270,7 +270,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -330,7 +330,7 @@
          "name":"input_auto:iso",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":20,
          "x":0,
          "y":0

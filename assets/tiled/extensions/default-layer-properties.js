@@ -64,6 +64,29 @@ tiled.extendMenu("Layer", [
   { action: "OnlyShowWorldMap", before: "SelectPreviousLayer" },
 ]);
 
+let OnlyShowHK = tiled.registerAction("OnlyShowHK", function(/* action */) {
+  for (let i = 0; i <= tiled.openAssets.length; i++) {
+    const map = tiled.openAssets[i];
+
+    for (let j = map.layerCount - 1; j >= 0; j--) {
+      const layer = map.layerAt(j);
+
+      if (layer.name === "ref:hk") {
+        layer.visible = true;
+        map.currentLayer = layer;
+      } else {
+        layer.visible = false;
+      }
+    }
+  }
+});
+OnlyShowHK.text = "Only Show HK Reference";
+
+tiled.extendMenu("Layer", [
+  { action: "SetDefaultLayerProperties", before: "SelectPreviousLayer" },
+  { action: "OnlyShowHK", before: "SelectPreviousLayer" },
+]);
+
 
 // let RepeatedAutomap = tiled.registerAction("RepeatedAutomap", function(/* action */) {
 //   let count = tiled.prompt("Please enter the number of times to automap:");
