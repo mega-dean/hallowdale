@@ -366,6 +366,72 @@
         }, 
         {
          "draworder":"topdown",
+         "id":10,
+         "name":"hazard",
+         "objects":[
+                {
+                 "height":27,
+                 "id":33,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":639,
+                 "x":429,
+                 "y":879
+                }, 
+                {
+                 "height":54,
+                 "id":34,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":1014,
+                 "y":831
+                }, 
+                {
+                 "height":120,
+                 "id":35,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":66,
+                 "x":393,
+                 "y":771
+                }, 
+                {
+                 "height":357,
+                 "id":36,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":63,
+                 "x":342,
+                 "y":447
+                }, 
+                {
+                 "height":36,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":93,
+                 "x":372,
+                 "y":444
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -938,8 +1004,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":32,
+ "nextlayerid":11,
+ "nextobjectid":38,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

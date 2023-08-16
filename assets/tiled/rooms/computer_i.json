@@ -210,6 +210,28 @@
         }, 
         {
          "draworder":"topdown",
+         "id":10,
+         "name":"hazard",
+         "objects":[
+                {
+                 "height":69,
+                 "id":12,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":2376,
+                 "x":189,
+                 "y":393
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -489,8 +511,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":12,
+ "nextlayerid":11,
+ "nextobjectid":14,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
