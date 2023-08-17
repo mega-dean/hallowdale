@@ -183,47 +183,65 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         get_ability_steps "mothwing_cloak" 0. 2.
           [ "Taken the"; "Scootenanny Chair." ]
           [
-            "Press [ZR]";
-            "to scootenanny forwards.";
+            "Press [ZR] to scootenanny forwards.";
             "Use the chair to scootenanny quickly along the ground or through the air.";
+            "While I normally don't condone climbing on furniture, Troy and Abed's friendship has \
+             been such a special and magical part of Greendale, we owe it to ourselves to honor \
+             it.";
           ]
       | "double-bouncies" ->
         get_ability_steps "monarch_wings" 0. 4.
           [ "Consumed the"; "Double Bouncies." ]
           [
-            "Press (B) while in the air";
-            "to double bounce.";
+            "Press (B) while in the air to double bounce.";
+            "Use the ethereal bounce to sail above enemies and discover new paths.";
             "At the apex of each bounce, there is a moment outside of time, outside of words, \
              outside of everything - a perfect moment. A silent moment. I call it the {{blue}} \
              World's Whisper.";
           ]
       | "reverse-danny-thomas" ->
-        get_ability_steps "mantis_claw" 0. 4.
+        get_ability_steps "mantis_claw" 0. 8.
           [ "Learned the"; "Reverse Danny Thomas." ]
-          [ "Do you think this game's gotten a little out of hand?" ]
+          [
+            "Press (B) while sliding against a wall to jump again.";
+            "Jump from wall to wall to reach new areas.";
+            "Do you think this game's gotten a little out of hand?";
+          ]
       | "computer-heart" ->
         get_ability_steps "crystal_heart" 0. 5.
           [ "Consumed the"; "Computer Heart." ]
           [
-            "Hold [ZL] while on the ground or clinging to a wall";
-            "to concentrate the force.";
+            "Hold [ZL] while on the ground or clinging to a wall to concentrate the force.";
+            "Release the button to blast forwards and fly through the air.";
             "Without an emotional component, computers will strip us of all humanity.";
           ]
         @ [ STEP (HIDE_LAYER "temporary-floors") ]
+      | "vaughns-tear" ->
+        (* TODO add ability outline *)
+        get_ability_steps "ismas_tear" 0. 8.
+          [ "Consumed the"; "Vaughn's Tear." ]
+          [
+            "Acid shall be repelled.";
+            "Swim in acidic waters without coming to any harm.";
+            "Well he's a baby. Now where were we?";
+          ]
+      | "pierce-hologram" ->
+        get_ability_steps "shade_cloak" 0. 7.
+          [ "Consumed the"; "Pierce Hologram." ]
+          [
+            "Press [ZR] to scootenanny forwards, cloaked in hologram.";
+            "Use the hologram to scootenanny through enemies and their attacks without taking \
+             damage.";
+            "Take it from a man with no legal right to be there: you're in a {{blue}} special \
+             {{white}} place.";
+          ]
       | "monkey-gas" ->
         get_ability_steps "howling_wraiths" 0. 6.
           [ "Consumed the"; "Monkey Knockout Gas." ]
           [
             "Tap (A) while holding UP";
             "to unleash the Knockout Gas.";
-            "Some kind of gas that knocks out monkeys.";
-          ]
-      | "shade-cloak" ->
-        get_ability_steps "shade_cloak" 0. 7.
-          [ "Consumed the"; "Shade Cloak." ]
-          [
-            "Press [ZR] to scootenanny forwards, cloaked in shadow.";
-            "Use the cloak to scootenanny through enemies and their attacks without taking damage.";
+            "Some kind of {{red}} gas {{white}} that knocks out monkeys.";
           ]
       | _ -> fail ())
     | "cutscene" -> (

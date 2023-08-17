@@ -8,9 +8,9 @@ let new_game () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 100. } in
   let b =
     (* newgame *)
-    (* false *)
+    false
     (* newgameplus *)
-    true
+    (* true *)
   in
   {
     ghost_id = "BRITTA";

@@ -417,8 +417,7 @@ let init (params : room_params) : room =
               match layer_name with
               | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "floors" -> [ "fg" ]
-              (* this is used for floors that are removed, like the breaking floor in King's Pass
-                 and the bridge in c-dash room *)
+              (* this is used for floors that are removed, like the bridge in c-dash room *)
               | "temporary-floors" -> [ "collides" ]
               | "benches" -> [ "collides" ]
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
