@@ -1,0 +1,14 @@
+{ "columns":91,
+ "image":"pcb.png",
+ "imageheight":500,
+ "imagewidth":1097,
+ "margin":0,
+ "name":"pcb",
+ "spacing":0,
+ "tilecount":24128,
+ "tiledversion":"1.10.2",
+ "tileheight":12,
+ "tilewidth":12,
+ "type":"tileset",
+ "version":"1.10"
+}

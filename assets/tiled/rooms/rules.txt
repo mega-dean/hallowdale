@@ -36,8 +36,6 @@ automapping/bg-draw-fence-corners.tmj
 automapping/bg-draw-fence-edges.tmj
 automapping/bg-fill-fence.tmj
 
-
-# 
 [basement_*]
 walls-rules.txt
 

@@ -241,7 +241,7 @@
          "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":72,
          "x":0,
          "y":0
@@ -605,6 +605,185 @@
         }, 
         {
          "draworder":"topdown",
+         "id":17,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":12016,
+                 "height":24,
+                 "id":34,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":333,
+                 "y":869
+                }, 
+                {
+                 "gid":12016,
+                 "height":24,
+                 "id":35,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":341,
+                 "y":1089
+                }, 
+                {
+                 "gid":12016,
+                 "height":24,
+                 "id":36,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":448,
+                 "y":1103
+                }, 
+                {
+                 "gid":12019,
+                 "height":21,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":723,
+                 "y":1015
+                }, 
+                {
+                 "gid":12019,
+                 "height":21,
+                 "id":38,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":679,
+                 "y":947
+                }, 
+                {
+                 "gid":12022,
+                 "height":45,
+                 "id":39,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":263,
+                 "y":789
+                }, 
+                {
+                 "gid":12014,
+                 "height":65,
+                 "id":40,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":97,
+                 "y":1038
+                }, 
+                {
+                 "gid":12020,
+                 "height":19,
+                 "id":41,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":197,
+                 "y":1099
+                }, 
+                {
+                 "gid":12016,
+                 "height":24,
+                 "id":42,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":213,
+                 "y":661
+                }, 
+                {
+                 "gid":12022,
+                 "height":45,
+                 "id":43,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":119,
+                 "y":601
+                }, 
+                {
+                 "gid":12022,
+                 "height":45,
+                 "id":44,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":113,
+                 "y":436
+                }, 
+                {
+                 "gid":12019,
+                 "height":21,
+                 "id":45,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":206,
+                 "y":528
+                }, 
+                {
+                 "gid":12016,
+                 "height":24,
+                 "id":46,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":213,
+                 "y":351
+                }, 
+                {
+                 "gid":12012,
+                 "height":35,
+                 "id":47,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":186,
+                 "y":948
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":16,
          "name":"triggers",
          "objects":[
@@ -621,7 +800,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -951,7 +1130,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -1067,7 +1246,7 @@
          "name":"bg",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":72,
          "x":0,
          "y":0
@@ -1542,8 +1721,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":17,
- "nextobjectid":34,
+ "nextlayerid":18,
+ "nextobjectid":48,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -1564,6 +1743,10 @@
         {
          "firstgid":6729,
          "source":"..\/tilesets\/other.json"
+        }, 
+        {
+         "firstgid":12009,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",
