@@ -215,6 +215,101 @@
         }, 
         {
          "draworder":"topdown",
+         "id":11,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":32,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":2355,
+                 "y":224
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":33,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":2832,
+                 "y":237
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":34,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2956,
+                 "y":271
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":35,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1909,
+                 "y":207
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":36,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":1039,
+                 "y":298
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":471,
+                 "y":336
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":38,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":617,
+                 "y":287
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -662,8 +757,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":32,
+ "nextlayerid":12,
+ "nextobjectid":39,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -676,6 +771,10 @@
         {
          "firstgid":5281,
          "source":"..\/tilesets\/world-map12.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

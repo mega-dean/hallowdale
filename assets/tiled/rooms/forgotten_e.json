@@ -325,6 +325,65 @@
         }, 
         {
          "draworder":"topdown",
+         "id":12,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":52,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1417,
+                 "y":431
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":53,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1586,
+                 "y":380
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":54,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":943,
+                 "y":414
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":55,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":1629,
+                 "y":279
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":11,
          "name":"spikes",
          "objects":[
@@ -1026,8 +1085,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":12,
- "nextobjectid":52,
+ "nextlayerid":13,
+ "nextobjectid":56,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -1040,6 +1099,10 @@
         {
          "firstgid":5281,
          "source":"..\/tilesets\/world-map12.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

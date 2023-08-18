@@ -254,6 +254,53 @@
         }, 
         {
          "draworder":"topdown",
+         "id":11,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6738,
+                 "height":27,
+                 "id":25,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":266,
+                 "y":388
+                }, 
+                {
+                 "gid":6738,
+                 "height":27,
+                 "id":26,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":128,
+                 "y":319
+                }, 
+                {
+                 "gid":6738,
+                 "height":27,
+                 "id":27,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":825,
+                 "y":347
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -757,8 +804,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":11,
- "nextobjectid":25,
+ "nextlayerid":12,
+ "nextobjectid":28,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -775,6 +822,10 @@
         {
          "firstgid":6601,
          "source":"..\/tilesets\/acid.json"
+        }, 
+        {
+         "firstgid":6729,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

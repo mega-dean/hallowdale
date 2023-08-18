@@ -224,7 +224,7 @@ let init () : state =
 
   let area_musics : area_music list =
     [
-      (* TODO figure out the loop times for these *)
+      (* TODO these loop times are not very precise *)
       load_music "as-i-lay-me-down" 72.128 171.947 [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
       load_music "daybreak" 0. Float.max_float [ AC_REPAIR_ANNEX ];
       load_music "ending" 0. Float.max_float [ COMPUTER_WING ];

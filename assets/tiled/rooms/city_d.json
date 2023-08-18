@@ -335,6 +335,137 @@
         }, 
         {
          "draworder":"topdown",
+         "id":11,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":1095,
+                 "y":267
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":38,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":864,
+                 "y":403
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":39,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":784,
+                 "y":492
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":40,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":775,
+                 "y":316
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":41,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":962,
+                 "y":352
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":42,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":876,
+                 "y":582
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":43,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":1256,
+                 "y":643
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":44,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":962,
+                 "y":491
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":45,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":773,
+                 "y":180
+                }, 
+                {
+                 "gid":6613,
+                 "height":48,
+                 "id":46,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":781,
+                 "y":650
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -971,8 +1102,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":37,
+ "nextlayerid":12,
+ "nextobjectid":47,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -985,6 +1116,10 @@
         {
          "firstgid":5281,
          "source":"..\/tilesets\/world-map12.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

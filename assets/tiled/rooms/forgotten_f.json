@@ -467,6 +467,53 @@
         }, 
         {
          "draworder":"topdown",
+         "id":10,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":23,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":392,
+                 "y":824
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":24,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":149,
+                 "y":1087
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":25,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":633,
+                 "y":1088
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -1037,8 +1084,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":23,
+ "nextlayerid":11,
+ "nextobjectid":26,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -1051,6 +1098,10 @@
         {
          "firstgid":5281,
          "source":"..\/tilesets\/world-map12.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

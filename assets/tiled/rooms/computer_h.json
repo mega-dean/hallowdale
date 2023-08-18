@@ -210,6 +210,53 @@
         }, 
         {
          "draworder":"topdown",
+         "id":10,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":9,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":773,
+                 "y":123
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":10,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":841,
+                 "y":199
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":11,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":719,
+                 "y":199
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -434,8 +481,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":9,
+ "nextlayerid":11,
+ "nextobjectid":12,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -448,6 +495,10 @@
         {
          "firstgid":1321,
          "source":"..\/tilesets\/terrains.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

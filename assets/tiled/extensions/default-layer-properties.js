@@ -81,6 +81,7 @@ let OnlyShowHK = tiled.registerAction("OnlyShowHK", function(/* action */) {
   }
 });
 OnlyShowHK.text = "Only Show HK Reference";
+OnlyShowHK.shortcut = "Meta+S";
 
 tiled.extendMenu("Layer", [
   { action: "SetDefaultLayerProperties", before: "SelectPreviousLayer" },

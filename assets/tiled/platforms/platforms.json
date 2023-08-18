@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":21,
+ "tilecount":22,
  "tiledversion":"1.10.2",
  "tileheight":72,
  "tiles":[
@@ -138,6 +138,12 @@
          "image":"kp-drop.png",
          "imageheight":60,
          "imagewidth":264
+        }, 
+        {
+         "id":22,
+         "image":"bookshelf-small.png",
+         "imageheight":28,
+         "imagewidth":44
         }],
  "tilewidth":264,
  "type":"tileset",

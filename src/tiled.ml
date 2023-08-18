@@ -238,6 +238,7 @@ module Room = struct
         ("rotatable", Some (ROTATABLE UPRIGHT));
         ("bench", None);
         ("kp-drop", Some (TEMPORARY VISIBLE));
+        ("bookshelf-small", None);
       ]
     in
     let texture_name, platform_kind =
