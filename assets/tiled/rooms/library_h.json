@@ -490,6 +490,125 @@
         }, 
         {
          "draworder":"topdown",
+         "id":15,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6608,
+                 "height":24,
+                 "id":41,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":459,
+                 "y":212
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":42,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":456,
+                 "y":524
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":43,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":340,
+                 "y":507
+                }, 
+                {
+                 "gid":6613,
+                 "height":48,
+                 "id":44,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":390,
+                 "y":441
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":45,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":456,
+                 "y":371
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":46,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":443,
+                 "y":931
+                }, 
+                {
+                 "gid":6604,
+                 "height":35,
+                 "id":47,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":370,
+                 "y":1161
+                }, 
+                {
+                 "gid":6613,
+                 "height":48,
+                 "id":48,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":477,
+                 "y":1093
+                }, 
+                {
+                 "gid":6613,
+                 "height":48,
+                 "id":49,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":373,
+                 "y":1005
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":9,
          "name":"triggers",
          "objects":[
@@ -1394,8 +1513,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":15,
- "nextobjectid":41,
+ "nextlayerid":16,
+ "nextobjectid":50,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -1408,6 +1527,10 @@
         {
          "firstgid":1321,
          "source":"..\/tilesets\/terrains.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

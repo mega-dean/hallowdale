@@ -678,6 +678,101 @@
         }, 
         {
          "draworder":"topdown",
+         "id":10,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":51,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":171,
+                 "y":1549
+                }, 
+                {
+                 "gid":6608,
+                 "height":24,
+                 "id":52,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":230,
+                 "y":1623
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":53,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":334,
+                 "y":1359
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":54,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":154,
+                 "y":992
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":55,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":174,
+                 "y":770
+                }, 
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":56,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":293,
+                 "y":761
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":57,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":461,
+                 "y":605
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -1726,8 +1821,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":51,
+ "nextlayerid":11,
+ "nextobjectid":59,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -1740,6 +1835,10 @@
         {
          "firstgid":1321,
          "source":"..\/tilesets\/terrains.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

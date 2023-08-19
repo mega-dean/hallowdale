@@ -50,6 +50,12 @@ with_platforms, without_platforms = jsons.partition do |json|
     "forgotten_g.json",
     "infected_a.json",
     "infected_d.json",
+    "library_d.json",
+    "library_i.json",
+    "library_c.json",
+    "outlands_e.json",
+    "trampoline_d.json",
+    "trampoline_f.json",
   ]
   if rooms_without_platforms.include?(json['filename'])
     true

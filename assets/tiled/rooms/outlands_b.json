@@ -306,6 +306,65 @@
         }, 
         {
          "draworder":"topdown",
+         "id":12,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":25,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":616,
+                 "y":96
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":26,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":80,
+                 "y":452
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":27,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":95,
+                 "y":542
+                }, 
+                {
+                 "gid":6608,
+                 "height":24,
+                 "id":28,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":719,
+                 "y":567
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":11,
          "name":"spikes",
          "objects":[
@@ -850,8 +909,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":12,
- "nextobjectid":25,
+ "nextlayerid":13,
+ "nextobjectid":29,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -864,6 +923,10 @@
         {
          "firstgid":1321,
          "source":"..\/tilesets\/terrains.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

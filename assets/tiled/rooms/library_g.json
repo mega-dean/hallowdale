@@ -294,6 +294,89 @@
         }, 
         {
          "draworder":"topdown",
+         "id":11,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6742,
+                 "height":45,
+                 "id":33,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":951,
+                 "y":171
+                }, 
+                {
+                 "gid":6742,
+                 "height":45,
+                 "id":34,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":361,
+                 "y":237
+                }, 
+                {
+                 "gid":6742,
+                 "height":45,
+                 "id":35,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":1955,
+                 "y":312
+                }, 
+                {
+                 "gid":6742,
+                 "height":45,
+                 "id":36,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":2097,
+                 "y":273
+                }, 
+                {
+                 "gid":6740,
+                 "height":19,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":2259,
+                 "y":541
+                }, 
+                {
+                 "gid":6738,
+                 "height":27,
+                 "id":38,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":1402,
+                 "y":542
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":7,
          "name":"floors",
          "objects":[
@@ -892,8 +975,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":11,
- "nextobjectid":33,
+ "nextlayerid":12,
+ "nextobjectid":39,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -910,6 +993,10 @@
         {
          "firstgid":6601,
          "source":"..\/tilesets\/acid.json"
+        }, 
+        {
+         "firstgid":6729,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

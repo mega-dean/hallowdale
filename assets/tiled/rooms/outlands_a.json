@@ -478,6 +478,149 @@
         }, 
         {
          "draworder":"topdown",
+         "id":13,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6608,
+                 "height":24,
+                 "id":35,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":323,
+                 "y":345
+                }, 
+                {
+                 "gid":6608,
+                 "height":24,
+                 "id":36,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":809,
+                 "y":1101
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":702,
+                 "y":1017
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":38,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":497,
+                 "y":511
+                }, 
+                {
+                 "gid":6614,
+                 "height":45,
+                 "id":39,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":612,
+                 "y":217
+                }, 
+                {
+                 "gid":6606,
+                 "height":65,
+                 "id":40,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":741,
+                 "y":268
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":41,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":567,
+                 "y":413
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":42,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":401,
+                 "y":257
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":43,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":774,
+                 "y":669
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":44,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":743,
+                 "y":932
+                }, 
+                {
+                 "gid":6612,
+                 "height":19,
+                 "id":45,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":85,
+                 "x":388,
+                 "y":421
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":12,
          "name":"spikes",
          "objects":[
@@ -1304,8 +1447,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":13,
- "nextobjectid":35,
+ "nextlayerid":14,
+ "nextobjectid":46,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -1318,6 +1461,10 @@
         {
          "firstgid":1321,
          "source":"..\/tilesets\/terrains.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

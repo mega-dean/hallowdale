@@ -262,6 +262,41 @@
         }, 
         {
          "draworder":"topdown",
+         "id":13,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":11894,
+                 "height":45,
+                 "id":17,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":1187,
+                 "y":372
+                }, 
+                {
+                 "gid":11891,
+                 "height":21,
+                 "id":18,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1240,
+                 "y":461
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":12,
          "name":"triggers",
          "objects":[
@@ -676,8 +711,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":13,
- "nextobjectid":17,
+ "nextlayerid":14,
+ "nextobjectid":19,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -694,6 +729,10 @@
         {
          "firstgid":6601,
          "source":"..\/tilesets\/other.json"
+        }, 
+        {
+         "firstgid":11881,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",

@@ -925,6 +925,53 @@
         }, 
         {
          "draworder":"topdown",
+         "id":14,
+         "name":"platforms",
+         "objects":[
+                {
+                 "gid":6610,
+                 "height":27,
+                 "id":81,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":55,
+                 "x":448,
+                 "y":1880
+                }, 
+                {
+                 "gid":6611,
+                 "height":21,
+                 "id":83,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":256,
+                 "y":1134
+                }, 
+                {
+                 "gid":6606,
+                 "height":65,
+                 "id":84,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":40,
+                 "x":475,
+                 "y":197
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":13,
          "name":"spikes",
          "objects":[
@@ -2283,8 +2330,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":14,
- "nextobjectid":81,
+ "nextlayerid":15,
+ "nextobjectid":85,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -2297,6 +2344,10 @@
         {
          "firstgid":5281,
          "source":"..\/tilesets\/world-map12.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,
  "type":"map",
