@@ -349,48 +349,50 @@ module Room = struct
             in
             let w = get_width () in
             let h = get_height w in
-            let top_left_offsets : vector = lookup_coll_offsets room tile_gid room.json in
-            let top_offset = top_left_offsets.y in
-            let bottom_offset = (* this assumes all tiles_groups have 0 bottom offset *) 0. in
-            let left_offset = top_left_offsets.x in
-            let right_offset = (* this assumes all platforms are symmetrical *) left_offset in
             let rect =
               {
-                pos = { x = x +. left_offset; y = y +. top_offset };
-                w =
-                  ((w |> Int.to_float) *. (tile_w *. Config.scale.room))
-                  -. (left_offset +. right_offset);
-                h =
-                  ((h |> Int.to_float) *. (tile_h *. Config.scale.room))
-                  -. (top_offset +. bottom_offset);
+                pos = { x; y };
+                w = (w |> Int.to_float) *. (tile_w *. Config.scale.room);
+                h = (h |> Int.to_float) *. (tile_h *. Config.scale.room);
               }
             in
             let stub_sprite, fragments =
-              match List.assoc_opt (Tile.raw_gid tile_gid) room.cache.jug_fragments_by_gid with
+              let all_raw_gids =
+                List.map (fun idx -> Tile.raw_gid (List.nth json_layer.data idx)) (!idxs |> uniq)
+                |> uniq
+              in
+              let keys = List.map fst room.cache.jug_fragments_by_gid in
+              match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
               | None -> (None, [])
-              | Some destroy_resources ->
-                let sprite =
-                  match destroy_resources.stub with
-                  | None -> None
-                  | Some stub ->
-                    let y_offset = rect.h -. (tile_h *. Config.scale.room) in
-                    let stub_dest =
-                      {
-                        pos = { x = rect.pos.x; y = rect.pos.y +. y_offset };
-                        w = rect.w;
-                        h = rect.h -. y_offset;
-                      }
-                    in
-                    Some
-                      {
-                        ident = "sprite stub";
-                        texture = stub;
-                        dest = stub_dest;
-                        facing_right = true;
-                        collision = None;
-                      }
-                in
-                (sprite, destroy_resources.fragments)
+              | Some raw_gid -> (
+                match List.assoc_opt raw_gid room.cache.jug_fragments_by_gid with
+                | None -> (None, [])
+                | Some destroy_resources ->
+                  let sprite =
+                    match destroy_resources.stub with
+                    | None -> None
+                    | Some stub ->
+                      let y_offset =
+                        (* multiply by 2 because jugs are 2 tiles high *)
+                        rect.h -. (2. *. tile_h *. Config.scale.room)
+                      in
+                      let stub_dest =
+                        {
+                          pos = { x = rect.pos.x; y = rect.pos.y +. y_offset };
+                          w = rect.w;
+                          h = rect.h -. y_offset;
+                        }
+                      in
+                      Some
+                        {
+                          ident = "sprite stub";
+                          texture = stub;
+                          dest = stub_dest;
+                          facing_right = true;
+                          collision = None;
+                        }
+                  in
+                  (sprite, destroy_resources.fragments))
             in
             let door_health =
               (* TODO these numbers are "number of hits - 1" because checking `> 0` in the slash-resolving

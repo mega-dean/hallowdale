@@ -5914,7 +5914,7 @@ let write_jug_metadata : _ -> jug_metadata -> _ = (
       Yojson.Safe.write_int
     )
       ob x.x;
-    if x.w <> 1 then (
+    if x.w <> 2 then (
       if !is_first then
         is_first := false
       else
@@ -5946,7 +5946,7 @@ let read_jug_metadata = (
     Yojson.Safe.read_lcurl p lb;
     let field_name = ref (None) in
     let field_x = ref (None) in
-    let field_w = ref (1) in
+    let field_w = ref (2) in
     let field_h = ref (None) in
     try
       Yojson.Safe.read_space p lb;

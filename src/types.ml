@@ -44,7 +44,7 @@ module Utils = struct
     match split_at_first_opt c str with
     | Some prefix, rest -> (prefix, rest)
     | None, _ ->
-      failwith (Printf.sprintf "Utils.split_at_first ---- no separator %c in string %s" c str)
+      failwith (Printf.sprintf "Utils.split_at_first ---- no separator '%c' in string '%s'" c str)
 
   let maybe_trim_before c str : string =
     match split_at_first_opt c str with

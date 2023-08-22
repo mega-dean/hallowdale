@@ -197,7 +197,7 @@ let draw_tiled_layer
           in
           let w, h = Tiled.Room.dest_wh room.json () in
           let dest = { pos = { x; y }; w; h } in
-          (* TODO-7 instead of drawing texture, use image_draw on the render buffer *)
+          (* TODO-7 instead of drawing texture for each tile, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
     let draw_spawned_fragment (f : entity) =

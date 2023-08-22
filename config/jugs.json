@@ -2,87 +2,85 @@
     {
         "name": "bookcase",
         "x": 0,
-        "h": 2,
-        "w": 2
+        "h": 4,
+        "w": 4
     },
     {
         "name": "chair",
-        "x": 2,
-        "h": 2,
-        "w": 2
+        "x": 4,
+        "h": 4,
+        "w": 4
     },
     {
         "name": "breakable-wall",
-        "x": 4,
-        "h": 3,
-        "w": 2
+        "x": 8,
+        "h": 6,
+        "w": 4
     },
     {
         "name": "purple-pen-jar",
-        "x": 6,
-        "h": 1,
-        "w": 1
-    },
-    {
-        "name": "security-camera",
-        "x": 7,
-        "h": 1,
-        "w": 1
-    },
-    {
-        "name": "trashcan",
-        "x": 9,
+        "x": 12,
         "h": 2
     },
     {
-        "name": "door",
-        "x": 10,
-        "h": 3
-    },
-    {
-        "name": "anthropology",
-        "x": 11,
-        "h": 3
-    },
-    {
-        "name": "skeleton",
-        "x": 12,
-        "h": 3
-    },
-    {
-        "name": "coat-rack",
-        "x": 13,
-        "h": 3
-    },
-    {
-        "name": "dog",
+        "name": "security-camera",
         "x": 14,
         "h": 2
     },
     {
+        "name": "trashcan",
+        "x": 18,
+        "h": 3
+    },
+    {
+        "name": "door",
+        "x": 20,
+        "h": 6
+    },
+    {
+        "name": "anthropology",
+        "x": 22,
+        "h": 6
+    },
+    {
+        "name": "skeleton",
+        "x": 24,
+        "h": 6
+    },
+    {
+        "name": "coat-rack",
+        "x": 26,
+        "h": 6
+    },
+    {
+        "name": "dog",
+        "x": 28,
+        "h": 4
+    },
+    {
         "name": "big-door",
-        "x": 15,
-        "h": 5
+        "x": 30,
+        "h": 10
     },
     {
         "name": "tp-statue-1",
-        "x": 16,
-        "h": 1
+        "x": 32,
+        "h": 2
     },
     {
         "name": "tp-statue-2",
-        "x": 17,
-        "h": 1
+        "x": 34,
+        "h": 2
     },
     {
         "name": "tp-statue-3",
-        "x": 18,
-        "h": 1
+        "x": 36,
+        "h": 2
     },
     {
         "name": "tp-lawn-mower",
-        "x": 19,
-        "h": 1,
-        "w": 2
+        "x": 38,
+        "h": 2,
+        "w": 4
     }
 ]

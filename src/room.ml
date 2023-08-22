@@ -70,7 +70,6 @@ let init (params : room_params) : room =
   let parse_room (path : string) : Json_t.room =
     let full_path = fmt "../assets/tiled/rooms/%s" path in
     (* TODO cache these instead of reloading the tileset between every room *)
-    (* FIXME handle errors here *)
     File.read full_path |> Json_j.room_of_string
   in
 
@@ -320,9 +319,22 @@ let init (params : room_params) : room =
             coll_rect
           :: !enemy_rects
       | "respawn" ->
-        (* TODO try using connected objects instead of parsing coordinates from the name *)
+        (* FIXME try using connected objects instead of parsing coordinates from the name
+           - get only object in .properties, which should be the respawn:target object
+           - get the coords from that object.id
+
+           - this will only work if the target rect has already been parsed into respawn_targets though
+           - that could be managed manually by creating target first in Tiled, but would be much better for that to be independent
+           - so probably just read all "respawn" triggers into a list, process "target" triggers into respawn_targets,
+             and then after all triggers, build the respawn_triggers from the list + respawn_targets
+        *)
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
+      | "target" ->
+        (* FIXME add to respawn_targets : (int * vector) list
+           - x/y here will be raw x/y, so shouldn't need to convert from tile_idx
+        *)
+        ()
       | "door-warp" ->
         let target = parse_warp_target name_suffix in
         cutscene_triggers := get_object_trigger (WARP target) :: !cutscene_triggers
@@ -528,44 +540,33 @@ let init (params : room_params) : room =
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
 
-      let make_stub width tile_x tile_y =
-        (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
-        let x, y = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
-        Some
-          (Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
-             (Some { w = json_room.tile_w *. width; h = json_room.tile_h; pos = { x; y } }))
-      in
-
-      let make_fragment name tile_x tile_y y_offset w h : entity =
-        let x', y' = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
-        let x, y = (x', y' +. y_offset) in
-        let texture =
-          Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
-            (Some { pos = { x; y }; w; h })
-        in
-        let sprite =
-          Sprite.create
-            (fmt "fragment sprite %s %0.1f" name y_offset)
-            texture
-            { pos = { x; y }; w = w *. Config.scale.room; h = h *. Config.scale.room }
-        in
-        let entity =
-          Entity.create_for_sprite sprite ~inanimate:true
-            { pos = Zero.vector (); w = sprite.dest.w; h = sprite.dest.h }
-        in
-        entity
-      in
-
-      (* TODO-3 fix jugs for new tile size
+      (* FIXME fix jugs for new tile size
          - width will definitely be wrong - maybe update the configs, but maybe just multiply by 2 here
          - fragments may be messed up
+
+         - can't reuse the old tileset (with 24x24 tile_size) because then jugs aren't contiguous
+         - could add a blank filler tile for connecting them, but probably just should update the tile_size
+
+         - going to need to still use the 24x24 fragments so they can be big enough
+         - this will actually be 4 "tiles", so maybe add code to only look the tiles up that are needed (based on collision size)
       *)
       let make_jug (config : jug_config) : int * jug_fragments =
+        let make_stub width tile_x tile_y =
+          (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
+          let x, y = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
+          let stub_h =
+            (* two tiles for some big stubs, but most are only one tile high *)
+            json_room.tile_h *. 2.
+          in
+          Some
+            (Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
+               (Some { w = json_room.tile_w *. width; h = stub_h; pos = { x; y } }))
+        in
         let fragments : entity list =
           let tile_x = config.tile_x in
           let tile_y =
             (* always render a stub, even if it is an empty tile image *)
-            config.h + 1
+            config.h + 2
           in
           let get_coll_wh id : float * float =
             (* id is (firstgid + idx) *)
@@ -574,11 +575,32 @@ let init (params : room_params) : room =
             | Some coll_rect -> (coll_rect.w, coll_rect.h)
           in
           let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option =
+            let make_fragment name y_offset w h : entity =
+              let x', y' = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
+              let x, y = (x', y' +. y_offset) in
+              let texture =
+                Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
+                  (Some { pos = { x; y }; w; h })
+              in
+              let sprite =
+                Sprite.create
+                  (fmt "fragment sprite %s %0.1f" name y_offset)
+                  texture
+                  { pos = { x; y }; w = w *. Config.scale.room; h = h *. Config.scale.room }
+              in
+              let entity =
+                Entity.create_for_sprite sprite ~inanimate:true
+                  { pos = Zero.vector (); w = sprite.dest.w; h = sprite.dest.h }
+              in
+              entity
+            in
             let w, h = get_coll_wh (jug_firstgid + collision.id) in
-            (* this check only supports the left column of wide jugs *)
+            (* this check only supports the left column of wide jugs
+               CLEANUP reuse in_this_column
+            *)
             if collision.id mod tileset.json.columns = tile_x then (
-              let y = (collision_idx |> Int.to_float) *. tileset.json.tile_h in
-              Some (make_fragment config.jug_name tile_x tile_y y w h))
+              let fragment_y = (collision_idx |> Int.to_float) *. tileset.json.tile_h *. 2. in
+              Some (make_fragment config.jug_name fragment_y w h))
             else
               None
           in
@@ -587,18 +609,21 @@ let init (params : room_params) : room =
           let fragments = List.mapi build_fragment collisions in
           fragments |> Utils.filter_somes
         in
+
         if List.length fragments = 0 then
           failwithf
-            "found 0 fragments for jug %s with tile_x %d - configure these with Tiled collision \
+            "found 0 fragments for jug '%s' with tile_x %d - configure these with Tiled collision \
              editor"
             config.jug_name config.tile_x;
         (* x is the 0-indexed tile coordinate on the jugs.png image, but we need to add jug_firstgid to adjust the cache key *)
+        let stub_y = config.h in
         ( config.tile_x + jug_firstgid,
-          { stub = make_stub (config.w |> Int.to_float) config.tile_x config.h; fragments } )
+          { stub = make_stub (config.w |> Int.to_float) config.tile_x stub_y; fragments } )
       in
 
       let metadata : jug_config list =
         let configs : Json_t.jug_metadata_file =
+          (* CLEANUP add error message for read_config (invalid json) *)
           File.read_config "jugs" Json_j.jug_metadata_file_of_string
         in
         let build (metadata : Json_t.jug_metadata) : jug_config =

@@ -96,7 +96,7 @@ type world = {
 type jug_metadata = {
   name : string;
   x : int;
-  ~w <ocaml default="1"> : int;
+  ~w <ocaml default="2"> : int;
   h : int;
 }
 

@@ -277,6 +277,12 @@
                  "height":84,
                  "id":60,
                  "name":"respawn:125,26",
+                 "properties":[
+                        {
+                         "name":"respawn-pos1",
+                         "type":"object",
+                         "value":64
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -294,10 +300,21 @@
                  "width":684,
                  "x":216,
                  "y":408
+                }, 
+                {
+                 "height":12,
+                 "id":64,
+                 "name":"target:1",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":8,
+                 "x":1505,
+                 "y":319
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -960,7 +977,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":64,
+ "nextobjectid":65,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

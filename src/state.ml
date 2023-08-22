@@ -725,7 +725,6 @@ let tick (state : state) =
        - maybe need to check difference in state.frame.time and seek forward
     *)
     if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then (
-      tmp "looping";
       Raylib.seek_music_stream game.music.t
         (Utils.bound 0.1 game.music.loop_start.at Float.max_float));
     Raylib.update_music_stream game.music.t;

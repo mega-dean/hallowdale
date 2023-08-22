@@ -619,7 +619,11 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     ()
   | ELECTRICITY ->
     let last_shock = action_started_at enemy "shock" in
-    let shock_dt = (* needs to be > 2.2 *) 4. in
+    let shock_dt =
+      (* needs to be greater than shock config (count * duration) *)
+      (* CLEANUP use a prop *)
+      2.5
+    in
     if last_shock.at < state.frame.time -. shock_dt then
       set_electricity_action enemy `SHOCK state.frame.time []
   | PENGUIN -> ()

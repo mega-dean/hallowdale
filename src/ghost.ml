@@ -27,15 +27,6 @@ let read_config () : ghosts_file =
   let parse_ghost_texture
       ((ghost_id_str, ghost_poses) : string * (string * Json_t.texture_config) list) :
       ghost_id * texture_config list =
-    let parse_name name : ghost_id =
-      match name with
-      | "ABED" -> ABED
-      | "ANNIE" -> ANNIE
-      | "BRITTA" -> BRITTA
-      | "JEFF" -> JEFF
-      | "TROY" -> TROY
-      | _ -> failwithf "bad ghost name '%s'" name
-    in
     let texture_configs : texture_config list =
       List.map (parse_texture_config ghost_id_str) ghost_poses
     in
@@ -573,10 +564,10 @@ let resolve_slash_collisions (state : state) (game : game) =
                 if door_health.hits > 1 then (
                   (* TODO this isn't quite working - the fragments are spawning on top of the door and not moving *)
                   let make_random_fragment _n = Utils.sample tile_group.fragments in
-                  (* TODO-3 this probably broke when tile size changed *)
-                  (* let random_fragments = List.init (Random.int 3) make_random_fragment in
-                   * layer.spawned_fragments <-
-                   *   List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments; *)
+                  let random_fragments = List.init (Random.int 3) make_random_fragment in
+                  (* CLEANUP can this reuse destroy_object? *)
+                  layer.spawned_fragments <-
+                    List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
                   door_health.hits <- door_health.hits - 1;
                   new_tile_groups := tile_group :: !new_tile_groups)
                 else
