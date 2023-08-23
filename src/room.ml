@@ -540,16 +540,7 @@ let init (params : room_params) : room =
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
 
-      (* FIXME fix jugs for new tile size
-         - width will definitely be wrong - maybe update the configs, but maybe just multiply by 2 here
-         - fragments may be messed up
-
-         - can't reuse the old tileset (with 24x24 tile_size) because then jugs aren't contiguous
-         - could add a blank filler tile for connecting them, but probably just should update the tile_size
-
-         - going to need to still use the 24x24 fragments so they can be big enough
-         - this will actually be 4 "tiles", so maybe add code to only look the tiles up that are needed (based on collision size)
-      *)
+      (* all of the `*. 2.` or `+ 2` in this function is here because jugs were originally written for a 24x24 tileset  *)
       let make_jug (config : jug_config) : int * jug_fragments =
         let make_stub width tile_x tile_y =
           (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
