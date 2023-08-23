@@ -1236,7 +1236,8 @@ let handle_debug_keys (game : game) (state : state) =
     game.ghost.ghost'.entity.dest.pos.x <- game.ghost.ghost'.entity.dest.pos.x -. dv
   else if holding_shift () then (
     if key_pressed DEBUG_1 then (* game.ghost.soul.current <- game.ghost.soul.max *)
-      show_ghost_location () (* show_camera_location () *)
+      (* show_ghost_location () *)
+      show_camera_location ()
     else if key_pressed DEBUG_2 then
       (* toggle_ability game.ghost "mantis_claw" *)
       (* game.ghost.health.current <- game.ghost.health.current - 1 *)

@@ -196,7 +196,10 @@ let draw_tiled_layer
             Tiled.Room.look_up_tile ~animation_offset room.json room.cache gid
           in
           let w, h = Tiled.Room.dest_wh room.json () in
-          let dest = { pos = { x; y }; w; h } in
+          let dest =
+            (* the Float.floor here fixes tile seams, and doesn't look noticeably jittery *)
+            { pos = { x = Float.floor x; y = Float.floor y }; w; h }
+          in
           (* TODO-7 instead of drawing texture for each tile, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
@@ -219,7 +222,9 @@ let draw_tiles room camera_x camera_y frame_idx layers : unit =
           y = camera_y *. (1. -. layer.json.parallax_y);
         }
     in
-    draw_tiled_layer ~tint:room.area.tint ~parallax room camera_x camera_y frame_idx layer
+    draw_tiled_layer
+      ~debug:(layer.name = "bg-iso-walls" && frame_idx mod 1440 = 0)
+      ~tint:room.area.tint ~parallax room camera_x camera_y frame_idx layer
   in
   List.iter draw_parallax_layer layers
 
