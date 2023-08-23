@@ -252,26 +252,26 @@
          "name":"triggers",
          "objects":[
                 {
-                 "height":132,
+                 "height":340,
                  "id":58,
                  "name":"respawn:206,22",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":348,
-                 "x":2124,
-                 "y":348
+                 "width":111,
+                 "x":2361,
+                 "y":140
                 }, 
                 {
-                 "height":84,
+                 "height":367,
                  "id":59,
                  "name":"respawn:172,26",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":468,
-                 "x":1620,
-                 "y":396
+                 "width":112,
+                 "x":2026,
+                 "y":114
                 }, 
                 {
                  "height":84,
@@ -304,13 +304,46 @@
                 {
                  "height":12,
                  "id":64,
-                 "name":"target:1",
+                 "name":"target:",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":8,
                  "x":1505,
                  "y":319
+                }, 
+                {
+                 "height":12,
+                 "id":65,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":8,
+                 "x":2081,
+                 "y":326
+                }, 
+                {
+                 "height":12,
+                 "id":66,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":8,
+                 "x":1612,
+                 "y":350
+                }, 
+                {
+                 "height":12,
+                 "id":68,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":8,
+                 "x":2459,
+                 "y":289
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -977,7 +1010,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":65,
+ "nextobjectid":69,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

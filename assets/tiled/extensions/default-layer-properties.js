@@ -27,13 +27,15 @@ let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties"
   for (let i = map.layerCount - 1; i >= 0; i--) {
     const layer = map.layerAt(i);
 
-    if (parallaxProps[layer.name] !== undefined) {
+    let layerName = layer.name.replace(/\d$/, '');
+
+    if (parallaxProps[layerName] !== undefined) {
       // tiled.alert("layer: " + layer.name);
-      layer.parallaxFactor.x = parallaxProps[layer.name];
-      layer.parallaxFactor.y = parallaxProps[layer.name];
+      layer.parallaxFactor.x = parallaxProps[layerName];
+      layer.parallaxFactor.y = parallaxProps[layerName];
     }
 
-    if (layersToLock.includes(layer.name)) {
+    if (layersToLock.includes(layerName)) {
       layer.locked = true;
     }
   }

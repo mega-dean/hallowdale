@@ -210,7 +210,7 @@ let init (params : room_params) : room =
 
       match name_prefix with
       | "camera" ->
-        let x, y = Utils.split_at_first '-' name_suffix in
+        let x, y = Utils.split_at_first ',' name_suffix in
         camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
         let direction', door_coords' = Utils.split_at_first '-' name_suffix in
@@ -334,6 +334,7 @@ let init (params : room_params) : room =
         (* FIXME add to respawn_targets : (int * vector) list
            - x/y here will be raw x/y, so shouldn't need to convert from tile_idx
         *)
+        tmp "got a target: %s %s" name_prefix name_suffix;
         ()
       | "door-warp" ->
         let target = parse_warp_target name_suffix in

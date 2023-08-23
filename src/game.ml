@@ -5,7 +5,7 @@ open Types
 let save_file_path idx = fmt "saves/%d.json" idx
 
 let new_game () : Json_t.save_file =
-  let kings_pass_drop = { x = 1800.; y = 100. } in
+  let kings_pass_drop = { x = 1800.; y = 550. } in
   let b =
     (* newgame *)
     false
