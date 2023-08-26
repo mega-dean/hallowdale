@@ -615,7 +615,7 @@ module Interaction = struct
   type step =
     | STEP of general_step
     | CURRENT_GHOST of ghost_step
-    | GHOST of ghost_id * party_ghost_step
+    | PARTY_GHOST of ghost_id * party_ghost_step
     | ENEMY of enemy_id * enemy_step
     | NPC of npc_id * npc_step
 

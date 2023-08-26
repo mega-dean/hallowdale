@@ -32,7 +32,11 @@ let read_config () : ghosts_file =
     in
     (parse_name ghost_id_str, texture_configs)
   in
-  let head_textures_by_ghost = List.map parse_ghost_texture ghost_file.head_textures_by_ghost in
+  let head_textures_by_ghost =
+    (* FIXME  *)
+    List.map parse_ghost_texture
+      [ ("ABED", []); ("ANNIE", []); ("BRITTA", []); ("JEFF", []); ("TROY", []) ]
+  in
   let load_textures name textures =
     let parse_texture_config' (s, tc) : string * texture_config =
       (s, parse_texture_config name (s, tc))
@@ -518,6 +522,7 @@ let resolve_slash_collisions (state : state) (game : game) =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
+        tmp "playing sound %s" sound_name;
         play_sound state sound_name;
         match coll.direction with
         | DOWN -> pogo game.ghost
@@ -536,6 +541,9 @@ let resolve_slash_collisions (state : state) (game : game) =
           new_fragment
         in
         let destroy_object (tile_group : tile_group) (collision : collision) =
+          play_sound state "break";
+          play_sound state "alarmswitch";
+          play_sound state "punch";
           layer.spawned_fragments <-
             List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
@@ -569,6 +577,8 @@ let resolve_slash_collisions (state : state) (game : game) =
                   layer.spawned_fragments <-
                     List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
                   door_health.hits <- door_health.hits - 1;
+                  play_sound state "alarmswitch";
+                  play_sound state "punch";
                   new_tile_groups := tile_group :: !new_tile_groups)
                 else
                   destroy_object tile_group coll)
@@ -579,8 +589,13 @@ let resolve_slash_collisions (state : state) (game : game) =
         List.iter resolve_tile_group layer.tile_groups;
         layer.tile_groups <- !new_tile_groups)
       else if layer.config.pogoable then
+        (* CLEANUP this is never used because all pogoable layers are destroyable
+           (spikes are checked as objects now)
+        *)
         List.iter
-          (fun (tile_group : tile_group) -> maybe_pogo "pot_break" tile_group.dest)
+          (fun (tile_group : tile_group) ->
+            tmp "maybe pogo";
+            maybe_pogo "break" tile_group.dest)
           layer.tile_groups
     in
 
@@ -1235,7 +1250,8 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.ghost.ghost'.entity.dest.pos.x <- game.ghost.ghost'.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then (* game.ghost.soul.current <- game.ghost.soul.max *)
+    if key_pressed DEBUG_1 then
+      (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* show_ghost_location () *)
       show_camera_location ()
     else if key_pressed DEBUG_2 then
@@ -1277,9 +1293,6 @@ let update (game : game) (state : state) =
   in
   let set_pose' (pose : ghost_pose) =
     set_pose game.ghost pose state.global.textures.ghost_bodies state.frame.time
-  in
-  let set_interaction_pose' (ghost : ghost) (pose : ghost_pose) =
-    set_pose ghost pose state.global.textures.ghost_bodies state.frame.time
   in
 
   (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
@@ -1510,20 +1523,25 @@ let update (game : game) (state : state) =
             (party_ghost : party_ghost)
             (step : Interaction.party_ghost_step) =
           let set_interaction_pose pose =
-            let body_texture =
+            let head_texture, body_texture =
               match pose with
               | IDLE ->
                 party_ghost.ghost'.entity.v.x <- 0.;
-                state.global.textures.ghost_bodies.idle
+                (party_ghost.ghost'.head_textures.idle, state.global.textures.ghost_bodies.idle)
               | PERFORMING action -> (
                 match action with
-                | ATTACK _ -> state.global.textures.ghost_bodies.idle
+                | ATTACK _ ->
+                  (party_ghost.ghost'.head_textures.idle, state.global.textures.ghost_bodies.nail)
                 | _ -> failwithf "bad PERFORMING action: %s" (Show.ghost_action_kind action))
-              | AIRBORNE _ -> state.global.textures.ghost_bodies.fall
-              | CRAWLING -> state.global.textures.ghost_bodies.crawl
+              | AIRBORNE _ ->
+                (party_ghost.ghost'.head_textures.idle, state.global.textures.ghost_bodies.fall)
+              | CRAWLING ->
+                tmp "setting crawling";
+                ( party_ghost.ghost'.head_textures.look_down,
+                  state.global.textures.ghost_bodies.crawl )
               | WALKING direction ->
                 Entity.walk party_ghost.ghost'.entity direction;
-                state.global.textures.ghost_bodies.walk
+                (party_ghost.ghost'.head_textures.walk, state.global.textures.ghost_bodies.walk)
               | LANDING _
               | READING
               | WALL_SLIDING _
@@ -1531,6 +1549,8 @@ let update (game : game) (state : state) =
                 failwithf "bad interaction pose '%s' for party ghost %s" (Show.ghost_pose pose)
                   (Show.ghost_id ghost_id)
             in
+            (* CLEANUP duplicated *)
+            party_ghost.ghost'.head <- head_texture;
             set_new_body_texture party_ghost.ghost' body_texture
           in
           match step with
@@ -1566,7 +1586,7 @@ let update (game : game) (state : state) =
 
         let handle_ghost_step (ghost : ghost) (step : Interaction.ghost_step) =
           match step with
-          | SET_POSE pose -> set_interaction_pose' ghost pose
+          | SET_POSE pose -> set_pose ghost pose state.global.textures.ghost_bodies state.frame.time
           | FILL_LIFE_VAPOR -> ghost.soul.current <- ghost.soul.max
           | INCREASE_HEALTH_TEXT (increases_health, str) ->
             if increases_health then (
@@ -1660,7 +1680,7 @@ let update (game : game) (state : state) =
         (match next_step with
         | STEP general_step -> handle_general_step general_step
         | CURRENT_GHOST ghost_step -> handle_ghost_step game.ghost ghost_step
-        | GHOST (ghost_id, party_ghost_step) ->
+        | PARTY_GHOST (ghost_id, party_ghost_step) ->
           let find_party_ghost () : party_ghost =
             match List.assoc_opt ghost_id game.ghosts' with
             | Some ghost -> ghost

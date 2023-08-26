@@ -8,6 +8,9 @@ val advance_or_despawn : float -> texture -> sprite -> sprite option
 val build_texture_from_config :
   ?scale:float -> ?particle:bool -> ?once:bool -> texture_config -> texture
 
+val build_texture_from_path :
+  ?scale:float -> ?particle:bool -> ?once:bool -> texture_path -> texture
+
 val build_texture_from_image : ?scale:float -> ?particle:bool -> image -> rect option -> texture
 val clone : sprite -> sprite
 

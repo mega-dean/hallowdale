@@ -1,0 +1,14 @@
+{ "columns":44,
+ "image":"iso.png",
+ "imageheight":360,
+ "imagewidth":528,
+ "margin":0,
+ "name":"iso",
+ "spacing":0,
+ "tilecount":1320,
+ "tiledversion":"1.10.2",
+ "tileheight":12,
+ "tilewidth":12,
+ "type":"tileset",
+ "version":"1.10"
+}

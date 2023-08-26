@@ -132,6 +132,25 @@ let build_texture'
     animation_src;
   }
 
+let build_texture_from_path
+    ?(scale = Config.scale.ghost)
+    ?(particle = false)
+    ?(once = false)
+    (path : texture_path) =
+  let image = load_image (get_path path) in
+  let texture_config =
+    {
+      (* texture location isn't used because image has already been loaded *)
+      path = { asset_dir = NPCS; character_name = ""; pose_name = "" };
+      count = 1;
+      duration = { seconds = 0. };
+      x_offset = 0.;
+      y_offset = 0.;
+    }
+  in
+  build_texture' ~scale ~particle ~once texture_config image
+
+
 let build_texture_from_config
     ?(scale = Config.scale.ghost)
     ?(particle = false)
@@ -139,6 +158,8 @@ let build_texture_from_config
     (texture_config : texture_config) : texture =
   let path = get_path texture_config.path in
   let image = load_image path in
+  tmp " ============= building texture %s from config:" path;
+  (* tmp ""; *)
   build_texture' ~scale ~particle ~once texture_config image
 
 let build_texture_from_image

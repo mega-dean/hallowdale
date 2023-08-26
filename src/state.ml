@@ -172,7 +172,8 @@ let init () : state =
         "nail-swing";
         "sword_hit";
         "nail-hit-metal";
-        "pot_break";
+        "glass-break";
+        "break";
         "spray";
         "alarmswitch";
         "cancel";
@@ -724,9 +725,9 @@ let tick (state : state) =
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
-    if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then (
+    if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then
       Raylib.seek_music_stream game.music.t
-        (Utils.bound 0.1 game.music.loop_start.at Float.max_float));
+        (Utils.bound 0.1 game.music.loop_start.at Float.max_float);
     Raylib.update_music_stream game.music.t;
 
     if game.debug_paused then

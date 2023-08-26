@@ -73,33 +73,22 @@ let init
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
   let ghosts_file : ghosts_file = Ghost.read_config () in
-  let use_json_config configs pose_name =
-    let config =
-      match List.find_opt (fun (tc : texture_config) -> tc.path.pose_name = pose_name) configs with
-      | None ->
-        let ghost_name = (List.nth configs 0).path.character_name in
-        failwithf "could not find pose config in ghosts/config.json for '%s' for ghost %s" pose_name
-          ghost_name
-      | Some v -> v
-    in
-    Sprite.build_texture_from_config config
+  let use_json_config ghost_id pose_name =
+    (* FIXME try using build_texture_from_image *)
+    Sprite.build_texture_from_path
+      { asset_dir = GHOSTS; character_name = Show.ghost_id ghost_id; pose_name }
   in
 
-  let britta_head_configs = List.assoc BRITTA ghosts_file.head_textures_by_ghost in
-  let jeff_head_configs = List.assoc JEFF ghosts_file.head_textures_by_ghost in
-  let abed_head_configs = List.assoc ABED ghosts_file.head_textures_by_ghost in
-  let troy_head_configs = List.assoc TROY ghosts_file.head_textures_by_ghost in
-  let annie_head_configs = List.assoc ANNIE ghosts_file.head_textures_by_ghost in
-
-  let britta_head_textures : ghost_head_textures =
+  let make_head_textures ghost_id : ghost_head_textures =
+    (* let configs = List.assoc ghost_id ghosts_file.head_textures_by_ghost in *)
     {
-      look_down = use_json_config britta_head_configs "look-down";
-      look_up = use_json_config britta_head_configs "look-up";
-      idle = use_json_config britta_head_configs "idle";
-      read = use_json_config britta_head_configs "read";
-      take_damage = use_json_config britta_head_configs "take-damage";
-      walk = use_json_config britta_head_configs "walk";
-      wall_slide = use_json_config britta_head_configs "wall-slide";
+      look_down = use_json_config ghost_id "look-down";
+      look_up = use_json_config ghost_id "look-up";
+      idle = use_json_config ghost_id "idle";
+      read = use_json_config ghost_id "read";
+      take_damage = use_json_config ghost_id "take-damage";
+      walk = use_json_config ghost_id "walk";
+      wall_slide = use_json_config ghost_id "wall-slide";
     }
   in
 
@@ -111,16 +100,17 @@ let init
   in
 
   let ghosts' : (ghost_id * party_ghost) list =
-    let make_party_ghost id config : ghost_id * party_ghost =
+    let make_party_ghost id : ghost_id * party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
+      let config = make_head_textures id in
       (id, Ghost.init_party id config idle_texture { x = 1000.; y = 1000. } in_party)
     in
     [
-      make_party_ghost BRITTA britta_head_textures;
-      make_party_ghost ABED britta_head_textures;
-      make_party_ghost TROY britta_head_textures;
-      make_party_ghost ANNIE britta_head_textures;
-      make_party_ghost JEFF britta_head_textures;
+      make_party_ghost BRITTA;
+      make_party_ghost ABED;
+      make_party_ghost TROY;
+      make_party_ghost ANNIE;
+      make_party_ghost JEFF;
     ]
   in
 

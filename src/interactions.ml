@@ -53,10 +53,10 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
 
     let jump_ghost ?(end_pose = IDLE) ghost_id direction vx =
       [
-        GHOST (ghost_id, JUMP (direction, vx));
+        PARTY_GHOST (ghost_id, JUMP (direction, vx));
         (* this wait time is arbitrary and specific to the uses in the chang cutscene *)
         STEP (WAIT 1.1);
-        GHOST (ghost_id, SET_POSE end_pose);
+        PARTY_GHOST (ghost_id, SET_POSE end_pose);
       ]
     in
     let fail () =
@@ -274,7 +274,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ENEMY (DUNCAN, SET_POSE "scavenging");
           CURRENT_GHOST (SET_POSE IDLE);
           STEP (DIALOGUE ("Britta", "Professor Duncan?"));
-          STEP (SET_FIXED_CAMERA (19, 12));
+          STEP (SET_FIXED_CAMERA (40, 24));
           STEP (WAIT 0.7);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
@@ -309,12 +309,12 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | "mama-mahogany" ->
         let other_ghost_1, other_ghost_2 = get_locker_boys_ghosts () in
         [
-          GHOST (other_ghost_1, ENTITY (UNHIDE_AT (8, 7, 10., 5.)));
-          GHOST (other_ghost_2, ENTITY (UNHIDE_AT (7, 7, 10., 5.)));
-          GHOST (other_ghost_1, SET_POSE IDLE);
-          GHOST (other_ghost_2, SET_POSE IDLE);
-          GHOST (other_ghost_1, ENTITY (SET_FACING RIGHT));
-          GHOST (other_ghost_2, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (other_ghost_1, ENTITY (UNHIDE_AT (8, 7, 10., 5.)));
+          PARTY_GHOST (other_ghost_2, ENTITY (UNHIDE_AT (7, 7, 10., 5.)));
+          PARTY_GHOST (other_ghost_1, SET_POSE IDLE);
+          PARTY_GHOST (other_ghost_2, SET_POSE IDLE);
+          PARTY_GHOST (other_ghost_1, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (other_ghost_2, ENTITY (SET_FACING RIGHT));
           ENEMY (LOCKER_BOY, ENTITY HIDE);
           CURRENT_GHOST (SET_POSE IDLE);
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
@@ -354,13 +354,15 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       match trigger.name_suffix with
       | "DUNCAN" ->
         [
-          CURRENT_GHOST (PARTY (WALK_TO 21));
+          CURRENT_GHOST (PARTY (WALK_TO 52));
+          (* CLEANUP maybe not necessary? *)
+          CURRENT_GHOST (SET_POSE IDLE);
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          ENEMY (DUNCAN, WALK_TO 12);
+          ENEMY (DUNCAN, WALK_TO 31);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING RIGHT));
           STEP (WAIT 0.3);
-          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 13, 14));
+          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
           STEP (WAIT 0.6);
           ENEMY (DUNCAN, SET_VX 200.);
           (* TODO a lot of these are wrong now, need to adjust for new physics *)
@@ -368,14 +370,14 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (WAIT 1.);
           ENEMY (DUNCAN, SET_POSE "scavenging");
           ENEMY (DUNCAN, ENTITY FREEZE);
-          STEP (HIDE_LAYER "bg-iso2");
-          STEP (UNHIDE_LAYER "bg-iso3");
-          GHOST (ANNIE, ENTITY (UNHIDE_AT (6, 14, 0., 0.)));
-          GHOST (JEFF, ENTITY (UNHIDE_AT (7, 13, 12., 0.)));
-          GHOST (ANNIE, ENTITY FREEZE);
-          GHOST (JEFF, ENTITY FREEZE);
+          STEP (HIDE_LAYER "bg-iso4");
+          STEP (UNHIDE_LAYER "bg-iso5");
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (24, 25, 0., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (20, 27, 12., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY FREEZE);
+          PARTY_GHOST (JEFF, ENTITY FREEZE);
           STEP (WAIT 1.5);
-          STEP (SET_FIXED_CAMERA (14, 33));
+          STEP (SET_FIXED_CAMERA (33, 33));
           STEP (WAIT 0.5);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
@@ -398,23 +400,24 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                  ( "Duncan",
                    "This is why the English never win any sports - because everyone else cheats!" ));
             ENEMY (DUNCAN, ENTITY UNFREEZE);
-            ENEMY (DUNCAN, WALK_TO 1);
+            ENEMY (DUNCAN, WALK_TO 8);
             STEP (WAIT 0.2);
             STEP (DIALOGUE ("Annie", "Britta, there you are."));
-            GHOST (JEFF, SET_POSE CRAWLING);
+            (* FIXME this only updates the body, need to update the head too *)
+            PARTY_GHOST (JEFF, SET_POSE CRAWLING);
             STEP
               (DIALOGUE
                  ( "Jeff",
                    "Sweet, sweet portable chairs. {{gold}} Plastic gold, {{white}} four-legged \
                     diamonds!" ));
-            GHOST (JEFF, SET_POSE IDLE);
+            PARTY_GHOST (JEFF, SET_POSE IDLE);
             STEP (DIALOGUE ("Jeff", "You claimin' this?"));
-            GHOST (JEFF, SET_POSE (PERFORMING (ATTACK RIGHT)));
-            GHOST (ANNIE, SET_POSE (PERFORMING (ATTACK RIGHT)));
+            PARTY_GHOST (JEFF, SET_POSE (PERFORMING (ATTACK RIGHT)));
+            PARTY_GHOST (ANNIE, SET_POSE (PERFORMING (ATTACK RIGHT)));
             STEP (DIALOGUE ("Jeff", "Lava joust?"));
             STEP (DIALOGUE ("Britta", "Did you all hit your heads on each other's heads?"));
-            GHOST (JEFF, SET_POSE IDLE);
-            GHOST (ANNIE, SET_POSE IDLE);
+            PARTY_GHOST (JEFF, SET_POSE IDLE);
+            PARTY_GHOST (ANNIE, SET_POSE IDLE);
             STEP
               (DIALOGUE
                  ( "Annie",
@@ -425,30 +428,30 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                  ("Annie", "You want to join this alliance? Or you want to join the {{red}} lava?"));
             STEP (DIALOGUE ("Britta", "Fine, but I'm not learning the new names for anything."));
             STEP (WAIT 0.4);
-            GHOST (JEFF, ADD_TO_PARTY);
-            GHOST (ANNIE, ADD_TO_PARTY);
+            PARTY_GHOST (JEFF, ADD_TO_PARTY);
+            PARTY_GHOST (ANNIE, ADD_TO_PARTY);
             STEP (WAIT 0.4);
             STEP SET_GHOST_CAMERA;
             STEP (WAIT 0.4);
             ENEMY (DUNCAN, ENTITY HIDE);
             STEP HIDE_BOSS_DOORS;
-            GHOST (JEFF, ENTITY HIDE);
-            GHOST (ANNIE, ENTITY HIDE);
+            PARTY_GHOST (JEFF, ENTITY HIDE);
+            PARTY_GHOST (ANNIE, ENTITY HIDE);
           ]
       | "LOCKER_BOY" ->
         (* TODO update for new room size *)
         let other_ghost_1, other_ghost_2 = get_locker_boys_ghosts () in
         [
-          GHOST (other_ghost_1, ENTITY (UNHIDE_AT (50, 19, 0., 0.)));
-          GHOST (other_ghost_2, ENTITY (UNHIDE_AT (50, 19, 0., 0.)));
+          PARTY_GHOST (other_ghost_1, ENTITY (UNHIDE_AT (50, 19, 0., 0.)));
+          PARTY_GHOST (other_ghost_2, ENTITY (UNHIDE_AT (50, 19, 0., 0.)));
           STEP HIDE_BOSS_DOORS;
           STEP (WAIT 0.5);
-          GHOST (ANNIE, WALK_TO 49);
-          GHOST (JEFF, WALK_TO 48);
-          GHOST (BRITTA, WALK_TO 47);
-          GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
-          GHOST (JEFF, ENTITY (SET_FACING RIGHT));
-          GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (ANNIE, WALK_TO 49);
+          PARTY_GHOST (JEFF, WALK_TO 48);
+          PARTY_GHOST (BRITTA, WALK_TO 47);
+          PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
           STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
           NPC (CHANG, ENTITY UNHIDE);
           NPC (CHANG, ENTITY (SET_FACING LEFT));
@@ -465,20 +468,20 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           NPC (CHANG, SET_POSE "attack");
           STEP (DIALOGUE ("Chang", "... into {{red}} lava!"));
           (* TODO sound effect for Troy/Abed entrance *)
-          GHOST (TROY, ENTITY (UNHIDE_AT (51, 10, 0., 0.)));
-          GHOST (ABED, ENTITY (UNHIDE_AT (50, 10, 0., 0.)));
-          GHOST (TROY, SET_POSE (AIRBORNE (-1.)));
-          GHOST (ABED, SET_POSE (AIRBORNE (-1.)));
-          GHOST (TROY, ENTITY FREEZE);
-          GHOST (ABED, ENTITY FREEZE);
-          GHOST (ABED, ADD_TO_PARTY);
-          GHOST (TROY, ADD_TO_PARTY);
+          PARTY_GHOST (TROY, ENTITY (UNHIDE_AT (51, 10, 0., 0.)));
+          PARTY_GHOST (ABED, ENTITY (UNHIDE_AT (50, 10, 0., 0.)));
+          PARTY_GHOST (TROY, SET_POSE (AIRBORNE (-1.)));
+          PARTY_GHOST (ABED, SET_POSE (AIRBORNE (-1.)));
+          PARTY_GHOST (TROY, ENTITY FREEZE);
+          PARTY_GHOST (ABED, ENTITY FREEZE);
+          PARTY_GHOST (ABED, ADD_TO_PARTY);
+          PARTY_GHOST (TROY, ADD_TO_PARTY);
           STEP (DIALOGUE ("Abed", "Stand down or meet your doom, Chang."));
-          GHOST (TROY, ENTITY UNFREEZE);
-          GHOST (ABED, ENTITY UNFREEZE);
+          PARTY_GHOST (TROY, ENTITY UNFREEZE);
+          PARTY_GHOST (ABED, ENTITY UNFREEZE);
           STEP (WAIT 1.);
-          GHOST (TROY, SET_POSE IDLE);
-          GHOST (ABED, SET_POSE IDLE);
+          PARTY_GHOST (TROY, SET_POSE IDLE);
+          PARTY_GHOST (ABED, SET_POSE IDLE);
           NPC (CHANG, SET_POSE "idle");
           STEP (WAIT 0.3);
           STEP
@@ -513,13 +516,13 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             ]
         @ [
             STEP (WAIT 0.3);
-            GHOST (TROY, SET_POSE IDLE);
+            PARTY_GHOST (TROY, SET_POSE IDLE);
             STEP (DIALOGUE ("Hickey", "Hiya kids."));
-            GHOST (TROY, ENTITY (SET_FACING LEFT));
-            GHOST (ABED, ENTITY (SET_FACING LEFT));
-            GHOST (ANNIE, ENTITY (SET_FACING LEFT));
-            GHOST (BRITTA, ENTITY (SET_FACING LEFT));
-            GHOST (JEFF, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (ANNIE, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.9);
             (* TODO maybe add SHAKE_SCREEN step *)
             NPC (HICKEY, ENTITY UNHIDE);
@@ -530,7 +533,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP
               (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
             NPC (HICKEY, SET_POSE "walking");
-            GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
             STEP (WAIT 1.1);
             STEP (SET_FIXED_CAMERA (56, 16));
             STEP (WAIT 1.1);
@@ -539,16 +542,16 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                  ( "Abed",
                    "Jeff, Annie, get to {{purple}} Shirley Island! {{white}} We'll meet you there!"
                  ));
-            GHOST (ANNIE, WALK_TO 53);
-            GHOST (JEFF, WALK_TO 53);
+            PARTY_GHOST (ANNIE, WALK_TO 53);
+            PARTY_GHOST (JEFF, WALK_TO 53);
             STEP (WAIT 0.7);
-            GHOST (ANNIE, ENTITY HIDE);
-            GHOST (JEFF, ENTITY HIDE);
-            GHOST (ANNIE, REMOVE_FROM_PARTY);
-            GHOST (JEFF, REMOVE_FROM_PARTY);
-            GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (ANNIE, ENTITY HIDE);
+            PARTY_GHOST (JEFF, ENTITY HIDE);
+            PARTY_GHOST (ANNIE, REMOVE_FROM_PARTY);
+            PARTY_GHOST (JEFF, REMOVE_FROM_PARTY);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
             STEP (DIALOGUE ("Troy", "Abed, save yourself!"));
-            GHOST (ABED, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
                  ( "Britta",
@@ -556,9 +559,9 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                     {{blue}} emotionally {{white}} by honestly experiencing the pain of him \
                     leaving Hallowdale." ));
             STEP (WAIT 0.4);
-            GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
             STEP (WAIT 0.9);
-            GHOST (ABED, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.4);
             STEP
               (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
@@ -566,38 +569,38 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         @ jump_ghost BRITTA RIGHT 140.
         @ [
             STEP (WAIT 0.18);
-            GHOST (BRITTA, ENTITY FREEZE);
-            GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (BRITTA, ENTITY FREEZE);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
             STEP (DIALOGUE ("Abed", "Now Troy, start inchworming."));
-            GHOST (TROY, WALK_TO 54);
+            PARTY_GHOST (TROY, WALK_TO 54);
             STEP (WAIT 0.7);
-            GHOST (ABED, WALK_TO 53);
+            PARTY_GHOST (ABED, WALK_TO 53);
             STEP (DIALOGUE ("Britta", "What's the third step?"));
-            GHOST (TROY, MAKE_CURRENT_GHOST);
+            PARTY_GHOST (TROY, MAKE_CURRENT_GHOST);
             STEP SET_GHOST_CAMERA;
-            GHOST (ABED, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE ("Abed", "The third step is {{blue}} survival. {{white}} Good luck, Britta."));
             STEP (SET_FIXED_CAMERA (56, 16));
             STEP (DIALOGUE ("Britta", "Seriously!?"));
-            GHOST (BRITTA, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.5);
-            GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
             STEP (DIALOGUE ("Britta", "Troy!"));
             STEP SET_GHOST_CAMERA;
-            GHOST (ABED, WALK_TO 49);
-            GHOST (TROY, WALK_TO 50);
-            GHOST (TROY, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (ABED, WALK_TO 49);
+            PARTY_GHOST (TROY, WALK_TO 50);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
             STEP
               (DIALOGUE
                  ( "Troy",
                    "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing \
                     us down and complaining a lot." ));
-            GHOST (TROY, ENTITY (SET_FACING LEFT));
-            GHOST (ABED, WALK_TO 39);
-            GHOST (ABED, ENTITY HIDE);
-            GHOST (BRITTA, ENTITY HIDE);
-            GHOST (BRITTA, REMOVE_FROM_PARTY);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (ABED, WALK_TO 39);
+            PARTY_GHOST (ABED, ENTITY HIDE);
+            PARTY_GHOST (BRITTA, ENTITY HIDE);
+            PARTY_GHOST (BRITTA, REMOVE_FROM_PARTY);
           ]
       | _ -> fail ())
     | _ -> failwithf "unknown interaction prefix: %s" trigger.name_prefix

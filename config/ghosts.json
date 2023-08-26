@@ -1,256 +1,76 @@
 {
     // the offsets for these are "distance from top-left corner to neck", and render.ml adjusts the
     // head/body to line up
+
+    // FIXME subtract 7 (or 9?) from each x_offset
     "body_textures": [
         ["idle", {
-            "x_offset": 9,
+            "x_offset": 2,
             "y_offset": 2
         }],
         ["read", {
-            "x_offset": 3,
+            "x_offset": -4,
             "y_offset": 4
         }],
         ["talk", {
         }],
         ["jump", {
+            "x_offset": -7,
             "count": 2
         }],
         ["focus", {
-            "x_offset": 3
+            "x_offset": -4
         }],
         ["crawl", {
-            "count": 4
-            // "x_offset": 18
+            "count": 4,
+            "duration": 0.5,
+            "x_offset": 11
         }],
         ["walk", {
             "count": 8,
-            "x_offset": -6,
+            "x_offset": -13,
             "y_offset": 0
         }],
         ["fall", {
             "count": 2,
             "duration": 0.15,
-            "x_offset": -10,
+            "x_offset": -17,
             "y_offset": -3
         }],
         ["flap", {
             "count": 2,
-            "duration": 0.05
-            // "x_offset": 20,
+            "duration": 0.05,
+            "x_offset": -7
             // "y_offset": 3
         }],
         ["cast", {
             "count": 2,
-            "x_offset": -20,
+            "x_offset": -27,
             "y_offset": -30
         }],
         ["dash", {
             "count": 2,
             "duration": 0.05,
-            "x_offset": -20,
+            "x_offset": -27,
             "y_offset": -3
         }],
         ["dive", {
             "count": 2,
-            "duration": 0.05
-          // "x_offset": 20,
+            "duration": 0.05,
+            "x_offset": -7
           // "y_offset": 3
         }],
         ["nail", {
             "count": 2,
-            "x_offset": -25
+            "x_offset": -32
             // "y_offset": 3
         }],
         ["take-damage", {
+            // FIXME
         }],
         ["wall-slide", {
-            "x_offset": 9,
             "y_offset": -27
         }]
-    ],
-
-    "head_textures_by_ghost": [
-        ["ABED", [
-            ["idle", {
-                "y_offset": 8
-            }],
-            ["jump", {
-                "x_offset": 9,
-                "y_offset": 8
-            }],
-            ["fall", {
-                "x_offset": 14,
-                "y_offset": 8
-            }],
-            ["dash", {
-                "x_offset": 22,
-                "y_offset": 12
-            }],
-            ["walk", {
-                "count": 4,
-                "duration": 0.1,
-                "x_offset": 9,
-                "y_offset": 8
-            }]
-        ]],
-        ["ANNIE", [
-            ["idle", {
-                "x_offset": 1
-            }],
-            ["walk", {
-                "count": 4,
-                "duration": 0.1,
-                "x_offset": 1
-            }],
-            ["nail", {
-                "x_offset": 1
-            }]
-        ]],
-
-        ["BRITTA", [
-            // FIXME fix offsets (this is for the head)
-            ["idle", {
-                // - the y-offset can be "how many pixels from the bottom of neck to bottom of image" (for things like Britta's hair, which hangs below
-                // maybe make all the offsets "distance from neck"
-
-                "x_offset": 1,
-                "y_offset": 2
-            }],
-            ["walk", {
-            }],
-            ["read", {
-            }],
-            ["take-damage", {
-            }],
-            ["look-up", {
-            }],
-            ["look-down", {
-            }],
-            ["nail", {
-                "count": 2
-            }],
-            ["jump", {
-                "count": 2
-            }],
-
-            // these are for the bodies
-            // ["idle", {
-            //     "count": 6,
-            //     "duration": 0.25,
-            //     "x_offset": 2,
-            //     "y_offset": 3
-            // }],
-            // ["read", {
-            //     "x_offset": 3,
-            //     "y_offset": 2
-            // }],
-            ["focus", {
-                "x_offset": 3
-            }],
-            ["crawl", {
-                "count": 4,
-                "x_offset": 18
-            }],
-            // ["walk", {
-            //     "count": 8,
-            //     "x_offset": 5,
-            //     "y_offset": 3
-            // }],
-            ["fall", {
-                "count": 4,
-                "x_offset": 8,
-                "y_offset": 2
-            }],
-            ["flap", {
-                "x_offset": 3,
-                "y_offset": 3
-            }],
-            ["cast", {
-                "count": 4,
-                "duration": 0.05,
-                "x_offset": 4,
-                "y_offset": 3
-            }],
-            ["dash", {
-                "count": 4,
-                "duration": 0.05,
-                "x_offset": 20,
-                "y_offset": 3
-            }],
-            ["dive", {
-                "x_offset": 6,
-                "y_offset": 2
-            }],
-            // ["nail", {
-            //     "count": 3,
-            //     "x_offset": 4,
-            //     "y_offset": 3
-            // }],
-            // ["take-damage", {
-            // }],
-            ["wall-slide", {
-                "y_offset": 7
-            }]
-        ]],
-
-        ["JEFF", [
-            ["idle", {
-                "x_offset": 3,
-                "y_offset": 9
-            }],
-            ["walk", {
-                "count": 4,
-                "duration": 0.1,
-                "x_offset": 8,
-                "y_offset": 10
-            }],
-            ["nail", {
-                "x_offset": 7,
-                "y_offset": 9
-            }],
-            ["jump", {
-                "x_offset": 6,
-                "y_offset": 9
-            }],
-            ["fall", {
-                "x_offset": 9,
-                "y_offset": 9
-            }],
-            ["crawl", {
-                "x_offset": 18
-            }]
-        ]],
-        ["TROY", [
-            ["idle", {
-                "x_offset": 4,
-                "y_offset": 1
-            }],
-            ["jump", {
-                "x_offset": 8,
-                "y_offset": 1
-            }],
-            ["fall", {
-                "x_offset": 8,
-                "y_offset": 1
-            }],
-            ["dive", {
-                "x_offset": 6,
-                "y_offset": 2
-            }],
-            ["dash", {
-                "x_offset": 22,
-                "y_offset": 2
-            }],
-            ["walk", {
-                "count": 4,
-                "duration": 0.1,
-                "x_offset": 9,
-                "y_offset": 1
-            }],
-            ["dive-landing", {
-                "x_offset": 9
-            }]
-        ]]
     ],
 
     "shared_textures": [

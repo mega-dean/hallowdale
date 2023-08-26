@@ -147,7 +147,6 @@ type ghost_action = {
 }
 
 type ghosts_file = {
-  head_textures_by_ghost: (string * texture_configs) list;
   body_textures: texture_configs;
   shared_textures: texture_configs;
   actions: (string * ghost_action) list

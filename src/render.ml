@@ -1047,20 +1047,31 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
-    let draw_ghost_head ~tint ghost' =
+    let draw_ghost_head ~tint ?(party = false) ghost' =
       let head_dest =
+        let head_w, head_h = (40., 40.) in
+        let neck_x, neck_y = (* CLEANUP not sure why neck_y isn't 30 *) (20., 26.) in
         let dest' =
           {
             pos =
               {
                 (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
-                x = ghost'.entity.dest.pos.x -. 20.;
-                y = ghost'.entity.dest.pos.y -. 27.;
+                (* FIXME not sure why party ghost needs to be different *)
+                (* FIXME this doesn't work for attacking
+                   - not sure why -> it was because render_offset wasn't being passed in
+                   - but might just be easiest to have separate configs, so "party_body_textures" in ghosts.json
+                *)
+                x = (ghost'.entity.dest.pos.x -. if party then 40. else neck_x);
+                y = (ghost'.entity.dest.pos.y -. if party then 60. else neck_y);
               };
-            w = 40. *. Config.scale.ghost;
-            h = 40. *. Config.scale.ghost;
+            w = head_w *. Config.scale.ghost;
+            h = head_h *. Config.scale.ghost;
           }
         in
+        if not party then
+          tmp "entity.dest.pos: %s, head_dest: %s"
+            (Show.vector ghost'.entity.dest.pos)
+            (Show.vector dest'.pos);
         dest' |> to_Rect
       in
       Draw.image ghost'.head.image
@@ -1070,9 +1081,9 @@ let tick (state : state) =
 
     let draw_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
       let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
-        draw_entity party_ghost.ghost'.entity;
-        (* TODO this isn't working *)
-        draw_ghost_head ~tint:Color.raywhite party_ghost.ghost';
+        let render_offset = Some party_ghost.ghost'.body_render_offset in
+        draw_entity ~render_offset party_ghost.ghost'.entity;
+        draw_ghost_head ~tint:Color.raywhite ~party:true party_ghost.ghost';
         if state.debug.enabled then (
           debug_rect party_ghost.ghost'.entity.dest;
           debug_rect_outline party_ghost.ghost'.entity.sprite.dest)
@@ -1151,11 +1162,12 @@ let tick (state : state) =
       List.iter draw_child children_behind;
 
       let render_offset =
+        let head_h =
+          (* this isn't exactly the ghost's head height *)
+          30.
+        in
         Some
-          {
-            x = ghost.ghost'.body_render_offset.x -. 9.;
-            y = ghost.ghost'.body_render_offset.y +. 28.;
-          }
+          { x = ghost.ghost'.body_render_offset.x; y = ghost.ghost'.body_render_offset.y +. head_h }
       in
 
       draw_entity ~tint ~render_offset ghost.ghost'.entity;
