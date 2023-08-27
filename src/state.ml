@@ -226,6 +226,7 @@ let init () : state =
   let area_musics : area_music list =
     [
       (* TODO these loop times are not very precise *)
+      load_music "opening" 1.029 Float.max_float [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
       load_music "as-i-lay-me-down" 72.128 171.947 [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
       load_music "daybreak" 0. Float.max_float [ AC_REPAIR_ANNEX ];
       load_music "ending" 0. Float.max_float [ COMPUTER_WING ];
@@ -237,7 +238,7 @@ let init () : state =
   in
 
   {
-    menu_music = (List.find (fun am -> am.name = "greendale") area_musics).t;
+    menu_music = List.find (fun am -> am.name = "opening") area_musics;
     area_musics;
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
@@ -276,12 +277,12 @@ let init () : state =
 
 let update_camera (game : game) (state : state) =
   let trigger_config : trigger option =
-    Ghost.find_trigger_collision' game.ghost game.room.triggers.camera
+    Player.find_trigger_collision' game.player game.room.triggers.camera
   in
   let subject =
     match state.camera.subject with
     | GHOST ->
-      let e = game.ghost.ghost'.entity in
+      let e = game.player.ghost.entity in
       let offset = (* TODO move to config *) 50. in
       if e.sprite.facing_right then
         { e.dest.pos with x = e.dest.pos.x +. offset }
@@ -457,7 +458,7 @@ let update_environment (game : game) (state : state) =
             shake_platform ();
             platform.kind <- Some (TEMPORARY (TOUCHED new_f)))
           ~change:(fun new_f ->
-            game.ghost.ghost'.entity.current_floor <- None;
+            game.player.ghost.entity.current_floor <- None;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
               Some (TEMPORARY (INVISIBLE Config.platform.disappearable_invisible_time)))
@@ -474,7 +475,7 @@ let update_environment (game : game) (state : state) =
             shake_platform ();
             platform.kind <- Some (DISAPPEARABLE (TOUCHED new_f)))
           ~change:(fun new_f ->
-            game.ghost.ghost'.entity.current_floor <- None;
+            game.player.ghost.entity.current_floor <- None;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
               Some (DISAPPEARABLE (INVISIBLE Config.platform.disappearable_invisible_time)))
@@ -516,7 +517,7 @@ let update_environment (game : game) (state : state) =
     | Some (DISAPPEARABLE state') -> handle_disappearable_platform state'
     | Some (ROTATABLE state') -> handle_rotatable_platform state'
   in
-  List.iter initiate_platform_reactions game.ghost.ghost'.entity.current_platforms;
+  List.iter initiate_platform_reactions game.player.ghost.entity.current_platforms;
   List.iter finish_platform_reactions game.room.platforms;
   List.iter update_fragment all_spawned_fragments;
   List.iter update_lever game.room.triggers.levers;
@@ -547,13 +548,13 @@ let update_enemies (game : game) (state : state) =
       let keep_spawned = update_projectile projectile state.frame in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
-        if Ghost.is_vulnerable state game then (
-          match Collision.with_entity game.ghost.ghost'.entity projectile.entity.dest with
+        if Player.is_vulnerable state game then (
+          match Collision.with_entity game.player.ghost.entity projectile.entity.dest with
           | None -> ()
           | Some c ->
             (* TODO add collision shape to enemy projectiles *)
-            if Collision.between_entities game.ghost.ghost'.entity projectile.entity then
-              Ghost.start_action state game (TAKE_DAMAGE (projectile.damage, c.direction))))
+            if Collision.between_entities game.player.ghost.entity projectile.entity then
+              Player.start_action state game (TAKE_DAMAGE (projectile.damage, c.direction))))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
@@ -574,7 +575,7 @@ let update_enemies (game : game) (state : state) =
       Sprite.advance_or_despawn state.frame.time sprite.texture sprite
     in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
-    (match Ghost.get_spell_sprite game.ghost with
+    (match Player.get_spell_sprite game.player with
     | None -> ()
     | Some (sprite, action_started) -> (
       (* TODO use Collision.between_shapes *)
@@ -582,21 +583,21 @@ let update_enemies (game : game) (state : state) =
       | None -> ()
       | Some collision ->
         let damage_kind =
-          if game.ghost.current.is_diving then
+          if game.player.current.is_diving then
             DESOLATE_DIVE
-          else if not (Ghost.past_cooldown game.ghost.history.dive_cooldown state.frame.time) then
+          else if not (Player.past_cooldown game.player.history.dive_cooldown state.frame.time) then
             DESOLATE_DIVE_SHOCKWAVE
           else
             HOWLING_WRAITHS
         in
         ignore
           (Enemy.maybe_take_damage state enemy action_started damage_kind
-             (Ghost.get_damage game.ghost damage_kind)
+             (Player.get_damage game.player damage_kind)
              collision)));
 
     let maybe_begin_interaction' () =
       let trigger = make_stub_trigger BOSS_KILLED "boss-killed" (Show.enemy_id enemy.id) in
-      Ghost.maybe_begin_interaction state game trigger
+      Player.maybe_begin_interaction state game trigger
     in
     if Enemy.is_dead enemy then (
       match enemy.on_killed.interaction_name with
@@ -630,14 +631,14 @@ let update_npcs (game : game) (state : state) =
   in
 
   let update_ghost ((_id, ghost) : ghost_id * party_ghost) =
-    Sprite.advance_animation state.frame.time ghost.ghost'.entity.sprite.texture
-      ghost.ghost'.entity.sprite;
-    if ghost.ghost'.entity.update_pos then (
-      Entity.update_pos game.room ghost.ghost'.entity state.frame.dt;
-      Entity.maybe_unset_current_floor ghost.ghost'.entity game.room)
+    Sprite.advance_animation state.frame.time ghost.ghost.entity.sprite.texture
+      ghost.ghost.entity.sprite;
+    if ghost.ghost.entity.update_pos then (
+      Entity.update_pos game.room ghost.ghost.entity state.frame.dt;
+      Entity.maybe_unset_current_floor ghost.ghost.entity game.room)
   in
 
-  List.iter update_ghost game.ghosts';
+  List.iter update_ghost game.party;
   List.iter update_npc game.room.npcs;
   (* pickup indicators aren't really "npcs" *)
   List.iter update_pickup_indicators game.room.pickup_indicators;
@@ -652,7 +653,7 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
         | Some collision ->
           ignore
             (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT
-               (Ghost.get_damage game.ghost VENGEFUL_SPIRIT)
+               (Player.get_damage game.player VENGEFUL_SPIRIT)
                collision))
     in
     List.iter maybe_damage_enemy game.room.enemies
@@ -662,11 +663,11 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
     if keep_spawned then
       damage_enemies projectile.spawned projectile.entity.sprite
     else
-      game.ghost.spawned_vengeful_spirits <-
-        List.filter (fun p -> p <> projectile) game.ghost.spawned_vengeful_spirits
+      game.player.spawned_vengeful_spirits <-
+        List.filter (fun p -> p <> projectile) game.player.spawned_vengeful_spirits
   in
 
-  List.iter update_vengeful_spirit game.ghost.spawned_vengeful_spirits;
+  List.iter update_vengeful_spirit game.player.spawned_vengeful_spirits;
   state
 
 let update_frame_inputs (state : state) : state =
@@ -719,7 +720,11 @@ let tick (state : state) =
   match state.game_context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
-    Raylib.update_music_stream state.menu_music;
+    (* FIXME just make the menu music play once and then quit *)
+    if Raylib.get_music_time_played state.menu_music.t > state.menu_music.loop_end.at then
+      Raylib.seek_music_stream state.menu_music.t
+        (Utils.bound 0.1 state.menu_music.loop_start.at Float.max_float);
+    Raylib.update_music_stream state.menu_music.t;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
   | IN_PROGRESS game ->
     (* TODO the music stutters at room transitions
@@ -735,15 +740,15 @@ let tick (state : state) =
         state
         |> update_frame_inputs
         |> Menu.update_pause_menu game
-        |> Ghost.handle_debug_keys game
-        |> Ghost.update game
+        |> Player.handle_debug_keys game
+        |> Player.update game
         |> update_spawned_vengeful_spirits game
         |> update_enemies game
         |> update_npcs game
         |> update_environment game
         |> update_camera game
       else
-        state |> update_frame_inputs |> Menu.update_pause_menu game |> Ghost.handle_debug_keys game
+        state |> update_frame_inputs |> Menu.update_pause_menu game |> Player.handle_debug_keys game
     else (
       let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
       match state'.pause_menu with
@@ -758,16 +763,20 @@ let tick (state : state) =
 
         if state.debug.enabled then (
           let party_ghosts =
-            let show_party_ghost ((_, p) : ghost_id * party_ghost) =
-              fmt "got party ghost %s at %s" (Show.ghost_id p.ghost'.id)
-                (Show.vector p.ghost'.entity.dest.pos)
+            let show_party_ghost ((ghost_id, p) : ghost_id * party_ghost) =
+              if List.mem ghost_id [ ANNIE; BRITTA ] then
+                Some
+                  (fmt "got party ghost %s at %s" (Show.ghost_id p.ghost.id)
+                     (Show.vector p.ghost.entity.dest.pos))
+              else
+                None
             in
-            List.map show_party_ghost game.ghosts' |> join ~sep:"\n"
+            List.filter_map show_party_ghost game.party |> join ~sep:"\n"
           in
-          itmp "current ghost:  %s at %s"
-            (Show.ghost_id game.ghost.ghost'.id)
-            (Show.vector game.ghost.ghost'.entity.dest.pos);
-          itmp "party ghosts:\n%s" party_ghosts);
+          tmp "current_ghost:  %s at %s"
+            (Show.ghost_id game.player.ghost.id)
+            (Show.vector game.player.ghost.entity.dest.pos);
+          tmp "party ghosts:\n%s" party_ghosts);
 
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
@@ -796,8 +805,8 @@ let tick (state : state) =
           state.should_save <- false);
 
         state'
-        |> Ghost.handle_debug_keys game
-        |> Ghost.update game
+        |> Player.handle_debug_keys game
+        |> Player.update game
         |> update_spawned_vengeful_spirits game
         |> update_enemies game
         |> update_npcs game

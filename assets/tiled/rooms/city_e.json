@@ -191,7 +191,7 @@
          "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":148,
          "x":0,
          "y":0
@@ -233,10 +233,32 @@
                  "width":16,
                  "x":1176,
                  "y":183
+                }, 
+                {
+                 "height":226,
+                 "id":54,
+                 "name":"respawn:40,15",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":265,
+                 "x":474,
+                 "y":23
+                }, 
+                {
+                 "height":233,
+                 "id":56,
+                 "name":"respawn:70,6",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":319,
+                 "x":862,
+                 "y":25
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -833,7 +855,7 @@
          "name":"bg",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":148,
          "x":0,
          "y":0
@@ -878,7 +900,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":148,
          "x":0,
          "y":0
@@ -932,7 +954,7 @@
          "y":0
         }],
  "nextlayerid":15,
- "nextobjectid":54,
+ "nextobjectid":57,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

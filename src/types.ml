@@ -812,7 +812,7 @@ type ghost_action_history = {
    a new pose is set, so it can still render the latest pose
    - this data structure tracks the variant arguments that need to be checked/re-set in future frames
 *)
-type current_status = {
+type ghost_status = {
   (* TODO just move this to entity and get rid of this type, since some enemies will need this, and the others can leave it always None *)
   mutable wall : rect option;
   (* these fields are here for things that can't use Ghost.is_doing to check their status
@@ -908,7 +908,6 @@ type invincibility_kind =
 
 (* this is very similar to Json_t.ghosts_file, but it eg. parses ghost names into ghost_id for the key of .textures *)
 type ghosts_file = {
-  head_textures_by_ghost : (ghost_id * texture_config list) list;
   body_textures : (string * texture_config) list;
   actions : (string * ghost_action_config) list;
   shared_textures : (string * texture_config) list;
@@ -970,7 +969,7 @@ type ghost_shared_textures = {
   shade_cloak_sparkles : texture;
 }
 
-type ghost' = {
+type ghost = {
   mutable id : ghost_id;
   mutable head : texture;
   head_textures : ghost_head_textures;
@@ -980,17 +979,16 @@ type ghost' = {
 }
 
 (* this is for the ghosts that are not being controlled right now *)
-(* TODO this seems like a bad idea now, maybe go back to a list of ghosts *)
 type party_ghost = {
-  ghost' : ghost';
+  ghost : ghost;
   mutable in_party : bool;
 }
 
-type ghost = {
-  mutable current : current_status;
+type player = {
+  mutable current : ghost_status;
   shared_textures : ghost_shared_textures;
   history : ghost_action_history;
-  mutable ghost' : ghost';
+  mutable ghost : ghost;
   mutable current_weapon : weapon;
   mutable weapons : (string * Json_t.weapon) list;
   mutable abilities : Json_t.ghost_abilities;
@@ -1081,6 +1079,7 @@ type area_id =
   | VENTWAYS
   | LIBRARY
 
+(* CLEANUP maybe rename this since it is used for menu_music *)
 type area_music = {
   name : string;
   t : Raylib.Music.t;
@@ -1319,12 +1318,12 @@ type debug = {
 }
 
 type game = {
-  mutable ghost : ghost;
+  mutable player : player;
   (* this should include a party_ghost for the currently-controlled ghost, so it should
      always be a list of all five ghosts
   *)
   (* TODO maybe use a party_ghost list *)
-  mutable ghosts' : (ghost_id * party_ghost) list;
+  mutable party : (ghost_id * party_ghost) list;
   mutable room : room;
   mutable music : area_music;
   interaction : Interaction.t;
@@ -1375,7 +1374,7 @@ type state = {
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
   global : global_cache;
-  menu_music : Raylib.Music.t;
+  menu_music : area_music;
   area_musics : area_music list;
   settings : settings;
 }
@@ -1390,3 +1389,12 @@ let play_sound state sound_name =
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
 let clone_time (t : time) : time = { at = t.at }
+let clone_sprite (sprite : sprite) : sprite = { sprite with dest = clone_rect sprite.dest }
+
+let clone_entity (entity : entity) : entity =
+  {
+    entity with
+    sprite = clone_sprite entity.sprite;
+    dest = clone_rect entity.dest;
+    v = clone_vector entity.v;
+  }

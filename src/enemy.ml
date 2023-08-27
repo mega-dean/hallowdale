@@ -16,7 +16,7 @@ let parse_name context name : enemy_id =
   | "WIRED_ELECTRICITY" -> WIRED_ELECTRICITY
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
-let last_performed_action (enemy : enemy) : string * float =
+let last_performed_action (enemy : enemy) : (string * float) option =
   let action_performed ((action, _time) : enemy_action * time) : bool =
     (* this assumes new actions are pushed to the front of the list *)
     match action with
@@ -24,8 +24,8 @@ let last_performed_action (enemy : enemy) : string * float =
     | _ -> false
   in
   match List.find_opt action_performed enemy.history with
-  | Some (PERFORMED action, performed) -> (action, performed.at)
-  | _ -> failwith "unreachable"
+  | Some (PERFORMED action, performed) -> Some (action, performed.at)
+  | _ -> (* FIXME should this be unreachable? *) None
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
   match List.assoc_opt (PERFORMED action_name) enemy.history with
@@ -442,7 +442,7 @@ let time_ago (enemy : enemy) (action_name : string) (clock : time) : duration =
   { seconds = clock.at -. performed.at }
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
-  let ghost_pos = game.ghost.ghost'.entity.dest.pos in
+  let ghost_pos = game.player.ghost.entity.dest.pos in
   let still_doing (action_name : string) (duration : float) : bool =
     (* TODO maybe look up duration by name by adding json props like `action-name_duration` *)
     let started = action_started_at enemy action_name in
@@ -486,8 +486,12 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       set_prop enemy "should_vanish" 0.;
       start_and_log_action enemy "vanish" state.frame.time [])
     else (
-      let action, action_duration = last_performed_action enemy in
-      continue_action enemy action (Some (state.frame.time -. action_duration)) state.frame.time []);
+      match last_performed_action enemy with
+      | None -> ()
+      | Some (action, action_duration) ->
+        continue_action enemy action
+          (Some (state.frame.time -. action_duration))
+          state.frame.time []);
     ()
   | DUNCAN -> (
     match enemy.entity.current_floor with
@@ -573,7 +577,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
           [ ("ghost_x", ghost_pos.x); ("ghost_y", ghost_pos.y) ];
         let should_explode =
           enemy.floor_collision_this_frame
-          || Collision.between_entities enemy.entity game.ghost.ghost'.entity
+          || Collision.between_entities enemy.entity game.player.ghost.entity
           (* TODO maybe check slash collisions too *)
         in
         if should_explode then (

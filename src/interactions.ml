@@ -43,8 +43,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     in
 
     let get_locker_boys_ghosts () : ghost_id * ghost_id =
-      let is_available (_id, ghost) = ghost.in_party in
-      let other_ghosts = List.filter is_available game.ghosts' in
+      let is_available (ghost_id, ghost) = ghost.in_party && ghost_id <> game.player.ghost.id in
+      let other_ghosts = List.filter is_available game.party in
       if List.length other_ghosts <> 2 then
         failwithf "got %d other_ghosts" (List.length other_ghosts)
       else
@@ -99,6 +99,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
              - probably add something like `black_rects : rect list` to Interaction.t
              - this doesn't work because render doesn't have access to game.interaction.black_rects
           *)
+          (* CLEANUP center this text box *)
           STEP (TEXT [ "Give me some rope, tie me to dream." ]);
           STEP
             (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
@@ -245,28 +246,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ]
       | _ -> fail ())
     | "cutscene" -> (
-      match trigger.name_suffix with
-      | "arrive-at-shirley-island" ->
-        [
-          NPC (NEIL, ENTITY (SET_FACING LEFT));
-          STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
-          NPC (NEIL, ENTITY (SET_FACING RIGHT));
-          STEP (SET_CAMERA_MOTION (LINEAR 6.));
-          (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
-             - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
-             - that's probably more work than it's worth though
-          *)
-          STEP (SET_FIXED_CAMERA (50, 30));
-          (* STEP (WAIT 0.3); *)
-          STEP (WAIT 5.);
-          STEP SET_GHOST_CAMERA;
-          NPC (NEIL, ENTITY (SET_FACING LEFT));
-          STEP
-            (DIALOGUE
-               ( "Neil",
-                 "No furniture beyond this point. Leave your weapons at the door, and any spare \
-                  doors at the entrance" ));
-        ]
+        match trigger.name_suffix with
+        (* FIXME adjust party ghost dests *)
       | "fight-duncan" ->
         [
           ENEMY (DUNCAN, ENTITY UNHIDE);
@@ -309,8 +290,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | "mama-mahogany" ->
         let other_ghost_1, other_ghost_2 = get_locker_boys_ghosts () in
         [
-          PARTY_GHOST (other_ghost_1, ENTITY (UNHIDE_AT (8, 7, 10., 5.)));
-          PARTY_GHOST (other_ghost_2, ENTITY (UNHIDE_AT (7, 7, 10., 5.)));
+          PARTY_GHOST (other_ghost_1, ENTITY (UNHIDE_AT (29, 34, 0., 0.)));
+          PARTY_GHOST (other_ghost_2, ENTITY (UNHIDE_AT (32, 34, 0., 0.)));
           PARTY_GHOST (other_ghost_1, SET_POSE IDLE);
           PARTY_GHOST (other_ghost_2, SET_POSE IDLE);
           PARTY_GHOST (other_ghost_1, ENTITY (SET_FACING RIGHT));
@@ -334,7 +315,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         (* TODO update for new room size *)
         [
           ENEMY (LOCKER_BOY, ENTITY HIDE);
-          CURRENT_GHOST (PARTY (WALK_TO 35));
+          CURRENT_GHOST (PARTY (WALK_TO 133));
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE READING);
           STEP (WAIT 0.7);
@@ -348,6 +329,27 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ENEMY (LOCKER_BOY, SET_POSE "vanish");
           STEP (WAIT 0.5);
           ENEMY (LOCKER_BOY, ENTITY UNFREEZE);
+        ]
+      | "arrive-at-shirley-island" ->
+        [
+          NPC (NEIL, ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
+          NPC (NEIL, ENTITY (SET_FACING RIGHT));
+          STEP (SET_CAMERA_MOTION (LINEAR 6.));
+          (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
+             - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
+             - that's probably more work than it's worth though
+          *)
+          STEP (SET_FIXED_CAMERA (50, 30));
+          (* STEP (WAIT 0.3); *)
+          STEP (WAIT 5.);
+          STEP SET_GHOST_CAMERA;
+          NPC (NEIL, ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE
+               ( "Neil",
+                 "No furniture beyond this point. Leave your weapons at the door, and any spare \
+                  doors at the entrance" ));
         ]
       | _ -> fail ())
     | "boss-killed" -> (
@@ -372,8 +374,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ENEMY (DUNCAN, ENTITY FREEZE);
           STEP (HIDE_LAYER "bg-iso4");
           STEP (UNHIDE_LAYER "bg-iso5");
-          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (24, 25, 0., 0.)));
-          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (20, 27, 12., 0.)));
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (23, 25, 0., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (20, 27, 0., 0.)));
           PARTY_GHOST (ANNIE, ENTITY FREEZE);
           PARTY_GHOST (JEFF, ENTITY FREEZE);
           STEP (WAIT 1.5);
@@ -403,8 +405,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             ENEMY (DUNCAN, WALK_TO 8);
             STEP (WAIT 0.2);
             STEP (DIALOGUE ("Annie", "Britta, there you are."));
-            (* FIXME this only updates the body, need to update the head too *)
             PARTY_GHOST (JEFF, SET_POSE CRAWLING);
+            (* PARTY_GHOST (JEFF, SET_POSE (PERFORMING FOCUS)); *)
             STEP
               (DIALOGUE
                  ( "Jeff",

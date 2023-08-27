@@ -825,7 +825,7 @@ let tick (state : state) =
         }
       in
 
-      draw_text_bg_box ~color:(Color.create 0 155 50 100) config;
+      draw_text_bg_box ~color:(Color.create 0 0 0 100) config;
       List.iteri (display_paragraph config 0) [ text ]
   in
 
@@ -899,8 +899,8 @@ let tick (state : state) =
 
     let draw_debug_info () =
       let draw_debug_ghost () =
-        let s = game.ghost.ghost'.entity.sprite in
-        if game.ghost.ghost'.entity.sprite.facing_right then
+        let s = game.player.ghost.entity.sprite in
+        if game.player.ghost.entity.sprite.facing_right then
           Draw.rect
             (s.dest.pos.x +. s.dest.w |> Float.to_int)
             (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
@@ -910,15 +910,15 @@ let tick (state : state) =
             (s.dest.pos.x -. s.dest.w |> Float.to_int)
             (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
             (s.dest.w |> Float.to_int) 4 Color.green;
-        draw_velocity game.ghost.ghost'.entity;
-        (match game.ghost.ghost'.entity.current_floor with
+        draw_velocity game.player.ghost.entity;
+        (match game.player.ghost.entity.current_floor with
         | None -> ()
         | Some (floor, v) -> debug_rect ~r:0 ~g:0 ~b:200 floor);
-        (match game.ghost.current.wall with
+        (match game.player.current.wall with
         | None -> ()
         | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall);
-        debug_rect_outline ~size:2. ~color:Color.green game.ghost.ghost'.entity.sprite.dest;
-        debug_rect_outline ~size:3. ~color:Color.yellow game.ghost.ghost'.entity.dest
+        debug_rect_outline ~size:2. ~color:Color.green game.player.ghost.entity.sprite.dest;
+        debug_rect_outline ~size:3. ~color:Color.yellow game.player.ghost.entity.dest
       in
 
       List.iter
@@ -1047,56 +1047,77 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
-    let draw_ghost_head ~tint ?(party = false) ghost' =
+    (* CLEANUP remove party arg *)
+    let draw_ghost_head ~tint ?(party = false) ghost =
       let head_dest =
         let head_w, head_h = (40., 40.) in
-        let neck_x, neck_y = (* CLEANUP not sure why neck_y isn't 30 *) (20., 26.) in
+        let neck_x, neck_y =
+          (* CLEANUP not sure why neck_y isn't 30
+             - also not sure why party has to be different from current
+          *)
+          (* CLEANUP not sure why party ghost needs to be different, and only for y *)
+          (20., 26.)
+          (* ((if party then 50. else 20.), 26.) *)
+          (* (0., 0.) *)
+        in
         let dest' =
           {
             pos =
               {
                 (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
-                (* FIXME not sure why party ghost needs to be different *)
-                (* FIXME this doesn't work for attacking
-                   - not sure why -> it was because render_offset wasn't being passed in
-                   - but might just be easiest to have separate configs, so "party_body_textures" in ghosts.json
-                *)
-                x = (ghost'.entity.dest.pos.x -. if party then 40. else neck_x);
-                y = (ghost'.entity.dest.pos.y -. if party then 60. else neck_y);
+                x = ghost.entity.dest.pos.x -. neck_x;
+                y = ghost.entity.dest.pos.y -. neck_y;
               };
             w = head_w *. Config.scale.ghost;
             h = head_h *. Config.scale.ghost;
           }
         in
+        if party && state.debug.enabled then
+          debug_rect ~r:255 dest';
         if not party then
-          tmp "entity.dest.pos: %s, head_dest: %s"
-            (Show.vector ghost'.entity.dest.pos)
+          itmp "entity.dest.pos: %s, head_dest: %s"
+            (Show.vector ghost.entity.dest.pos)
             (Show.vector dest'.pos);
         dest' |> to_Rect
       in
-      Draw.image ghost'.head.image
-        (src_Rect' ghost'.head ghost'.entity.sprite.facing_right)
+      Draw.image ghost.head.image
+        (src_Rect' ghost.head ghost.entity.sprite.facing_right)
         head_dest (Raylib.Vector2.create 0. 0.) 0. tint
     in
 
-    let draw_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
+    let draw_party_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
+      if state.debug.enabled then
+        itmp "-----------";
       let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
-        let render_offset = Some party_ghost.ghost'.body_render_offset in
-        draw_entity ~render_offset party_ghost.ghost'.entity;
-        draw_ghost_head ~tint:Color.raywhite ~party:true party_ghost.ghost';
+        (* FIXME duplicated *)
+        let render_offset =
+          let head_h =
+            (* this isn't exactly the ghosts head height *)
+            30.
+          in
+          Some
+            {
+              x = party_ghost.ghost.body_render_offset.x;
+              y = party_ghost.ghost.body_render_offset.y +. head_h;
+            }
+        in
+
+        draw_entity ~render_offset party_ghost.ghost.entity;
+        draw_ghost_head ~tint:Color.raywhite ~party:true party_ghost.ghost;
         if state.debug.enabled then (
-          debug_rect party_ghost.ghost'.entity.dest;
-          debug_rect_outline party_ghost.ghost'.entity.sprite.dest)
+          debug_rect party_ghost.ghost.entity.dest;
+          debug_rect_outline party_ghost.ghost.entity.sprite.dest)
       in
       List.iter draw_party_ghost ghosts_by_id
     in
 
-    let draw_ghost (ghost : ghost) =
+    (* CLEANUP rename *)
+    let draw_ghost (ghost : player) =
       let tint =
-        match Ghost.get_invincibility_kind state game with
+        match Player.get_invincibility_kind state game with
         | None -> Color.create 255 255 255 255
         | Some invincibility_kind -> (
-          let d = state.frame.time -. game.ghost.history.take_damage.started.at in
+          let d = state.frame.time -. game.player.history.take_damage.started.at in
           let a = get_flashing_tint d in
           match invincibility_kind with
           | TOOK_DAMAGE -> Color.create 255 255 255 a
@@ -1106,10 +1127,10 @@ let tick (state : state) =
 
       let draw_child ((child_kind, child) : ghost_child_kind * ghost_child) =
         let get_child_pos child_w child_h =
-          Entity.get_child_pos ghost.ghost'.entity child.relative_pos child_w child_h
+          Entity.get_child_pos ghost.ghost.entity child.relative_pos child_w child_h
         in
         let draw_child_sprite (sprite : sprite) tint =
-          sprite.facing_right <- ghost.ghost'.entity.sprite.facing_right;
+          sprite.facing_right <- ghost.ghost.entity.sprite.facing_right;
           sprite.dest.pos <- get_child_pos sprite.dest.w sprite.dest.h;
           draw_sprite ~tint sprite
         in
@@ -1144,10 +1165,10 @@ let tick (state : state) =
         let size = 1200. in
         {
           ident = "shine";
-          texture = game.ghost.shared_textures.shine;
+          texture = game.player.shared_textures.shine;
           dest =
             {
-              pos = Entity.get_child_pos ghost.ghost'.entity (ALIGNED (CENTER, CENTER)) size size;
+              pos = Entity.get_child_pos ghost.ghost.entity (ALIGNED (CENTER, CENTER)) size size;
               w = size;
               h = size;
             };
@@ -1163,21 +1184,21 @@ let tick (state : state) =
 
       let render_offset =
         let head_h =
-          (* this isn't exactly the ghost's head height *)
+          (* this isn't exactly the ghosts head height *)
           30.
         in
         Some
-          { x = ghost.ghost'.body_render_offset.x; y = ghost.ghost'.body_render_offset.y +. head_h }
+          { x = ghost.ghost.body_render_offset.x; y = ghost.ghost.body_render_offset.y +. head_h }
       in
 
-      draw_entity ~tint ~render_offset ghost.ghost'.entity;
-      draw_ghost_head ~tint ghost.ghost';
+      draw_entity ~tint ~render_offset ghost.ghost.entity;
+      draw_ghost_head ~tint ghost.ghost;
       List.iter draw_child children_in_front
     in
 
     let draw_hud () =
       let padding = 8. in
-      let energon_pod_image = game.ghost.shared_textures.energon_pod.image in
+      let energon_pod_image = game.player.shared_textures.energon_pod.image in
       let pod_src_w, pod_src_h =
         ( Raylib.Texture.width energon_pod_image / 2 |> Int.to_float,
           Raylib.Texture.height energon_pod_image |> Int.to_float )
@@ -1217,7 +1238,7 @@ let tick (state : state) =
           Color.raywhite
       in
       let draw_head i idx =
-        let image = game.ghost.shared_textures.health.image in
+        let image = game.player.shared_textures.health.image in
         let w, h =
           ( Raylib.Texture.width image / 2 |> Int.to_float,
             Raylib.Texture.height image |> Int.to_float )
@@ -1229,15 +1250,15 @@ let tick (state : state) =
             (camera_y +. 10.) dest_w dest_h
         in
         let src =
-          if (idx |> Float.to_int) + 1 > game.ghost.health.current then
+          if (idx |> Float.to_int) + 1 > game.player.health.current then
             Rectangle.create w 0. w h
           else
             Rectangle.create 0. 0. w h
         in
         Draw.image image src dest (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
-      draw_soul game.ghost.soul;
-      List.iteri draw_head (Utils.rangef game.ghost.health.max)
+      draw_soul game.player.soul;
+      List.iteri draw_head (Utils.rangef game.player.health.max)
     in
 
     Raylib.begin_drawing ();
@@ -1249,8 +1270,8 @@ let tick (state : state) =
     draw_levers ();
     draw_npcs game.room.npcs;
     draw_solid_tiles game.room camera_x camera_y state.frame.idx;
-    draw_ghosts game.ghosts';
-    draw_ghost game.ghost;
+    draw_party_ghosts game.party;
+    draw_ghost game.player;
     draw_enemies game.room.enemies;
     draw_floating_platforms game.room camera_x camera_y state.frame.idx;
     draw_object_trigger_indicators ();

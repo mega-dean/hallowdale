@@ -319,7 +319,7 @@ let init (params : room_params) : room =
             coll_rect
           :: !enemy_rects
       | "respawn" ->
-        (* FIXME try using connected objects instead of parsing coordinates from the name
+        (* TODO-8 try using connected objects instead of parsing coordinates from the name
            - get only object in .properties, which should be the respawn:target object
            - get the coords from that object.id
 
@@ -331,7 +331,7 @@ let init (params : room_params) : room =
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "target" ->
-        (* FIXME add to respawn_targets : (int * vector) list
+        (* TODO-8 add to respawn_targets : (int * vector) list
            - x/y here will be raw x/y, so shouldn't need to convert from tile_idx
         *)
         tmp "got a target: %s %s" name_prefix name_suffix;
@@ -720,10 +720,10 @@ let change_current_room
         platforms = state.global.textures.platforms;
       }
   in
-  game.ghost.ghost'.entity.current_floor <- None;
-  game.ghost.current.wall <- None;
-  game.ghost.spawned_vengeful_spirits <- [];
-  game.ghost.ghost'.entity.dest.pos <- ghost_start_pos;
+  game.player.ghost.entity.current_floor <- None;
+  game.player.current.wall <- None;
+  game.player.spawned_vengeful_spirits <- [];
+  game.player.ghost.entity.dest.pos <- ghost_start_pos;
   (* game.ghost.entity.dest.pos <- { x = ghost_start_pos.x *. 2.; y = ghost_start_pos.y *. 2.}; *)
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
@@ -749,7 +749,7 @@ let handle_transitions (state : state) (game : game) =
   in
   let colliding exit_rect =
     (* TODO this might not be working sometimes with the new collision detection *)
-    Collision.with_entity game.ghost.ghost'.entity exit_rect
+    Collision.with_entity game.player.ghost.entity exit_rect
   in
   match List.find_map colliding game.room.exits with
   | None -> false
@@ -761,7 +761,7 @@ let handle_transitions (state : state) (game : game) =
       let cr = collision.rect in
       let current_room_location = List.assoc game.room.id state.world in
       let global_ghost_pos =
-        get_global_pos game.ghost.ghost'.entity.dest.pos current_room_location
+        get_global_pos game.player.ghost.entity.dest.pos current_room_location
       in
       let target_room_id, room_location =
         let global_x, global_y =
@@ -778,13 +778,13 @@ let handle_transitions (state : state) (game : game) =
         *)
         match collision.direction with
         | LEFT ->
-          game.ghost.ghost'.entity.sprite.facing_right <- true;
-          { start_pos' with x = start_pos'.x +. game.ghost.ghost'.entity.dest.w }
+          game.player.ghost.entity.sprite.facing_right <- true;
+          { start_pos' with x = start_pos'.x +. game.player.ghost.entity.dest.w }
         | RIGHT ->
-          game.ghost.ghost'.entity.sprite.facing_right <- false;
-          { start_pos' with x = start_pos'.x -. game.ghost.ghost'.entity.dest.w }
-        | UP -> { start_pos' with y = start_pos'.y +. game.ghost.ghost'.entity.dest.h }
-        | DOWN -> { start_pos' with y = start_pos'.y -. game.ghost.ghost'.entity.dest.h }
+          game.player.ghost.entity.sprite.facing_right <- false;
+          { start_pos' with x = start_pos'.x -. game.player.ghost.entity.dest.w }
+        | UP -> { start_pos' with y = start_pos'.y +. game.player.ghost.entity.dest.h }
+        | DOWN -> { start_pos' with y = start_pos'.y -. game.player.ghost.entity.dest.h }
       in
 
       let get_music area_id =

@@ -143,10 +143,10 @@ let ghost_pose pose =
   | WALL_SLIDING _r -> "WALL_SLIDING"
   | SWIMMING _ -> "SWIMMING"
 
-let ghost_location (g : ghost) =
-  print "ghost at %0.1f, %0.1f" g.ghost'.entity.sprite.dest.pos.x g.ghost'.entity.sprite.dest.pos.y
+let ghost_location (g : player) =
+  print "ghost at %0.1f, %0.1f" g.ghost.entity.sprite.dest.pos.x g.ghost.entity.sprite.dest.pos.y
 
-let ghost_name (g : ghost) = fmt "ghost:%s" (entity g.ghost'.entity)
+let ghost_name (g : player) = fmt "ghost:%s" (entity g.ghost.entity)
 
 let area_id id =
   match id with
@@ -389,7 +389,7 @@ let change_weapon_menu_choice (game : game option) (choice : change_weapon_menu_
   | Some game' -> (
     match choice with
     | EQUIP_WEAPON weapon_name ->
-      if game'.ghost.current_weapon.name = weapon_name then
+      if game'.player.current_weapon.name = weapon_name then
         fmt "{{blue}} %s" weapon_name
       else
         weapon_name
@@ -400,7 +400,7 @@ let menu_ghost_id (game : game option) id =
   | None -> failwith "need to have a game to show weapons menu"
   | Some game' -> (
     let show name =
-      if id = game'.ghost.ghost'.id then
+      if id = game'.player.ghost.id then
         fmt "{{blue}} %s" name
       else
         name

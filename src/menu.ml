@@ -84,23 +84,25 @@ let update_menu_choice (menu : menu) state =
 let save_game ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress game;
   let save_file : Json_t.save_file =
-    let ghosts' = game.ghosts' in
+    let ghosts' = game.party in
     {
-      ghost_id = Show.ghost_id game.ghost.ghost'.id;
+      ghost_id = Show.ghost_id game.player.ghost.id;
       ghosts_in_party =
-        (* game.ghosts only has the uncontrolled ghosts, but save_file.ghosts_in_party
-           should include the current ghost's id
+        (* game.players only has the uncontrolled ghosts, but save_file.ghosts_in_party
+           should include the current ghosts id
         *)
-        [ game.ghost.ghost'.id ] @ Ghost.available_ghost_ids ghosts' |> List.map Show.ghost_id;
-      ghost_x = game.ghost.ghost'.entity.dest.pos.x;
-      ghost_y = game.ghost.ghost'.entity.dest.pos.y;
+        [ game.player.ghost.id ] @ Player.available_ghost_ids ghosts'
+        |> List.map Show.ghost_id
+        |> Utils.uniq;
+      ghost_x = game.player.ghost.entity.dest.pos.x;
+      ghost_y = game.player.ghost.entity.dest.pos.y;
       respawn_x = game.room.respawn_pos.x;
       respawn_y = game.room.respawn_pos.y;
       room_name = Tiled.Room.get_filename game.room;
-      abilities = game.ghost.abilities;
+      abilities = game.player.abilities;
       progress = game.progress;
-      weapons = List.map fst game.ghost.weapons;
-      current_weapon = game.ghost.current_weapon.name;
+      weapons = List.map fst game.player.weapons;
+      current_weapon = game.player.current_weapon.name;
     }
   in
   let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
@@ -116,7 +118,8 @@ let update_pause_menu (game : game) (state : state) : state =
     match state.pause_menu with
     | None ->
       play_sound state "menu-expand";
-      state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts')))
+      state.pause_menu <-
+        Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
     | Some _ ->
       play_sound state "menu-close";
       state.pause_menu <- None);
@@ -152,23 +155,24 @@ let update_pause_menu (game : game) (state : state) : state =
         state.pause_menu <- None;
         game.interaction.text <- None
       | PAUSE_MENU CHANGE_WEAPON ->
-        state.pause_menu <- Some (change_weapon_menu (List.map fst game.ghost.weapons))
-      | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.ghosts')
+        state.pause_menu <- Some (change_weapon_menu (List.map fst game.player.weapons))
+      | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.party)
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
         Raylib.seek_music_stream game.music.t 0.;
-        Raylib.seek_music_stream state.menu_music 0.;
+        Raylib.seek_music_stream state.menu_music.t 0.;
         (* TODO unload textures *)
         state.pause_menu <- None;
         save_game game state ~after_fn:(fun state ->
             state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
-      | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Ghost.equip_weapon game.ghost weapon_name
+      | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Player.equip_weapon game.player weapon_name
       | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
-        if game.ghost.ghost'.id <> ghost_id then
-          Ghost.swap_current_ghost state game ghost_id
+        if game.player.ghost.id <> ghost_id then
+          Player.swap_current_ghost state game ghost_id
       | SETTINGS_MENU BACK
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
-        state.pause_menu <- Some (pause_menu (List.length (Ghost.available_ghost_ids game.ghosts')))
+        state.pause_menu <-
+          Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
       | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (settings_menu ())
       | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (music_menu ())
       | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (sound_effects_menu ())
@@ -199,14 +203,14 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
          TODO can maybe improve this, since it can still be off if the camera is bounded
       *)
       Tiled.create_camera_at
-        (Raylib.Vector2.create game.ghost.ghost'.entity.dest.pos.x
-           game.ghost.ghost'.entity.dest.pos.y)
+        (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x
+           game.player.ghost.entity.dest.pos.y)
         0.;
     if is_new_game then (
-      Entity.freeze game.ghost.ghost'.entity;
+      Entity.freeze game.player.ghost.entity;
       state.screen_fade <- Some 255;
       let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
-      Ghost.maybe_begin_interaction state game trigger);
+      Player.maybe_begin_interaction state game trigger);
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in

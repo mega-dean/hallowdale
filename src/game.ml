@@ -8,9 +8,9 @@ let new_game () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 550. } in
   let b =
     (* newgame *)
-    false
+    (* false *)
     (* newgameplus *)
-    (* true *)
+    true
   in
   {
     ghost_id = "BRITTA";
@@ -72,15 +72,14 @@ let init
     (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
 
-  let ghosts_file : ghosts_file = Ghost.read_config () in
+  let ghosts_file : ghosts_file = Player.read_config () in
   let use_json_config ghost_id pose_name =
-    (* FIXME try using build_texture_from_image *)
+    (* PERF try using build_texture_from_image *)
     Sprite.build_texture_from_path
       { asset_dir = GHOSTS; character_name = Show.ghost_id ghost_id; pose_name }
   in
 
   let make_head_textures ghost_id : ghost_head_textures =
-    (* let configs = List.assoc ghost_id ghosts_file.head_textures_by_ghost in *)
     {
       look_down = use_json_config ghost_id "look-down";
       look_up = use_json_config ghost_id "look-up";
@@ -93,25 +92,19 @@ let init
   in
 
   let idle_texture = global.textures.ghost_bodies.idle.texture' in
-  let shared_ghost_textures = Ghost.load_shared_textures ghosts_file.shared_textures in
-  let make_ghost (party_ghost : party_ghost) : ghost =
-    Ghost.init party_ghost.ghost'.id idle_texture party_ghost.ghost'.head_textures
+  let shared_ghost_textures = Player.load_shared_textures ghosts_file.shared_textures in
+  let make_ghost (party_ghost : party_ghost) : player =
+    Player.init party_ghost.ghost.id idle_texture party_ghost.ghost.head_textures
       ghosts_file.actions (clone_vector start_pos) save_file global.weapons shared_ghost_textures
   in
 
-  let ghosts' : (ghost_id * party_ghost) list =
+  let party : (ghost_id * party_ghost) list =
     let make_party_ghost id : ghost_id * party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
       let config = make_head_textures id in
-      (id, Ghost.init_party id config idle_texture { x = 1000.; y = 1000. } in_party)
+      (id, Player.init_party id config idle_texture { x = 1000.; y = 1000. } in_party)
     in
-    [
-      make_party_ghost BRITTA;
-      make_party_ghost ABED;
-      make_party_ghost TROY;
-      make_party_ghost ANNIE;
-      make_party_ghost JEFF;
-    ]
+    List.map make_party_ghost [ BRITTA; ABED; TROY; ANNIE; JEFF ]
   in
 
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
@@ -135,16 +128,16 @@ let init
 
   let music = List.find (fun am -> List.mem room.area.id am.areas) area_musics in
 
-  let current_ghost_id = Ghost.parse_name save_file.ghost_id in
-  let party_ghost = List.assoc current_ghost_id ghosts' in
-  let ghost = make_ghost party_ghost in
+  let current_ghost_id = Player.parse_name save_file.ghost_id in
+  let party_ghost = List.assoc current_ghost_id party in
+  let player = make_ghost party_ghost in
 
-  ghost.ghost'.entity.update_pos <- true;
-  Ghost.equip_weapon ghost save_file.current_weapon;
+  player.ghost.entity.update_pos <- true;
+  Player.equip_weapon player save_file.current_weapon;
 
   {
-    ghost;
-    ghosts';
+    player;
+    party;
     room;
     music;
     interaction =
