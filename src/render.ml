@@ -652,6 +652,7 @@ let tick (state : state) =
         (display_paragraph config (config.outline_offset_y + 100))
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
+      (* FIXME this isn't correct with bigger screen size *)
       let margin_x = 50 in
       let config : text_config =
         {
@@ -1085,24 +1086,19 @@ let tick (state : state) =
         head_dest (Raylib.Vector2.create 0. 0.) 0. tint
     in
 
+    let ghost_render_offset ghost =
+      let head_h =
+        (* head images are 40px tall, but the bottom of the neck is at (20,30) so this only needs to be 30 *)
+        30.
+      in
+      Some { x = ghost.body_render_offset.x; y = ghost.body_render_offset.y +. head_h }
+    in
+
     let draw_party_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
       if state.debug.enabled then
         itmp "-----------";
       let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
-        (* FIXME duplicated *)
-        let render_offset =
-          let head_h =
-            (* this isn't exactly the ghosts head height *)
-            30.
-          in
-          Some
-            {
-              x = party_ghost.ghost.body_render_offset.x;
-              y = party_ghost.ghost.body_render_offset.y +. head_h;
-            }
-        in
-
-        draw_entity ~render_offset party_ghost.ghost.entity;
+        draw_entity ~render_offset:(ghost_render_offset party_ghost.ghost) party_ghost.ghost.entity;
         draw_ghost_head ~tint:Color.raywhite ~party:true party_ghost.ghost;
         if state.debug.enabled then (
           debug_rect party_ghost.ghost.entity.dest;
@@ -1111,8 +1107,7 @@ let tick (state : state) =
       List.iter draw_party_ghost ghosts_by_id
     in
 
-    (* CLEANUP rename *)
-    let draw_ghost (ghost : player) =
+    let draw_player (player : player) =
       let tint =
         match Player.get_invincibility_kind state game with
         | None -> Color.create 255 255 255 255
@@ -1127,10 +1122,10 @@ let tick (state : state) =
 
       let draw_child ((child_kind, child) : ghost_child_kind * ghost_child) =
         let get_child_pos child_w child_h =
-          Entity.get_child_pos ghost.ghost.entity child.relative_pos child_w child_h
+          Entity.get_child_pos player.ghost.entity child.relative_pos child_w child_h
         in
         let draw_child_sprite (sprite : sprite) tint =
-          sprite.facing_right <- ghost.ghost.entity.sprite.facing_right;
+          sprite.facing_right <- player.ghost.entity.sprite.facing_right;
           sprite.dest.pos <- get_child_pos sprite.dest.w sprite.dest.h;
           draw_sprite ~tint sprite
         in
@@ -1138,8 +1133,8 @@ let tick (state : state) =
         | NAIL slash ->
           if state.debug.enabled then
             debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
-          let tint = ghost.current_weapon.tint in
-          draw_child_sprite slash.sprite ghost.current_weapon.tint
+          let tint = player.current_weapon.tint in
+          draw_child_sprite slash.sprite player.current_weapon.tint
         | DREAM_NAIL
         | C_DASH_WHOOSH
         | SHADE_DASH_SPARKLES
@@ -1158,7 +1153,7 @@ let tick (state : state) =
           debug_rect_outline ~size:2. ~color:Color.red p.entity.dest;
         draw_entity p.entity
       in
-      List.iter draw_vengeful_spirit ghost.spawned_vengeful_spirits;
+      List.iter draw_vengeful_spirit player.spawned_vengeful_spirits;
       let shine_sprite : sprite =
         (* TODO maybe have different shine for each area (this one might be too bright for basement or computer-wing) *)
         (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame *)
@@ -1168,7 +1163,7 @@ let tick (state : state) =
           texture = game.player.shared_textures.shine;
           dest =
             {
-              pos = Entity.get_child_pos ghost.ghost.entity (ALIGNED (CENTER, CENTER)) size size;
+              pos = Entity.get_child_pos player.ghost.entity (ALIGNED (CENTER, CENTER)) size size;
               w = size;
               h = size;
             };
@@ -1177,22 +1172,13 @@ let tick (state : state) =
         }
       in
       let children_in_front, children_behind =
-        List.partition (fun (_, child) -> child.in_front) ghost.children
+        List.partition (fun (_, child) -> child.in_front) player.children
       in
       draw_sprite shine_sprite;
       List.iter draw_child children_behind;
 
-      let render_offset =
-        let head_h =
-          (* this isn't exactly the ghosts head height *)
-          30.
-        in
-        Some
-          { x = ghost.ghost.body_render_offset.x; y = ghost.ghost.body_render_offset.y +. head_h }
-      in
-
-      draw_entity ~tint ~render_offset ghost.ghost.entity;
-      draw_ghost_head ~tint ghost.ghost;
+      draw_entity ~tint ~render_offset:(ghost_render_offset player.ghost) player.ghost.entity;
+      draw_ghost_head ~tint player.ghost;
       List.iter draw_child children_in_front
     in
 
@@ -1271,7 +1257,7 @@ let tick (state : state) =
     draw_npcs game.room.npcs;
     draw_solid_tiles game.room camera_x camera_y state.frame.idx;
     draw_party_ghosts game.party;
-    draw_ghost game.player;
+    draw_player game.player;
     draw_enemies game.room.enemies;
     draw_floating_platforms game.room camera_x camera_y state.frame.idx;
     draw_object_trigger_indicators ();

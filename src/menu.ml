@@ -56,11 +56,6 @@ let save_files_menu () : menu =
     current_choice_idx = 0;
   }
 
-(* TODO this is broken now, after the duncan fight:
-   - party_ghosts can be selected
-   - BRITTA can't be selected,
-   - trying to select BRITTA and then selecting someone else makes the ghost invisible
-*)
 let change_ghost_menu (ghosts : (ghost_id * party_ghost) list) : menu =
   let ghost_choices =
     List.filter_map
@@ -118,8 +113,7 @@ let update_pause_menu (game : game) (state : state) : state =
     match state.pause_menu with
     | None ->
       play_sound state "menu-expand";
-      state.pause_menu <-
-        Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
+      state.pause_menu <- Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
     | Some _ ->
       play_sound state "menu-close";
       state.pause_menu <- None);
@@ -171,8 +165,7 @@ let update_pause_menu (game : game) (state : state) : state =
       | SETTINGS_MENU BACK
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
-        state.pause_menu <-
-          Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
+        state.pause_menu <- Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
       | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (settings_menu ())
       | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (music_menu ())
       | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (sound_effects_menu ())
@@ -211,6 +204,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       state.screen_fade <- Some 255;
       let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
       Player.maybe_begin_interaction state game trigger);
+    Raylib.stop_music_stream state.menu_music.t;
     state.game_context <- IN_PROGRESS game
     (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
   in

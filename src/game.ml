@@ -8,9 +8,9 @@ let new_game () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 550. } in
   let b =
     (* newgame *)
-    (* false *)
+    false
     (* newgameplus *)
-    true
+    (* true *)
   in
   {
     ghost_id = "BRITTA";
@@ -30,17 +30,11 @@ let new_game () : Json_t.save_file =
         monarch_wings = b;
         shade_cloak = b;
         ismas_tear = b;
-        (* mothwing_cloak = true;
-         * mantis_claw = true;
-         * crystal_heart = true;
-         * monarch_wings = true;
-         * shade_cloak = true;
-         * ismas_tear = true; *)
 
         (* spells *)
-        vengeful_spirit = false;
-        desolate_dive = false;
-        howling_wraiths = false;
+        vengeful_spirit = b;
+        desolate_dive = b;
+        howling_wraiths = b;
       };
     progress = [];
     weapons =
@@ -49,7 +43,7 @@ let new_game () : Json_t.save_file =
         (* "Devil's Drench XJ-11"; *)
         (* "Bush Scissors"; *)
         (* "Limpken Wrench"; *)
-        "Orange Paintball Gun";
+        (* "Orange Paintball Gun"; *)
         (* "Pickle Magnet"; *)
         (* "Quantum Spanner"; *)
       ];

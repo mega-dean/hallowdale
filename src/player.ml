@@ -516,7 +516,6 @@ let resolve_slash_collisions (state : state) (game : game) =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
-        tmp "playing sound %s" sound_name;
         play_sound state sound_name;
         match coll.direction with
         | DOWN -> pogo game.player
@@ -587,9 +586,7 @@ let resolve_slash_collisions (state : state) (game : game) =
            (spikes are checked as objects now)
         *)
         List.iter
-          (fun (tile_group : tile_group) ->
-            tmp "maybe pogo";
-            maybe_pogo "break" tile_group.dest)
+          (fun (tile_group : tile_group) -> maybe_pogo "break" tile_group.dest)
           layer.tile_groups
     in
 
@@ -775,7 +772,6 @@ let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame
         (ghost.ghost.head_textures.idle, bodies.jump)
     | CRAWLING ->
       update_vx 0.;
-      tmp "got body offset: %s" (Show.vector bodies.crawl.render_offset);
       (ghost.ghost.head_textures.idle, bodies.crawl)
     | IDLE ->
       reset_standing_abilities ();
@@ -1112,28 +1108,62 @@ let is_casting (state : state) (game : game) =
   || game.player.current.is_diving
   || is_doing game.player (CAST HOWLING_WRAITHS) state.frame.time
 
-(* CLEANUP rename *)
-let make_party_ghost (player : player) : party_ghost =
-  { ghost = player.ghost; in_party = true }
+let as_party_ghost (player : player) : party_ghost = { ghost = player.ghost; in_party = true }
 
+(* FIXME generalize *)
+let swap_current_ghost_in_cutscene (state : state) (game : game) target_ghost_id =
+  match List.assoc_opt target_ghost_id game.party with
+  | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
+  | Some target_ghost ->
+    let old_ghost = as_party_ghost game.player in
+    let current_pos = old_ghost.ghost.entity.dest.pos in
+    game.party <- Utils.replace_assoc BRITTA old_ghost game.party;
+    let positions : string =
+      let show_pos (id, (pg : party_ghost)) = fmt "%s: %s" (Show.ghost_id id) (Show.vector pg.ghost.entity.dest.pos) in
+      List.map show_pos game.party |> join ~sep:"\n"
+    in
+    tmp "party ghost positions:\n%s" positions;
+    game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
+    Entity.hide target_ghost.ghost.entity;
+    ()
+
+(* FIXME
+   - probably easiest to split this into two separate functions, and then maybe consolidate at the end
+      - this fn should reuse make_current_ghost
+
+
+- maybe rename to swap_current_ghost_on/off_screen
+*)
 let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_ghost_id =
   match List.assoc_opt target_ghost_id game.party with
   | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
-  | Some new_ghost ->
-    let old_ghost = make_party_ghost game.player in
+  | Some target_ghost ->
+    let old_ghost = as_party_ghost game.player in
     let current_pos = old_ghost.ghost.entity.dest.pos in
+
     (* MAKE_CURRENT_GHOST uses this fn during interactions to update game.ghost, but shouldn't swap places *)
     if swap_pos then (
-      Entity.unhide_at new_ghost.ghost.entity (clone_vector current_pos);
+      Entity.unhide_at target_ghost.ghost.entity (clone_vector current_pos);
       (* CLEANUP replace with clone_sprite *)
-      new_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
-      new_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v;
+      target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
+      target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v;
 
       Entity.hide old_ghost.ghost.entity;
       old_ghost.ghost.entity.current_floor <- None);
 
-    game.player.ghost <- { new_ghost.ghost with entity = clone_entity new_ghost.ghost.entity };
-    Entity.hide new_ghost.ghost.entity
+    (* FIXME not currently working for MAKE_CURRENT_GHOST because britta is disappearing *)
+    (* FIXME this should not be cloning an entity every time
+       - this is probably what leaves the ghost behind that needs to be hidden
+       - but, probably can't just not use clone_entity
+
+       - need to manually maintain 5 entities:
+       - the current ghost
+       - the 4 party ghosts
+    *)
+    game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
+    (* this is currently needed because the target_ghost swaps in before the change *)
+    (* Entity.hide target_ghost.ghost.entity; *)
+    ()
 
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   let new_val v =
@@ -1226,7 +1256,7 @@ let handle_debug_keys (game : game) (state : state) =
     else
       Config.ghost.debug_v
   in
-  if key_down DEBUG_UP then
+  if key_down DEBUG_UP then (* swap_current_ghost_in_cutscene state game ANNIE *)
     game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
   else if key_down DEBUG_DOWN then
     game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y +. dv
@@ -1238,7 +1268,15 @@ let handle_debug_keys (game : game) (state : state) =
     if key_pressed DEBUG_1 then
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* show_ghost_location () *)
-      show_camera_location ()
+      (    let positions : string =
+             let show_pos (id, (pg : party_ghost)) = fmt "%s: %s" (Show.ghost_id id) (Show.vector pg.ghost.entity.dest.pos) in
+             List.map show_pos game.party |> join ~sep:"\n"
+           in
+           tmp "party ghost positions:\n%s" positions;
+           tmp "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos);
+
+      )
+      (* show_camera_location () *)
     else if key_pressed DEBUG_2 then
       (* toggle_ability game.ghost "mantis_claw" *)
       (* game.ghost.health.current <- game.ghost.health.current - 1 *)
@@ -1343,6 +1381,9 @@ let update (game : game) (state : state) =
       (* holding down c-dash will skip through interactions quickly, but still perform each step
          once so side-effects like gaining abilities still happen
          TODO this starts a c-dash after the interaction, not sure if there's a better option
+      *)
+      (* FIXME this should not skip jumping steps
+         - this is already happening for WALK_TO
       *)
       state.frame_inputs.c_dash.down
     in
@@ -1515,19 +1556,30 @@ let update (game : game) (state : state) =
                 (party_ghost.ghost.head_textures.idle, state.global.textures.ghost_bodies.idle)
               | PERFORMING action -> (
                 match action with
+                | JUMP ->
+                  party_ghost.ghost.entity.v.y <- Config.ghost.jump_vy;
+                  (party_ghost.ghost.head_textures.idle, state.global.textures.ghost_bodies.jump)
                 | ATTACK _ ->
                   (party_ghost.ghost.head_textures.idle, state.global.textures.ghost_bodies.nail)
-                (* | FOCUS ->
-                 *   (party_ghost.ghost.head_textures.idle, state.global.textures.ghost_bodies.nail) *)
+                | CAST DESOLATE_DIVE ->
+                  party_ghost.ghost.entity.v.y <- Config.ghost.dive_vy;
+                  party_ghost.ghost.entity.v.x <- 0.;
+                  (* CLEANUP maybe add dive children
+                     - but this might not be worth it since it might be tricky to unset the child sprites
+                     - would probably need a new step UNSET_CHILDREN
+                  *)
+                  (party_ghost.ghost.head_textures.look_up, state.global.textures.ghost_bodies.dive)
                 | _ ->
                   failwithf "bad PERFORMING action for party ghost: %s"
                     (Show.ghost_action_kind action))
               | AIRBORNE _ ->
                 (party_ghost.ghost.head_textures.idle, state.global.textures.ghost_bodies.fall)
               | CRAWLING ->
-                (* tmp "got party body crawling offset: %s" (Show.vector state.global.textures.ghost_bodies.crawl.render_offset); *)
                 (party_ghost.ghost.head_textures.look_down, state.global.textures.ghost_bodies.focus)
               | WALKING direction ->
+                itmp "    ------- walking party ghost %s with v.x %f"
+                  (Show.ghost_id party_ghost.ghost.id)
+                  party_ghost.ghost.entity.v.x;
                 Entity.walk party_ghost.ghost.entity direction;
                 (party_ghost.ghost.head_textures.walk, state.global.textures.ghost_bodies.walk)
               | LANDING _
@@ -1546,11 +1598,11 @@ let update (game : game) (state : state) =
           | REMOVE_FROM_PARTY -> party_ghost.in_party <- false
           | JUMP (_direction, vx) ->
             (* TODO fix the jump cutscene *)
-            (* set_interaction_pose' ghost (PERFORMING JUMP) *)
+            set_interaction_pose (PERFORMING JUMP);
             party_ghost.ghost.entity.v.x <- vx;
             party_ghost.ghost.entity.current_floor <- None
           | SET_POSE pose -> set_interaction_pose pose
-          | MAKE_CURRENT_GHOST -> swap_current_ghost state ~swap_pos:false game ghost_id
+          | MAKE_CURRENT_GHOST -> swap_current_ghost_in_cutscene state game ghost_id
           | ENTITY entity_step ->
             (match entity_step with
             | HIDE ->
@@ -1563,6 +1615,7 @@ let update (game : game) (state : state) =
           | WALK_TO target_tile_x ->
             let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
             let dist = (tx *. Config.scale.room) -. party_ghost.ghost.entity.dest.pos.x in
+            itmp "walk to: %f -> %f" party_ghost.ghost.entity.dest.pos.x tx;
             still_walking := abs_float dist > 10.;
             if not !still_walking then
               set_interaction_pose IDLE
@@ -1588,7 +1641,7 @@ let update (game : game) (state : state) =
           | UNSET_FLOOR -> game.player.ghost.entity.current_floor <- None
           | ENTITY entity_step -> handle_entity_step player.ghost.entity entity_step
           | PARTY party_step ->
-            handle_party_ghost_step player.ghost.id (make_party_ghost player) party_step
+            handle_party_ghost_step player.ghost.id (as_party_ghost player) party_step
         in
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
@@ -1673,7 +1726,7 @@ let update (game : game) (state : state) =
           let find_party_ghost () : party_ghost =
             match List.assoc_opt ghost_id game.party with
             | Some ghost -> ghost
-            | None -> failwithf "ghost_id %s needs in game.players" (Show.ghost_id ghost_id)
+            | None -> failwithf "ghost_id %s needs to be in game.players" (Show.ghost_id ghost_id)
           in
           handle_party_ghost_step ghost_id (find_party_ghost ()) party_ghost_step
         | NPC (target_npc_id, npc_step) ->

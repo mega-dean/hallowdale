@@ -216,9 +216,12 @@ let init () : state =
   (* TODO this should get saved to the save file instead of resetting every time *)
   let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
 
-  let load_music name intro loop areas =
+  let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas =
     let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
     Raylib.set_music_volume music settings.music_volume;
+    (* FIXME this probably isn't a good way to do this
+       - use stop_music_stream instead
+    *)
     Raylib.play_music_stream music;
     { name; t = music; areas; loop_start = { at = intro }; loop_end = { at = loop } }
   in
@@ -226,14 +229,15 @@ let init () : state =
   let area_musics : area_music list =
     [
       (* TODO these loop times are not very precise *)
-      load_music "opening" 1.029 Float.max_float [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
-      load_music "as-i-lay-me-down" 72.128 171.947 [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
-      load_music "daybreak" 0. Float.max_float [ AC_REPAIR_ANNEX ];
-      load_music "ending" 0. Float.max_float [ COMPUTER_WING ];
-      load_music "greendale" 0. Float.max_float [ LIBRARY; MEOW_MEOW_BEENZ ];
-      load_music "kiss-from-a-rose" 22.255 73.545 [ CITY_OF_CHAIRS; OUTLANDS ];
-      load_music "mash-theme" 0. 75.451 [ BASEMENT ];
-      load_music "somewhere-out-there" 35.306 93.553 [ TRAMPOLINEPATH ];
+      load_music "opening" [];
+      load_music "as-i-lay-me-down" ~intro:72.128 ~loop:171.947
+        [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
+      load_music "daybreak" [ AC_REPAIR_ANNEX ];
+      load_music "ending" [ COMPUTER_WING ];
+      load_music "greendale" [ LIBRARY; MEOW_MEOW_BEENZ ];
+      load_music "kiss-from-a-rose" ~intro:22.255 ~loop:73.545 [ CITY_OF_CHAIRS; OUTLANDS ];
+      load_music "mash-theme" ~loop:75.451 [ BASEMENT ];
+      load_music "somewhere-out-there" ~intro:35.306 ~loop:93.553 [ TRAMPOLINEPATH ];
     ]
   in
 
@@ -634,7 +638,11 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time ghost.ghost.entity.sprite.texture
       ghost.ghost.entity.sprite;
     if ghost.ghost.entity.update_pos then (
+      (* if _id = BRITTA then
+       *   tmp "party ghost before: %s" (Show.vector ghost.ghost.entity.dest.pos); *)
       Entity.update_pos game.room ghost.ghost.entity state.frame.dt;
+      (* if _id = BRITTA then
+       *   tmp "party ghost after: %s" (Show.vector ghost.ghost.entity.dest.pos); *)
       Entity.maybe_unset_current_floor ghost.ghost.entity game.room)
   in
 
@@ -720,7 +728,6 @@ let tick (state : state) =
   match state.game_context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
-    (* FIXME just make the menu music play once and then quit *)
     if Raylib.get_music_time_played state.menu_music.t > state.menu_music.loop_end.at then
       Raylib.seek_music_stream state.menu_music.t
         (Utils.bound 0.1 state.menu_music.loop_start.at Float.max_float);
@@ -733,6 +740,7 @@ let tick (state : state) =
     if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then
       Raylib.seek_music_stream game.music.t
         (Utils.bound 0.1 game.music.loop_start.at Float.max_float);
+
     Raylib.update_music_stream game.music.t;
 
     if game.debug_paused then
@@ -761,22 +769,22 @@ let tick (state : state) =
           add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
         in
 
-        if state.debug.enabled then (
-          let party_ghosts =
-            let show_party_ghost ((ghost_id, p) : ghost_id * party_ghost) =
-              if List.mem ghost_id [ ANNIE; BRITTA ] then
-                Some
-                  (fmt "got party ghost %s at %s" (Show.ghost_id p.ghost.id)
-                     (Show.vector p.ghost.entity.dest.pos))
-              else
-                None
-            in
-            List.filter_map show_party_ghost game.party |> join ~sep:"\n"
-          in
-          tmp "current_ghost:  %s at %s"
-            (Show.ghost_id game.player.ghost.id)
-            (Show.vector game.player.ghost.entity.dest.pos);
-          tmp "party ghosts:\n%s" party_ghosts);
+        (* if state.debug.enabled then (
+         *   let party_ghosts =
+         *     let show_party_ghost ((ghost_id, p) : ghost_id * party_ghost) =
+         *       if List.mem ghost_id [ ANNIE; BRITTA ] then
+         *         Some
+         *           (fmt "got party ghost %s at %s" (Show.ghost_id p.ghost.id)
+         *              (Show.vector p.ghost.entity.dest.pos))
+         *       else
+         *         None
+         *     in
+         *     List.filter_map show_party_ghost game.party |> join ~sep:"\n"
+         *   in
+         *   tmp "current_ghost:  %s at %s"
+         *     (Show.ghost_id game.player.ghost.id)
+         *     (Show.vector game.player.ghost.entity.dest.pos);
+         *   tmp "party ghosts:\n%s" party_ghosts); *)
 
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;

@@ -449,6 +449,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     state.frame.time -. started.at < duration
   in
   match enemy.id with
+  (* FIXME update locker boy configs for new room location *)
   | LOCKER_BOY ->
     (* TODO this isn't working after resizing the screen - definitely need to update
        config values, maybe some code too *)
@@ -486,6 +487,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
       set_prop enemy "should_vanish" 0.;
       start_and_log_action enemy "vanish" state.frame.time [])
     else (
+      (* TODO probably will need this for a lot of enemies *)
       match last_performed_action enemy with
       | None -> ()
       | Some (action, action_duration) ->

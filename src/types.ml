@@ -551,6 +551,7 @@ module Interaction = struct
     | FLOATING_TEXT of string * float
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
+    (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
     | DIALOGUE of string * string
     | PURPLE_PEN_TEXT of string list
     | PUSH_RECT of float * float * float * float
@@ -598,7 +599,11 @@ module Interaction = struct
     | ADD_ITEM of item_kind
     | UNSET_FLOOR
     | ENTITY of entity_step
-    | PARTY of party_ghost_step
+    | (* FIXME this is only used for WALK_TO, which is the only other use of make_party_ghost
+         - so maybe just duplicate the "walking to" code
+      *)
+      PARTY of
+        party_ghost_step
 
   type enemy_step =
     | WALK_TO of int

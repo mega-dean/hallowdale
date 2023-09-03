@@ -65,9 +65,12 @@ walls-rules.txt
 ############ decorate bg-iso-walls ############
 # this has to run after draw-walls (in walls-rules.txt)
 # - these will probably need to be area-specific too though (for eg. tpath bg), so just move this to wall-rules.txt
-# automapping/reset-bg-iso.tmj
-# automapping/add-bg-iso.tmj
-# automapping/draw-posters.tmj
+# - the floor decorations (tables, desks, chairs) are all facing the same direction, so after applying this, flip the right side of each floor horizontally
+
+
+automapping/reset-bg-iso.tmj
+automapping/add-bg-iso.tmj
+automapping/draw-posters.tmj
 
 
 # _
