@@ -12,6 +12,13 @@ let parse_name context name : npc_id =
   | "VICKI" -> VICKI
   | "LEONARD" -> LEONARD
   | "GARRETT" -> GARRETT
+  | "JERRY" -> JERRY
+  | "BLACKSMITH_WIFE" -> BLACKSMITH_WIFE
+  | "HILDA" -> HILDA
+  | "FRANKIE" -> FRANKIE
+  | "HUMAN_BEING" -> HUMAN_BEING
+  | "POTTERY_TEACHER" -> POTTERY_TEACHER
+
   | _ -> failwithf "Npc.parse_name: found unrecognized npc name '%s' in %s" name context
 
 let create_from_rects (npc_rects : (npc_id * rect * bool) list) (npc_configs : (npc_id * Json_t.npc_config) list) =

@@ -25,7 +25,7 @@ let last_performed_action (enemy : enemy) : (string * float) option =
   in
   match List.find_opt action_performed enemy.history with
   | Some (PERFORMED action, performed) -> Some (action, performed.at)
-  | _ -> (* FIXME should this be unreachable? *) None
+  | _ -> (* CLEANUP should this be unreachable? *) None
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
   match List.assoc_opt (PERFORMED action_name) enemy.history with
@@ -449,7 +449,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     state.frame.time -. started.at < duration
   in
   match enemy.id with
-  (* FIXME update locker boy configs for new room location *)
+  (* TODO-4 update locker boy configs for new room location *)
   | LOCKER_BOY ->
     (* TODO this isn't working after resizing the screen - definitely need to update
        config values, maybe some code too *)

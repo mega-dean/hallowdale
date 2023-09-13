@@ -47,27 +47,17 @@
             "h": 43,
             "texture_configs": [
                 ["idle", {
-                    "count": 1,
-                    "duration": 0.0
                 }],
                 ["idle-with-locker-boys", {
-                    "count": 1,
-                    "duration": 0.0,
                     "x_offset": 88
                 }],
                 ["attack-with-locker-boys", {
-                    "count": 1,
-                    "duration": 0.0,
                     "x_offset": 88
                 }],
                 ["take-damage", {
-                    "count": 1,
-                    "duration": 0.0,
                     "x_offset": 88
                 }],
                 ["attack", {
-                    "count": 1,
-                    "duration": 0.0
                 }],
                 ["walking", {
                     "count": 4,
@@ -96,7 +86,60 @@
                 ["idle", {
                 }]
             ]
+        }],
+        [ "HILDA", {
+            "w": 23,
+            "h": 42,
+            "texture_configs": [
+                ["idle", {
+                }]
+            ]
+        }],
+        [ "BLACKSMITH_WIFE", {
+            "w": 25,
+            "h": 44,
+            "texture_configs": [
+                ["idle", {
+                }]
+            ]
+        }],
+
+        [ "JERRY", {
+            "w": 28,
+            "h": 43,
+            "texture_configs": [
+                ["idle", {
+                }]
+            ]
+        }],
+
+        [ "FRANKIE", {
+            "w": 20,
+            "h": 37,
+            "texture_configs": [
+                ["idle", {
+                }]
+            ]
+        }],
+
+        [ "HUMAN_BEING", {
+            "w": 18,
+            "h": 38,
+            "texture_configs": [
+                ["idle", {
+                }]
+            ]
+        }],
+
+        [ "POTTERY_TEACHER", {
+            "w": 23,
+            "h": 48,
+            "texture_configs": [
+                ["idle", {
+                }]
+            ]
         }]
+
     ],
 
     // "shared" npc textures is basically a junk drawer for things that don't belong anywhere else

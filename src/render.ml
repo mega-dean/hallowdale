@@ -345,6 +345,7 @@ let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : str
     | "{{darkblue}}" -> change_color Raylib.Color.darkblue
     | "{{darkgreen}}" -> change_color Raylib.Color.darkgreen
     | "{{darkpurple}}" -> change_color Raylib.Color.darkpurple
+    | "{{darkpink}}" -> change_color (Raylib.Color.create 146 24 118 255)
     | _ ->
       if word_w + segment_w + current_line.w > w then
         (start_new_line lines segment, new_segment ~color:segment.color word word_w 0)
@@ -652,7 +653,7 @@ let tick (state : state) =
         (display_paragraph config (config.outline_offset_y + 100))
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
-      (* FIXME this isn't correct with bigger screen size *)
+      (* TODO-5 this isn't correct with bigger screen size *)
       let margin_x = 50 in
       let config : text_config =
         {
@@ -702,9 +703,11 @@ let tick (state : state) =
           | "Britta" -> "{{gold}}"
           | "Annie" -> "{{orange}}"
           | "Jeff" -> "{{darkblue}}"
+          | "Shirley" -> "{{darkpink}}"
           | "Troy" -> "{{darkgreen}}"
           | "Abed" -> "{{darkpurple}}"
           | "Neil" -> "{{purple}}"
+          | "Garrett" -> "{{green}}"
           | "Chang"
           | "Hickey"
           | "Duncan" ->

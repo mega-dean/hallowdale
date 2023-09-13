@@ -219,7 +219,7 @@ let init () : state =
   let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas =
     let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
     Raylib.set_music_volume music settings.music_volume;
-    (* FIXME this probably isn't a good way to do this
+    (* CLEANUP this probably isn't a good way to do this
        - use stop_music_stream instead
     *)
     Raylib.play_music_stream music;

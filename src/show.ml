@@ -345,6 +345,12 @@ let npc_id (n : npc_id) : string =
   | NEIL -> "NEIL"
   | SHIRLEY -> "SHIRLEY"
   | VICKI -> "VICKI"
+  | JERRY -> "JERRY"
+  | BLACKSMITH_WIFE -> "BLACKSMITH_WIFE"
+  | HILDA -> "HILDA"
+  | FRANKIE -> "FRANKIE"
+  | HUMAN_BEING -> "HUMAN_BEING"
+  | POTTERY_TEACHER -> "POTTERY_TEACHER"
 
 let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
 let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)

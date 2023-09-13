@@ -503,13 +503,13 @@
                 {
                  "height":44,
                  "id":38,
-                 "name":"npc:SHIRLEY",
+                 "name":"mirrored-npc:SHIRLEY",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":2093,
-                 "y":796
+                 "x":2498,
+                 "y":797
                 }, 
                 {
                  "height":44,
@@ -519,8 +519,8 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":2425,
-                 "y":530
+                 "x":1512,
+                 "y":531
                 }, 
                 {
                  "height":44,
@@ -530,8 +530,96 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1993,
-                 "y":363
+                 "x":1286,
+                 "y":535
+                }, 
+                {
+                 "height":132,
+                 "id":41,
+                 "name":"cutscene:arrive-at-shirley-island",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":144,
+                 "x":228,
+                 "y":60
+                }, 
+                {
+                 "height":44,
+                 "id":42,
+                 "name":"mirrored-npc:LEONARD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1589,
+                 "y":530
+                }, 
+                {
+                 "height":44,
+                 "id":43,
+                 "name":"mirrored-npc:JERRY",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1355,
+                 "y":652
+                }, 
+                {
+                 "height":44,
+                 "id":44,
+                 "name":"mirrored-npc:FRANKIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1460,
+                 "y":652
+                }, 
+                {
+                 "height":44,
+                 "id":45,
+                 "name":"mirrored-npc:BLACKSMITH_WIFE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1554,
+                 "y":652
+                }, 
+                {
+                 "height":44,
+                 "id":46,
+                 "name":"mirrored-npc:HILDA",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1603,
+                 "y":652
+                }, 
+                {
+                 "height":44,
+                 "id":47,
+                 "name":"mirrored-npc:POTTERY_TEACHER",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1656,
+                 "y":531
+                }, 
+                {
+                 "height":44,
+                 "id":48,
+                 "name":"mirrored-npc:HUMAN_BEING",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":1410,
+                 "y":652
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1783,7 +1871,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":41,
+ "nextobjectid":50,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

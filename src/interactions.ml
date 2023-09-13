@@ -25,7 +25,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       @ [ STEP FADE_SCREEN_IN; STEP (WAIT 0.2); CURRENT_GHOST (SET_POSE IDLE) ]
     in
 
-    (* FIXME separate arg quote_line *)
+    (* TODO-5 separate arg quote_line *)
     let get_ability_steps ability_name outline_x outline_y top_lines bottom_lines =
       fade_screen_with_dramatic_pause
         [
@@ -322,29 +322,103 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ENEMY (LOCKER_BOY, ENTITY UNFREEZE);
         ]
       | "arrive-at-shirley-island" ->
-        (* FIXME add party ghosts *)
         [
-          (* TODO do this when talking to shirley *)
-          PARTY_GHOST (JEFF, ADD_TO_PARTY);
-          PARTY_GHOST (ANNIE, ADD_TO_PARTY);
+          (* FIXME add party ghosts *)
+          (* PARTY_GHOST (JEFF, ADD_TO_PARTY);
+           * PARTY_GHOST (ANNIE, ADD_TO_PARTY); *)
+          CURRENT_GHOST (SET_POSE IDLE);
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
           NPC (NEIL, ENTITY (SET_FACING LEFT));
           STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
           NPC (NEIL, ENTITY (SET_FACING RIGHT));
-          STEP (SET_CAMERA_MOTION (LINEAR 6.));
+          STEP (SET_CAMERA_MOTION (LINEAR 3.));
           (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
              - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
              - that's probably more work than it's worth though
           *)
-          (* FIXME coords *)
-          STEP (SET_FIXED_CAMERA (50, 30));
-          STEP (WAIT 5.);
-          STEP SET_GHOST_CAMERA;
-          NPC (NEIL, ENTITY (SET_FACING LEFT));
+          STEP (SET_FIXED_CAMERA (75, 75));
           STEP
             (DIALOGUE
                ( "Neil",
                  "No furniture beyond this point. Leave your weapons at the door, and any spare \
-                  doors at the entrance" ));
+                  doors at the entrance." ));
+          (* STEP (WAIT 3.); *)
+          STEP (SET_FIXED_CAMERA (125, 48));
+          STEP (WAIT 3.);
+          STEP
+            (DIALOGUE
+               ( "Garrett",
+                 "Then came the now-now time, when the floors were covered with the burny touch." ));
+          (* this isn't unhiding, just using it to move *)
+          CURRENT_GHOST (ENTITY (UNHIDE_AT (177, 67, 0., 0.)));
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (TROY, ENTITY (UNHIDE_AT (174, 67, 0., 0.)));
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (202, 67, 0., 0.)));
+          PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
+          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (198, 67, 0., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY (SET_FACING LEFT));
+          PARTY_GHOST (TROY, ENTITY UNFREEZE);
+          PARTY_GHOST (JEFF, ENTITY UNFREEZE);
+          PARTY_GHOST (ANNIE, ENTITY UNFREEZE);
+          STEP (SET_FIXED_CAMERA (190, 60));
+          STEP (WAIT 4.);
+          (* FIXME finish this cutscene:
+             - maybe a dialogue at the end saying "you can explore the school now, and also switch ghosts"
+             - make the party ghosts turn towards the speaker
+          *)
+          PARTY_GHOST (JEFF, WALK_TO 180);
+          STEP (WAIT 0.5);
+          STEP (DIALOGUE ("Jeff", "You made it!"));
+          STEP
+            (DIALOGUE
+               ( "Shirley",
+                 "Friends! Welcome to Shirley Island, where all your dreams come true if you dream \
+                  of standing on a table and pissing in a jar." ));
+          STEP (DIALOGUE ("Shirley", "Where's Britta?"));
+          STEP (DIALOGUE ("Abed", "She didn't make it."));
+          STEP (DIALOGUE ("Shirley", "Oh, that's too bad..."));
+          (* TODO add the Secular/Christians corkboard *)
+          STEP (DIALOGUE ("Annie", "Poor Britta."));
+          STEP
+            (DIALOGUE ("Abed", "It's okay - her sacrifice got us this far, and now we can't lose."));
+          STEP (DIALOGUE ("Troy", "Why not?"));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE ("Abed", "Because now we're on Shirley Island, and according to legend..."));
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          STEP (DIALOGUE ("Abed", "... so is {{blue}} the orb."));
+          STEP
+            (DIALOGUE
+               ( "Shirley",
+                 "I'm sure I have no idea what you're talking about. This is a place of {{pink}} \
+                  peace." ));
+          STEP (DIALOGUE ("Abed", "And {{green}} profit."));
+          STEP (DIALOGUE ("Shirley", "Come again?"));
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "You're not really playing, Shirley. You're a merchant, and more power to you. \
+                  But don't withhold power from others just to make money." ));
+          CURRENT_GHOST (PARTY (WALK_TO 201));
+          STEP (DIALOGUE ("Abed", "We want {{blue}} the orb."));
+          STEP (DIALOGUE ("Troy", "Abed..."));
+          PARTY_GHOST (TROY, WALK_TO 203);
+          PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE
+               ( "Troy",
+                 "Listen, I'm still a little raw from what happened with Britta back there. I \
+                  mean, fun is fun, but I don't want my {{red}} last day {{white}} here to be a \
+                  day where everyone hates me." ));
+          (* STEP
+           *   (TEXT [  ]); *)
+          (*
+
+ *)
+        ]
+      | "temp-open-boss-doors" ->
+        [
+          STEP HIDE_BOSS_DOORS;
         ]
       | _ -> fail ())
     | "boss-killed" -> (
@@ -561,6 +635,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP (WAIT 0.9);
             PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.4);
+            (* FIXME add abed.in_party, remove britta.in_party *)
             PARTY_GHOST (ABED, MAKE_CURRENT_GHOST);
             STEP
               (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
@@ -593,14 +668,14 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP (DIALOGUE ("Britta", "Troy!"));
             STEP SET_GHOST_CAMERA;
             CURRENT_GHOST (PARTY (WALK_TO 153));
-            PARTY_GHOST (TROY, (WALK_TO 156));
+            PARTY_GHOST (TROY, WALK_TO 156);
             PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
             STEP
               (DIALOGUE
                  ( "Troy",
                    "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing \
                     us down and complaining a lot." ));
-            PARTY_GHOST (TROY, WALK_TO 135);
+            PARTY_GHOST (TROY, WALK_TO 128);
             PARTY_GHOST (TROY, ENTITY HIDE);
             (* FIXME maybe do this here
                PARTY_GHOST (BRITTA, REMOVE_FROM_PARTY);

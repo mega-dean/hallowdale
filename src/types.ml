@@ -437,6 +437,12 @@ type npc_id =
   | LEONARD
   | VICKI
   | GARRETT
+  | JERRY
+  | BLACKSMITH_WIFE
+  | HILDA
+  | FRANKIE
+  | HUMAN_BEING
+  | POTTERY_TEACHER
 
 type enemy_id =
   | PENGUIN
@@ -570,7 +576,8 @@ module Interaction = struct
     | SET_FACING of direction
     | HIDE
     | UNHIDE
-    | UNHIDE_AT of int * int * float * float
+    | (* TODO add another param facing_right : bool *)
+      UNHIDE_AT of int * int * float * float
     | FREEZE
     | UNFREEZE
 
@@ -599,11 +606,7 @@ module Interaction = struct
     | ADD_ITEM of item_kind
     | UNSET_FLOOR
     | ENTITY of entity_step
-    | (* FIXME this is only used for WALK_TO, which is the only other use of make_party_ghost
-         - so maybe just duplicate the "walking to" code
-      *)
-      PARTY of
-        party_ghost_step
+    | PARTY of party_ghost_step
 
   type enemy_step =
     | WALK_TO of int

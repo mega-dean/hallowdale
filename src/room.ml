@@ -742,6 +742,9 @@ let change_current_room
 let get_global_pos (current_pos : vector) (room_location : room_location) : vector =
   { x = current_pos.x +. room_location.global_x; y = current_pos.y +. room_location.global_y }
 
+(* TODO-6 hide all party ghosts to clean up from interactions
+   - can also remove the HIDE_PARTY_GHOST steps from the ends of some interactions, eg duncan-killed
+*)
 let handle_transitions (state : state) (game : game) =
   let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
     let room_location = List.assoc room_id world in
