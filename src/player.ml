@@ -1117,35 +1117,35 @@ let swap_current_ghost_in_cutscene (state : state) (game : game) target_ghost_id
   | Some target_ghost ->
     let old_ghost = as_party_ghost game.player in
     let current_pos = old_ghost.ghost.entity.dest.pos in
+    (* FIXME this probably shouldn't be happening here
+              - but without it, britta disappears
+
+       - maybe change game.party to just be a party_ghost list
+    *)
     game.party <- Utils.replace_assoc BRITTA old_ghost game.party;
-    let positions : string =
-      let show_pos (id, (pg : party_ghost)) =
-        fmt "%s: %s" (Show.ghost_id id) (Show.vector pg.ghost.entity.dest.pos)
-      in
-      List.map show_pos game.party |> join ~sep:"\n"
-    in
-    tmp "party ghost positions:\n%s" positions;
+    (* let positions : string =
+     *   let show_pos (id, (pg : party_ghost)) =
+     *     fmt "%s: %s" (Show.ghost_id id) (Show.vector pg.ghost.entity.dest.pos)
+     *   in
+     *   List.map show_pos game.party |> join ~sep:"\n"
+     * in
+     * tmp "party ghost positions:\n%s" positions; *)
     game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
     Entity.hide target_ghost.ghost.entity;
     ()
 
-let swap_current_ghost (state : state) (game : game) ?(swap_pos = true) target_ghost_id =
+let swap_current_ghost (state : state) (game : game) target_ghost_id =
   match List.assoc_opt target_ghost_id game.party with
   | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
   | Some target_ghost ->
     let old_ghost = as_party_ghost game.player in
     let current_pos = old_ghost.ghost.entity.dest.pos in
-
-    (* MAKE_CURRENT_GHOST uses this fn during interactions to update game.ghost, but shouldn't swap places *)
-    if swap_pos then (
-      Entity.unhide_at target_ghost.ghost.entity (clone_vector current_pos);
-      (* CLEANUP replace with clone_sprite *)
-      target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
-      target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v;
-
-      Entity.hide old_ghost.ghost.entity;
-      old_ghost.ghost.entity.current_floor <- None);
+    Entity.unhide_at target_ghost.ghost.entity (clone_vector current_pos);
+    (* CLEANUP replace with clone_sprite *)
+    target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
+    target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v;
     game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
+    Entity.hide target_ghost.ghost.entity;
     ()
 
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
@@ -1402,6 +1402,16 @@ let update (game : game) (state : state) =
            probably not really worth it *)
         let handle_general_step (general_step : Interaction.general_step) =
           match general_step with
+          | SHAKE_SCREEN amount -> state.camera.shake <- amount
+          | DEBUG ->
+            let statuses =
+              List.map
+                (fun (id, (pg : party_ghost)) ->
+                  fmt "%s in party: %b" (Show.ghost_id id) pg.in_party)
+                game.party
+              |> join
+            in
+            tmp "------------\nparty ghost statuses: %s" statuses
           | INITIALIZE_INTERACTIONS remove_nail ->
             game.player.ghost.entity.v <- Zero.vector ();
             if remove_nail then (
@@ -1562,7 +1572,7 @@ let update (game : game) (state : state) =
                 itmp "    ------- walking party ghost %s with v.x %f"
                   (Show.ghost_id party_ghost.ghost.id)
                   party_ghost.ghost.entity.v.x;
-                (* FIXME this can also check if skip-interaction is held down and use a higher vx *)
+                (* TODO this can also check if skip-interaction is held down and use a higher vx *)
                 Entity.walk party_ghost.ghost.entity direction;
                 (party_ghost.ghost.head_textures.walk, state.global.textures.ghost_bodies.walk)
               | LANDING _

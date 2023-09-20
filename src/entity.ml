@@ -43,9 +43,10 @@ let move_onscreen (e : entity) =
   e.dest.pos.x <- abs_float e.dest.pos.x;
   e.dest.pos.y <- abs_float e.dest.pos.y
 
-let hide (e : entity) =
-  freeze e;
-  move_offscreen e
+let hide entity =
+  freeze entity;
+  entity.current_floor <- None;
+  move_offscreen entity
 
 let unhide (e : entity) = move_onscreen e
 

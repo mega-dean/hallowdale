@@ -638,6 +638,7 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time ghost.ghost.entity.sprite.texture
       ghost.ghost.entity.sprite;
     if ghost.ghost.entity.update_pos then (
+      itmp "updating party ghost  %s position" (Show.ghost_id _id);
       (* if _id = BRITTA then
        *   tmp "party ghost before: %s" (Show.vector ghost.ghost.entity.dest.pos); *)
       Entity.update_pos game.room ghost.ghost.entity state.frame.dt;
@@ -811,6 +812,9 @@ let tick (state : state) =
         if state.should_save then (
           Menu.save_game game state;
           state.should_save <- false);
+
+
+        itmp "-------------------";
 
         state'
         |> Player.handle_debug_keys game

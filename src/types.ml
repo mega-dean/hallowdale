@@ -548,6 +548,8 @@ module Interaction = struct
     | INITIALIZE_INTERACTIONS of bool
     | FADE_SCREEN_OUT
     | FADE_SCREEN_IN
+    | SHAKE_SCREEN of float
+    | DEBUG
     | WAIT of float
     | WARP of trigger_kind
     | DOOR_WARP of trigger_kind
@@ -1330,7 +1332,7 @@ type game = {
   (* this should include a party_ghost for the currently-controlled ghost, so it should
      always be a list of all five ghosts
   *)
-  (* TODO maybe use a party_ghost list *)
+  (* CLEANUP use a party_ghost list *)
   mutable party : (ghost_id * party_ghost) list;
   mutable room : room;
   mutable music : area_music;

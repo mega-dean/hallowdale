@@ -148,7 +148,10 @@
             "gravity_multiplier": 0.2,
             "death_gravity_multiplier": 0.2,
             "dream_nail": {
-                "recoil_vx": 0.0
+                "recoil_vx": 0.0,
+                "dialogues": [
+                    "Did you read the hat?"
+                ]
             },
             "props": [
                 ["death_recoil_v", 1200]

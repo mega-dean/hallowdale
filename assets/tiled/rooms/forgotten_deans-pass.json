@@ -315,15 +315,26 @@
                  "y":216
                 }, 
                 {
-                 "height":56,
+                 "height":80,
                  "id":183,
-                 "name":"info:FIXME",
+                 "name":"health:2.02.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":80,
-                 "x":98,
-                 "y":1231
+                 "x":103,
+                 "y":1250
+                }, 
+                {
+                 "height":7,
+                 "id":184,
+                 "name":"cutscene:kp-landing",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":287,
+                 "x":455,
+                 "y":1331
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2134,7 +2145,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -2279,7 +2290,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
@@ -2424,7 +2435,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
@@ -2569,7 +2580,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
@@ -2998,7 +3009,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
@@ -3284,7 +3295,7 @@
          "name":"doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
@@ -4142,7 +4153,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
@@ -4288,13 +4299,13 @@
          "parallaxx":0,
          "parallaxy":0,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":310,
          "x":0,
          "y":0
         }],
  "nextlayerid":29,
- "nextobjectid":184,
+ "nextobjectid":185,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

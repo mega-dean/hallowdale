@@ -106,7 +106,7 @@
 
         [ "JERRY", {
             "w": 28,
-            "h": 43,
+            "h": 40,
             "texture_configs": [
                 ["idle", {
                 }]

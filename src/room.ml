@@ -443,7 +443,9 @@ let init (params : room_params) : room =
               *)
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
-              | "doors" -> [ "collides"; "destroyable"; "permanently_removable" ]
+              | "doors" ->
+                (* this is also used for purple pens *)
+                [ "collides"; "destroyable"; "permanently_removable" ]
               | "bg"
               | "bg-iso"
               | "bg-iso-lava"

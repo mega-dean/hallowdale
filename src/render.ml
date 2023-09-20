@@ -586,17 +586,40 @@ let tick (state : state) =
       w h color
   in
 
+  (* FIXME update this for the weird archives text *)
   let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) =
-    let display_line (config : text_config) y_offset line_number (line : line) =
+    let word_separator =
+      if String.length paragraph > 0 && String.get paragraph 0 = '-' then
+        '-'
+      else
+        ' '
+    in
+    let sep_s = String.make 1 word_separator in
+
+    let display_line (config : text_config) y_offset line_idx (line : line) =
       let display_segment (segment : line_segment) =
         let centered_x =
           if config.centered then (text_box_width config - line.w) / 2 else config.padding_x
         in
-        let line_spacing = line_height *. (line_number |> Int.to_float) in
+        let line_spacing = line_height *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
-        Raylib.draw_text segment.content
+        let content' =
+          (* FIXME this is stripping all spaces and not replacing them
+             - segment.content is a single line with spaces
+          *)
+          Str.global_replace (Str.regexp " ") (String.make 1 word_separator) segment.content
+        in
+        let content =
+          (* TODO the first '-' in archives lore is being stripped somehow *)
+          if line_idx = 0 && word_separator = '-' then
+            "-" ^ content'
+          else
+            content'
+        in
+
+        Raylib.draw_text content
           ((segment.dest.pos.x +. camera_x |> Float.to_int) + config.margin_x + centered_x)
-          ((dest_y |> Float.to_int) + (line_number * font_size))
+          ((dest_y |> Float.to_int) + (line_idx * font_size))
           font_size segment.color
       in
       List.iter display_segment line.segments
@@ -608,7 +631,7 @@ let tick (state : state) =
     in
     let lines =
       let w = text_box_width config - (2 * config.padding_x) in
-      get_lines measure_text w (String.split_on_char ' ' paragraph)
+      get_lines measure_text w (String.split_on_char word_separator paragraph)
     in
     List.iteri (display_line config y_offset') lines
   in
@@ -719,7 +742,7 @@ let tick (state : state) =
       let margin_y_bottom =
         let tall_text =
           (* TODO it's worth cleaning this up if there are any long dialogs needed besides the ACB note *)
-          String.length (List.nth text'.content (List.length text'.content - 1)) > 300
+          String.length (List.nth text'.content (List.length text'.content - 1)) > 500
         in
         if tall_text then
           50
