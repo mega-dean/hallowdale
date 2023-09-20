@@ -25,15 +25,20 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       @ [ STEP FADE_SCREEN_IN; STEP (WAIT 0.2); CURRENT_GHOST (SET_POSE IDLE) ]
     in
 
-    (* TODO-5 separate arg quote_line *)
-    let get_ability_steps ability_name outline_x outline_y top_lines bottom_lines =
+    (* quote is optional because abilities gained during cutscenes don't have quotes *)
+    let get_ability_steps ability_name outline_x outline_y ?(quote = None) top_lines bottom_lines =
+      let bottom_lines' =
+        match quote with
+        | None -> bottom_lines
+        | Some quote' -> bottom_lines @ [ "============================="; quote' ]
+      in
       fade_screen_with_dramatic_pause
         [
           CURRENT_GHOST (ADD_ITEM (ABILITY ability_name));
           STEP
             (ABILITY_TEXT
                ( ability_text_outline outline_x outline_y,
-                 top_lines @ [ "-----------------------------" ] @ bottom_lines ));
+                 top_lines @ [ "=============================" ] @ bottom_lines' ));
         ]
     in
 
@@ -63,6 +68,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         PARTY_GHOST (ghost_id, SET_POSE IDLE);
       ]
     in
+    let read_sign = [ CURRENT_GHOST (SET_POSE READING); STEP (WAIT 0.4) ] in
 
     (* TODO-2 add dialogue for Shirley Island npcs
        HILDA -> "I live in the village. I love {{orange}} Abed.",
@@ -83,10 +89,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           (PURPLE_PEN_TEXT [ "Found a purple pen with a note:"; fmt "{{purple}} %s" (get_lore ()) ]);
       ]
     | "health" ->
-      [
-        CURRENT_GHOST (SET_POSE READING);
-        CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ()));
-      ]
+      read_sign @ [ CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
     | "d-nail-item" -> (
       match trigger.name_suffix with
       | "dreamnailitem" -> [ STEP (TEXT [ "Give me some rope, tie me to dream." ]) ]
@@ -134,57 +137,51 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP FADE_SCREEN_IN;
         ]
       | "focus" ->
-        [
-          CURRENT_GHOST (SET_POSE READING);
-          STEP (WAIT 0.4);
-          STEP FADE_SCREEN_OUT;
-          STEP
-            (FOCUS_ABILITY_TEXT
-               ( [
+        read_sign
+        @ [
+            STEP FADE_SCREEN_OUT;
+            STEP
+              (FOCUS_ABILITY_TEXT
+                 ( [
+                     "Human Beings, these words are for you alone.";
+                     "";
+                     "";
+                     "Your great strength marks you already accepted. Focus your life vapor and \
+                      you shall achieve feats of which others can only dream.";
+                   ],
+                   ability_text_outline 0. 0.,
+                   [
+                     "Collect LIFE VAPOR by striking enemies.";
+                     "Once enough LIFE VAPOR is collected";
+                     "Hold (A)";
+                     "to focus LIFE VAPOR and HEAL.";
+                   ] ));
+            STEP FADE_SCREEN_IN;
+          ]
+      | "dean-and-creator" ->
+        read_sign
+        @ [
+            STEP
+              (TEXT
+                 [
+                   (* TEXT is left-aligned by default so this line looks weird, but it can't be manually centered with spaces
+                      because Render.get_lines trims them
+                   *)
                    "Human Beings, these words are for you alone.";
                    "";
-                   "";
-                   "Your great strength marks you already accepted. Focus your life vapor and you \
-                    shall achieve feats of which others can only dream.";
-                 ],
-                 ability_text_outline 0. 0.,
+                   "Beyond this point you enter the land of Dean and Creator. Step across this \
+                    threshold and obey our laws.";
+                 ]);
+            STEP (WAIT 0.4);
+            STEP
+              (TEXT
                  [
-                   "Collect LIFE VAPOR by striking enemies.";
-                   "Once enough LIFE VAPOR is collected";
-                   "Hold (A)";
-                   "to focus LIFE VAPOR and HEAL.";
-                 ] ));
-          STEP FADE_SCREEN_IN;
-        ]
-      | "dean-and-creator" ->
-        [
-          CURRENT_GHOST (SET_POSE READING);
-          STEP (WAIT 0.4);
-          STEP
-            (TEXT
-               [
-                 (* TEXT is left-aligned by default so this line looks weird, but it can't be manually centered with spaces
-                    because Render.get_lines trims them
-                 *)
-                 "Human Beings, these words are for you alone.";
-                 "";
-                 "Beyond this point you enter the land of Dean and Creator. Step across this \
-                  threshold and obey our laws.";
-               ]);
-          STEP (WAIT 0.4);
-          STEP
-            (TEXT
-               [
-                 "Bear witness to the last and only civilisation, the eternal Kingdom.";
-                 "";
-                 "Hallowdale";
-               ]);
-        ]
-      | lore -> [
-          (* FIXME add these two steps automatically *)
-          CURRENT_GHOST (SET_POSE READING);
-          STEP (WAIT 0.4);
-          STEP (TEXT [ get_lore () ]) ])
+                   "Bear witness to the last and only civilisation, the eternal Kingdom.";
+                   "";
+                   "Hallowdale";
+                 ]);
+          ]
+      | lore -> read_sign @ [ STEP (TEXT [ get_lore () ]) ])
     | "ability" -> (
       match trigger.name_suffix with
       | "scootenanny" ->
@@ -193,46 +190,47 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           [
             "Press [ZR] to scootenanny forwards.";
             "Use the chair to scootenanny quickly along the ground or through the air.";
-            "While I normally don't condone climbing on furniture, Troy and Abed's friendship has \
-             been such a special and magical part of Greendale, we owe it to ourselves to honor \
-             it.";
           ]
+          ~quote:
+            (Some
+               "While I normally don't condone climbing on furniture, Troy and Abed's friendship \
+                has been such a special and magical part of Greendale, we owe it to ourselves to \
+                honor it.")
       | "double-bouncies" ->
         get_ability_steps "monarch_wings" 0. 4.
           [ "Consumed the"; "Double Bouncies." ]
           [
             "Press (B) while in the air to double bounce.";
             "Use the ethereal bounce to sail above enemies and discover new paths.";
-            "At the apex of each bounce, there is a moment outside of time, outside of words, \
-             outside of everything - a perfect moment. A silent moment. I call it the {{blue}} \
-             World's Whisper.";
           ]
+          ~quote:
+            (Some
+               "At the apex of each bounce, there is a moment outside of time, outside of words, \
+                outside of everything - a perfect moment. A silent moment. I call it the {{blue}} \
+                World's Whisper.")
       | "reverse-danny-thomas" ->
         get_ability_steps "mantis_claw" 0. 8.
           [ "Learned the"; "Reverse Danny Thomas." ]
           [
             "Press (B) while sliding against a wall to jump again.";
             "Jump from wall to wall to reach new areas.";
-            "Do you think this game's gotten a little out of hand?";
           ]
+          ~quote:(Some "Do you think this game's gotten a little out of hand?")
       | "computer-heart" ->
         get_ability_steps "crystal_heart" 0. 5.
           [ "Consumed the"; "Computer Heart." ]
           [
             "Hold [ZL] while on the ground or clinging to a wall to concentrate the force.";
             "Release the button to blast forwards and fly through the air.";
-            "Without an emotional component, computers will strip us of all humanity.";
           ]
+          ~quote:(Some "Without an emotional component, computers will strip us of all humanity.")
         @ [ STEP (HIDE_LAYER "temporary-floors") ]
       | "vaughns-tear" ->
         (* TODO add ability outline *)
         get_ability_steps "ismas_tear" 0. 8.
           [ "Consumed the"; "Vaughn's Tear." ]
-          [
-            "Acid shall be repelled.";
-            "Swim in acidic waters without coming to any harm.";
-            "Everything is connected. Rocks. Eagles. Hats.";
-          ]
+          [ "Acid shall be repelled."; "Swim in acidic waters without coming to any harm." ]
+          ~quote:(Some "Everything is connected. Rocks. Eagles. Hats.")
       | "pierce-hologram" ->
         get_ability_steps "shade_cloak" 0. 7.
           [ "Consumed the"; "Pierce Hologram." ]
@@ -240,17 +238,16 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             "Press [ZR] to scootenanny forwards, cloaked in hologram.";
             "Use the hologram to scootenanny through enemies and their attacks without taking \
              damage.";
-            "Take it from a man with no legal right to be there: you're in a {{blue}} special \
-             {{white}} place.";
           ]
+          ~quote:
+            (Some
+               "Take it from a man with no legal right to be there: you're in a {{blue}} special \
+                {{white}} place.")
       | "monkey-gas" ->
         get_ability_steps "howling_wraiths" 0. 6.
           [ "Consumed the"; "Monkey Knockout Gas." ]
-          [
-            "Tap (A) while holding UP";
-            "to unleash the Knockout Gas.";
-            "Some kind of {{red}} gas {{white}} that knocks out monkeys.";
-          ]
+          [ "Tap (A) while holding UP"; "to unleash the Knockout Gas." ]
+          ~quote:(Some "Some kind of {{red}} gas {{white}} that knocks out monkeys.")
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
@@ -339,9 +336,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         ]
       | "arrive-at-shirley-island" ->
         [
-          (* FIXME add party ghosts *)
-          (* PARTY_GHOST (JEFF, ADD_TO_PARTY);
-           * PARTY_GHOST (ANNIE, ADD_TO_PARTY); *)
           CURRENT_GHOST (SET_POSE IDLE);
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
           NPC (NEIL, ENTITY (SET_FACING LEFT));
@@ -372,31 +366,13 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           CURRENT_GHOST (ENTITY (UNHIDE_AT (177, 67, 0., 0.)));
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
         ]
-        (* FIXME not working
-           - works for all when skipping locker-boys fight
-           - only works for JEFF when completing locker-boys fight
-
-           - shouldn't even need to unfreeze separately, since it happens in Entity.unhide_at
-        *)
         @ unhide_and_unfreeze TROY ~direction:RIGHT 174
         @ unhide_and_unfreeze JEFF 202
         @ unhide_and_unfreeze ANNIE 198
         @ [
-            (* PARTY_GHOST (TROY, ENTITY (UNHIDE_AT (174, 67, 0., 0.)));
-             * PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (202, 67, 0., 0.)));
-             * PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
-             * PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (198, 67, 0., 0.)));
-             * PARTY_GHOST (ANNIE, ENTITY (SET_FACING LEFT)); *)
-            (* PARTY_GHOST (TROY, ENTITY UNFREEZE);
-             * PARTY_GHOST (JEFF, ENTITY UNFREEZE);
-             * PARTY_GHOST (ANNIE, ENTITY UNFREEZE); *)
             STEP (SET_FIXED_CAMERA (192, 62));
             STEP DEBUG;
             STEP (WAIT 4.);
-            (* FIXME finish this cutscene:
-               - maybe a dialogue at the end saying "you can explore the school now, and also switch ghosts"
-               - make the party ghosts turn towards the speaker
-            *)
             PARTY_GHOST (JEFF, WALK_TO 180);
             STEP (WAIT 0.5);
             STEP (DIALOGUE ("Jeff", "You made it!"));
@@ -418,18 +394,28 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
               (DIALOGUE ("Abed", "Because now we're on Shirley Island, and according to legend..."));
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             STEP (DIALOGUE ("Abed", "... so is {{blue}} the orb."));
+            PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             STEP
               (DIALOGUE
                  ( "Shirley",
                    "I'm sure I have no idea what you're talking about. This is a place of {{pink}} \
                     peace." ));
+            PARTY_GHOST (ANNIE, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
             STEP (DIALOGUE ("Abed", "And {{green}} profit."));
+            PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             STEP (DIALOGUE ("Shirley", "Come again?"));
+            PARTY_GHOST (ANNIE, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
                  ( "Abed",
                    "You're not really playing, Shirley. You're a merchant, and more power to you. \
                     But don't withhold power from others just to make money." ));
+            PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             CURRENT_GHOST (PARTY (WALK_TO 201));
             STEP (DIALOGUE ("Abed", "We want {{blue}} the orb."));
             STEP (DIALOGUE ("Troy", "Abed..."));
@@ -444,11 +430,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             PARTY_GHOST (ANNIE, ADD_TO_PARTY);
             PARTY_GHOST (JEFF, ADD_TO_PARTY);
             PARTY_GHOST (TROY, ADD_TO_PARTY);
-            (* STEP
-             *   (TEXT [  ]); *)
-            (*
-
- *)
           ]
       | "temp-open-boss-doors" -> [ STEP HIDE_BOSS_DOORS ]
       | _ -> fail ())
@@ -609,9 +590,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
               "holding DOWN to strike the earth with a burst of intimidation.";
               "Spells will deplete LIFE VAPOR.";
               "Replenish LIFE VAPOR by striking enemies.";
-              (* FIXME
-                 I guess that actually looked the way it did in my head.
-              *)
             ]
         @ [
             STEP (WAIT 0.3);
@@ -619,6 +597,9 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP (WAIT 0.9);
             (* TODO maybe add SHAKE_SCREEN step *)
             STEP (SHAKE_SCREEN 1.);
+            STEP (WAIT 1.);
+            STEP (SHAKE_SCREEN 1.);
+            STEP (WAIT 1.);
             STEP (DIALOGUE ("Hickey", "Hiya kids."));
             NPC (HICKEY, ENTITY UNHIDE);
             NPC (HICKEY, ENTITY UNFREEZE);
@@ -629,7 +610,11 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP
               (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
             NPC (HICKEY, SET_POSE "walking");
-            STEP (WAIT 1.1);
+            STEP (SHAKE_SCREEN 1.);
+            STEP (WAIT 1.);
+            STEP (SHAKE_SCREEN 1.);
+            STEP (WAIT 1.);
+            STEP (SHAKE_SCREEN 1.);
             STEP (SET_FIXED_CAMERA (175, 42));
             STEP (WAIT 1.1);
             (* CURRENT_GHOST (ENTITY (SET_FACING LEFT)); *)
@@ -662,7 +647,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP (WAIT 0.9);
             PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.4);
-            (* FIXME add abed.in_party, remove britta.in_party *)
             STEP DEBUG;
             PARTY_GHOST (ABED, ADD_TO_PARTY);
             PARTY_GHOST (ABED, MAKE_CURRENT_GHOST);
@@ -679,12 +663,12 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
             STEP (DIALOGUE ("Abed", "Now Troy, start inchworming."));
             (* if the cutscene is skipped, Troy ends up on the ledge above,
-               so the extra WALK_TO here is just to ensure he ends up on the bottom level
+               so the extra WALK_TO and WAIT here is just to ensure he ends up on the bottom level
             *)
-            PARTY_GHOST (TROY, WALK_TO 165);
+            PARTY_GHOST (TROY, WALK_TO 167);
             PARTY_GHOST (TROY, WALK_TO 157);
             STEP (WAIT 0.7);
-            CURRENT_GHOST (PARTY (WALK_TO 165));
+            CURRENT_GHOST (PARTY (WALK_TO 167));
             STEP (WAIT 0.7);
             CURRENT_GHOST (PARTY (WALK_TO 155));
             STEP (DIALOGUE ("Britta", "What's the third step?"));

@@ -1332,8 +1332,7 @@ type game = {
   (* this should include a party_ghost for the currently-controlled ghost, so it should
      always be a list of all five ghosts
   *)
-  (* CLEANUP use a party_ghost list *)
-  mutable party : (ghost_id * party_ghost) list;
+  mutable party : party_ghost list;
   mutable room : room;
   mutable music : area_music;
   interaction : Interaction.t;

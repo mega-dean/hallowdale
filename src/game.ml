@@ -30,7 +30,6 @@ let new_game () : Json_t.save_file =
         monarch_wings = b;
         shade_cloak = b;
         ismas_tear = b;
-
         (* spells *)
         vengeful_spirit = b;
         desolate_dive = b;
@@ -92,11 +91,11 @@ let init
       ghosts_file.actions (clone_vector start_pos) save_file global.weapons shared_ghost_textures
   in
 
-  let party : (ghost_id * party_ghost) list =
-    let make_party_ghost id : ghost_id * party_ghost =
+  let party : party_ghost list =
+    let make_party_ghost id : party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
       let config = make_head_textures id in
-      (id, Player.init_party id config idle_texture { x = 1000.; y = 1000. } in_party)
+      Player.init_party id config idle_texture { x = 1000.; y = 1000. } in_party
     in
     List.map make_party_ghost [ BRITTA; ABED; TROY; ANNIE; JEFF ]
   in
@@ -123,7 +122,10 @@ let init
   let music = List.find (fun am -> List.mem room.area.id am.areas) area_musics in
 
   let current_ghost_id = Player.parse_name save_file.ghost_id in
-  let party_ghost = List.assoc current_ghost_id party in
+  let party_ghost =
+    (* CLEANUP  *)
+    Option.get (Player.find_party_ghost current_ghost_id party)
+  in
   let player = make_ghost party_ghost in
 
   player.ghost.entity.update_pos <- true;

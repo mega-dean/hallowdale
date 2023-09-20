@@ -329,7 +329,7 @@ let update_vx (entity : entity) multiplier =
   let mult = if entity.sprite.facing_right then multiplier else -1. *. multiplier in
   entity.v.x <- mult *. Config.ghost.vx
 
-let walk (entity : entity) (direction : direction) : unit =
+let walk_ghost (entity : entity) (direction : direction) : unit =
   set_facing_right entity direction;
   update_vx entity 1.
 

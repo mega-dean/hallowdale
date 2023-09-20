@@ -586,7 +586,6 @@ let tick (state : state) =
       w h color
   in
 
-  (* FIXME update this for the weird archives text *)
   let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) =
     let word_separator =
       if String.length paragraph > 0 && String.get paragraph 0 = '-' then
@@ -594,8 +593,6 @@ let tick (state : state) =
       else
         ' '
     in
-    let sep_s = String.make 1 word_separator in
-
     let display_line (config : text_config) y_offset line_idx (line : line) =
       let display_segment (segment : line_segment) =
         let centered_x =
@@ -604,15 +601,12 @@ let tick (state : state) =
         let line_spacing = line_height *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
         let content' =
-          (* FIXME this is stripping all spaces and not replacing them
-             - segment.content is a single line with spaces
-          *)
           Str.global_replace (Str.regexp " ") (String.make 1 word_separator) segment.content
         in
         let content =
           (* TODO the first '-' in archives lore is being stripped somehow *)
           if line_idx = 0 && word_separator = '-' then
-            "-" ^ content'
+            fmt "-%s-" content'
           else
             content'
         in
@@ -676,14 +670,13 @@ let tick (state : state) =
         (display_paragraph config (config.outline_offset_y + 100))
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
-      (* TODO-5 this isn't correct with bigger screen size *)
       let margin_x = 50 in
       let config : text_config =
         {
           margin_x;
           margin_y = 20;
           margin_y_bottom = 20;
-          outline_offset_y = 0;
+          outline_offset_y = 50;
           padding_x = 50;
           padding_y = 50;
           centered = true;
@@ -692,7 +685,7 @@ let tick (state : state) =
 
       draw_screen_fade 160;
       draw_text_bg_box config;
-      draw_outline ability_text;
+      draw_outline ~offset_y:config.outline_offset_y ability_text;
 
       (* lots of hardcoded stuff in here, but I'm not sure if this will be used besides the focus-info text *)
       let top_y_offset, bottom_y_offset = (0, 400) in
@@ -1120,10 +1113,10 @@ let tick (state : state) =
       Some { x = ghost.body_render_offset.x; y = ghost.body_render_offset.y +. head_h }
     in
 
-    let draw_party_ghosts (ghosts_by_id : (ghost_id * party_ghost) list) =
+    let draw_party_ghosts (ghosts_by_id : party_ghost list) =
       if state.debug.enabled then
         itmp "-----------";
-      let draw_party_ghost ((ghost_id, party_ghost) : ghost_id * party_ghost) =
+      let draw_party_ghost (party_ghost : party_ghost) =
         draw_entity ~render_offset:(ghost_render_offset party_ghost.ghost) party_ghost.ghost.entity;
         draw_ghost_head ~tint:Color.raywhite ~party:true party_ghost.ghost;
         if state.debug.enabled then (

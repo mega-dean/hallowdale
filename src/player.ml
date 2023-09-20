@@ -57,8 +57,8 @@ let read_config () : ghosts_file =
   in
   { actions; body_textures; shared_textures }
 
-let available_ghost_ids ghosts : ghost_id list =
-  ghosts |> List.filter (fun (_id, g) -> g.in_party) |> List.map fst
+let ghost_ids_in_party ghosts : ghost_id list =
+  ghosts |> List.filter_map (fun g -> if g.in_party then Some g.ghost.id else None)
 
 let maybe_begin_interaction (state : state) (game : game) trigger =
   let begin_interaction ?(increase_health = false) trigger =
@@ -99,13 +99,17 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
   | RESPAWN ->
     failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
 
-let find_trigger_collision' ghost (triggers : trigger list) =
-  let colliding rt = Option.is_some (Collision.with_entity ghost.ghost.entity rt.dest) in
-  List.find_opt colliding triggers
+let find_trigger_collision' ghost (xs : 'a list) get_trigger_dest : 'a option =
+  let colliding x =
+    Option.is_some (Collision.with_entity ghost.ghost.entity (get_trigger_dest x))
+  in
+  List.find_opt colliding xs
+
+let find_trigger_collision ghost (triggers : trigger list) =
+  find_trigger_collision' ghost triggers (fun t -> t.dest)
 
 let find_respawn_trigger_collision ghost (triggers : (vector * trigger) list) =
-  let colliding (_, rt) = Option.is_some (Collision.with_entity ghost.ghost.entity rt.dest) in
-  List.find_opt colliding triggers
+  find_trigger_collision' ghost triggers (fun (_, t) -> t.dest)
 
 (* returns the first enemy collision *)
 let get_enemy_collision (player : player) (room : room) : (int * direction) option =
@@ -788,7 +792,7 @@ let set_pose ghost (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame
       (ghost.ghost.head_textures.read, bodies.read)
     | WALKING direction ->
       reset_standing_abilities ();
-      Entity.walk ghost.ghost.entity direction;
+      Entity.walk_ghost ghost.ghost.entity direction;
       (ghost.ghost.head_textures.walk, bodies.walk)
     | WALL_SLIDING wall ->
       let wall_to_the_left = wall.pos.x < ghost.ghost.entity.sprite.dest.pos.x in
@@ -1110,43 +1114,30 @@ let is_casting (state : state) (game : game) =
 
 let as_party_ghost (player : player) : party_ghost = { ghost = player.ghost; in_party = true }
 
-(* CLEANUP generalize *)
-let swap_current_ghost_in_cutscene (state : state) (game : game) target_ghost_id =
-  match List.assoc_opt target_ghost_id game.party with
+let find_party_ghost (id : ghost_id) party : party_ghost option =
+  List.find_opt (fun (party_ghost : party_ghost) -> party_ghost.ghost.id = id) party
+
+let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) target_ghost_id =
+  match find_party_ghost target_ghost_id game.party with
   | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
   | Some target_ghost ->
     let old_ghost = as_party_ghost game.player in
     let current_pos = old_ghost.ghost.entity.dest.pos in
-    (* FIXME this probably shouldn't be happening here
-              - but without it, britta disappears
-
-       - maybe change game.party to just be a party_ghost list
-    *)
-    game.party <- Utils.replace_assoc BRITTA old_ghost game.party;
-    (* let positions : string =
-     *   let show_pos (id, (pg : party_ghost)) =
-     *     fmt "%s: %s" (Show.ghost_id id) (Show.vector pg.ghost.entity.dest.pos)
-     *   in
-     *   List.map show_pos game.party |> join ~sep:"\n"
-     * in
-     * tmp "party ghost positions:\n%s" positions; *)
+    if in_cutscene then (
+      let new_party =
+        let other_ghosts =
+          List.filter (fun (pg : party_ghost) -> pg.ghost.id <> old_ghost.ghost.id) game.party
+        in
+        { old_ghost with in_party = false } :: other_ghosts
+      in
+      game.party <- new_party)
+    else (
+      Entity.unhide_at target_ghost.ghost.entity (clone_vector current_pos);
+      (* TODO maybe replace with clone_sprite *)
+      target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
+      target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v);
     game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
-    Entity.hide target_ghost.ghost.entity;
-    ()
-
-let swap_current_ghost (state : state) (game : game) target_ghost_id =
-  match List.assoc_opt target_ghost_id game.party with
-  | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
-  | Some target_ghost ->
-    let old_ghost = as_party_ghost game.player in
-    let current_pos = old_ghost.ghost.entity.dest.pos in
-    Entity.unhide_at target_ghost.ghost.entity (clone_vector current_pos);
-    (* CLEANUP replace with clone_sprite *)
-    target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
-    target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v;
-    game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
-    Entity.hide target_ghost.ghost.entity;
-    ()
+    Entity.hide target_ghost.ghost.entity
 
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   let new_val v =
@@ -1254,8 +1245,8 @@ let handle_debug_keys (game : game) (state : state) =
       (* show_ghost_location () *)
       game.player.ghost.entity.sprite.facing_right <- true;
       let positions : string =
-        let show_pos (id, (pg : party_ghost)) =
-          fmt "%s: %s" (Show.ghost_id id) (Show.vector pg.ghost.entity.dest.pos)
+        let show_pos (pg : party_ghost) =
+          fmt "%s: %s" (Show.ghost_id pg.ghost.id) (Show.vector pg.ghost.entity.dest.pos)
         in
         List.map show_pos game.party |> join ~sep:"\n"
       in
@@ -1321,7 +1312,7 @@ let update (game : game) (state : state) =
 
     let check_for_new_interactions () : bool =
       let interactable_triggers = game.room.triggers.lore @ game.room.triggers.item_pickups in
-      (match find_trigger_collision' game.player interactable_triggers with
+      (match find_trigger_collision game.player interactable_triggers with
       | None -> game.room.interaction_label <- None
       | Some trigger -> (
         let label =
@@ -1354,7 +1345,7 @@ let update (game : game) (state : state) =
           if List.mem blocking_interaction_name all_finished_interactions then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
-      (match find_trigger_collision' game.player game.room.triggers.cutscene with
+      (match find_trigger_collision game.player game.room.triggers.cutscene with
       | None -> ()
       | Some trigger -> maybe_begin_interaction state game trigger);
       (match find_respawn_trigger_collision game.player game.room.triggers.respawn with
@@ -1406,8 +1397,8 @@ let update (game : game) (state : state) =
           | DEBUG ->
             let statuses =
               List.map
-                (fun (id, (pg : party_ghost)) ->
-                  fmt "%s in party: %b" (Show.ghost_id id) pg.in_party)
+                (fun (pg : party_ghost) ->
+                  fmt "%s in party: %b" (Show.ghost_id pg.ghost.id) pg.in_party)
                 game.party
               |> join
             in
@@ -1572,8 +1563,11 @@ let update (game : game) (state : state) =
                 itmp "    ------- walking party ghost %s with v.x %f"
                   (Show.ghost_id party_ghost.ghost.id)
                   party_ghost.ghost.entity.v.x;
-                (* TODO this can also check if skip-interaction is held down and use a higher vx *)
-                Entity.walk party_ghost.ghost.entity direction;
+                Entity.walk_ghost party_ghost.ghost.entity direction;
+                if speed_through_interaction then
+                  (* can't go faster than 2x because it breaks the locker-boys-killed
+                     cutscene because Abed doesn't have enough time to fall to the lower level *)
+                  party_ghost.ghost.entity.v.x <- party_ghost.ghost.entity.v.x *. 2.;
                 (party_ghost.ghost.head_textures.walk, state.global.textures.ghost_bodies.walk)
               | LANDING _
               | READING
@@ -1595,7 +1589,7 @@ let update (game : game) (state : state) =
             party_ghost.ghost.entity.v.x <- vx;
             party_ghost.ghost.entity.current_floor <- None
           | SET_POSE pose -> set_interaction_pose pose
-          | MAKE_CURRENT_GHOST -> swap_current_ghost_in_cutscene state game ghost_id
+          | MAKE_CURRENT_GHOST -> swap_current_ghost ~in_cutscene:true state game ghost_id
           | ENTITY entity_step ->
             (match entity_step with
             | HIDE ->
@@ -1717,7 +1711,7 @@ let update (game : game) (state : state) =
         | CURRENT_GHOST ghost_step -> handle_ghost_step game.player ghost_step
         | PARTY_GHOST (ghost_id, party_ghost_step) ->
           let find_party_ghost () : party_ghost =
-            match List.assoc_opt ghost_id game.party with
+            match find_party_ghost ghost_id game.party with
             | Some ghost -> ghost
             | None -> failwithf "ghost_id %s needs to be in game.players" (Show.ghost_id ghost_id)
           in

@@ -56,10 +56,14 @@ let save_files_menu () : menu =
     current_choice_idx = 0;
   }
 
-let change_ghost_menu (ghosts : (ghost_id * party_ghost) list) : menu =
+let change_ghost_menu (ghosts : party_ghost list) : menu =
   let ghost_choices =
     List.filter_map
-      (fun (id, ghost) -> if ghost.in_party then Some (CHANGE_GHOST_MENU (USE_GHOST id)) else None)
+      (fun party_ghost ->
+        if party_ghost.in_party then
+          Some (CHANGE_GHOST_MENU (USE_GHOST party_ghost.ghost.id))
+        else
+          None)
       ghosts
   in
   { choices = ghost_choices @ [ CHANGE_GHOST_MENU BACK ]; current_choice_idx = 0 }
@@ -86,7 +90,7 @@ let save_game ?(after_fn = ignore) (game : game) (state : state) =
         (* game.players only has the uncontrolled ghosts, but save_file.ghosts_in_party
            should include the current ghosts id
         *)
-        [ game.player.ghost.id ] @ Player.available_ghost_ids ghosts'
+        [ game.player.ghost.id ] @ Player.ghost_ids_in_party ghosts'
         |> List.map Show.ghost_id
         |> Utils.uniq;
       ghost_x = game.player.ghost.entity.dest.pos.x;
@@ -113,7 +117,7 @@ let update_pause_menu (game : game) (state : state) : state =
     match state.pause_menu with
     | None ->
       play_sound state "menu-expand";
-      state.pause_menu <- Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
+      state.pause_menu <- Some (pause_menu (List.length (Player.ghost_ids_in_party game.party)))
     | Some _ ->
       play_sound state "menu-close";
       state.pause_menu <- None);
@@ -165,7 +169,7 @@ let update_pause_menu (game : game) (state : state) : state =
       | SETTINGS_MENU BACK
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
-        state.pause_menu <- Some (pause_menu (List.length (Player.available_ghost_ids game.party)))
+        state.pause_menu <- Some (pause_menu (List.length (Player.ghost_ids_in_party game.party)))
       | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (settings_menu ())
       | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (music_menu ())
       | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (sound_effects_menu ())

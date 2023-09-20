@@ -281,7 +281,7 @@ let init () : state =
 
 let update_camera (game : game) (state : state) =
   let trigger_config : trigger option =
-    Player.find_trigger_collision' game.player game.room.triggers.camera
+    Player.find_trigger_collision game.player game.room.triggers.camera
   in
   let subject =
     match state.camera.subject with
@@ -634,17 +634,17 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time sprite.texture sprite
   in
 
-  let update_ghost ((_id, ghost) : ghost_id * party_ghost) =
-    Sprite.advance_animation state.frame.time ghost.ghost.entity.sprite.texture
-      ghost.ghost.entity.sprite;
-    if ghost.ghost.entity.update_pos then (
-      itmp "updating party ghost  %s position" (Show.ghost_id _id);
+  let update_ghost (party_ghost : party_ghost) =
+    let ghost = party_ghost.ghost in
+    Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
+    if ghost.entity.update_pos then (
+      itmp "updating party ghost  %s position" (Show.ghost_id ghost.id);
       (* if _id = BRITTA then
        *   tmp "party ghost before: %s" (Show.vector ghost.ghost.entity.dest.pos); *)
-      Entity.update_pos game.room ghost.ghost.entity state.frame.dt;
+      Entity.update_pos game.room ghost.entity state.frame.dt;
       (* if _id = BRITTA then
        *   tmp "party ghost after: %s" (Show.vector ghost.ghost.entity.dest.pos); *)
-      Entity.maybe_unset_current_floor ghost.ghost.entity game.room)
+      Entity.maybe_unset_current_floor ghost.entity game.room)
   in
 
   List.iter update_ghost game.party;
@@ -770,22 +770,22 @@ let tick (state : state) =
           add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
         in
 
-        (* if state.debug.enabled then (
-         *   let party_ghosts =
-         *     let show_party_ghost ((ghost_id, p) : ghost_id * party_ghost) =
-         *       if List.mem ghost_id [ ANNIE; BRITTA ] then
-         *         Some
-         *           (fmt "got party ghost %s at %s" (Show.ghost_id p.ghost.id)
-         *              (Show.vector p.ghost.entity.dest.pos))
-         *       else
-         *         None
-         *     in
-         *     List.filter_map show_party_ghost game.party |> join ~sep:"\n"
-         *   in
-         *   tmp "current_ghost:  %s at %s"
-         *     (Show.ghost_id game.player.ghost.id)
-         *     (Show.vector game.player.ghost.entity.dest.pos);
-         *   tmp "party ghosts:\n%s" party_ghosts); *)
+        if state.debug.enabled then (
+          let party_ghosts =
+            let show_party_ghost (p : party_ghost) =
+              if true || List.mem p.ghost.id [ ANNIE; BRITTA ] then
+                Some
+                  (fmt "    (%b) %s at %s" p.in_party (Show.ghost_id p.ghost.id)
+                     (Show.vector p.ghost.entity.dest.pos))
+              else
+                None
+            in
+            List.filter_map show_party_ghost game.party |> join ~sep:"\n"
+          in
+          tmp "-------------------current_ghost:  %s at %s"
+            (Show.ghost_id game.player.ghost.id)
+            (Show.vector game.player.ghost.entity.dest.pos);
+          tmp "%s" party_ghosts);
 
         show_triggers game.room.triggers.lore;
         show_triggers game.room.triggers.cutscene;
@@ -813,8 +813,6 @@ let tick (state : state) =
           Menu.save_game game state;
           state.should_save <- false);
 
-
-        itmp "-------------------";
 
         state'
         |> Player.handle_debug_keys game
