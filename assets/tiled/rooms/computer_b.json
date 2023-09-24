@@ -875,10 +875,21 @@
                  "width":1704,
                  "x":2124,
                  "y":216
+                }, 
+                {
+                 "height":469,
+                 "id":100,
+                 "name":"camera:gx,<y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":865,
+                 "x":12,
+                 "y":519
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -2113,7 +2124,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":344,
          "x":0,
          "y":0
@@ -2356,7 +2367,7 @@
          "y":0
         }],
  "nextlayerid":20,
- "nextobjectid":100,
+ "nextobjectid":101,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

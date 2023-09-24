@@ -101,11 +101,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       match trigger.name_suffix with
       | "opening-poem" ->
         [
-          (* TODO add STEP SHOW_RECT and STEP HIDE_RECT to uncover the lines of the poem one-at-a-time
-             - probably add something like `black_rects : rect list` to Interaction.t
-             - this doesn't work because render doesn't have access to game.interaction.black_rects
-          *)
-          (* CLEANUP center this text box *)
+          (* TODO center this text box *)
           STEP (TEXT [ "Give me some rope, tie me to dream." ]);
           STEP
             (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
@@ -438,8 +434,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | "DUNCAN" ->
         [
           CURRENT_GHOST (PARTY (WALK_TO 52));
-          (* CLEANUP maybe not necessary? *)
-          CURRENT_GHOST (SET_POSE IDLE);
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
           ENEMY (DUNCAN, WALK_TO 31);
           ENEMY (DUNCAN, SET_POSE "idle");
@@ -532,6 +526,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           (* PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT)); *)
           PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
           PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
+
+          (* TODO center this text box so it doesn't overlap the ghosts or chang *)
           STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
           STEP (SET_FIXED_CAMERA (169, 42));
           STEP (WAIT 0.5);

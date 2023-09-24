@@ -5,12 +5,12 @@ open Types
 let save_file_path idx = fmt "saves/%d.json" idx
 
 let new_game () : Json_t.save_file =
-  let kings_pass_drop = { x = 1800.; y = 550. } in
+  let kings_pass_drop = { x = 1800.; y = 150. } in
   let b =
     (* newgame *)
-    false
+    (* false *)
     (* newgameplus *)
-    (* true *)
+    true
   in
   {
     ghost_id = "BRITTA";
@@ -28,7 +28,7 @@ let new_game () : Json_t.save_file =
         mantis_claw = b;
         crystal_heart = b;
         monarch_wings = b;
-        shade_cloak = b;
+        shade_cloak = false;
         ismas_tear = b;
         (* spells *)
         vengeful_spirit = b;
@@ -122,10 +122,7 @@ let init
   let music = List.find (fun am -> List.mem room.area.id am.areas) area_musics in
 
   let current_ghost_id = Player.parse_name save_file.ghost_id in
-  let party_ghost =
-    (* CLEANUP  *)
-    Option.get (Player.find_party_ghost current_ghost_id party)
-  in
+  let party_ghost = Option.get (Player.find_party_ghost current_ghost_id party) in
   let player = make_ghost party_ghost in
 
   player.ghost.entity.update_pos <- true;
@@ -141,7 +138,6 @@ let init
         steps = [];
         text = None;
         speaker_name = None;
-        black_rects = [];
         corner_text = None;
         floating_text = None;
       };

@@ -559,11 +559,10 @@ module Interaction = struct
     | FLOATING_TEXT of string * float
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
+    (* | SET_TEXT_OFFSET of rect * string list *)
     (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
     | DIALOGUE of string * string
     | PURPLE_PEN_TEXT of string list
-    | PUSH_RECT of float * float * float * float
-    (* | POP_RECT *)
     (* camera *)
     | SET_FIXED_CAMERA of int * int
     | SET_GHOST_CAMERA
@@ -634,6 +633,9 @@ module Interaction = struct
     padding_y : int;
     margin_x : int;
     margin_y : int;
+    (* FIXME weird to have this and margin_y - "text box height" is probably less confusing
+       - maybe just rename margin_y to margin_y_top though
+    *)
     margin_y_bottom : int;
     outline_offset_y : int;
     (* TODO
@@ -675,8 +677,6 @@ module Interaction = struct
     (* this is for text boxes that should show up on the screen without blocking gameplay,
        like dream-nail thoughts and some interactions *)
     mutable floating_text : (string * time) option;
-    (* these are only used for revealing the opening poem for new games *)
-    mutable black_rects : rect list;
   }
 end
 
@@ -1089,13 +1089,16 @@ type area_id =
   | VENTWAYS
   | LIBRARY
 
-(* CLEANUP maybe rename this since it is used for menu_music *)
-type area_music = {
+type music = {
   name : string;
   t : Raylib.Music.t;
-  areas : area_id list;
   loop_start : time;
   loop_end : time;
+}
+
+type area_music = {
+  music : music;
+  areas : area_id list;
 }
 
 type area = {
@@ -1383,7 +1386,7 @@ type state = {
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
   global : global_cache;
-  menu_music : area_music;
+  menu_music : music;
   area_musics : area_music list;
   settings : settings;
 }

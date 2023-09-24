@@ -25,7 +25,7 @@ let last_performed_action (enemy : enemy) : (string * float) option =
   in
   match List.find_opt action_performed enemy.history with
   | Some (PERFORMED action, performed) -> Some (action, performed.at)
-  | _ -> (* CLEANUP should this be unreachable? *) None
+  | _ -> None
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
   match List.assoc_opt (PERFORMED action_name) enemy.history with
@@ -486,8 +486,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     else if should_vanish () then (
       set_prop enemy "should_vanish" 0.;
       start_and_log_action enemy "vanish" state.frame.time [])
-    else (
-      (* TODO probably will need this for a lot of enemies *)
+    else ((* TODO probably will need this for a lot of enemies *)
       match last_performed_action enemy with
       | None -> ()
       | Some (action, action_duration) ->
@@ -625,12 +624,11 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     ()
   | ELECTRICITY ->
     let last_shock = action_started_at enemy "shock" in
-    let shock_dt =
+    let shock_duration =
       (* needs to be greater than shock config (count * duration) *)
-      (* CLEANUP use a prop *)
-      2.5
+      get_json_prop enemy "shock_duration"
     in
-    if last_shock.at < state.frame.time -. shock_dt then
+    if last_shock.at < state.frame.time -. shock_duration then
       set_electricity_action enemy `SHOCK state.frame.time []
   | PENGUIN -> ()
 

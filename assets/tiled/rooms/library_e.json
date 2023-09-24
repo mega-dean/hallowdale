@@ -303,7 +303,7 @@
                 {
                  "height":86,
                  "id":14,
-                 "name":"warp:library_a@35,35",
+                 "name":"warp:library_a@9,45",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -324,7 +324,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 

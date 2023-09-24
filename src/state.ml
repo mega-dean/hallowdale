@@ -216,20 +216,20 @@ let init () : state =
   (* TODO this should get saved to the save file instead of resetting every time *)
   let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
 
-  let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas =
+  let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas : area_music =
     let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
     Raylib.set_music_volume music settings.music_volume;
-    (* CLEANUP this probably isn't a good way to do this
-       - use stop_music_stream instead
+    (* TODO this probably isn't a good way to do this
+       - this is starting all ~8 area musics, and then only advancing the one for the current area
+       - should probably be using stop_music_stream
     *)
     Raylib.play_music_stream music;
-    { name; t = music; areas; loop_start = { at = intro }; loop_end = { at = loop } }
+    { areas; music = { name; t = music; loop_start = { at = intro }; loop_end = { at = loop } } }
   in
 
   let area_musics : area_music list =
     [
       (* TODO these loop times are not very precise *)
-      load_music "opening" [];
       load_music "as-i-lay-me-down" ~intro:72.128 ~loop:171.947
         [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
       load_music "daybreak" [ AC_REPAIR_ANNEX ];
@@ -242,7 +242,7 @@ let init () : state =
   in
 
   {
-    menu_music = List.find (fun am -> am.name = "opening") area_musics;
+    menu_music = (load_music "opening" []).music;
     area_musics;
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
@@ -738,11 +738,11 @@ let tick (state : state) =
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
-    if Raylib.get_music_time_played game.music.t > game.music.loop_end.at then
-      Raylib.seek_music_stream game.music.t
-        (Utils.bound 0.1 game.music.loop_start.at Float.max_float);
+    let music = game.music.music in
+    if Raylib.get_music_time_played music.t > music.loop_end.at then
+      Raylib.seek_music_stream music.t (Utils.bound 0.1 music.loop_start.at Float.max_float);
 
-    Raylib.update_music_stream game.music.t;
+    Raylib.update_music_stream music.t;
 
     if game.debug_paused then
       if key_pressed DEBUG_2 then
@@ -812,7 +812,6 @@ let tick (state : state) =
         if state.should_save then (
           Menu.save_game game state;
           state.should_save <- false);
-
 
         state'
         |> Player.handle_debug_keys game

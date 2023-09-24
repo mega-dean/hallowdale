@@ -210,7 +210,7 @@
                 {
                  "height":158,
                  "id":14,
-                 "name":"door-warp:library_e@66,40",
+                 "name":"door-warp:library_e@66,45",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -228,10 +228,21 @@
                  "width":64,
                  "x":1482,
                  "y":438
+                }, 
+                {
+                 "height":488,
+                 "id":16,
+                 "name":"camera:>x,gy",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":706,
+                 "x":81,
+                 "y":123
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -564,7 +575,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":137,
          "x":0,
          "y":0
@@ -697,7 +708,7 @@
          "y":0
         }],
  "nextlayerid":13,
- "nextobjectid":16,
+ "nextobjectid":17,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

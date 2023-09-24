@@ -137,7 +137,7 @@ let update_pause_menu (game : game) (state : state) : state =
     let change_music_volume increase =
       let new_volume = get_new_volume increase state.settings.music_volume in
       state.settings.music_volume <- new_volume;
-      Raylib.set_music_volume game.music.t new_volume
+      Raylib.set_music_volume game.music.music.t new_volume
     in
 
     let change_sound_effects_volume increase =
@@ -156,7 +156,7 @@ let update_pause_menu (game : game) (state : state) : state =
         state.pause_menu <- Some (change_weapon_menu (List.map fst game.player.weapons))
       | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.party)
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
-        Raylib.seek_music_stream game.music.t 0.;
+        Raylib.seek_music_stream game.music.music.t 0.;
         Raylib.seek_music_stream state.menu_music.t 0.;
         (* TODO unload textures *)
         state.pause_menu <- None;

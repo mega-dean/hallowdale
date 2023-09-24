@@ -196,6 +196,9 @@
             "w": 0,
             "h": 0,
             "kind": "enemy",
+            "props": [
+                ["shock_duration", 2.5]
+            ],
             "gravity_multiplier": 0.0,
             "can_take_damage": false,
             "dream_nail": {

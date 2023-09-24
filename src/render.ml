@@ -645,43 +645,32 @@ let tick (state : state) =
       draw_texture texture dest 0
     in
 
+    let base_config : text_config =
+      {
+        margin_x = 50;
+        margin_y = 20;
+        margin_y_bottom = 20;
+        outline_offset_y = Config.window.height / 4;
+        padding_x = 50;
+        padding_y = 50;
+        centered = true;
+      }
+    in
+
     (* TODO probably worth moving all these magic numbers into a config *)
     match interaction_text with
     | None -> ()
     | Some (ABILITY ability_text) ->
-      let margin_x = 50 in
-      let config : text_config =
-        {
-          margin_x;
-          margin_y = 20;
-          margin_y_bottom = 20;
-          outline_offset_y = Config.window.height / 4;
-          padding_x = 50;
-          padding_y = 50;
-          centered = true;
-        }
-      in
-
       draw_screen_fade 160;
-      draw_text_bg_box config;
-      draw_outline ~offset_y:config.outline_offset_y ability_text;
+      draw_text_bg_box base_config;
+      draw_outline ~offset_y:base_config.outline_offset_y ability_text;
 
+      (* FIXME maybe pass in new args to display_paragraph/draw_outline, rather than accessing them directly from game.interaction._ *)
       List.iteri
-        (display_paragraph config (config.outline_offset_y + 100))
+        (display_paragraph base_config (base_config.outline_offset_y + 100))
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
-      let margin_x = 50 in
-      let config : text_config =
-        {
-          margin_x;
-          margin_y = 20;
-          margin_y_bottom = 20;
-          outline_offset_y = 50;
-          padding_x = 50;
-          padding_y = 50;
-          centered = true;
-        }
-      in
+      let config : text_config = { base_config with outline_offset_y = 50 } in
 
       draw_screen_fade 160;
       draw_text_bg_box config;
@@ -692,14 +681,12 @@ let tick (state : state) =
       List.iteri (display_paragraph config top_y_offset) ability_text.top_paragraphs;
       List.iteri (display_paragraph config bottom_y_offset) ability_text.bottom_paragraphs
     | Some (DIALOGUE (speaker_name, text')) ->
-      let margin_x = 250 in
       let config : text_config =
         {
-          margin_x;
+          margin_x = 250;
           margin_y = 50;
           margin_y_bottom =
-            (* this allows for 4 lines of dialogue, but the bottom one is pretty close so < 3 lines works best
-            *)
+            (* this allows for ~4 lines of dialogue, but the bottom one is pretty close so < 3 lines works best *)
             450;
           outline_offset_y = 0;
           padding_x = 30;
@@ -708,7 +695,7 @@ let tick (state : state) =
         }
       in
       draw_text_bg_box config;
-      let hd = List.hd text'.content in
+      let content = List.hd text'.content in
       if List.length (List.tl text'.content) > 0 then
         (* TODO when one character says several lines in a row, it would be nice
            to not "close" the text box in between each one *)
@@ -730,7 +717,7 @@ let tick (state : state) =
             "{{maroon}}"
           | _ -> failwithf "unknown speaker: %s" speaker_name
         in
-        display_paragraph config 0 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name hd))
+        display_paragraph config 0 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name content))
     | Some (PLAIN text') ->
       let margin_y_bottom =
         let tall_text =
@@ -742,15 +729,12 @@ let tick (state : state) =
         else
           350
       in
-      let margin_x = 150 in
       let config : text_config =
-        {
-          margin_x;
+        { base_config with
+          margin_x = 150;
           margin_y = 50;
           margin_y_bottom;
           outline_offset_y = 0;
-          padding_x = 50;
-          padding_y = 50;
           centered = false;
         }
       in
@@ -781,14 +765,10 @@ let tick (state : state) =
 
       let margin_y_bottom = margin_y in
       let config : text_config =
-        {
+        { base_config with
           margin_x;
           margin_y;
           margin_y_bottom;
-          outline_offset_y = Config.window.height / 4;
-          padding_x = 50;
-          padding_y = 50;
-          centered = true;
         }
       in
       draw_text_bg_box config;
@@ -1067,19 +1047,10 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
-    (* CLEANUP remove party arg *)
-    let draw_ghost_head ~tint ?(party = false) ghost =
+    let draw_ghost_head ~tint ghost =
       let head_dest =
         let head_w, head_h = (40., 40.) in
-        let neck_x, neck_y =
-          (* CLEANUP not sure why neck_y isn't 30
-             - also not sure why party has to be different from current
-          *)
-          (* CLEANUP not sure why party ghost needs to be different, and only for y *)
-          (20., 26.)
-          (* ((if party then 50. else 20.), 26.) *)
-          (* (0., 0.) *)
-        in
+        let neck_x, neck_y = (20., 26.) in
         let dest' =
           {
             pos =
@@ -1092,12 +1063,6 @@ let tick (state : state) =
             h = head_h *. Config.scale.ghost;
           }
         in
-        if party && state.debug.enabled then
-          debug_rect ~r:255 dest';
-        if not party then
-          itmp "entity.dest.pos: %s, head_dest: %s"
-            (Show.vector ghost.entity.dest.pos)
-            (Show.vector dest'.pos);
         dest' |> to_Rect
       in
       Draw.image ghost.head.image
@@ -1118,7 +1083,7 @@ let tick (state : state) =
         itmp "-----------";
       let draw_party_ghost (party_ghost : party_ghost) =
         draw_entity ~render_offset:(ghost_render_offset party_ghost.ghost) party_ghost.ghost.entity;
-        draw_ghost_head ~tint:Color.raywhite ~party:true party_ghost.ghost;
+        draw_ghost_head ~tint:Color.raywhite party_ghost.ghost;
         if state.debug.enabled then (
           debug_rect party_ghost.ghost.entity.dest;
           debug_rect_outline party_ghost.ghost.entity.sprite.dest)

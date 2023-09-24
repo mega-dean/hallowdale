@@ -568,6 +568,7 @@ let init (params : room_params) : room =
             | None -> failwithf "expected one collision rect object, got 0 for gid %d" id
             | Some coll_rect -> (coll_rect.w, coll_rect.h)
           in
+          let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
           let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option =
             let make_fragment name y_offset w h : entity =
               let x', y' = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
@@ -589,16 +590,14 @@ let init (params : room_params) : room =
               entity
             in
             let w, h = get_coll_wh (jug_firstgid + collision.id) in
-            (* this check only supports the left column of wide jugs
-               CLEANUP reuse in_this_column
-            *)
-            if collision.id mod tileset.json.columns = tile_x then (
+            (* this check only supports the left column of wide jugs *)
+            if in_this_column collision then (
+              (* collision.id mod tileset.json.columns = tile_x then ( *)
               let fragment_y = (collision_idx |> Int.to_float) *. tileset.json.tile_h *. 2. in
               Some (make_fragment config.jug_name fragment_y w h))
             else
               None
           in
-          let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
           let collisions = List.filter in_this_column tileset.json.collisions in
           let fragments = List.mapi build_fragment collisions in
           fragments |> Utils.filter_somes
@@ -617,7 +616,6 @@ let init (params : room_params) : room =
 
       let metadata : jug_config list =
         let configs : Json_t.jug_metadata_file =
-          (* CLEANUP add error message for read_config (invalid json) *)
           File.read_config "jugs" Json_j.jug_metadata_file_of_string
         in
         let build (metadata : Json_t.jug_metadata) : jug_config =
@@ -797,8 +795,8 @@ let handle_transitions (state : state) (game : game) =
       let current_area_music = get_music game.room.area.id in
       let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
       let target_area_music = get_music target_area_id in
-      if current_area_music.name <> target_area_music.name then (
-        Raylib.seek_music_stream target_area_music.t 0.;
+      if current_area_music.music.name <> target_area_music.music.name then (
+        Raylib.seek_music_stream target_area_music.music.t 0.;
         game.music <- target_area_music);
       change_current_room state game room_location start_pos;
       let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
