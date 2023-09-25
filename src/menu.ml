@@ -5,6 +5,17 @@ open Types
 let main_menu () : menu =
   { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
 
+let select_game_mode_menu save_file save_file_idx : menu =
+  {
+    choices =
+      [
+        SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx));
+        SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
+        SELECT_GAME_MODE BACK;
+      ];
+    current_choice_idx = 0;
+  }
+
 let pause_menu ghost_count : menu =
   {
     choices =
@@ -85,7 +96,9 @@ let save_game ?(after_fn = ignore) (game : game) (state : state) =
   let save_file : Json_t.save_file =
     let ghosts' = game.party in
     {
+      game_mode = Show.game_mode game.mode;
       ghost_id = Show.ghost_id game.player.ghost.id;
+      (* FIXME add game_mode *)
       ghosts_in_party =
         (* game.players only has the uncontrolled ghosts, but save_file.ghosts_in_party
            should include the current ghosts id
@@ -181,6 +194,47 @@ let update_pause_menu (game : game) (state : state) : state =
       | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
 
+let initialize_camera_and_game state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
+  let mode' =
+    match mode with
+    | Some m -> m
+    | None -> (
+      match save_file.game_mode with
+      | "Classic" -> CLASSIC
+      | "Steel Sole" -> STEEL_SOLE
+      | _ -> failwithf "invalid game_mode in save_file %d" save_file_idx)
+  in
+  let game = Game.init mode' save_file state.global state.area_musics state.world save_file_idx in
+  state.camera.update_instantly <- true;
+  state.camera.raylib <-
+    (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
+       TODO can maybe improve this, since it can still be off if the camera is bounded
+    *)
+    Tiled.create_camera_at
+      (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x game.player.ghost.entity.dest.pos.y)
+      0.;
+  game
+
+(* FIXME a lot of this will probably be needed for ss games too *)
+let initialize_classic_game (state : state) (game : game) save_file =
+  Entity.freeze game.player.ghost.entity;
+  state.screen_fade <- Some 255;
+  let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
+  Player.maybe_begin_interaction state game trigger
+
+let initialize_ss_game (state : state) (game : game) (save_file : Json_t.save_file) =
+  (* FIXME give all abilities *)
+  save_file.abilities.mantis_claw <- true;
+  save_file.abilities.mothwing_cloak <- true;
+  save_file.abilities.monarch_wings <- true;
+  save_file.abilities.crystal_heart <- true;
+  save_file.abilities.ismas_tear <- true;
+  ()
+
+let start_game (state : state) (game : game) =
+  Raylib.stop_music_stream state.menu_music.t;
+  state.game_context <- IN_PROGRESS game
+
 let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : state =
   update_menu_choice menu state;
 
@@ -193,24 +247,18 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       | 4 -> save_slots.slot_4
       | _ -> failwithf "bad save file idx: %d" save_file_idx
     in
-    let game = Game.init save_file state.global state.area_musics state.world save_file_idx in
-    state.camera.update_instantly <- true;
-    state.camera.raylib <-
-      (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
-         TODO can maybe improve this, since it can still be off if the camera is bounded
-      *)
-      Tiled.create_camera_at
-        (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x
-           game.player.ghost.entity.dest.pos.y)
-        0.;
-    if is_new_game then (
-      Entity.freeze game.player.ghost.entity;
-      state.screen_fade <- Some 255;
-      let trigger : trigger = make_stub_trigger INFO "info" "opening-poem" in
-      Player.maybe_begin_interaction state game trigger);
-    Raylib.stop_music_stream state.menu_music.t;
-    state.game_context <- IN_PROGRESS game
-    (* TODO maybe do something to prevent the ghost from jumping when file is loaded *)
+    if is_new_game then
+      state.game_context <- MAIN_MENU (select_game_mode_menu save_file save_file_idx, save_slots)
+    else (
+      let game = initialize_camera_and_game state save_file save_file_idx in
+      tmp "starting game with mode: %s" (Show.game_mode game.mode);
+      start_game state game)
+  in
+
+  let initialize_and_start_game init game_mode save_file save_file_idx =
+    let game = initialize_camera_and_game state ~mode:(Some game_mode) save_file save_file_idx in
+    init state game save_file;
+    start_game state game
   in
 
   if state.frame_inputs.jump.pressed then (
@@ -225,5 +273,10 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     | SAVE_FILES SLOT_3 -> load_file 3
     | SAVE_FILES SLOT_4 -> load_file 4
     | SAVE_FILES BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
+    | SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)) ->
+      initialize_and_start_game initialize_classic_game CLASSIC save_file save_file_idx
+    | SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx)) ->
+      initialize_and_start_game initialize_ss_game STEEL_SOLE save_file save_file_idx
+    | SELECT_GAME_MODE BACK -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
     | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
   state

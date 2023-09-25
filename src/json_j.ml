@@ -92,6 +92,7 @@ type ghost_abilities = Json_t.ghost_abilities = {
 
 type save_file = Json_t.save_file = {
   ghost_id: string;
+  game_mode: string;
   ghost_x: float;
   ghost_y: float;
   respawn_x: float;
@@ -4024,6 +4025,15 @@ let write_save_file : _ -> save_file -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
+      Buffer.add_string ob "\"game_mode\":";
+    (
+      Yojson.Safe.write_string
+    )
+      ob x.game_mode;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
       Buffer.add_string ob "\"ghost_x\":";
     (
       Yojson.Safe.write_float
@@ -4121,6 +4131,7 @@ let read_save_file = (
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
     let field_ghost_id = ref (None) in
+    let field_game_mode = ref (None) in
     let field_ghost_x = ref (None) in
     let field_ghost_y = ref (None) in
     let field_respawn_x = ref (None) in
@@ -4146,10 +4157,10 @@ let read_save_file = (
                       if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = '_' then (
                         match String.unsafe_get s (pos+6) with
                           | 'x' -> (
-                              1
+                              2
                             )
                           | 'y' -> (
-                              2
+                              3
                             )
                           | _ -> (
                               -1
@@ -4161,7 +4172,7 @@ let read_save_file = (
                     )
                   | 'w' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 's' then (
-                        8
+                        9
                       )
                       else (
                         -1
@@ -4183,7 +4194,7 @@ let read_save_file = (
                     )
                   | 'p' -> (
                       if String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 's' then (
-                        10
+                        11
                       )
                       else (
                         -1
@@ -4197,7 +4208,15 @@ let read_save_file = (
                 match String.unsafe_get s pos with
                   | 'a' -> (
                       if String.unsafe_get s (pos+1) = 'b' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 't' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 's' then (
-                        7
+                        8
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | 'g' -> (
+                      if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'm' && String.unsafe_get s (pos+6) = 'o' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'e' then (
+                        1
                       )
                       else (
                         -1
@@ -4209,10 +4228,10 @@ let read_save_file = (
                             if String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'w' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = '_' then (
                               match String.unsafe_get s (pos+8) with
                                 | 'x' -> (
-                                    3
+                                    4
                                   )
                                 | 'y' -> (
-                                    4
+                                    5
                                   )
                                 | _ -> (
                                     -1
@@ -4224,7 +4243,7 @@ let read_save_file = (
                           )
                         | 'o' -> (
                             if String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'a' && String.unsafe_get s (pos+7) = 'm' && String.unsafe_get s (pos+8) = 'e' then (
-                              6
+                              7
                             )
                             else (
                               -1
@@ -4240,7 +4259,7 @@ let read_save_file = (
               )
             | 14 -> (
                 if String.unsafe_get s pos = 'c' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'e' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'p' && String.unsafe_get s (pos+12) = 'o' && String.unsafe_get s (pos+13) = 'n' then (
-                  9
+                  10
                 )
                 else (
                   -1
@@ -4248,7 +4267,7 @@ let read_save_file = (
               )
             | 15 -> (
                 if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'i' && String.unsafe_get s (pos+8) = 'n' && String.unsafe_get s (pos+9) = '_' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 't' && String.unsafe_get s (pos+14) = 'y' then (
-                  5
+                  6
                 )
                 else (
                   -1
@@ -4271,6 +4290,14 @@ let read_save_file = (
               )
             );
           | 1 ->
+            field_game_mode := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              )
+            );
+          | 2 ->
             field_ghost_x := (
               Some (
                 (
@@ -4278,7 +4305,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 2 ->
+          | 3 ->
             field_ghost_y := (
               Some (
                 (
@@ -4286,7 +4313,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 3 ->
+          | 4 ->
             field_respawn_x := (
               Some (
                 (
@@ -4294,7 +4321,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 4 ->
+          | 5 ->
             field_respawn_y := (
               Some (
                 (
@@ -4302,7 +4329,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 5 ->
+          | 6 ->
             field_ghosts_in_party := (
               Some (
                 (
@@ -4310,7 +4337,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 6 ->
+          | 7 ->
             field_room_name := (
               Some (
                 (
@@ -4318,7 +4345,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 7 ->
+          | 8 ->
             field_abilities := (
               Some (
                 (
@@ -4326,7 +4353,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 8 ->
+          | 9 ->
             field_weapons := (
               Some (
                 (
@@ -4334,7 +4361,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 9 ->
+          | 10 ->
             field_current_weapon := (
               Some (
                 (
@@ -4342,7 +4369,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 10 ->
+          | 11 ->
             field_progress := (
               Some (
                 (
@@ -4369,10 +4396,10 @@ let read_save_file = (
                         if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = '_' then (
                           match String.unsafe_get s (pos+6) with
                             | 'x' -> (
-                                1
+                                2
                               )
                             | 'y' -> (
-                                2
+                                3
                               )
                             | _ -> (
                                 -1
@@ -4384,7 +4411,7 @@ let read_save_file = (
                       )
                     | 'w' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 's' then (
-                          8
+                          9
                         )
                         else (
                           -1
@@ -4406,7 +4433,7 @@ let read_save_file = (
                       )
                     | 'p' -> (
                         if String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 's' then (
-                          10
+                          11
                         )
                         else (
                           -1
@@ -4420,7 +4447,15 @@ let read_save_file = (
                   match String.unsafe_get s pos with
                     | 'a' -> (
                         if String.unsafe_get s (pos+1) = 'b' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 't' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 's' then (
-                          7
+                          8
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | 'g' -> (
+                        if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'm' && String.unsafe_get s (pos+6) = 'o' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'e' then (
+                          1
                         )
                         else (
                           -1
@@ -4432,10 +4467,10 @@ let read_save_file = (
                               if String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'w' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = '_' then (
                                 match String.unsafe_get s (pos+8) with
                                   | 'x' -> (
-                                      3
+                                      4
                                     )
                                   | 'y' -> (
-                                      4
+                                      5
                                     )
                                   | _ -> (
                                       -1
@@ -4447,7 +4482,7 @@ let read_save_file = (
                             )
                           | 'o' -> (
                               if String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'a' && String.unsafe_get s (pos+7) = 'm' && String.unsafe_get s (pos+8) = 'e' then (
-                                6
+                                7
                               )
                               else (
                                 -1
@@ -4463,7 +4498,7 @@ let read_save_file = (
                 )
               | 14 -> (
                   if String.unsafe_get s pos = 'c' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'e' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'p' && String.unsafe_get s (pos+12) = 'o' && String.unsafe_get s (pos+13) = 'n' then (
-                    9
+                    10
                   )
                   else (
                     -1
@@ -4471,7 +4506,7 @@ let read_save_file = (
                 )
               | 15 -> (
                   if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'i' && String.unsafe_get s (pos+8) = 'n' && String.unsafe_get s (pos+9) = '_' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 't' && String.unsafe_get s (pos+14) = 'y' then (
-                    5
+                    6
                   )
                   else (
                     -1
@@ -4494,6 +4529,14 @@ let read_save_file = (
                 )
               );
             | 1 ->
+              field_game_mode := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_string
+                  ) p lb
+                )
+              );
+            | 2 ->
               field_ghost_x := (
                 Some (
                   (
@@ -4501,7 +4544,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 2 ->
+            | 3 ->
               field_ghost_y := (
                 Some (
                   (
@@ -4509,7 +4552,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 3 ->
+            | 4 ->
               field_respawn_x := (
                 Some (
                   (
@@ -4517,7 +4560,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 4 ->
+            | 5 ->
               field_respawn_y := (
                 Some (
                   (
@@ -4525,7 +4568,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 5 ->
+            | 6 ->
               field_ghosts_in_party := (
                 Some (
                   (
@@ -4533,7 +4576,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 6 ->
+            | 7 ->
               field_room_name := (
                 Some (
                   (
@@ -4541,7 +4584,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 7 ->
+            | 8 ->
               field_abilities := (
                 Some (
                   (
@@ -4549,7 +4592,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 8 ->
+            | 9 ->
               field_weapons := (
                 Some (
                   (
@@ -4557,7 +4600,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 9 ->
+            | 10 ->
               field_current_weapon := (
                 Some (
                   (
@@ -4565,7 +4608,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 10 ->
+            | 11 ->
               field_progress := (
                 Some (
                   (
@@ -4583,6 +4626,7 @@ let read_save_file = (
         (
           {
             ghost_id = (match !field_ghost_id with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ghost_id");
+            game_mode = (match !field_game_mode with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "game_mode");
             ghost_x = (match !field_ghost_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ghost_x");
             ghost_y = (match !field_ghost_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ghost_y");
             respawn_x = (match !field_respawn_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "respawn_x");

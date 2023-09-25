@@ -217,6 +217,8 @@ type ghost_abilities = {
 
 type save_file = {
   ghost_id : string;
+  (* this has to be mutable because empty save files are created for new games with CLASSIC, then overwritten *)
+  game_mode : string;
   ghost_x : float;
   ghost_y : float;
   respawn_x : float;

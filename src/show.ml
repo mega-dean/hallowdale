@@ -423,11 +423,22 @@ let change_ghost_menu_choice (game : game option) (choice : change_ghost_menu_ch
   | USE_GHOST id -> menu_ghost_id game id
   | BACK -> "Back"
 
+let game_mode (game_mode : game_mode) : string =
+  match game_mode with
+  | CLASSIC -> "Classic"
+  | STEEL_SOLE -> "Steel Sole"
+
+let game_mode_choice (game_mode_choice : select_game_mode_choice) : string =
+  match game_mode_choice with
+  | USE_MODE (mode, _, _) -> fmt "Start %s" (game_mode mode)
+  | BACK -> "BACK"
+
 let menu_choice (game : game option) (choice : menu_choice) =
   match choice with
   | MAIN_MENU choice -> main_menu_choice choice
   | SAVE_FILES choice -> save_files_choice choice
   | PAUSE_MENU choice -> pause_menu_choice choice
+  | SELECT_GAME_MODE game_mode_choice' -> game_mode_choice game_mode_choice'
   | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice game choice
   | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice game choice
   | SETTINGS_MENU choice -> settings_menu_choice choice

@@ -154,6 +154,7 @@ let apply_collisions
     let right_of r = r.pos.x +. r.w in
     match coll.direction with
     | UP ->
+      (* FIXME if game_mode == STEEL_SOLE then hazard_respawn *)
       (* checks here prevent floor from being set for a single frame when jumping/pogoing over corners *)
       if Option.is_none entity.y_recoil then (
         entity.current_floor <- Some (floor, floor_v);
@@ -987,6 +988,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         check_monkey_block_collisions state game;
         game.player.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
+      tmp "TAKE_DAMAGE_AND_RESPAWN ->";
       Entity.freeze game.player.ghost.entity;
       (* TODO handle dying *)
       game.player.health.current <- game.player.health.current - 1;
@@ -1014,12 +1016,6 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
   set_pose game.player (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
-
-let hazard_respawn (state : state) (game : game) =
-  game.player.ghost.entity.current_floor <- None;
-  Entity.unfreeze game.player.ghost.entity;
-  state.camera.update_instantly <- true;
-  game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
 
 let continue_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   (match action_kind with
@@ -1226,6 +1222,16 @@ let handle_debug_keys (game : game) (state : state) =
     else
       Config.ghost.debug_v
   in
+  let show_ghost_positions () =
+    let positions : string =
+      let show_pos (pg : party_ghost) =
+        fmt "%s: %s" (Show.ghost_id pg.ghost.id) (Show.vector pg.ghost.entity.dest.pos)
+      in
+      List.map show_pos game.party |> join ~sep:"\n"
+    in
+    print "party ghost positions:\n%s" positions;
+    print "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos)
+  in
   if key_down DEBUG_UP then
     game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
   else if key_down DEBUG_DOWN then
@@ -1235,28 +1241,19 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then (
+    if key_pressed DEBUG_1 then
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* swap_current_ghost_in_cutscene state game ANNIE *)
       (* show_ghost_location () *)
-      game.player.ghost.entity.sprite.facing_right <- true;
-      let positions : string =
-        let show_pos (pg : party_ghost) =
-          fmt "%s: %s" (Show.ghost_id pg.ghost.id) (Show.vector pg.ghost.entity.dest.pos)
-        in
-        List.map show_pos game.party |> join ~sep:"\n"
-      in
-      tmp "party ghost positions:\n%s" positions;
-      tmp "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos)
-      (* show_camera_location () *))
-    else if key_pressed DEBUG_2 then
-      (* toggle_ability game.ghost "mantis_claw" *)
-      (* game.ghost.health.current <- game.ghost.health.current - 1 *)
-      game.player.soul.current <- game.player.soul.max
-    else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
-      print "player water is_some: %b" (Option.is_some game.player.current.water)
-    else if key_pressed DEBUG_4 then (* toggle_ability game.player "desolate_dive" *)
-      toggle_ability game.player "ismas_tear")
+      game.player.ghost.entity.sprite.facing_right <- true (* show_camera_location () *))
+  else if key_pressed DEBUG_2 then
+    (* toggle_ability game.ghost "mantis_claw" *)
+    (* game.ghost.health.current <- game.ghost.health.current - 1 *)
+    game.player.soul.current <- game.player.soul.max
+  else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
+    print "player water is_some: %b" (Option.is_some game.player.current.water)
+  else if key_pressed DEBUG_4 then (* toggle_ability game.player "desolate_dive" *)
+    toggle_ability game.player "ismas_tear"
   else if key_pressed DEBUG_1 then
     game.debug_paused <- not game.debug_paused;
   state
@@ -1265,6 +1262,30 @@ let handle_debug_keys (game : game) (state : state) =
 type handled_action = { this_frame : bool }
 
 let in_water (player : player) : bool = Option.is_some player.current.water
+
+let hazard_respawn (state : state) (game : game) =
+  let new_current_floor =
+    match game.mode with
+    | CLASSIC ->
+      (* TODO add the phantom current_floor if the room transfer direction was DOWN
+         to prevent the ghost from falling back down to the previous room
+      *)
+      None
+    | STEEL_SOLE ->
+      let e = game.player.ghost.entity in
+      Some
+        ( {
+            pos = { x = game.room.respawn_pos.x; y = game.room.respawn_pos.y +. e.dest.h };
+            w = e.dest.w;
+            h = 20.;
+          },
+          Zero.vector () )
+  in
+  game.player.ghost.entity.current_floor <- new_current_floor;
+
+  Entity.unfreeze game.player.ghost.entity;
+  state.camera.update_instantly <- true;
+  game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
 
 let update (game : game) (state : state) =
   let stop_wall_sliding = ref false in
@@ -1390,15 +1411,7 @@ let update (game : game) (state : state) =
         let handle_general_step (general_step : Interaction.general_step) =
           match general_step with
           | SHAKE_SCREEN amount -> state.camera.shake <- amount
-          | DEBUG ->
-            let statuses =
-              List.map
-                (fun (pg : party_ghost) ->
-                  fmt "%s in party: %b" (Show.ghost_id pg.ghost.id) pg.in_party)
-                game.party
-              |> join
-            in
-            tmp "------------\nparty ghost statuses: %s" statuses
+          | DEBUG -> ()
           | INITIALIZE_INTERACTIONS remove_nail ->
             game.player.ghost.entity.v <- Zero.vector ();
             if remove_nail then (
@@ -1554,9 +1567,6 @@ let update (game : game) (state : state) =
               | CRAWLING ->
                 (party_ghost.ghost.head_textures.look_down, state.global.textures.ghost_bodies.focus)
               | WALKING direction ->
-                itmp "    ------- walking party ghost %s with v.x %f"
-                  (Show.ghost_id party_ghost.ghost.id)
-                  party_ghost.ghost.entity.v.x;
                 Entity.walk_ghost party_ghost.ghost.entity direction;
                 if speed_through_interaction then
                   (* can't go faster than 2x because it breaks the locker-boys-killed
@@ -1594,7 +1604,6 @@ let update (game : game) (state : state) =
           | WALK_TO target_tile_x ->
             let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
             let dist = (tx *. Config.scale.room) -. party_ghost.ghost.entity.dest.pos.x in
-            itmp "walk to: %f -> %f" party_ghost.ghost.entity.dest.pos.x tx;
             still_walking := abs_float dist > 10.;
             if not !still_walking then
               set_interaction_pose IDLE
@@ -2246,15 +2255,6 @@ let update (game : game) (state : state) =
             in
             List.iter check_collision collisions))
     in
-    let hazard_collisions, platform_spike_collisions' =
-      Entity.get_damage_collisions game.room game.player.ghost.entity
-    in
-    let platform_spike_collisions =
-      if is_vulnerable state game then
-        platform_spike_collisions'
-      else
-        []
-    in
 
     let floor_collisions' = Entity.get_floor_collisions game.room game.player.ghost.entity in
     let floor_v, floor_collisions =
@@ -2263,6 +2263,31 @@ let update (game : game) (state : state) =
       | Some (collision, rect, floor_v) -> (floor_v, [ (collision, rect) ])
     in
 
+    let hazard_collisions, platform_spike_collisions' =
+      let hazard', platform_spike' =
+        Entity.get_damage_collisions game.room game.player.ghost.entity
+      in
+      match game.mode with
+      | CLASSIC -> (hazard', platform_spike')
+      | STEEL_SOLE ->
+        let up_floor_collisions =
+          (* this is supposed to fix the steel sole hazard respawns on wall seams
+             - TODO maybe do something like this to find floor_collisions in the first place,
+               since that might fix bonking on wall seams
+          *)
+          if List.length floor_collisions > 1 then
+            []
+          else
+            List.filter (fun ((c : collision), _) -> c.direction = UP) floor_collisions
+        in
+        (hazard' @ up_floor_collisions, platform_spike')
+    in
+    let platform_spike_collisions =
+      if is_vulnerable state game then
+        platform_spike_collisions'
+      else
+        []
+    in
     let bench_collisions = Entity.get_bench_collisions game.room game.player.ghost.entity in
     (* since these are collisions from above, they are only detected for the frame that the
        ghost collides (and then again the frame after, which is a bug)

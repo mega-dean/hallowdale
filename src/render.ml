@@ -665,7 +665,6 @@ let tick (state : state) =
       draw_text_bg_box base_config;
       draw_outline ~offset_y:base_config.outline_offset_y ability_text;
 
-      (* FIXME maybe pass in new args to display_paragraph/draw_outline, rather than accessing them directly from game.interaction._ *)
       List.iteri
         (display_paragraph base_config (base_config.outline_offset_y + 100))
         ability_text.bottom_paragraphs
@@ -755,6 +754,7 @@ let tick (state : state) =
         match List.nth menu.choices 0 with
         (* TODO probably need these to be based on font size *)
         | PAUSE_MENU _ -> (250, 220)
+        | SELECT_GAME_MODE _ -> (250, 220)
         | CHANGE_WEAPON_MENU _ -> (150, 50)
         | CHANGE_GHOST_MENU _ -> (150, 50)
         | MAIN_MENU _ -> (50, 360)
@@ -1079,8 +1079,6 @@ let tick (state : state) =
     in
 
     let draw_party_ghosts (ghosts_by_id : party_ghost list) =
-      if state.debug.enabled then
-        itmp "-----------";
       let draw_party_ghost (party_ghost : party_ghost) =
         draw_entity ~render_offset:(ghost_render_offset party_ghost.ghost) party_ghost.ghost.entity;
         draw_ghost_head ~tint:Color.raywhite party_ghost.ghost;

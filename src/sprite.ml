@@ -150,7 +150,6 @@ let build_texture_from_path
   in
   build_texture' ~scale ~particle ~once texture_config image
 
-
 let build_texture_from_config
     ?(scale = Config.scale.ghost)
     ?(particle = false)
@@ -158,8 +157,6 @@ let build_texture_from_config
     (texture_config : texture_config) : texture =
   let path = get_path texture_config.path in
   let image = load_image path in
-  tmp " ============= building texture %s from config:" path;
-  (* tmp ""; *)
   build_texture' ~scale ~particle ~once texture_config image
 
 let build_texture_from_image

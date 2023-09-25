@@ -283,13 +283,11 @@ module Room = struct
     match List.find_opt gid_in_tileset tileset_sources with
     | None -> failwithf "could not find gid %d in any tilesets" gid
     | Some tileset_source -> (
-        let tileset = get_tileset tileset_source in
-        if gid = 10333 then
-          tmp "gid: %d with tileset source: %s" gid tileset_source.source;
-        try (tileset.tiles.(gid - tileset_source.firstgid + animation_offset), bits) with
-        | Invalid_argument _ ->
-          failwithf "look_up_tile error: tileset '%s', gid %d, %d tiles, %d" tileset.json.name gid
-            (Array.length tileset.tiles) tileset_source.firstgid)
+      let tileset = get_tileset tileset_source in
+      try (tileset.tiles.(gid - tileset_source.firstgid + animation_offset), bits) with
+      | Invalid_argument _ ->
+        failwithf "look_up_tile error: tileset '%s', gid %d, %d tiles, %d" tileset.json.name gid
+          (Array.length tileset.tiles) tileset_source.firstgid)
 
   let lookup_coll_offsets room (gid : int) (json_room : Json_t.room) : vector =
     let tile, _ = look_up_tile json_room room.cache gid in

@@ -367,7 +367,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         @ unhide_and_unfreeze ANNIE 198
         @ [
             STEP (SET_FIXED_CAMERA (192, 62));
-            STEP DEBUG;
             STEP (WAIT 4.);
             PARTY_GHOST (JEFF, WALK_TO 180);
             STEP (WAIT 0.5);
@@ -427,7 +426,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             PARTY_GHOST (JEFF, ADD_TO_PARTY);
             PARTY_GHOST (TROY, ADD_TO_PARTY);
           ]
-      | "temp-open-boss-doors" -> [ STEP HIDE_BOSS_DOORS ]
       | _ -> fail ())
     | "boss-killed" -> (
       match trigger.name_suffix with
@@ -643,11 +641,9 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP (WAIT 0.9);
             PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP (WAIT 0.4);
-            STEP DEBUG;
             PARTY_GHOST (ABED, ADD_TO_PARTY);
             PARTY_GHOST (ABED, MAKE_CURRENT_GHOST);
             PARTY_GHOST (BRITTA, REMOVE_FROM_PARTY);
-            STEP DEBUG;
             STEP
               (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));

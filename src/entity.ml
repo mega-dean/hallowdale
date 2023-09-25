@@ -158,6 +158,7 @@ let get_acid_collisions (room : room) (entity : entity) : (collision * rect) lis
   let layers = List.filter (fun (l : layer) -> l.name = "acid") room.layers in
   get_tile_collisions layers entity
 
+(* CLEANUP put this into a type damage_collisions so the return values are labelled *)
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
 let get_damage_collisions (room : room) (entity : entity) =
   ( get_rect_collisions entity (room.hazards @ room.spikes),

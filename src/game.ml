@@ -4,22 +4,24 @@ open Types
 
 let save_file_path idx = fmt "saves/%d.json" idx
 
-let new_game () : Json_t.save_file =
+let empty_save_file () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 150. } in
   let b =
     (* newgame *)
-    (* false *)
+    false
     (* newgameplus *)
-    true
+    (* true *)
   in
   {
+    (* FIXME temporary, this gets overwritten when steel sole is selected *)
+    game_mode = Show.game_mode CLASSIC;
     ghost_id = "BRITTA";
     ghosts_in_party = [ "BRITTA" ];
     ghost_x = kings_pass_drop.x;
     ghost_y = kings_pass_drop.y;
     (* there aren't any hazards in king's pass for new games, so respawn_pos doesn't matter *)
-    respawn_x = 0.;
-    respawn_y = 0.;
+    respawn_x = kings_pass_drop.x;
+    respawn_y = kings_pass_drop.y;
     room_name = "forgotten_deans-pass";
     abilities =
       {
@@ -28,7 +30,7 @@ let new_game () : Json_t.save_file =
         mantis_claw = b;
         crystal_heart = b;
         monarch_wings = b;
-        shade_cloak = false;
+        shade_cloak = b;
         ismas_tear = b;
         (* spells *)
         vengeful_spirit = b;
@@ -52,12 +54,13 @@ let new_game () : Json_t.save_file =
 let load_all_save_slots () : save_slots =
   let load_file save_file_idx : Json_t.save_file * bool =
     match File.maybe_read (fmt "../%s" (save_file_path save_file_idx)) with
-    | None -> (new_game (), true)
+    | None -> (empty_save_file (), true)
     | Some save_file -> (Json_j.save_file_of_string save_file, false)
   in
   { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
 
 let init
+    (mode : game_mode)
     (save_file : Json_t.save_file)
     (global : global_cache)
     (area_musics : area_music list)
@@ -129,18 +132,13 @@ let init
   Player.equip_weapon player save_file.current_weapon;
 
   {
+    mode;
     player;
     party;
     room;
     music;
     interaction =
-      {
-        steps = [];
-        text = None;
-        speaker_name = None;
-        corner_text = None;
-        floating_text = None;
-      };
+      { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
     progress = save_file.progress;
     save_file_slot;
     debug_paused = false;

@@ -465,6 +465,14 @@ type main_menu_choice =
   | START_GAME
   | QUIT
 
+type game_mode =
+  | CLASSIC
+  | STEEL_SOLE
+
+type select_game_mode_choice =
+  | USE_MODE of game_mode * Json_t.save_file * int
+  | BACK
+
 type save_files_choice =
   | SLOT_1
   | SLOT_2
@@ -503,6 +511,7 @@ type menu_choice =
   | CHANGE_WEAPON_MENU of change_weapon_menu_choice
   | CHANGE_GHOST_MENU of change_ghost_menu_choice
   | MAIN_MENU of main_menu_choice
+  | SELECT_GAME_MODE of select_game_mode_choice
   | SETTINGS_MENU of settings_menu_choice
   | CHANGE_SETTING of (settings_menu_choice * change_setting_choice)
   | SAVE_FILES of save_files_choice
@@ -632,10 +641,8 @@ module Interaction = struct
     padding_x : int;
     padding_y : int;
     margin_x : int;
+    (* TODO rename to margin_y_top *)
     margin_y : int;
-    (* FIXME weird to have this and margin_y - "text box height" is probably less confusing
-       - maybe just rename margin_y to margin_y_top though
-    *)
     margin_y_bottom : int;
     outline_offset_y : int;
     (* TODO
@@ -1331,6 +1338,7 @@ type debug = {
 }
 
 type game = {
+  mode : game_mode;
   mutable player : player;
   (* this should include a party_ghost for the currently-controlled ghost, so it should
      always be a list of all five ghosts
