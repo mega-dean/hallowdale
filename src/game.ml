@@ -13,7 +13,7 @@ let empty_save_file () : Json_t.save_file =
     (* true *)
   in
   {
-    (* FIXME temporary, this gets overwritten when steel sole is selected *)
+    (* this is only needed because these stub save files are created before game mode is chosen *)
     game_mode = Show.game_mode CLASSIC;
     ghost_id = "BRITTA";
     ghosts_in_party = [ "BRITTA" ];
@@ -37,7 +37,8 @@ let empty_save_file () : Json_t.save_file =
         desolate_dive = b;
         howling_wraiths = b;
       };
-    progress = [];
+    progress =
+      { by_room = []; steel_sole = { purple_pens = []; dunks = 0; c_dashes = 0; frame_idx = 0 } };
     weapons =
       [
         "Old Nail";
@@ -110,7 +111,7 @@ let init
     Room.init
       {
         file_name = save_file.room_name;
-        progress = save_file.progress;
+        progress_by_room = save_file.progress.by_room;
         exits;
         enemy_configs = global.enemy_configs;
         npc_configs = global.npc_configs;
@@ -139,7 +140,7 @@ let init
     music;
     interaction =
       { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
-    progress = save_file.progress;
+    progress = { by_room = save_file.progress.by_room; steel_sole = save_file.progress.steel_sole };
     save_file_slot;
     debug_paused = false;
   }

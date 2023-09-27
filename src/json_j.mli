@@ -72,6 +72,13 @@ type texture_config = Json_t.texture_config = {
 
 type texture_configs = Json_t.texture_configs
 
+type steel_sole_progress = Json_t.steel_sole_progress = {
+  mutable purple_pens: (int * string) list;
+  mutable dunks: int;
+  mutable c_dashes: int;
+  mutable frame_idx: int
+}
+
 type room_progress = Json_t.room_progress = {
   mutable removed_idxs_by_layer: (string * int list) list;
   mutable finished_interactions: string list;
@@ -80,14 +87,19 @@ type room_progress = Json_t.room_progress = {
 
 type ghost_abilities = Json_t.ghost_abilities = {
   mutable crystal_heart: bool;
+  mutable ismas_tear: bool;
   mutable mantis_claw: bool;
   mutable monarch_wings: bool;
   mutable mothwing_cloak: bool;
   mutable shade_cloak: bool;
-  mutable ismas_tear: bool;
   mutable vengeful_spirit: bool;
   mutable desolate_dive: bool;
   mutable howling_wraiths: bool
+}
+
+type game_progress = Json_t.game_progress = {
+  steel_sole: steel_sole_progress;
+  mutable by_room: (string * room_progress) list
 }
 
 type save_file = Json_t.save_file = {
@@ -102,7 +114,7 @@ type save_file = Json_t.save_file = {
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;
-  progress: (string * room_progress) list
+  progress: game_progress
 }
 
 type object_layer = Json_t.object_layer = {
@@ -445,6 +457,26 @@ val texture_configs_of_string :
   string -> texture_configs
   (** Deserialize JSON data of type {!type:texture_configs}. *)
 
+val write_steel_sole_progress :
+  Buffer.t -> steel_sole_progress -> unit
+  (** Output a JSON value of type {!type:steel_sole_progress}. *)
+
+val string_of_steel_sole_progress :
+  ?len:int -> steel_sole_progress -> string
+  (** Serialize a value of type {!type:steel_sole_progress}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_steel_sole_progress :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> steel_sole_progress
+  (** Input JSON data of type {!type:steel_sole_progress}. *)
+
+val steel_sole_progress_of_string :
+  string -> steel_sole_progress
+  (** Deserialize JSON data of type {!type:steel_sole_progress}. *)
+
 val write_room_progress :
   Buffer.t -> room_progress -> unit
   (** Output a JSON value of type {!type:room_progress}. *)
@@ -484,6 +516,26 @@ val read_ghost_abilities :
 val ghost_abilities_of_string :
   string -> ghost_abilities
   (** Deserialize JSON data of type {!type:ghost_abilities}. *)
+
+val write_game_progress :
+  Buffer.t -> game_progress -> unit
+  (** Output a JSON value of type {!type:game_progress}. *)
+
+val string_of_game_progress :
+  ?len:int -> game_progress -> string
+  (** Serialize a value of type {!type:game_progress}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_game_progress :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> game_progress
+  (** Input JSON data of type {!type:game_progress}. *)
+
+val game_progress_of_string :
+  string -> game_progress
+  (** Deserialize JSON data of type {!type:game_progress}. *)
 
 val write_save_file :
   Buffer.t -> save_file -> unit

@@ -204,20 +204,33 @@ type room_progress = {
 type ghost_abilities = {
   (* movement *)
   crystal_heart <ocaml mutable> : bool;
+  ismas_tear <ocaml mutable> : bool;
   mantis_claw <ocaml mutable> : bool;
   monarch_wings <ocaml mutable> : bool;
   mothwing_cloak <ocaml mutable> : bool;
   shade_cloak <ocaml mutable> : bool;
-  ismas_tear <ocaml mutable> : bool;
   (* spells *)
   vengeful_spirit <ocaml mutable> : bool;
   desolate_dive <ocaml mutable> : bool;
   howling_wraiths <ocaml mutable> : bool;
 }
 
+type steel_sole_progress = {
+  (* CLEANUP maybe rename to purple_pens_found *)
+  purple_pens <ocaml mutable> : (int * string) list;
+  dunks <ocaml mutable> : int;
+  c_dashes <ocaml mutable> : int;
+  frame_idx <ocaml mutable> : int;
+}
+
+
+type game_progress = {
+  steel_sole : steel_sole_progress;
+  by_room <ocaml mutable> : (string * room_progress) list;
+}
+
 type save_file = {
   ghost_id : string;
-  (* this has to be mutable because empty save files are created for new games with CLASSIC, then overwritten *)
   game_mode : string;
   ghost_x : float;
   ghost_y : float;
@@ -228,5 +241,5 @@ type save_file = {
   abilities : ghost_abilities;
   weapons : string list;
   current_weapon : string;
-  progress : (string * room_progress) list;
+  progress : game_progress;
 }

@@ -38,19 +38,7 @@ let update_pickup_indicators (state : state) (game : game) =
 
 let save_progress (game : game) =
   let room_uuid = Tiled.Room.get_filename game.room in
-  game.progress <- Utils.replace_assoc room_uuid game.room.progress game.progress
-
-type room_params = {
-  file_name : string;
-  progress : (string * Json_t.room_progress) list;
-  exits : rect list;
-  enemy_configs : (enemy_id * Json_t.enemy_config) list;
-  npc_configs : (npc_id * Json_t.npc_config) list;
-  pickup_indicator_texture : texture;
-  lever_texture : texture;
-  respawn_pos : vector;
-  platforms : (string * texture) list;
-}
+  game.progress.by_room <- Utils.replace_assoc room_uuid game.room.progress game.progress.by_room
 
 let init (params : room_params) : room =
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
@@ -63,7 +51,7 @@ let init (params : room_params) : room =
     { finished_interactions = []; revealed_shadow_layers = []; removed_idxs_by_layer = [] }
   in
   let room_progress =
-    match List.assoc_opt room_key params.progress with
+    match List.assoc_opt room_key params.progress_by_room with
     | None -> new_room_progress ()
     | Some rp -> rp
   in
@@ -706,11 +694,11 @@ let change_current_room
   let exits = Tiled.Room.get_exits room_location in
   save_progress game;
 
-  let new_room =
+  let new_room : room =
     init
       {
         file_name = room_location.filename;
-        progress = game.progress;
+        progress_by_room = game.progress.by_room;
         exits;
         enemy_configs = state.global.enemy_configs;
         npc_configs = state.global.npc_configs;

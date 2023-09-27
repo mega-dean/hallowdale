@@ -534,9 +534,15 @@ let update_interaction_text (game : game) (state : state) =
   let maybe_unset text unset =
     match text with
     | None -> ()
-    | Some (_, end_time) ->
-      if state.frame.time > end_time.at then
-        unset ()
+    | Some (tt : Interaction.transient_text) -> (
+      match tt.visible with
+      | PAUSE_MENU -> (
+        match state.pause_menu with
+        | Some _ -> ()
+        | None -> unset ())
+      | TIME end_time ->
+        if state.frame.time > end_time.at then
+          unset ())
   in
   maybe_unset game.interaction.floating_text (fun () -> game.interaction.floating_text <- None);
   maybe_unset game.interaction.corner_text (fun () -> game.interaction.corner_text <- None);
@@ -756,7 +762,43 @@ let tick (state : state) =
     else (
       let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
       match state'.pause_menu with
-      | Some menu -> state'
+      | Some menu ->
+        (match game.mode with
+        | CLASSIC -> ()
+        | STEEL_SOLE ->
+          (* FIXME show game stats *)
+          let time =
+            if List.length game.progress.steel_sole.purple_pens = 0 then
+              ""
+            else (
+              let frames =
+                (* take the first because newest entries are pushed to the front *)
+                List.hd game.progress.steel_sole.purple_pens |> fst
+              in
+              let ms' =
+                fmt "%.3f"
+                  ((frames mod Config.window.fps |> Int.to_float)
+                  /. (Config.window.fps |> Int.to_float))
+              in
+              let ms = String.sub ms' 1 (String.length ms' - 1) in
+              let seconds' = frames / Config.window.fps in
+              let seconds = seconds' mod 60 in
+              let minutes' = seconds' / 60 in
+              let minutes = minutes' mod 60 in
+              let hours' = minutes' / 60 in
+              let hours = hours' mod 60 in
+              fmt "%02d:%02d:%02d%s" hours minutes seconds ms)
+          in
+          game.interaction.corner_text <-
+            Some
+              {
+                content =
+                  fmt "%d / 60 pens in %s, %d dunks, %d c-dashes"
+                    (List.length game.progress.steel_sole.purple_pens)
+                    time game.progress.steel_sole.dunks game.progress.steel_sole.c_dashes;
+                visible = PAUSE_MENU;
+              });
+        state'
       | None ->
         if state.debug.enabled then (
           let show_triggers ?(color = Raylib.Color.blue) triggers =

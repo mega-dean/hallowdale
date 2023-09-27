@@ -99,39 +99,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         [ CURRENT_GHOST (ADD_ITEM (DREAMER (trigger.name_suffix, get_lore ()))) ]
     | "info" -> (
       match trigger.name_suffix with
-      | "opening-poem" ->
-        [
-          (* TODO center this text box *)
-          STEP (TEXT [ "Give me some rope, tie me to dream." ]);
-          STEP
-            (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
-          STEP
-            (TEXT
-               [
-                 "Give me some rope, tie me to dream.";
-                 "Give me the hope to run out of steam.";
-                 "Somebody said it could be here.";
-               ]);
-          STEP
-            (TEXT
-               [
-                 "Give me some rope, tie me to dream.";
-                 "Give me the hope to run out of steam.";
-                 "Somebody said it could be here.";
-                 "We could be roped up, tied up, dead in a year.";
-               ]);
-          STEP
-            (TEXT
-               [
-                 "Give me some rope, tie me to dream.";
-                 "Give me the hope to run out of steam.";
-                 "Somebody said it could be here.";
-                 "We could be roped up, tied up, dead in a year.";
-                 " - excerpt from \"At Least It Was Here\" by The 88";
-               ]);
-          STEP (WAIT 1.);
-          STEP FADE_SCREEN_IN;
-        ]
       | "focus" ->
         read_sign
         @ [
@@ -247,6 +214,39 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
+      | "opening-poem" ->
+        [
+          (* TODO center this text box *)
+          STEP (TEXT [ "Give me some rope, tie me to dream." ]);
+          STEP
+            (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
+          STEP
+            (TEXT
+               [
+                 "Give me some rope, tie me to dream.";
+                 "Give me the hope to run out of steam.";
+                 "Somebody said it could be here.";
+               ]);
+          STEP
+            (TEXT
+               [
+                 "Give me some rope, tie me to dream.";
+                 "Give me the hope to run out of steam.";
+                 "Somebody said it could be here.";
+                 "We could be roped up, tied up, dead in a year.";
+               ]);
+          STEP
+            (TEXT
+               [
+                 "Give me some rope, tie me to dream.";
+                 "Give me the hope to run out of steam.";
+                 "Somebody said it could be here.";
+                 "We could be roped up, tied up, dead in a year.";
+                 " - excerpt from \"At Least It Was Here\" by The 88";
+               ]);
+          STEP (WAIT 1.);
+          STEP FADE_SCREEN_IN;
+        ]
       | "kp-landing" ->
         [ CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); STEP (SHAKE_SCREEN 1.); STEP (WAIT 2.0) ]
       | "fight-duncan" ->
@@ -524,7 +524,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           (* PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT)); *)
           PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
           PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
-
           (* TODO center this text box so it doesn't overlap the ghosts or chang *)
           STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
           STEP (SET_FIXED_CAMERA (169, 42));

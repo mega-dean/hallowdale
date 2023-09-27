@@ -399,7 +399,7 @@
                 {
                  "height":18,
                  "id":118,
-                 "name":"purple-pen:",
+                 "name":"purple-pen:2.16.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -410,7 +410,7 @@
                 {
                  "height":18,
                  "id":119,
-                 "name":"purple-pen:",
+                 "name":"purple-pen:5.08.2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -420,7 +420,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -1280,7 +1280,7 @@
          "name":"doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":247,
          "x":0,
          "y":0
@@ -1356,7 +1356,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":247,
          "x":0,
          "y":0

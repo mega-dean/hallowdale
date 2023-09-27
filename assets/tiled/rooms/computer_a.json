@@ -210,6 +210,28 @@
         }, 
         {
          "draworder":"topdown",
+         "id":10,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":227,
+                 "id":8,
+                 "name":"door-warp:computer_h@157,11",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":37,
+                 "x":133,
+                 "y":108
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
@@ -434,8 +456,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":10,
- "nextobjectid":7,
+ "nextlayerid":13,
+ "nextobjectid":9,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -448,6 +470,10 @@
         {
          "firstgid":1321,
          "source":"..\/tilesets\/terrains.json"
+        }, 
+        {
+         "firstgid":6601,
+         "source":"..\/tilesets\/jugs.json"
         }],
  "tilewidth":12,
  "type":"map",

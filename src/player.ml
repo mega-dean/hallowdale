@@ -91,8 +91,10 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
   | D_NAIL
   | BOSS_KILLED
   | ITEM
-  | CUTSCENE ->
-    begin_cutscene_interaction name trigger
+  | CUTSCENE -> (
+    match game.mode with
+    | STEEL_SOLE -> ()
+    | CLASSIC -> begin_cutscene_interaction name trigger)
   | CAMERA _
   | LEVER _
   | SHADOW
@@ -154,7 +156,6 @@ let apply_collisions
     let right_of r = r.pos.x +. r.w in
     match coll.direction with
     | UP ->
-      (* FIXME if game_mode == STEEL_SOLE then hazard_respawn *)
       (* checks here prevent floor from being set for a single frame when jumping/pogoing over corners *)
       if Option.is_none entity.y_recoil then (
         entity.current_floor <- Some (floor, floor_v);
@@ -417,7 +418,8 @@ let check_dream_nail_collisions (state : state) (game : game) =
               else
                 Utils.sample enemy.json.dream_nail.dialogues
             in
-            game.interaction.floating_text <- Some (text, { at = state.frame.time +. 1. });
+            game.interaction.floating_text <-
+              Some { content = text; visible = TIME { at = state.frame.time +. 1. } };
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
               game.player.soul.current <-
@@ -548,9 +550,29 @@ let resolve_slash_collisions (state : state) (game : game) =
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
           | Some (PURPLE_PEN name) ->
+            game.progress.steel_sole.purple_pens <-
+              (state.frame.idx, name) :: game.progress.steel_sole.purple_pens;
             maybe_begin_interaction state game (make_stub_trigger PURPLE_PEN "purple-pen" name)
           | _ -> ());
           destroy_tile_group layer tile_group;
+
+          (* CLEANUP duplicated *)
+          (* CLEANUP only do this for ss *)
+          let new_current_floor =
+            Some
+              ( {
+                  pos =
+                    {
+                      x = game.player.ghost.entity.dest.pos.x;
+                      y = game.player.ghost.entity.dest.pos.y +. game.player.ghost.entity.dest.h;
+                    };
+                  w = game.player.ghost.entity.dest.w;
+                  h = 20.;
+                },
+                Zero.vector () )
+          in
+          game.player.ghost.entity.current_floor <- new_current_floor;
+
           if collision.direction = DOWN && layer.config.pogoable then
             pogo game.player;
           match tile_group.stub_sprite with
@@ -939,6 +961,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
       (* play_sound state "spray"; *)
       (* state.camera.shake <- 1.; *)
+      (* TODO maybe only should track this stuff when game_mode is STEEL_SOLE *)
+      game.progress.steel_sole.c_dashes <- 1 + game.progress.steel_sole.c_dashes;
       game.player.current.is_c_dashing <- true;
       game.player.current.is_charging_c_dash <- false;
       game.player.ghost.entity.current_floor <- None;
@@ -1322,7 +1346,7 @@ let update (game : game) (state : state) =
          - could also improve interaction checks to only run the first frame that the ghost collides with the trigger, not every one
          -- although that would not work for triggers that wait for the interact key, so probably not worth it
       *)
-      List.map snd game.progress
+      List.map snd game.progress.by_room
       |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
       |> List.flatten
     in
@@ -1430,7 +1454,8 @@ let update (game : game) (state : state) =
               failwithf "need WARP trigger kind for WARP steps, got '%s'"
                 (Show.trigger_kind trigger_kind))
           | FLOATING_TEXT (text, duration) ->
-            game.interaction.floating_text <- Some (text, { at = state.frame.time +. duration })
+            game.interaction.floating_text <-
+              Some { content = text; visible = TIME { at = state.frame.time +. duration } }
           | TEXT paragraphs ->
             let text : Interaction.text = { content = paragraphs; increases_health = false } in
             game.interaction.speaker_name <- None;
@@ -2264,23 +2289,27 @@ let update (game : game) (state : state) =
     in
 
     let hazard_collisions, platform_spike_collisions' =
-      let hazard', platform_spike' =
+      let hazards', platform_spikes' =
         Entity.get_damage_collisions game.room game.player.ghost.entity
       in
       match game.mode with
-      | CLASSIC -> (hazard', platform_spike')
-      | STEEL_SOLE ->
-        let up_floor_collisions =
+      | CLASSIC -> (hazards', platform_spikes')
+      | STEEL_SOLE -> (
+        let up_floor_collision : (collision * rect) option =
           (* this is supposed to fix the steel sole hazard respawns on wall seams
              - TODO maybe do something like this to find floor_collisions in the first place,
                since that might fix bonking on wall seams
           *)
-          if List.length floor_collisions > 1 then
-            []
+          if List.length floor_collisions > 1 || game.player.ghost.entity.v.y < 0. then
+            None
           else
-            List.filter (fun ((c : collision), _) -> c.direction = UP) floor_collisions
+            List.find_opt (fun ((c : collision), _) -> c.direction = UP) floor_collisions
         in
-        (hazard' @ up_floor_collisions, platform_spike')
+        match up_floor_collision with
+        | None -> (hazards', platform_spikes')
+        | Some coll ->
+          game.progress.steel_sole.dunks <- 1 + game.progress.steel_sole.dunks;
+          ([ coll ], platform_spikes'))
     in
     let platform_spike_collisions =
       if is_vulnerable state game then
@@ -2297,8 +2326,8 @@ let update (game : game) (state : state) =
     | Some (coll, rect) -> (
       match coll.direction with
       | UP ->
-        let end_time = { at = state.frame.time +. 1.5 } in
-        game.interaction.corner_text <- Some ("Game saved.", end_time);
+        game.interaction.corner_text <-
+          Some { content = "Game saved."; visible = TIME { at = state.frame.time +. 1.5 } };
         state.should_save <- true;
         game.player.health.current <- game.player.health.max
       | _ -> ()));
@@ -2495,7 +2524,7 @@ let init
 
   let max_health =
     let finished_interaction_names =
-      match List.assoc_opt save_file.room_name save_file.progress with
+      match List.assoc_opt save_file.room_name save_file.progress.by_room with
       | None -> []
       | Some progress -> progress.finished_interactions
     in

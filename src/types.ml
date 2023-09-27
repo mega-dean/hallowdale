@@ -675,15 +675,25 @@ module Interaction = struct
     | DIALOGUE of string * text
     | MENU of menu * save_slots option
 
+  type transient_text_visible =
+    | TIME of time
+    | PAUSE_MENU
+
+  (* CLEANUP naming - this is text that may have an end-time, like corner_text and floating_text *)
+  type transient_text = {
+    content : string;
+    visible : transient_text_visible;
+  }
+
   type t = {
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
     (* this is used for "Game Saved" when sitting on benches *)
-    mutable corner_text : (string * time) option;
+    mutable corner_text : transient_text option;
     (* this is for text boxes that should show up on the screen without blocking gameplay,
        like dream-nail thoughts and some interactions *)
-    mutable floating_text : (string * time) option;
+    mutable floating_text : transient_text option;
   }
 end
 
@@ -1253,6 +1263,18 @@ type idx_config =
   | PURPLE_PEN of string
   | DOOR_HITS of int
 
+type room_params = {
+  file_name : string;
+  progress_by_room : (string * Json_t.room_progress) list;
+  exits : rect list;
+  enemy_configs : (enemy_id * Json_t.enemy_config) list;
+  npc_configs : (npc_id * Json_t.npc_config) list;
+  pickup_indicator_texture : texture;
+  lever_texture : texture;
+  respawn_pos : vector;
+  platforms : (string * texture) list;
+}
+
 (* TODO add current_interaction : string to handle dying during a boss-fight
    - unset on death
    - on duncan-killed, move current_interaction into finished_interactions
@@ -1347,8 +1369,7 @@ type game = {
   mutable room : room;
   mutable music : area_music;
   interaction : Interaction.t;
-  (* string is room uuid *)
-  mutable progress : (string * Json_t.room_progress) list;
+  progress : Json_t.game_progress;
   mutable save_file_slot : int;
   mutable debug_paused : bool;
 }

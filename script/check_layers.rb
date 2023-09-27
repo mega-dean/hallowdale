@@ -35,39 +35,40 @@ jsons = Dir['./assets/tiled/rooms/*.json'].map do |file|
   read_file(file)
 end
 
-with_platforms, without_platforms = jsons.partition do |json|
-  rooms_without_platforms = [
+with_pp, without_pp = jsons.partition do |json|
+  rooms_without_pp = [
     "ac-repair_b.json",
-    "ac-repair_f.json",
-    "city_e.json",
+    "basement_a.json",
+    "city_a.json",
     "computer_a.json",
-    "computer_g.json",
-    "computer_i.json",
-    "computer_m.json",
     "computer_f.json",
-    "forgotten_d.json",
+    "computer_h.json",
+    "forgotten_a.json",
+    "forgotten_f.json",
     "forgotten_h.json",
-    "forgotten_g.json",
     "infected_a.json",
+    "infected_b.json",
     "infected_d.json",
-    "library_d.json",
-    "library_i.json",
-    "library_c.json",
-    "outlands_e.json",
-    "trampoline_d.json",
-    "trampoline_f.json",
+    "library_a.json",
+    "library_f.json",
+    "library_g.json",
+    "outlands_a.json",
+    "trampoline_a.json",
   ]
-  if rooms_without_platforms.include?(json['filename'])
+
+  if rooms_without_pp.include?(json['filename'])
     true
   else
     json['layers'].any? do |layer|
-      layer['name'] == 'platforms'
+      if layer['name'] == 'triggers'
+        layer['objects'].any?{|obj| obj['name'].start_with?('purple-pen:')}
+      end
     end
   end
 end
 
-puts "#{without_platforms.count} left without platforms:"
-without_platforms.each do |json|
+puts "#{without_pp.count} left without purple-pen:"
+without_pp.each do |json|
   # if json['filename'].start_with?('outlands_')
     puts "  #{json['filename']}"
   # end
@@ -87,11 +88,3 @@ end
 # floors.sort_by{|k, v| v}.each do |name, count|
 #   puts "#{name}: #{count}"
 # end
-
-
-
-
-
-# TODO
-# - find zero-sized rects in object layers
-# - could try updating and saving the json for things like "make every world-map layer visible"

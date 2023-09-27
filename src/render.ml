@@ -729,7 +729,8 @@ let tick (state : state) =
           350
       in
       let config : text_config =
-        { base_config with
+        {
+          base_config with
           margin_x = 150;
           margin_y = 50;
           margin_y_bottom;
@@ -764,13 +765,7 @@ let tick (state : state) =
       in
 
       let margin_y_bottom = margin_y in
-      let config : text_config =
-        { base_config with
-          margin_x;
-          margin_y;
-          margin_y_bottom;
-        }
-      in
+      let config : text_config = { base_config with margin_x; margin_y; margin_y_bottom } in
       draw_text_bg_box config;
       let is_new_game (_, b) = b in
 
@@ -795,22 +790,27 @@ let tick (state : state) =
   let draw_other_text game =
     (match game.interaction.corner_text with
     | None -> ()
-    | Some (text, end_time) ->
+    | Some (tt) ->
       let dest =
         {
           x = camera_x;
           y = camera_y +. ((Config.window.height |> Int.to_float) -. (font_size |> Int.to_float));
         }
       in
-      let alpha = 256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int in
-      Raylib.draw_text text (dest.x |> Float.to_int) (dest.y |> Float.to_int) font_size
+      let alpha =
+        match tt.visible with
+        | PAUSE_MENU -> 255
+        | TIME end_time ->
+          256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int
+      in
+      Raylib.draw_text tt.content (dest.x |> Float.to_int) (dest.y |> Float.to_int) font_size
         (Raylib.Color.create 255 255 255 alpha));
 
     match game.interaction.floating_text with
     | None -> ()
-    | Some (text, end_time) ->
-      if String.length text > 160 then
-        failwithf "dream nail text is too long: %s" text;
+    | Some tt ->
+      if String.length tt.content > 160 then
+        failwithf "dream nail text is too long: %s" tt.content;
 
       (* this config works pretty well for text that is one or two lines long *)
       let config : text_config =
@@ -826,7 +826,7 @@ let tick (state : state) =
       in
 
       draw_text_bg_box ~color:(Color.create 0 0 0 100) config;
-      List.iteri (display_paragraph config 0) [ text ]
+      List.iteri (display_paragraph config 0) [ tt.content ]
   in
 
   let show_main_menu menu save_slots =

@@ -69,6 +69,13 @@ type texture_config = {
 
 type texture_configs = (string * texture_config) list
 
+type steel_sole_progress = {
+  mutable purple_pens: (int * string) list;
+  mutable dunks: int;
+  mutable c_dashes: int;
+  mutable frame_idx: int
+}
+
 type room_progress = {
   mutable removed_idxs_by_layer: (string * int list) list;
   mutable finished_interactions: string list;
@@ -77,14 +84,19 @@ type room_progress = {
 
 type ghost_abilities = {
   mutable crystal_heart: bool;
+  mutable ismas_tear: bool;
   mutable mantis_claw: bool;
   mutable monarch_wings: bool;
   mutable mothwing_cloak: bool;
   mutable shade_cloak: bool;
-  mutable ismas_tear: bool;
   mutable vengeful_spirit: bool;
   mutable desolate_dive: bool;
   mutable howling_wraiths: bool
+}
+
+type game_progress = {
+  steel_sole: steel_sole_progress;
+  mutable by_room: (string * room_progress) list
 }
 
 type save_file = {
@@ -99,7 +111,7 @@ type save_file = {
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;
-  progress: (string * room_progress) list
+  progress: game_progress
 }
 
 type object_layer = { name: string; objects: coll_rect list }

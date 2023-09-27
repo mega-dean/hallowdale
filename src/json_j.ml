@@ -72,6 +72,13 @@ type texture_config = Json_t.texture_config = {
 
 type texture_configs = Json_t.texture_configs
 
+type steel_sole_progress = Json_t.steel_sole_progress = {
+  mutable purple_pens: (int * string) list;
+  mutable dunks: int;
+  mutable c_dashes: int;
+  mutable frame_idx: int
+}
+
 type room_progress = Json_t.room_progress = {
   mutable removed_idxs_by_layer: (string * int list) list;
   mutable finished_interactions: string list;
@@ -80,14 +87,19 @@ type room_progress = Json_t.room_progress = {
 
 type ghost_abilities = Json_t.ghost_abilities = {
   mutable crystal_heart: bool;
+  mutable ismas_tear: bool;
   mutable mantis_claw: bool;
   mutable monarch_wings: bool;
   mutable mothwing_cloak: bool;
   mutable shade_cloak: bool;
-  mutable ismas_tear: bool;
   mutable vengeful_spirit: bool;
   mutable desolate_dive: bool;
   mutable howling_wraiths: bool
+}
+
+type game_progress = Json_t.game_progress = {
+  steel_sole: steel_sole_progress;
+  mutable by_room: (string * room_progress) list
 }
 
 type save_file = Json_t.save_file = {
@@ -102,7 +114,7 @@ type save_file = Json_t.save_file = {
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;
-  progress: (string * room_progress) list
+  progress: game_progress
 }
 
 type object_layer = Json_t.object_layer = {
@@ -3154,6 +3166,315 @@ let read_texture_configs = (
 )
 let texture_configs_of_string s =
   read_texture_configs (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__18 = (
+  Atdgen_runtime.Oj_run.write_list (
+    fun ob x ->
+      Buffer.add_char ob '(';
+      (let x, _ = x in
+      (
+        Yojson.Safe.write_int
+      ) ob x
+      );
+      Buffer.add_char ob ',';
+      (let _, x = x in
+      (
+        Yojson.Safe.write_string
+      ) ob x
+      );
+      Buffer.add_char ob ')';
+  )
+)
+let string_of__18 ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__18 ob x;
+  Buffer.contents ob
+let read__18 = (
+  Atdgen_runtime.Oj_run.read_list (
+    fun p lb ->
+      Yojson.Safe.read_space p lb;
+      let std_tuple = Yojson.Safe.start_any_tuple p lb in
+      let len = ref 0 in
+      let end_of_tuple = ref false in
+      (try
+        let x0 =
+          let x =
+            (
+              Atdgen_runtime.Oj_run.read_int
+            ) p lb
+          in
+          incr len;
+          Yojson.Safe.read_space p lb;
+          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+          x
+        in
+        let x1 =
+          let x =
+            (
+              Atdgen_runtime.Oj_run.read_string
+            ) p lb
+          in
+          incr len;
+          (try
+            Yojson.Safe.read_space p lb;
+            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+          with Yojson.End_of_tuple -> end_of_tuple := true);
+          x
+        in
+        if not !end_of_tuple then (
+          try
+            while true do
+              Yojson.Safe.skip_json p lb;
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+            done
+          with Yojson.End_of_tuple -> ()
+        );
+        (x0, x1)
+      with Yojson.End_of_tuple ->
+        Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+  )
+)
+let _18_of_string s =
+  read__18 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
+  fun ob (x : steel_sole_progress) ->
+    Buffer.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"purple_pens\":";
+    (
+      write__18
+    )
+      ob x.purple_pens;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"dunks\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.dunks;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"c_dashes\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.c_dashes;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"frame_idx\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.frame_idx;
+    Buffer.add_char ob '}';
+)
+let string_of_steel_sole_progress ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_steel_sole_progress ob x;
+  Buffer.contents ob
+let read_steel_sole_progress = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_purple_pens = ref (None) in
+    let field_dunks = ref (None) in
+    let field_c_dashes = ref (None) in
+    let field_frame_idx = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+          match len with
+            | 5 -> (
+                if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 's' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
+            | 8 -> (
+                if String.unsafe_get s pos = 'c' && String.unsafe_get s (pos+1) = '_' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 's' then (
+                  2
+                )
+                else (
+                  -1
+                )
+              )
+            | 9 -> (
+                if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'x' then (
+                  3
+                )
+                else (
+                  -1
+                )
+              )
+            | 11 -> (
+                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
+            | _ -> (
+                -1
+              )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_purple_pens := (
+              Some (
+                (
+                  read__18
+                ) p lb
+              )
+            );
+          | 1 ->
+            field_dunks := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 2 ->
+            field_c_dashes := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 3 ->
+            field_frame_idx := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+            match len with
+              | 5 -> (
+                  if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 's' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 8 -> (
+                  if String.unsafe_get s pos = 'c' && String.unsafe_get s (pos+1) = '_' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 's' then (
+                    2
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 9 -> (
+                  if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'x' then (
+                    3
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 11 -> (
+                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | _ -> (
+                  -1
+                )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_purple_pens := (
+                Some (
+                  (
+                    read__18
+                  ) p lb
+                )
+              );
+            | 1 ->
+              field_dunks := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 2 ->
+              field_c_dashes := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 3 ->
+              field_frame_idx := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            purple_pens = (match !field_purple_pens with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "purple_pens");
+            dunks = (match !field_dunks with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "dunks");
+            c_dashes = (match !field_c_dashes with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "c_dashes");
+            frame_idx = (match !field_frame_idx with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "frame_idx");
+          }
+         : steel_sole_progress)
+      )
+)
+let steel_sole_progress_of_string s =
+  read_steel_sole_progress (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__17 = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
@@ -3465,6 +3786,15 @@ let write_ghost_abilities : _ -> ghost_abilities -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
+      Buffer.add_string ob "\"ismas_tear\":";
+    (
+      Yojson.Safe.write_bool
+    )
+      ob x.ismas_tear;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
       Buffer.add_string ob "\"mantis_claw\":";
     (
       Yojson.Safe.write_bool
@@ -3497,15 +3827,6 @@ let write_ghost_abilities : _ -> ghost_abilities -> _ = (
       Yojson.Safe.write_bool
     )
       ob x.shade_cloak;
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"ismas_tear\":";
-    (
-      Yojson.Safe.write_bool
-    )
-      ob x.ismas_tear;
     if !is_first then
       is_first := false
     else
@@ -3544,11 +3865,11 @@ let read_ghost_abilities = (
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
     let field_crystal_heart = ref (None) in
+    let field_ismas_tear = ref (None) in
     let field_mantis_claw = ref (None) in
     let field_monarch_wings = ref (None) in
     let field_mothwing_cloak = ref (None) in
     let field_shade_cloak = ref (None) in
-    let field_ismas_tear = ref (None) in
     let field_vengeful_spirit = ref (None) in
     let field_desolate_dive = ref (None) in
     let field_howling_wraiths = ref (None) in
@@ -3563,7 +3884,7 @@ let read_ghost_abilities = (
           match len with
             | 10 -> (
                 if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
-                  5
+                  1
                 )
                 else (
                   -1
@@ -3573,7 +3894,7 @@ let read_ghost_abilities = (
                 match String.unsafe_get s pos with
                   | 'm' -> (
                       if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'c' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'w' then (
-                        1
+                        2
                       )
                       else (
                         -1
@@ -3581,7 +3902,7 @@ let read_ghost_abilities = (
                     )
                   | 's' -> (
                       if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'd' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'c' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = 'o' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'k' then (
-                        4
+                        5
                       )
                       else (
                         -1
@@ -3611,7 +3932,7 @@ let read_ghost_abilities = (
                     )
                   | 'm' -> (
                       if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 'c' && String.unsafe_get s (pos+6) = 'h' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'g' && String.unsafe_get s (pos+12) = 's' then (
-                        2
+                        3
                       )
                       else (
                         -1
@@ -3623,7 +3944,7 @@ let read_ghost_abilities = (
               )
             | 14 -> (
                 if String.unsafe_get s pos = 'm' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'h' && String.unsafe_get s (pos+4) = 'w' && String.unsafe_get s (pos+5) = 'i' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'c' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 'o' && String.unsafe_get s (pos+12) = 'a' && String.unsafe_get s (pos+13) = 'k' then (
-                  3
+                  4
                 )
                 else (
                   -1
@@ -3668,7 +3989,7 @@ let read_ghost_abilities = (
               )
             );
           | 1 ->
-            field_mantis_claw := (
+            field_ismas_tear := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3676,7 +3997,7 @@ let read_ghost_abilities = (
               )
             );
           | 2 ->
-            field_monarch_wings := (
+            field_mantis_claw := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3684,7 +4005,7 @@ let read_ghost_abilities = (
               )
             );
           | 3 ->
-            field_mothwing_cloak := (
+            field_monarch_wings := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3692,7 +4013,7 @@ let read_ghost_abilities = (
               )
             );
           | 4 ->
-            field_shade_cloak := (
+            field_mothwing_cloak := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3700,7 +4021,7 @@ let read_ghost_abilities = (
               )
             );
           | 5 ->
-            field_ismas_tear := (
+            field_shade_cloak := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3746,7 +4067,7 @@ let read_ghost_abilities = (
             match len with
               | 10 -> (
                   if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
-                    5
+                    1
                   )
                   else (
                     -1
@@ -3756,7 +4077,7 @@ let read_ghost_abilities = (
                   match String.unsafe_get s pos with
                     | 'm' -> (
                         if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'c' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'w' then (
-                          1
+                          2
                         )
                         else (
                           -1
@@ -3764,7 +4085,7 @@ let read_ghost_abilities = (
                       )
                     | 's' -> (
                         if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'd' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'c' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = 'o' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'k' then (
-                          4
+                          5
                         )
                         else (
                           -1
@@ -3794,7 +4115,7 @@ let read_ghost_abilities = (
                       )
                     | 'm' -> (
                         if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 'c' && String.unsafe_get s (pos+6) = 'h' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'g' && String.unsafe_get s (pos+12) = 's' then (
-                          2
+                          3
                         )
                         else (
                           -1
@@ -3806,7 +4127,7 @@ let read_ghost_abilities = (
                 )
               | 14 -> (
                   if String.unsafe_get s pos = 'm' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'h' && String.unsafe_get s (pos+4) = 'w' && String.unsafe_get s (pos+5) = 'i' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'c' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 'o' && String.unsafe_get s (pos+12) = 'a' && String.unsafe_get s (pos+13) = 'k' then (
-                    3
+                    4
                   )
                   else (
                     -1
@@ -3851,7 +4172,7 @@ let read_ghost_abilities = (
                 )
               );
             | 1 ->
-              field_mantis_claw := (
+              field_ismas_tear := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3859,7 +4180,7 @@ let read_ghost_abilities = (
                 )
               );
             | 2 ->
-              field_monarch_wings := (
+              field_mantis_claw := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3867,7 +4188,7 @@ let read_ghost_abilities = (
                 )
               );
             | 3 ->
-              field_mothwing_cloak := (
+              field_monarch_wings := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3875,7 +4196,7 @@ let read_ghost_abilities = (
                 )
               );
             | 4 ->
-              field_shade_cloak := (
+              field_mothwing_cloak := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3883,7 +4204,7 @@ let read_ghost_abilities = (
                 )
               );
             | 5 ->
-              field_ismas_tear := (
+              field_shade_cloak := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -3924,11 +4245,11 @@ let read_ghost_abilities = (
         (
           {
             crystal_heart = (match !field_crystal_heart with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "crystal_heart");
+            ismas_tear = (match !field_ismas_tear with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ismas_tear");
             mantis_claw = (match !field_mantis_claw with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "mantis_claw");
             monarch_wings = (match !field_monarch_wings with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "monarch_wings");
             mothwing_cloak = (match !field_mothwing_cloak with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "mothwing_cloak");
             shade_cloak = (match !field_shade_cloak with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "shade_cloak");
-            ismas_tear = (match !field_ismas_tear with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ismas_tear");
             vengeful_spirit = (match !field_vengeful_spirit with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "vengeful_spirit");
             desolate_dive = (match !field_desolate_dive with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "desolate_dive");
             howling_wraiths = (match !field_howling_wraiths with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "howling_wraiths");
@@ -3938,7 +4259,7 @@ let read_ghost_abilities = (
 )
 let ghost_abilities_of_string s =
   read_ghost_abilities (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__18 = (
+let write__19 = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -3956,11 +4277,11 @@ let write__18 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__18 ?(len = 1024) x =
+let string_of__19 ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__18 ob x;
+  write__19 ob x;
   Buffer.contents ob
-let read__18 = (
+let read__19 = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -4006,8 +4327,161 @@ let read__18 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _18_of_string s =
-  read__18 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _19_of_string s =
+  read__19 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_game_progress : _ -> game_progress -> _ = (
+  fun ob (x : game_progress) ->
+    Buffer.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"steel_sole\":";
+    (
+      write_steel_sole_progress
+    )
+      ob x.steel_sole;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"by_room\":";
+    (
+      write__19
+    )
+      ob x.by_room;
+    Buffer.add_char ob '}';
+)
+let string_of_game_progress ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_game_progress ob x;
+  Buffer.contents ob
+let read_game_progress = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_steel_sole = ref (None) in
+    let field_by_room = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+          match len with
+            | 7 -> (
+                if String.unsafe_get s pos = 'b' && String.unsafe_get s (pos+1) = 'y' && String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' && String.unsafe_get s (pos+6) = 'm' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
+            | 10 -> (
+                if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 'o' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'e' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
+            | _ -> (
+                -1
+              )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_steel_sole := (
+              Some (
+                (
+                  read_steel_sole_progress
+                ) p lb
+              )
+            );
+          | 1 ->
+            field_by_room := (
+              Some (
+                (
+                  read__19
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+            match len with
+              | 7 -> (
+                  if String.unsafe_get s pos = 'b' && String.unsafe_get s (pos+1) = 'y' && String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' && String.unsafe_get s (pos+6) = 'm' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 10 -> (
+                  if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 'o' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'e' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | _ -> (
+                  -1
+                )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_steel_sole := (
+                Some (
+                  (
+                    read_steel_sole_progress
+                  ) p lb
+                )
+              );
+            | 1 ->
+              field_by_room := (
+                Some (
+                  (
+                    read__19
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            steel_sole = (match !field_steel_sole with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "steel_sole");
+            by_room = (match !field_by_room with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "by_room");
+          }
+         : game_progress)
+      )
+)
+let game_progress_of_string s =
+  read_game_progress (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_save_file : _ -> save_file -> _ = (
   fun ob (x : save_file) ->
     Buffer.add_char ob '{';
@@ -4117,7 +4591,7 @@ let write_save_file : _ -> save_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"progress\":";
     (
-      write__18
+      write_game_progress
     )
       ob x.progress;
     Buffer.add_char ob '}';
@@ -4373,7 +4847,7 @@ let read_save_file = (
             field_progress := (
               Some (
                 (
-                  read__18
+                  read_game_progress
                 ) p lb
               )
             );
@@ -4612,7 +5086,7 @@ let read_save_file = (
               field_progress := (
                 Some (
                   (
-                    read__18
+                    read_game_progress
                   ) p lb
                 )
               );
