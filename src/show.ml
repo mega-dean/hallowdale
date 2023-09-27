@@ -85,10 +85,7 @@ let asset_dir (asset_dir : asset_dir) =
 let attack_direction (d : direction option) : string =
   match d with
   | None -> "not attacking"
-  | Some UP -> "up"
-  | Some DOWN -> "down"
-  | Some LEFT -> "left"
-  | Some RIGHT -> "right"
+  | Some d -> fmt "attacking %s" (direction d)
 
 let ghost_id id =
   match id with
@@ -355,10 +352,10 @@ let npc_id (n : npc_id) : string =
 let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
 let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
 
-let main_menu_choice (choice : main_menu_choice) =
-  match choice with
-  | START_GAME -> "Start Game"
-  | QUIT -> "Quit"
+let game_mode (game_mode : game_mode) : string =
+  match game_mode with
+  | CLASSIC -> "Classic"
+  | STEEL_SOLE -> "Steel Sole"
 
 let save_files_choice (choice : save_files_choice) =
   match choice with
@@ -368,77 +365,77 @@ let save_files_choice (choice : save_files_choice) =
   | SLOT_4 -> "4:"
   | BACK -> "Back"
 
-let pause_menu_choice (choice : pause_menu_choice) =
-  match choice with
-  | CONTINUE -> "Continue"
-  | CHANGE_GHOST -> "Change Ghost"
-  | CHANGE_WEAPON -> "Change Weapon"
-  | SETTINGS -> "Settings"
-  | QUIT_TO_MAIN_MENU -> "Save and Quit"
-
-let settings_menu_choice (choice : settings_menu_choice) =
-  match choice with
-  | MUSIC -> "Music"
-  | SOUND_EFFECTS -> "Sound Effects"
-  | BACK -> "Back"
-
-let change_setting _setting choice =
-  match choice with
-  (* this looks pretty terrible, but it works for now *)
-  | INCREASE -> "louder"
-  | DECREASE -> "quieter"
-  | BACK -> "Back"
-
-let change_weapon_menu_choice (game : game option) (choice : change_weapon_menu_choice) =
-  match game with
-  | None -> failwith "need to have a game to show weapons menu"
-  | Some game' -> (
-    match choice with
-    | EQUIP_WEAPON weapon_name ->
-      if game'.player.current_weapon.name = weapon_name then
-        fmt "{{blue}} %s" weapon_name
-      else
-        weapon_name
-    | BACK -> "Back")
-
-let menu_ghost_id (game : game option) id =
-  match game with
-  | None -> failwith "need to have a game to show weapons menu"
-  | Some game' -> (
-    let show name =
-      if id = game'.player.ghost.id then
-        fmt "{{blue}} %s" name
-      else
-        name
-    in
-    match id with
-    | ABED -> show "Abed"
-    | ANNIE -> show "Annie"
-    | BRITTA -> show "Britta"
-    | JEFF -> show "Jeff"
-    | TROY -> show "Troy")
-
-let change_ghost_menu_choice (game : game option) (choice : change_ghost_menu_choice) =
-  match choice with
-  | USE_GHOST id -> menu_ghost_id game id
-  | BACK -> "Back"
-
-let game_mode (game_mode : game_mode) : string =
-  match game_mode with
-  | CLASSIC -> "Classic"
-  | STEEL_SOLE -> "Steel Sole"
-
-let game_mode_choice (game_mode_choice : select_game_mode_choice) : string =
-  match game_mode_choice with
-  | USE_MODE (mode, _, _) -> fmt "Start %s" (game_mode mode)
-  | BACK -> "BACK"
-
 let menu_choice (game : game option) (choice : menu_choice) =
+  let game_mode_choice (game_mode_choice : select_game_mode_choice) : string =
+    match game_mode_choice with
+    | USE_MODE (mode, _, _) -> fmt "Start %s" (game_mode mode)
+    | BACK -> "BACK"
+  in
+  let change_ghost_menu_choice (game : game option) (choice : change_ghost_menu_choice) =
+    let menu_ghost_id (game : game option) id =
+      match game with
+      | None -> failwith "need to have a game to show weapons menu"
+      | Some game' -> (
+        let show name =
+          if id = game'.player.ghost.id then
+            fmt "{{blue}} %s" name
+          else
+            name
+        in
+        match id with
+        | ABED -> show "Abed"
+        | ANNIE -> show "Annie"
+        | BRITTA -> show "Britta"
+        | JEFF -> show "Jeff"
+        | TROY -> show "Troy")
+    in
+    match choice with
+    | USE_GHOST id -> menu_ghost_id game id
+    | BACK -> "Back"
+  in
+  let change_weapon_menu_choice (game : game option) (choice : change_weapon_menu_choice) =
+    match game with
+    | None -> failwith "need to have a game to show weapons menu"
+    | Some game' -> (
+      match choice with
+      | EQUIP_WEAPON weapon_name ->
+        if game'.player.current_weapon.name = weapon_name then
+          fmt "{{blue}} %s" weapon_name
+        else
+          weapon_name
+      | BACK -> "Back")
+  in
+  let change_setting _setting choice =
+    match choice with
+    (* this looks pretty terrible, but it works for now *)
+    | INCREASE -> "louder"
+    | DECREASE -> "quieter"
+    | BACK -> "Back"
+  in
+  let main_menu_choice (choice : main_menu_choice) =
+    match choice with
+    | START_GAME -> "Start Game"
+    | QUIT -> "Quit"
+  in
+  let pause_menu_choice (choice : pause_menu_choice) =
+    match choice with
+    | CONTINUE -> "Continue"
+    | CHANGE_GHOST -> "Change Ghost"
+    | CHANGE_WEAPON -> "Change Weapon"
+    | SETTINGS -> "Settings"
+    | QUIT_TO_MAIN_MENU -> "Save and Quit"
+  in
+  let settings_menu_choice (choice : settings_menu_choice) =
+    match choice with
+    | MUSIC -> "Music"
+    | SOUND_EFFECTS -> "Sound Effects"
+    | BACK -> "Back"
+  in
   match choice with
   | MAIN_MENU choice -> main_menu_choice choice
   | SAVE_FILES choice -> save_files_choice choice
   | PAUSE_MENU choice -> pause_menu_choice choice
-  | SELECT_GAME_MODE game_mode_choice' -> game_mode_choice game_mode_choice'
+  | SELECT_GAME_MODE choice -> game_mode_choice choice
   | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice game choice
   | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice game choice
   | SETTINGS_MENU choice -> settings_menu_choice choice

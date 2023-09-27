@@ -43,19 +43,9 @@ dune promote
 rm src/json_* && atdgen -t src/json.atd && atdgen -j src/json.atd
 ```
 
-#### generate world map
-
-- `world-map` layer must be visible in every room in the map for this to work
-- the `tmxrasterizer` binary comes with Tiled, so you'll need to use the path where it is installed
-
-```
-path/to/tmxrasterizer --show-layer world-map assets/tiled/rooms/Deepnest_East.world world-map.png
-path/to/tmxrasterizer --show-layer world-map --show-layer world-map-labels assets/tiled/rooms/Deepnest_East.world world-map-with-notes.png
-```
-
 #### create release
 
-TBD, but seems like it is something along the lines of `dune-release distrib` then `gh release create`
+Trigger the github actions manually.
 
 ### License
 

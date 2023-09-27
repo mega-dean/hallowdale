@@ -270,7 +270,7 @@
                 {
                  "height":18,
                  "id":58,
-                 "name":"purple-pen:1.12.1",
+                 "name":"purple-pen:3.02.1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -714,12 +714,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":228,
+                 "width":48,
                  "x":168,
                  "y":204
                 }, 
                 {
-                 "height":72,
+                 "height":96,
                  "id":22,
                  "name":"",
                  "rotation":0,
@@ -727,7 +727,7 @@
                  "visible":true,
                  "width":180,
                  "x":216,
-                 "y":228
+                 "y":204
                 }, 
                 {
                  "height":48,

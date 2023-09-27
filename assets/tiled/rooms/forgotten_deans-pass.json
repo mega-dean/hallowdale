@@ -802,6 +802,17 @@
                  "width":20,
                  "x":3302,
                  "y":1192
+                }, 
+                {
+                 "height":136,
+                 "id":190,
+                 "name":"hide:shadow4",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":86,
+                 "x":2921,
+                 "y":750
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -4338,7 +4349,7 @@
          "y":0
         }],
  "nextlayerid":29,
- "nextobjectid":190,
+ "nextobjectid":191,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

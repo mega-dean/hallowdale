@@ -68,9 +68,9 @@ walls-rules.txt
 # - the floor decorations (tables, desks, chairs) are all facing the same direction, so after applying this, flip the right side of each floor horizontally
 
 
-automapping/reset-bg-iso.tmj
-automapping/add-bg-iso.tmj
-automapping/draw-posters.tmj
+# automapping/reset-bg-iso.tmj
+# automapping/add-bg-iso.tmj
+# automapping/draw-posters.tmj
 
 
 # _

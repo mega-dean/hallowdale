@@ -374,7 +374,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -460,12 +460,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":168,
-                 "x":264,
+                 "width":72,
+                 "x":360,
                  "y":288
                 }, 
                 {
-                 "height":120,
+                 "height":156,
                  "id":4,
                  "name":"",
                  "rotation":0,
@@ -473,7 +473,7 @@
                  "visible":true,
                  "width":96,
                  "x":264,
-                 "y":324
+                 "y":288
                 }, 
                 {
                  "height":36,
@@ -680,12 +680,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":288,
-                 "x":1188,
+                 "width":36,
+                 "x":1440,
                  "y":384
                 }, 
                 {
-                 "height":24,
+                 "height":60,
                  "id":25,
                  "name":"",
                  "rotation":0,
@@ -693,7 +693,7 @@
                  "visible":true,
                  "width":252,
                  "x":1188,
-                 "y":420
+                 "y":384
                 }, 
                 {
                  "height":36,
@@ -975,7 +975,7 @@
          "name":"doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":386,
          "x":0,
          "y":0
@@ -1060,7 +1060,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":386,
          "x":0,
          "y":0

@@ -2,6 +2,9 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
+(* FIXME path *)
+(* fmt "saves/%d.json" idx *)
+(* let save_file_path idx = Fpath.(v "saves" / fmt "%d.json" idx |> to_string) *)
 let save_file_path idx = fmt "saves/%d.json" idx
 
 let empty_save_file () : Json_t.save_file =
@@ -54,6 +57,9 @@ let empty_save_file () : Json_t.save_file =
 
 let load_all_save_slots () : save_slots =
   let load_file save_file_idx : Json_t.save_file * bool =
+    (* tmp "before: %s" (fmt "../%s" (save_file_path save_file_idx)); *)
+    (* match File.maybe_read Fpath.(v ".." / save_file_path save_file_idx |> to_string) with *)
+    (* FIXME path *)
     match File.maybe_read (fmt "../%s" (save_file_path save_file_idx)) with
     | None -> (empty_save_file (), true)
     | Some save_file -> (Json_j.save_file_of_string save_file, false)

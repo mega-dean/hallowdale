@@ -37,9 +37,6 @@ module Utils = struct
     | None -> (None, str)
     | Some idx -> (Some (Str.string_before str idx), Str.string_after str (idx + 1))
 
-  (* returns the strings before and after the first occurrence of char c:
-     separate "a.b.c.d" '.' => "a", "b.c.d"
-  *)
   let split_at_first c str : string * string =
     match split_at_first_opt c str with
     | Some prefix, rest -> (prefix, rest)
@@ -69,10 +66,22 @@ module Utils = struct
 
   (* returns a random element from xs *)
   let sample xs = List.nth xs (Random.int (List.length xs))
-  let starts_with () = ()
 end
 
-(* TODO maybe add type hdirection = LEFT | RIGHT for things that only can be horizontal *)
+(* CLEANUP see if there is a built-in way to do this with fpath *)
+let append_to_path (base_path : Fpath.t) (new_segs : string list) : Fpath.t =
+  List.fold_left Fpath.( / ) base_path new_segs
+
+(* let make_path (segments : string list) : string = append_to_path (Fpath.v "") segments *)
+(* let make_path (segments : string list) : Fpath.t = append_to_path (Fpath.v "") segments *)
+(* FIXME not sure if this will work: probably good enough to set the path, but the base might be wrong for windows
+   eg. C:\\...
+   - maybe won't matter though if all paths are relative
+*)
+let make_path' (segments : string list) : string = join ~sep:Fpath.dir_sep segments
+let assets_dir' : string = "assets"
+let make_assets_path (segments : string list) : string = make_path' ("assets" :: segments)
+
 type direction =
   | UP
   | DOWN
@@ -123,14 +132,11 @@ end
 (* the raw image file that a texture can source from *)
 type image = Raylib.Texture.t
 
-(* TODO use something like this instead of hardcoding "../assets/" everywhere
-   let asset_path asset_dir path =
-     (fmt "../assets/tiled/%s" path)
-*)
-
+(* FIXME path *)
 let load_tiled_asset path = Raylib.load_texture (fmt "../assets/tiled/%s" path)
 
 let load_image path : image =
+  (* FIXME path *)
   let full_path = fmt "../assets/%s.png" path in
   if Sys.file_exists full_path then
     Raylib.load_texture full_path
@@ -571,7 +577,7 @@ module Interaction = struct
     (* | SET_TEXT_OFFSET of rect * string list *)
     (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
     | DIALOGUE of string * string
-    | PURPLE_PEN_TEXT of string list
+    | PURPLE_PEN_TEXT of string
     (* camera *)
     | SET_FIXED_CAMERA of int * int
     | SET_GHOST_CAMERA
@@ -1344,6 +1350,7 @@ type texture_cache = {
 (* these are all things that are eager-loaded from json config files *)
 type global_cache = {
   textures : texture_cache;
+  (* FIXME make lore.json a hash with keys, not just a string map *)
   lore : (string * string) list;
   weapons : (string * Json_t.weapon) list;
   (* TODO collision_shapes : (string * shape) list; *)

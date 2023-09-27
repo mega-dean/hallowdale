@@ -801,12 +801,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":144,
+                 "width":60,
                  "x":876,
                  "y":408
                 }, 
                 {
-                 "height":180,
+                 "height":228,
                  "id":13,
                  "name":"",
                  "rotation":0,
@@ -814,7 +814,7 @@
                  "visible":true,
                  "width":84,
                  "x":936,
-                 "y":456
+                 "y":408
                 }, 
                 {
                  "height":96,

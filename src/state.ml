@@ -135,7 +135,8 @@ let init () : state =
           } )
     in
     let path =
-      (* this is a little duplicated with Sprite.get_path, but not worth consolidating *)
+      (* duplicated in Sprite.get_path *)
+      (* FIXME path *)
       fmt "../assets/%s/%s/" (Show.asset_dir TILED) "platforms"
     in
 
@@ -161,6 +162,7 @@ let init () : state =
   in
   print_line "done loading platforms";
 
+  (* FIXME path *)
   let load_sound name =
     (name, Raylib.load_sound (fmt "../assets/audio/sound-effects/%s.ogg" name))
   in
@@ -217,6 +219,7 @@ let init () : state =
   let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
 
   let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas : area_music =
+    (* FIXME path *)
     let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
     Raylib.set_music_volume music settings.music_volume;
     (* TODO this probably isn't a good way to do this
@@ -766,15 +769,9 @@ let tick (state : state) =
         (match game.mode with
         | CLASSIC -> ()
         | STEEL_SOLE ->
-          (* FIXME show game stats *)
-          let time =
-            if List.length game.progress.steel_sole.purple_pens = 0 then
-              ""
-            else (
-              let frames =
-                (* take the first because newest entries are pushed to the front *)
-                List.hd game.progress.steel_sole.purple_pens |> fst
-              in
+          let time, current_time =
+            let current_time_frames = state.frame.idx in
+            let get_time frames =
               let ms' =
                 fmt "%.3f"
                   ((frames mod Config.window.fps |> Int.to_float)
@@ -787,15 +784,35 @@ let tick (state : state) =
               let minutes = minutes' mod 60 in
               let hours' = minutes' / 60 in
               let hours = hours' mod 60 in
-              fmt "%02d:%02d:%02d%s" hours minutes seconds ms)
+              fmt "%02d:%02d:%02d%s" hours minutes seconds ms
+            in
+            if List.length game.progress.steel_sole.purple_pens = 0 then
+              ("", get_time current_time_frames)
+            else (
+              let frames' =
+                (* take the first because newest entries are pushed to the front *)
+                List.hd game.progress.steel_sole.purple_pens |> fst
+              in
+              (get_time frames', get_time current_time_frames))
           in
+          let pen_lore =
+            (* TODO this is a pretty naive way to check for pen lore, maybe the json file should
+               be an object instead of a list
+               - this same logic is in check_layers.rb
+            *)
+            List.filter
+              (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0)
+              state.global.lore
+          in
+          let total_purple_pen_count = List.length pen_lore in
           game.interaction.corner_text <-
             Some
               {
                 content =
-                  fmt "%d / 60 pens in %s, %d dunks, %d c-dashes"
+                  fmt "%d / %d pens in %s, %d dunks, %d c-dashes --- %s"
                     (List.length game.progress.steel_sole.purple_pens)
-                    time game.progress.steel_sole.dunks game.progress.steel_sole.c_dashes;
+                    total_purple_pen_count time game.progress.steel_sole.dunks
+                    game.progress.steel_sole.c_dashes current_time;
                 visible = PAUSE_MENU;
               });
         state'

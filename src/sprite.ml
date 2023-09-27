@@ -82,9 +82,19 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
   if particle.should_despawn then None else Some sprite
 
 let get_path (texture_path : texture_path) : string =
-  fmt "%s/%s/%s"
-    (Show.asset_dir texture_path.asset_dir)
-    texture_path.character_name texture_path.pose_name
+  make_path'
+    [
+      (* FIXME path - this should use assets_path
+         - currently doubling: assets/assets/...
+      *)
+      (* assets_dir'; *)
+      Show.asset_dir texture_path.asset_dir;
+      texture_path.character_name;
+      texture_path.pose_name;
+    ]
+(* fmt "%s/%s/%s"
+ *   (Show.asset_dir texture_path.asset_dir)
+ *   texture_path.character_name texture_path.pose_name *)
 
 let build_texture'
     ?(scale = Config.scale.ghost)

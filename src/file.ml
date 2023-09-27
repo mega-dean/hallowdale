@@ -31,5 +31,6 @@ let write (filename : string) (contents : string) : bool =
   true
 
 let read_config file_name (convert : string -> 'a) : 'a =
+  (* FIXME path *)
   let full_path = fmt "../config/%s.json" file_name |> convert_path in
   read full_path |> convert

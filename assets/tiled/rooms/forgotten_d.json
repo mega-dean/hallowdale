@@ -432,8 +432,8 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":336,
-                 "x":948,
+                 "width":240,
+                 "x":1044,
                  "y":636
                 }, 
                 {
@@ -443,12 +443,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":132,
+                 "width":36,
                  "x":912,
                  "y":552
                 }, 
                 {
-                 "height":60,
+                 "height":132,
                  "id":6,
                  "name":"",
                  "rotation":0,
@@ -456,10 +456,10 @@
                  "visible":true,
                  "width":96,
                  "x":948,
-                 "y":576
+                 "y":552
                 }, 
                 {
-                 "height":384,
+                 "height":408,
                  "id":7,
                  "name":"",
                  "rotation":0,
@@ -467,7 +467,7 @@
                  "visible":true,
                  "width":36,
                  "x":876,
-                 "y":216
+                 "y":192
                 }, 
                 {
                  "height":48,
@@ -487,12 +487,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":420,
-                 "x":996,
+                 "width":384,
+                 "x":1032,
                  "y":192
                 }, 
                 {
-                 "height":108,
+                 "height":156,
                  "id":10,
                  "name":"",
                  "rotation":0,
@@ -500,7 +500,7 @@
                  "visible":true,
                  "width":36,
                  "x":996,
-                 "y":240
+                 "y":192
                 }, 
                 {
                  "height":36,
@@ -751,7 +751,7 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":72,
+                 "width":36,
                  "x":840,
                  "y":192
                 }],

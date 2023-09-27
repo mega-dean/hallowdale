@@ -1,6 +1,6 @@
 (library
   (name hallowdale)
-  (libraries yojson atdgen raylib)
+  (libraries yojson atdgen raylib fpath)
   (inline_tests)
   (preprocess (pps ppx_expect))
   )

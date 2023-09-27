@@ -111,12 +111,17 @@ let save_game ?(after_fn = ignore) (game : game) (state : state) =
       respawn_y = game.room.respawn_pos.y;
       room_name = Tiled.Room.get_filename game.room;
       abilities = game.player.abilities;
-      progress = game.progress;
+      progress =
+        {
+          game.progress with
+          steel_sole = { game.progress.steel_sole with frame_idx = state.frame.idx };
+        };
       (* { by_room = game.progress.by_room; steel_sole = game.progress.steel_sole }; *)
       weapons = List.map fst game.player.weapons;
       current_weapon = game.player.current_weapon.name;
     }
   in
+  (* FIXME path *)
   let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write save_file_path contents in
@@ -224,8 +229,8 @@ let initialize_ss_game (save_file : Json_t.save_file) =
   save_file.abilities.monarch_wings <- true;
   save_file.abilities.mothwing_cloak <- true;
 
-  (* no dive because it can cause a soft-lock in water/acid because it waits for current_floor
-     to know when it is done diving
+  (* no dive because it can cause a soft-lock in water/acid (because it waits for current_floor
+     to know when it is done diving)
   *)
   save_file.abilities.vengeful_spirit <- true;
   save_file.abilities.howling_wraiths <- true;
@@ -258,12 +263,14 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       state.game_context <- MAIN_MENU (select_game_mode_menu save_file save_file_idx, save_slots)
     else (
       let game = initialize_camera_and_game state save_file save_file_idx in
+      (match game.mode with
+      | CLASSIC -> ()
+      | STEEL_SOLE -> Player.add_phantom_floor game game.player.ghost.entity.dest.pos);
       start_game ~is_new_game state game save_file)
   in
 
   let initialize_and_start_game game_mode save_file save_file_idx =
     let game = initialize_camera_and_game state ~mode:(Some game_mode) save_file save_file_idx in
-    (* init state game save_file; *)
     start_game state game save_file
   in
 

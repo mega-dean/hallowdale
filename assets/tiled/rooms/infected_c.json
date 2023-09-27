@@ -840,23 +840,23 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":276,
+                 "width":36,
                  "x":384,
                  "y":756
                 }, 
                 {
-                 "height":72,
+                 "height":84,
                  "id":16,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":240,
-                 "x":420,
-                 "y":768
+                 "width":108,
+                 "x":552,
+                 "y":756
                 }, 
                 {
-                 "height":48,
+                 "height":108,
                  "id":17,
                  "name":"",
                  "rotation":0,
@@ -864,7 +864,7 @@
                  "visible":true,
                  "width":132,
                  "x":420,
-                 "y":816
+                 "y":756
                 }, 
                 {
                  "height":96,

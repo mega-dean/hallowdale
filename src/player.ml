@@ -447,6 +447,16 @@ let check_dream_nail_collisions (state : state) (game : game) =
     List.iter resolve_enemy game.room.enemies;
     List.iter resolve_trigger game.room.triggers.d_nail
 
+let add_phantom_floor (game : game) (target : vector) =
+  game.player.ghost.entity.current_floor <-
+    Some
+      ( {
+          pos = { x = target.x; y = target.y +. game.player.ghost.entity.dest.h };
+          w = game.player.ghost.entity.dest.w;
+          h = 20.;
+        },
+        Zero.vector () )
+
 let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.player with
   | None -> check_dream_nail_collisions state game
@@ -555,24 +565,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             maybe_begin_interaction state game (make_stub_trigger PURPLE_PEN "purple-pen" name)
           | _ -> ());
           destroy_tile_group layer tile_group;
-
-          (* CLEANUP duplicated *)
-          (* CLEANUP only do this for ss *)
-          let new_current_floor =
-            Some
-              ( {
-                  pos =
-                    {
-                      x = game.player.ghost.entity.dest.pos.x;
-                      y = game.player.ghost.entity.dest.pos.y +. game.player.ghost.entity.dest.h;
-                    };
-                  w = game.player.ghost.entity.dest.w;
-                  h = 20.;
-                },
-                Zero.vector () )
-          in
-          game.player.ghost.entity.current_floor <- new_current_floor;
-
+          add_phantom_floor game game.player.ghost.entity.dest.pos;
           if collision.direction = DOWN && layer.config.pogoable then
             pogo game.player;
           match tile_group.stub_sprite with
@@ -1288,24 +1281,17 @@ type handled_action = { this_frame : bool }
 let in_water (player : player) : bool = Option.is_some player.current.water
 
 let hazard_respawn (state : state) (game : game) =
-  let new_current_floor =
-    match game.mode with
-    | CLASSIC ->
-      (* TODO add the phantom current_floor if the room transfer direction was DOWN
-         to prevent the ghost from falling back down to the previous room
-      *)
-      None
-    | STEEL_SOLE ->
-      let e = game.player.ghost.entity in
-      Some
-        ( {
-            pos = { x = game.room.respawn_pos.x; y = game.room.respawn_pos.y +. e.dest.h };
-            w = e.dest.w;
-            h = 20.;
-          },
-          Zero.vector () )
-  in
-  game.player.ghost.entity.current_floor <- new_current_floor;
+  (match game.mode with
+  | CLASSIC ->
+    let room_h =
+      (* CLEANUP move to fn Room.get_h *)
+      (game.room.json.h_in_tiles |> Int.to_float) *. game.room.json.tile_h
+    in
+    (* CLEANUP move 50 to config *)
+    if game.room.respawn_pos.y +. 50. > room_h then
+      add_phantom_floor game game.room.respawn_pos;
+    ()
+  | STEEL_SOLE -> add_phantom_floor game game.room.respawn_pos);
 
   Entity.unfreeze game.player.ghost.entity;
   state.camera.update_instantly <- true;
@@ -1510,9 +1496,16 @@ let update (game : game) (state : state) =
             let text : Interaction.text = { content = [ str ]; increases_health = false } in
             game.interaction.speaker_name <- Some speaker;
             game.interaction.text <- Some (DIALOGUE (speaker, text))
-          | PURPLE_PEN_TEXT lines ->
+          | PURPLE_PEN_TEXT line ->
             Entity.freeze game.player.ghost.entity;
-            let text : Interaction.text = { content = lines; increases_health = false } in
+            let text : Interaction.text =
+              let content =
+                match game.mode with
+                | CLASSIC -> [ "Found a purple pen with a note:"; fmt "{{purple}} %s" line ]
+                | STEEL_SOLE -> [ line ]
+              in
+              { content; increases_health = false }
+            in
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
         in

@@ -258,6 +258,8 @@ let init (params : room_params) : room =
           coll_rect.h |> Float.to_int
         in
         add_idx_config (DOOR_HITS door_health)
+      (* FIXME  *)
+      (* | "archive-purple-pen" *)
       | "purple-pen" -> add_idx_config (PURPLE_PEN name_suffix)
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
@@ -283,7 +285,7 @@ let init (params : room_params) : room =
       | "mirrored-npc" ->
         let npc_id, dest =
           get_object_rect
-            (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name_suffix) name_suffix)
+            (Npc.parse_name (fmt "Tiled rect mirrored-npc_%s" name_suffix) name_suffix)
             coll_rect
         in
         npc_rects := (npc_id, dest, false) :: !npc_rects
@@ -354,7 +356,7 @@ let init (params : room_params) : room =
   (* need this for on_destroy cache keys *)
   let jug_firstgid =
     let is_jug (ts : Json_t.tileset_source) =
-      String.length ts.source > 10 && Str.last_chars ts.source 10 = "/jugs.json"
+      String.length ts.source > 10 && Str.last_chars ts.source 9 = "jugs.json"
     in
     match List.find_opt is_jug json_room.tileset_sources with
     | Some tileset_source -> tileset_source.firstgid
@@ -526,7 +528,9 @@ let init (params : room_params) : room =
   in
 
   let cache =
-    match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
+    match
+      List.assoc_opt Fpath.(v ".." / "tilesets" / "jugs.json" |> to_string) tilesets_by_path
+    with
     | None -> { jug_fragments_by_gid = []; tilesets_by_path }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in

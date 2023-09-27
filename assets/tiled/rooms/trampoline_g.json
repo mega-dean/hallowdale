@@ -1643,12 +1643,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":72,
-                 "x":192,
+                 "width":12,
+                 "x":252,
                  "y":108
                 }, 
                 {
-                 "height":132,
+                 "height":444,
                  "id":33,
                  "name":"",
                  "rotation":0,
@@ -1656,7 +1656,7 @@
                  "visible":true,
                  "width":60,
                  "x":192,
-                 "y":420
+                 "y":108
                 }, 
                 {
                  "height":24,

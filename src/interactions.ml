@@ -84,10 +84,14 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
       ]
     | "purple-pen" ->
       remove_nail := false;
-      [
-        STEP
-          (PURPLE_PEN_TEXT [ "Found a purple pen with a note:"; fmt "{{purple}} %s" (get_lore ()) ]);
-      ]
+      [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]
+    (* FIXME  *)
+    (* | "archive-purple-pen" ->
+     *   remove_nail := false;
+     *   [
+     *     STEP
+     *       (PURPLE_PEN_TEXT [ fmt "{{purple}} %s" (get_lore ()) ]);
+     *   ] *)
     | "health" ->
       read_sign @ [ CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
     | "d-nail-item" -> (
@@ -211,6 +215,13 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           [ "Consumed the"; "Monkey Knockout Gas." ]
           [ "Tap (A) while holding UP"; "to unleash the Knockout Gas." ]
           ~quote:(Some "Some kind of {{red}} gas {{white}} that knocks out monkeys.")
+      | "honda-nail" ->
+        get_ability_steps "dream_nail" 0. 6. [ "Taken the"; "Honda Nail." ]
+          [
+            "Hold (X) to charge and slash with the nail.";
+            "Cut through the veil between dreams and waking.";
+          ]
+          ~quote:(Some "The power of dreams.")
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
