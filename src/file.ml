@@ -2,12 +2,11 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let convert_path path_with_slashes =
-  let filename_parts = String.split_on_char '/' path_with_slashes in
+let convert_path path_with_separators =
+  let filename_parts = String.split_on_char Filename.dir_sep.[0] path_with_separators in
   List.fold_left Filename.concat "" filename_parts
 
-let ls (dir : string) : string list =
-  Sys.readdir (convert_path dir) |> Array.to_list
+let ls (dir : string) : string list = Sys.readdir (convert_path dir) |> Array.to_list
 
 let read (filename : string) : string =
   let filename' = convert_path filename in
@@ -31,6 +30,5 @@ let write (filename : string) (contents : string) : bool =
   true
 
 let read_config file_name (convert : string -> 'a) : 'a =
-  (* FIXME path *)
-  let full_path = fmt "../config/%s.json" file_name |> convert_path in
+  let full_path = make_path [ ".."; "config"; fmt "%s.json" file_name ] |> convert_path in
   read full_path |> convert

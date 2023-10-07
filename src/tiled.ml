@@ -269,7 +269,7 @@ module Room = struct
     (* TODO get rid of this fn and just try accessing `tileset.tiles.(gid - firstgid)` for each
        tileset_source, and rescue out-of-bounds *)
     let gid_in_tileset (tileset_source : Json_t.tileset_source) =
-      (* FIXME path *)
+      (* these paths are coming from Tiled exports, so they don't need to use Filename.dir_sep *)
       if tileset_source.source = "../tilesets/world-map.json" then
         false
       else (
@@ -278,7 +278,6 @@ module Room = struct
     in
     let tileset_sources =
       List.filter
-        (* FIXME path *)
         (fun (source : Json_t.tileset_source) -> source.source <> "../platforms/platforms.json")
         json_room.tileset_sources
     in
@@ -480,7 +479,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
         (* the platforms tileset has to be parsed separately because Tiled uses the key "objects"
            for different things, so image-based tilesets (like platforms) aren't compatible
            with regular tilesets *)
-        (* FIXME path *)
+        (* these paths are coming from Tiled exports, so they don't need to use Filename.dir_sep *)
         String.equal "../tilesets/world-map.json" source.source
         || String.equal ":/automap-tiles.tsx" source.source
         || String.starts_with ~prefix:"../platforms/" source.source
@@ -500,8 +499,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
     match parse_tileset source' with
     | None -> None
     | Some json ->
-      (* FIXME path *)
-      let image = load_tiled_asset ("tilesets/" ^ json.source) in
+      let image = load_tiled_asset (make_path [ "tilesets"; json.source ]) in
       Some (source'.source, { json; tiles = load_tiles room json image source' })
   in
   List.filter_map load_tileset room.tileset_sources
@@ -522,8 +520,7 @@ let create_camera_at v (shake : float) =
   Raylib.Camera2D.create offset v rotation zoom
 
 let init_world (path : string) : (room_id * room_location) list =
-  (* FIXME path *)
-  let full_path = fmt "../assets/tiled/rooms/%s.world" path in
+  let full_path = make_assets_path [ "tiled"; "rooms"; fmt "%s.world" path ] in
   let json_world : Json_t.world = File.read full_path |> Json_j.world_of_string in
   let filenames_in_world_file : str_set ref = ref StrSet.empty in
   let get_room_location (global_map : Json_t.global_map) : room_id * room_location =
@@ -545,8 +542,7 @@ let init_world (path : string) : (room_id * room_location) list =
     if Str.last_chars s 5 = ".json" then
       files_in_rooms_dir := StrSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
   in
-  (* FIXME path *)
-  File.ls "../assets/tiled/rooms" |> List.iter add_to_set;
+  File.ls (make_assets_path [ "tiled"; "rooms" ]) |> List.iter add_to_set;
   let filenames_without_files : str_set =
     StrSet.diff !filenames_in_world_file !files_in_rooms_dir
   in

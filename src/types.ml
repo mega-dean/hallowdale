@@ -68,19 +68,8 @@ module Utils = struct
   let sample xs = List.nth xs (Random.int (List.length xs))
 end
 
-(* CLEANUP see if there is a built-in way to do this with fpath *)
-let append_to_path (base_path : Fpath.t) (new_segs : string list) : Fpath.t =
-  List.fold_left Fpath.( / ) base_path new_segs
-
-(* let make_path (segments : string list) : string = append_to_path (Fpath.v "") segments *)
-(* let make_path (segments : string list) : Fpath.t = append_to_path (Fpath.v "") segments *)
-(* FIXME not sure if this will work: probably good enough to set the path, but the base might be wrong for windows
-   eg. C:\\...
-   - maybe won't matter though if all paths are relative
-*)
-let make_path' (segments : string list) : string = join ~sep:Fpath.dir_sep segments
-let assets_dir' : string = "assets"
-let make_assets_path (segments : string list) : string = make_path' ("assets" :: segments)
+let make_path (segments : string list) : string = join ~sep:Filename.dir_sep segments
+let make_assets_path (segments : string list) : string = make_path (".." :: "assets" :: segments)
 
 type direction =
   | UP
@@ -132,12 +121,10 @@ end
 (* the raw image file that a texture can source from *)
 type image = Raylib.Texture.t
 
-(* FIXME path *)
-let load_tiled_asset path = Raylib.load_texture (fmt "../assets/tiled/%s" path)
+let load_tiled_asset path = Raylib.load_texture (make_assets_path [ "tiled"; path ])
 
 let load_image path : image =
-  (* FIXME path *)
-  let full_path = fmt "../assets/%s.png" path in
+  let full_path = make_assets_path [ path ] in
   if Sys.file_exists full_path then
     Raylib.load_texture full_path
   else
@@ -1350,7 +1337,7 @@ type texture_cache = {
 (* these are all things that are eager-loaded from json config files *)
 type global_cache = {
   textures : texture_cache;
-  (* FIXME make lore.json a hash with keys, not just a string map *)
+  (* TODO maybe make lore.json a hash with keys, not just a string map *)
   lore : (string * string) list;
   weapons : (string * Json_t.weapon) list;
   (* TODO collision_shapes : (string * shape) list; *)

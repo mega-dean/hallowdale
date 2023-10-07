@@ -81,20 +81,9 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
   let particle = advance_particle_animation current_clock next_texture sprite in
   if particle.should_despawn then None else Some sprite
 
-let get_path (texture_path : texture_path) : string =
-  make_path'
-    [
-      (* FIXME path - this should use assets_path
-         - currently doubling: assets/assets/...
-      *)
-      (* assets_dir'; *)
-      Show.asset_dir texture_path.asset_dir;
-      texture_path.character_name;
-      texture_path.pose_name;
-    ]
-(* fmt "%s/%s/%s"
- *   (Show.asset_dir texture_path.asset_dir)
- *   texture_path.character_name texture_path.pose_name *)
+let texture_path_to_string (texture_path : texture_path) : string =
+  make_path
+    [ Show.asset_dir texture_path.asset_dir; texture_path.character_name; fmt "%s.png" texture_path.pose_name ]
 
 let build_texture'
     ?(scale = Config.scale.ghost)
@@ -136,7 +125,7 @@ let build_texture'
           LOOPED { frame_idx = 0; frames; frame_started }))
   in
   {
-    ident = get_path texture_config.path;
+    ident = texture_path_to_string texture_config.path;
     image;
     coll_offset = { x = texture_config.x_offset *. scale; y = texture_config.y_offset *. scale };
     animation_src;
@@ -147,7 +136,7 @@ let build_texture_from_path
     ?(particle = false)
     ?(once = false)
     (path : texture_path) =
-  let image = load_image (get_path path) in
+  let image = load_image (texture_path_to_string path) in
   let texture_config =
     {
       (* texture location isn't used because image has already been loaded *)
@@ -165,7 +154,8 @@ let build_texture_from_config
     ?(particle = false)
     ?(once = false)
     (texture_config : texture_config) : texture =
-  let path = get_path texture_config.path in
+  let path = texture_path_to_string texture_config.path in
+  tmp " ------------ %s" path;
   let image = load_image path in
   build_texture' ~scale ~particle ~once texture_config image
 

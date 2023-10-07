@@ -431,8 +431,7 @@ let create_from_textures
     List.nth texture_configs 0
   in
   let validate_configs_are_complete () =
-    (* FIXME path *)
-    let get_filenames asset_dir char_name = File.ls (fmt "../assets/%s/%s" asset_dir char_name) in
+    let get_filenames asset_dir char_name = File.ls (make_assets_path [asset_dir; char_name]) in
     let config_names =
       texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
     in

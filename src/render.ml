@@ -638,6 +638,7 @@ let tick (state : state) =
     List.iteri (display_line config y_offset') lines
   in
 
+  (* PERF store the result of this in Interaction.t so it doesn't need to be computed every frame *)
   let maybe_draw_text (game : game option) (interaction_text : Interaction.text_kind option) =
     (* TODO add offset_x based on ghost.id, and make ability-outlines.png a grid of images *)
     let draw_outline ?(offset_y = 0) (ability_text : Interaction.ability_text) =

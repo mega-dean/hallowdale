@@ -85,13 +85,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     | "purple-pen" ->
       remove_nail := false;
       [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]
-    (* FIXME  *)
-    (* | "archive-purple-pen" ->
-     *   remove_nail := false;
-     *   [
-     *     STEP
-     *       (PURPLE_PEN_TEXT [ fmt "{{purple}} %s" (get_lore ()) ]);
-     *   ] *)
     | "health" ->
       read_sign @ [ CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
     | "d-nail-item" -> (

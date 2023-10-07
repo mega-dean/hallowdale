@@ -2,10 +2,7 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-(* FIXME path *)
-(* fmt "saves/%d.json" idx *)
-(* let save_file_path idx = Fpath.(v "saves" / fmt "%d.json" idx |> to_string) *)
-let save_file_path idx = fmt "saves/%d.json" idx
+let save_file_path idx = make_path [ "saves"; fmt "%d.json" idx ]
 
 let empty_save_file () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 150. } in
@@ -57,10 +54,7 @@ let empty_save_file () : Json_t.save_file =
 
 let load_all_save_slots () : save_slots =
   let load_file save_file_idx : Json_t.save_file * bool =
-    (* tmp "before: %s" (fmt "../%s" (save_file_path save_file_idx)); *)
-    (* match File.maybe_read Fpath.(v ".." / save_file_path save_file_idx |> to_string) with *)
-    (* FIXME path *)
-    match File.maybe_read (fmt "../%s" (save_file_path save_file_idx)) with
+    match File.maybe_read (make_path [ ".."; save_file_path save_file_idx ]) with
     | None -> (empty_save_file (), true)
     | Some save_file -> (Json_j.save_file_of_string save_file, false)
   in
@@ -74,7 +68,6 @@ let init
     (world : world)
     (save_file_slot : int) : game =
   let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
-
   let ghosts_file : ghosts_file = Player.read_config () in
   let use_json_config ghost_id pose_name =
     (* PERF try using build_texture_from_image *)

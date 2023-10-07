@@ -136,8 +136,7 @@ let init () : state =
     in
     let path =
       (* duplicated in Sprite.get_path *)
-      (* FIXME path *)
-      fmt "../assets/%s/%s/" (Show.asset_dir TILED) "platforms"
+      make_assets_path [ Show.asset_dir TILED; "platforms" ]
     in
 
     let check_file filename =
@@ -162,9 +161,9 @@ let init () : state =
   in
   print_line "done loading platforms";
 
-  (* FIXME path *)
   let load_sound name =
-    (name, Raylib.load_sound (fmt "../assets/audio/sound-effects/%s.ogg" name))
+    let path = make_assets_path [ "audio"; "sound-effects"; fmt "%s.ogg" name ] in
+    (name, Raylib.load_sound path)
   in
 
   let sounds =
@@ -219,8 +218,9 @@ let init () : state =
   let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
 
   let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas : area_music =
-    (* FIXME path *)
-    let music = Raylib.load_music_stream (fmt "../assets/audio/music/%s.ogg" name) in
+    let music =
+      Raylib.load_music_stream (make_assets_path [ "audio"; "music"; fmt "%s.ogg" name ])
+    in
     Raylib.set_music_volume music settings.music_volume;
     (* TODO this probably isn't a good way to do this
        - this is starting all ~8 area musics, and then only advancing the one for the current area
@@ -800,9 +800,7 @@ let tick (state : state) =
                be an object instead of a list
                - this same logic is in check_layers.rb
             *)
-            List.filter
-              (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0)
-              state.global.lore
+            List.filter (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0) state.global.lore
           in
           let total_purple_pen_count = List.length pen_lore in
           game.interaction.corner_text <-

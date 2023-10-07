@@ -258,8 +258,6 @@ let init (params : room_params) : room =
           coll_rect.h |> Float.to_int
         in
         add_idx_config (DOOR_HITS door_health)
-      (* FIXME  *)
-      (* | "archive-purple-pen" *)
       | "purple-pen" -> add_idx_config (PURPLE_PEN name_suffix)
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
@@ -388,7 +386,7 @@ let init (params : room_params) : room =
             match Utils.split_at_first_opt '|' json.name with
             | Some interaction_name, layer_name -> (
               let finished name = List.mem name room_progress.finished_interactions in
-              match String.get interaction_name 0 with
+              match interaction_name.[0] with
               | '!' -> (layer_name, not (finished (Str.string_after interaction_name 1)))
               | _ -> (layer_name, finished interaction_name))
             | _ ->
@@ -528,13 +526,10 @@ let init (params : room_params) : room =
   in
 
   let cache =
-    match
-      List.assoc_opt Fpath.(v ".." / "tilesets" / "jugs.json" |> to_string) tilesets_by_path
-    with
+    match List.assoc_opt (make_path [ ".."; "tilesets"; "jugs.json" ]) tilesets_by_path with
     | None -> { jug_fragments_by_gid = []; tilesets_by_path }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
-
       (* all of the `*. 2.` or `+ 2` in this function is here because jugs were originally written for a 24x24 tileset  *)
       let make_jug (config : jug_config) : int * jug_fragments =
         let make_stub width tile_x tile_y =

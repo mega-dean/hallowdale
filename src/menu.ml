@@ -121,8 +121,7 @@ let save_game ?(after_fn = ignore) (game : game) (state : state) =
       current_weapon = game.player.current_weapon.name;
     }
   in
-  (* FIXME path *)
-  let save_file_path = fmt "../saves/%d.json" game.save_file_slot in
+  let save_file_path = make_path [ ".."; "saves"; fmt "%d.json" game.save_file_slot ] in
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write save_file_path contents in
   if written then
