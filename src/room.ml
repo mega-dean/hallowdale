@@ -786,6 +786,8 @@ let handle_transitions (state : state) (game : game) =
         Raylib.seek_music_stream target_area_music.music.t 0.;
         game.music <- target_area_music);
       change_current_room state game room_location start_pos;
+      game.player.current.can_dash <- true;
+      game.player.current.can_flap <- true;
       let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
       List.iter hide_party_ghost game.party;
       true)

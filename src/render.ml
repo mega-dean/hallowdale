@@ -1241,7 +1241,9 @@ let tick (state : state) =
         Draw.image image src dest (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
       draw_soul game.player.soul;
-      List.iteri draw_head (Utils.rangef game.player.health.max)
+      match game.mode with
+      | CLASSIC -> List.iteri draw_head (Utils.rangef game.player.health.max)
+      | STEEL_SOLE -> ()
     in
 
     Raylib.begin_drawing ();
@@ -1260,9 +1262,7 @@ let tick (state : state) =
     draw_object_trigger_indicators ();
     draw_loose_projectiles ();
     draw_fg_tiles game.room camera_x camera_y state.frame.idx;
-    (match game.mode with
-    | CLASSIC -> draw_hud ()
-    | STEEL_SOLE -> ());
+    draw_hud ();
     (match state.screen_fade with
     | None -> ()
     | Some alpha ->
