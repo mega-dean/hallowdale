@@ -655,7 +655,7 @@
                 {
                  "height":18,
                  "id":44,
-                 "name":"purple-pen:1.04.1",
+                 "name":"purple-pen:3.01.2",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -665,7 +665,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 

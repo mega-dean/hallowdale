@@ -88,17 +88,17 @@ if unused_purple_pens.any?
   puts unused_purple_pens.join(', ')
 end
 
-# floors = {}
+pen_counts = {}
 
-# jsons.map do |json|
-#   each_layer(json) do |layer|
-#     if layer['type'] == 'objectgroup' && layer['name'] == 'floors'
-#       floors[json['filename']] = layer['objects'].count
-#     end
-#   end
-# end
+jsons.map do |json|
+  each_layer(json) do |layer|
+    if layer['type'] == 'objectgroup' && layer['name'] == 'triggers'
+      pen_counts[json['filename']] = layer['objects'].select{|obj| obj['name'].start_with?('purple-pen')}.count
+    end
+  end
+end
 
-# floors.sort_by{|k, v| v}.each do |name, count|
+# pen_counts.sort_by{|k, v| v}.each do |name, count|
 #   puts "#{name}: #{count}"
 # end
 
