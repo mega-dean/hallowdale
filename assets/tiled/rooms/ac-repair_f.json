@@ -827,6 +827,8 @@
          "id":10,
          "name":"bg",
          "opacity":1,
+         "parallaxx":0.9,
+         "parallaxy":0.9,
          "type":"tilelayer",
          "visible":false,
          "width":153,
