@@ -60,7 +60,71 @@ let load_all_save_slots () : save_slots =
   in
   { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
 
-let init
+let save ?(after_fn = ignore) (game : game) (state : state) =
+  Room.save_progress game;
+  let save_file : Json_t.save_file =
+    let ghosts' = game.party in
+    {
+      game_mode = Show.game_mode game.mode;
+      ghost_id = Show.ghost_id game.player.ghost.id;
+      ghosts_in_party =
+        (* game.players only has the uncontrolled ghosts, but save_file.ghosts_in_party
+           should include the current ghosts id
+        *)
+        [ game.player.ghost.id ] @ Player.ghost_ids_in_party ghosts'
+        |> List.map Show.ghost_id
+        |> Utils.uniq;
+      ghost_x = game.player.ghost.entity.dest.pos.x;
+      ghost_y = game.player.ghost.entity.dest.pos.y;
+      respawn_x = game.room.respawn_pos.x;
+      respawn_y = game.room.respawn_pos.y;
+      room_name = Tiled.Room.get_filename game.room;
+      abilities = game.player.abilities;
+      progress =
+        {
+          game.progress with
+          steel_sole = { game.progress.steel_sole with frame_idx = state.frame.idx };
+        };
+      (* { by_room = game.progress.by_room; steel_sole = game.progress.steel_sole }; *)
+      weapons = List.map fst game.player.weapons;
+      current_weapon = game.player.current_weapon.name;
+    }
+  in
+  let save_file_path = make_path [ ".."; "saves"; fmt "%d.json" game.save_file_slot ] in
+  let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
+  let written = File.write save_file_path contents in
+  if written then
+    after_fn state
+  else
+    failwith "error when trying to save"
+
+let initialize_steel_sole (save_file : Json_t.save_file) =
+  (* TODO not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
+  save_file.abilities.crystal_heart <- true;
+  save_file.abilities.ismas_tear <- true;
+  save_file.abilities.mantis_claw <- true;
+  save_file.abilities.monarch_wings <- true;
+  save_file.abilities.mothwing_cloak <- true;
+
+  (* no dive because it can cause a soft-lock in water/acid (because it waits for current_floor
+     to know when it is done diving)
+  *)
+  save_file.abilities.vengeful_spirit <- true;
+  save_file.abilities.howling_wraiths <- true;
+  ()
+
+let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
+  if is_new_game then (
+    Entity.freeze game.player.ghost.entity;
+    state.screen_fade <- Some 255;
+    let trigger : trigger = make_stub_trigger INFO "cutscene" "opening-poem" in
+    Player.maybe_begin_interaction state game trigger)
+  else
+    state.frame.idx <- save_file.progress.steel_sole.frame_idx;
+  Raylib.stop_music_stream state.menu_music.t;
+  state.game_context <- IN_PROGRESS game
+
+let create
     (mode : game_mode)
     (save_file : Json_t.save_file)
     (global : global_cache)
@@ -120,7 +184,7 @@ let init
         platforms = global.textures.platforms;
       }
   in
-  room.layers <- Tiled.Room.get_layer_tile_groups room room.progress.removed_idxs_by_layer;
+  Tiled.Room.reset_tile_groups room;
 
   let music = List.find (fun am -> List.mem room.area.id am.areas) area_musics in
 
@@ -143,3 +207,24 @@ let init
     save_file_slot;
     debug_paused = false;
   }
+
+let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
+  let mode' =
+    match mode with
+    | Some m -> m
+    | None -> (
+      match save_file.game_mode with
+      | "Classic" -> CLASSIC
+      | "Steel Sole" -> STEEL_SOLE
+      | _ -> failwithf "invalid game_mode in save_file %d" save_file_idx)
+  in
+  let game = create mode' save_file state.global state.area_musics state.world save_file_idx in
+  state.camera.update_instantly <- true;
+  state.camera.raylib <-
+    (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
+       TODO can maybe improve this, since it can still be off if the camera is bounded
+    *)
+    Tiled.create_camera_at
+      (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x game.player.ghost.entity.dest.pos.y)
+      0.;
+  game

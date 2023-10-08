@@ -120,9 +120,7 @@ let get_enemy_collision (player : player) (room : room) : (int * direction) opti
       None
     else if Collision.between_entities player.ghost.entity enemy.entity then (
       let direction : direction =
-        (* TODO probably doing this in multiple places, move this to a function in Entity *)
-        let mid_x rect = rect.pos.x +. (rect.w /. 2.) in
-        if mid_x enemy.entity.dest > mid_x player.ghost.entity.dest then
+        if rect_center_x enemy.entity.dest > rect_center_x player.ghost.entity.dest then
           LEFT
         else
           RIGHT
@@ -880,11 +878,6 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   in
   game.player.spawned_vengeful_spirits <- projectile :: game.player.spawned_vengeful_spirits
 
-let check_monkey_block_collisions (state : state) (game : game) =
-  let layers = List.filter (fun l -> l.config.monkey) game.room.layers in
-  (* TODO-2 use destroy_tile_group from resolve_slash_collisions  *)
-  ()
-
 let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   let action =
     match action_kind with
@@ -953,9 +946,12 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | C_DASH ->
       (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
       (* play_sound state "spray"; *)
-      (* state.camera.shake <- 1.; *)
       (* TODO maybe only should track this stuff when game_mode is STEEL_SOLE *)
-      game.progress.steel_sole.c_dashes <- 1 + game.progress.steel_sole.c_dashes;
+      (match game.room.area.id with
+      | COMPUTER_WING ->
+        (* not counting these for now since there are some rooms that require it  *)
+        ()
+      | _ -> game.progress.steel_sole.c_dashes <- 1 + game.progress.steel_sole.c_dashes);
       game.player.current.is_c_dashing <- true;
       game.player.current.is_charging_c_dash <- false;
       game.player.ghost.entity.current_floor <- None;
@@ -1002,10 +998,21 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         spawn_child game.player WRAITHS
           (ALIGNED (CENTER, BOTTOM))
           ~scale:1.7 game.player.shared_textures.howling_wraiths;
-        check_monkey_block_collisions state game;
         game.player.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
-      tmp "TAKE_DAMAGE_AND_RESPAWN ->";
+      (* PERF move this to respawn_ghost *)
+      (match game.mode with
+      | CLASSIC -> ()
+      | STEEL_SOLE ->
+        game.player.soul.current <- game.player.soul.max;
+        let jug_layers : layer list =
+          List.filter
+            (fun (layer : layer) ->
+              String.length layer.name > 5 && Str.last_chars layer.name 5 = "-jugs")
+            game.room.layers
+        in
+        List.iter (fun layer -> layer.destroyed_tiles <- []) jug_layers;
+        Tiled.Room.reset_tile_groups game.room);
       Entity.freeze game.player.ghost.entity;
       (* TODO handle dying *)
       game.player.health.current <- game.player.health.current - 1;
@@ -1270,7 +1277,8 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
     print "player water is_some: %b" (Option.is_some game.player.current.water)
   else if key_pressed DEBUG_4 then (* toggle_ability game.player "desolate_dive" *)
-    toggle_ability game.player "ismas_tear"
+    (* toggle_ability game.player "ismas_tear" *)
+    ()
   else if key_pressed DEBUG_1 then
     game.debug_paused <- not game.debug_paused;
   state
@@ -1279,23 +1287,6 @@ let handle_debug_keys (game : game) (state : state) =
 type handled_action = { this_frame : bool }
 
 let in_water (player : player) : bool = Option.is_some player.current.water
-
-let hazard_respawn (state : state) (game : game) =
-  (match game.mode with
-  | CLASSIC ->
-    let room_h =
-      (* CLEANUP move to fn Room.get_h *)
-      (game.room.json.h_in_tiles |> Int.to_float) *. game.room.json.tile_h
-    in
-    (* CLEANUP move 50 to config *)
-    if game.room.respawn_pos.y +. 50. > room_h then
-      add_phantom_floor game game.room.respawn_pos;
-    ()
-  | STEEL_SOLE -> add_phantom_floor game game.room.respawn_pos);
-
-  Entity.unfreeze game.player.ghost.entity;
-  state.camera.update_instantly <- true;
-  game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
 
 let update (game : game) (state : state) =
   let stop_wall_sliding = ref false in
@@ -1377,7 +1368,10 @@ let update (game : game) (state : state) =
       | Some trigger -> maybe_begin_interaction state game trigger);
       (match find_respawn_trigger_collision game.player game.room.triggers.respawn with
       | None -> ()
-      | Some (new_respawn_pos, trigger) -> game.room.respawn_pos <- new_respawn_pos);
+      | Some (new_respawn_pos, trigger) -> (
+        match game.mode with
+        | CLASSIC -> game.room.respawn_pos <- new_respawn_pos
+        | STEEL_SOLE -> ()));
       List.length game.interaction.steps > 0
     in
     let speed_through_interaction =
@@ -1435,7 +1429,14 @@ let update (game : game) (state : state) =
             match trigger_kind with
             | WARP target ->
               let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
-              Room.change_current_room state game target_room_location target.pos
+              let target_pos =
+                match game.mode with
+                | CLASSIC -> target.pos
+                | STEEL_SOLE ->
+                  (* FIXME 80 seems like too much to adjust by, but this works for the archives exits *)
+                  { target.pos with y = target.pos.y -. 80. }
+              in
+              Room.change_current_room state game target_room_location target_pos
             | _ ->
               failwithf "need WARP trigger kind for WARP steps, got '%s'"
                 (Show.trigger_kind trigger_kind))
@@ -1466,21 +1467,16 @@ let update (game : game) (state : state) =
           | WAIT time -> new_wait := time -. state.frame.dt
           | HIDE_BOSS_DOORS ->
             set_layer_hidden "boss-doors" true;
-            game.room.layers <-
-              Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer
+            Tiled.Room.reset_tile_groups game.room
           | UNHIDE_BOSS_DOORS ->
             set_layer_hidden "boss-doors" false;
-            game.room.layers <-
-              Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer
+            Tiled.Room.reset_tile_groups game.room
           | HIDE_LAYER layer_name ->
             set_layer_hidden layer_name true;
-            game.room.layers <-
-              Tiled.Room.get_layer_tile_groups ~debug:true game.room
-                game.room.progress.removed_idxs_by_layer
+            Tiled.Room.reset_tile_groups game.room
           | UNHIDE_LAYER layer_name ->
             set_layer_hidden layer_name false;
-            game.room.layers <-
-              Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer
+            Tiled.Room.reset_tile_groups game.room
           | SPAWN_VENGEFUL_SPIRIT (direction, end_tile_x, end_tile_y) ->
             let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (end_tile_x, end_tile_y) in
             let end_x, end_y = (tx *. Config.scale.room, ty *. Config.scale.room) in
@@ -2200,6 +2196,20 @@ let update (game : game) (state : state) =
         continue_action state game TAKE_DAMAGE_AND_RESPAWN
       else if game.player.current.is_taking_hazard_damage then (
         game.player.current.is_taking_hazard_damage <- false;
+        let hazard_respawn (state : state) (game : game) =
+          (match game.mode with
+          | CLASSIC ->
+            let transitioned_from_below =
+              game.room.respawn_pos.y +. 50. > Tiled.Room.get_h game.room.json
+            in
+            if transitioned_from_below then
+              add_phantom_floor game game.room.respawn_pos;
+            ()
+          | STEEL_SOLE -> add_phantom_floor game game.room.respawn_pos);
+          Entity.unfreeze game.player.ghost.entity;
+          state.camera.update_instantly <- true;
+          game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
+        in
         hazard_respawn state game)
       else (
         state.camera.shake <- 1.;
@@ -2282,27 +2292,22 @@ let update (game : game) (state : state) =
     in
 
     let hazard_collisions, platform_spike_collisions' =
-      let hazards', platform_spikes' =
-        Entity.get_damage_collisions game.room game.player.ghost.entity
-      in
+      let damage = Entity.get_damage_collisions game.room game.player.ghost.entity in
       match game.mode with
-      | CLASSIC -> (hazards', platform_spikes')
+      | CLASSIC -> (damage.hazards, damage.platform_spikes)
       | STEEL_SOLE -> (
         let up_floor_collision : (collision * rect) option =
-          (* this is supposed to fix the steel sole hazard respawns on wall seams
-             - TODO maybe do something like this to find floor_collisions in the first place,
-               since that might fix bonking on wall seams
-          *)
+          (* this is supposed to fix the steel sole hazard respawns on wall seams *)
           if List.length floor_collisions > 1 || game.player.ghost.entity.v.y < 0. then
             None
           else
             List.find_opt (fun ((c : collision), _) -> c.direction = UP) floor_collisions
         in
         match up_floor_collision with
-        | None -> (hazards', platform_spikes')
+        | None -> (damage.hazards, damage.platform_spikes)
         | Some coll ->
           game.progress.steel_sole.dunks <- 1 + game.progress.steel_sole.dunks;
-          ([ coll ], platform_spikes'))
+          ([ coll ], damage.platform_spikes))
     in
     let platform_spike_collisions =
       if is_vulnerable state game then

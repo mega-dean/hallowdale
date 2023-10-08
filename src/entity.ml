@@ -158,11 +158,17 @@ let get_acid_collisions (room : room) (entity : entity) : (collision * rect) lis
   let layers = List.filter (fun (l : layer) -> l.name = "acid") room.layers in
   get_tile_collisions layers entity
 
-(* CLEANUP put this into a type damage_collisions so the return values are labelled *)
+type damage_collisions = {
+  hazards : (collision * rect) list;
+  platform_spikes : (collision * rect) list;
+}
+
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
 let get_damage_collisions (room : room) (entity : entity) =
-  ( get_rect_collisions entity (room.hazards @ room.spikes),
-    get_rect_collisions entity (List.map snd room.platform_spikes) )
+  {
+    hazards = get_rect_collisions entity (room.hazards @ room.spikes);
+    platform_spikes = get_rect_collisions entity (List.map snd room.platform_spikes);
+  }
 
 let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =
   let get_projectile_collision (projectile : projectile) =
@@ -280,7 +286,7 @@ let get_child_pos'
   let to_the_left () =
     { y = parent_dest.pos.y; x = parent_dest.pos.x -. child_w +. (parent_dest.w /. 2.) }
   in
-  let to_the_right () = { y = parent_dest.pos.y; x = parent_dest.pos.x +. (parent_dest.w /. 2.) } in
+  let to_the_right () = { y = parent_dest.pos.y; x = rect_center_x parent_dest } in
   match relative_pos with
   | IN_FRONT ->
     if facing_right then
@@ -431,7 +437,7 @@ let create_from_textures
     List.nth texture_configs 0
   in
   let validate_configs_are_complete () =
-    let get_filenames asset_dir char_name = File.ls (make_assets_path [asset_dir; char_name]) in
+    let get_filenames asset_dir char_name = File.ls (make_assets_path [ asset_dir; char_name ]) in
     let config_names =
       texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
     in

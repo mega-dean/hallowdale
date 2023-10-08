@@ -143,7 +143,7 @@ let draw_entity
   draw_sprite ~debug ~tint ~render_offset e.sprite
 
 let center (r : rect) : Raylib.Vector2.t =
-  Raylib.Vector2.create (r.pos.x +. (r.w /. 2.)) (r.pos.y +. (r.h /. 2.))
+  Raylib.Vector2.create (rect_center_x r) (rect_center_y r)
 
 let draw_velocity (e : entity) : unit =
   let end_x, end_y = (e.sprite.dest.pos.x +. (e.v.x /. 3.), e.sprite.dest.pos.y +. (e.v.y /. 3.)) in

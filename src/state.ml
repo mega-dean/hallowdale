@@ -846,7 +846,7 @@ let tick (state : state) =
                (game.room.spikes @ game.room.hazards @ List.map snd game.room.platform_spikes)));
 
         if state.should_save then (
-          Menu.save_game game state;
+          Game.save game state;
           state.should_save <- false);
 
         state'

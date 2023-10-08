@@ -100,8 +100,9 @@ type rect = {
   mutable h : float;
 }
 
-let get_rect_center (rect : rect) =
-  { x = rect.pos.x +. (rect.w /. 2.); y = rect.pos.y +. (rect.h /. 2.) }
+let rect_center_x (rect : rect) = rect.pos.x +. (rect.w /. 2.)
+let rect_center_y (rect : rect) = rect.pos.y +. (rect.h /. 2.)
+let get_rect_center (rect : rect) = { x = rect_center_x rect; y = rect_center_y rect }
 
 type bounds = {
   min : vector;
@@ -561,7 +562,6 @@ module Interaction = struct
     | FLOATING_TEXT of string * float
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
-    (* | SET_TEXT_OFFSET of rect * string list *)
     (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
     | DIALOGUE of string * string
     | PURPLE_PEN_TEXT of string
@@ -672,7 +672,9 @@ module Interaction = struct
     | TIME of time
     | PAUSE_MENU
 
-  (* CLEANUP naming - this is text that may have an end-time, like corner_text and floating_text *)
+  (* this is text that only shows temporarily and doesn't start an interaction, like
+     corner_text and floating_text
+  *)
   type transient_text = {
     content : string;
     visible : transient_text_visible;

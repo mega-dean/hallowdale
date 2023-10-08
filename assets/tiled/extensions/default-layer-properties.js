@@ -14,7 +14,7 @@ let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties"
     "auto:walls": 0.9,
     "auto:iso": 0.9,
     "bg-walls": 0.9,
-    "bg": 0.9,
+    // "bg": 0.9,
     "bg-iso": 0.9,
     "bg-iso-walls": 0.9,
     // TODO fg layers

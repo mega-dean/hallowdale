@@ -509,8 +509,8 @@ let init (params : room_params) : room =
           (* TODO error message looks weird when the already-parsed layer name has a number
              - duplicate "shadow4" layers says "append numbers to disambiguate, eg shadow42"
           *)
-          failwithf "already parsed layer '%s' - append numbers to disambiguate, eg %s2" json.name
-            json.name
+          failwithf "already parsed layer '%s' for room %s - append numbers to disambiguate, eg %s2"
+            json.name params.file_name json.name
         else
           layer_names := json.name :: !layer_names;
         let reference_layer () = String.starts_with ~prefix:"ref:" json.name in
@@ -720,8 +720,7 @@ let change_current_room
   (* TODO probably need to unload things like enemy textures *)
   Tiled.Room.unload_tilesets game.room;
   game.room <- new_room;
-  game.room.layers <-
-    Tiled.Room.get_layer_tile_groups game.room game.room.progress.removed_idxs_by_layer;
+  Tiled.Room.reset_tile_groups game.room;
   state.camera.update_instantly <- true;
   state.camera.raylib <-
     Tiled.create_camera_at (Raylib.Vector2.create ghost_start_pos.x ghost_start_pos.y) 0.
@@ -752,17 +751,14 @@ let handle_transitions (state : state) (game : game) =
       in
       let target_room_id, room_location =
         let global_x, global_y =
-          ( cr.pos.x +. (cr.w /. 2.) +. current_room_location.global_x,
-            cr.pos.y +. (cr.h /. 2.) +. current_room_location.global_y )
+          ( rect_center_x cr +. current_room_location.global_x,
+            rect_center_y cr +. current_room_location.global_y )
         in
         Tiled.Room.locate_by_coords state.world global_x global_y
       in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
-        (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen
-           - TODO I think this is broken when exiting a room below (falling)
-           - the ghost can pretty easily fall through the floor at the mama-mahogany cutscene that happens right after room transition
-        *)
+        (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
         match collision.direction with
         | LEFT ->
           game.player.ghost.entity.sprite.facing_right <- true;
@@ -788,6 +784,10 @@ let handle_transitions (state : state) (game : game) =
       change_current_room state game room_location start_pos;
       game.player.current.can_dash <- true;
       game.player.current.can_flap <- true;
+      (match game.mode with
+       | CLASSIC -> ()
+       | STEEL_SOLE -> game.player.soul.current <- game.player.soul.max;
+      );
       let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
       List.iter hide_party_ghost game.party;
       true)

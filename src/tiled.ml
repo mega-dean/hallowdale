@@ -122,10 +122,12 @@ module Tile = struct
     (0b11100000000000000000000000000000 land gid) lsr 29
 end
 
-(* TODO maybe rename this so it's less confusing with room.ml *)
 module Room = struct
   (* TODO this module is a little weird since it works on both json_room and room types *)
   type t = Json_t.room
+
+  let get_h (room : t) =
+    (room.h_in_tiles |> Int.to_float) *. room.tile_h
 
   let get_filename' area_id room_id : string =
     fmt "%s_%s" (Show.area_id area_id) (Show.room_id_filename room_id)
@@ -435,6 +437,9 @@ module Room = struct
       layer
     in
     List.map set_tile_groups room.layers
+
+  let reset_tile_groups (room : room) =
+    room.layers <- get_layer_tile_groups room room.progress.removed_idxs_by_layer
 end
 
 let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) :

@@ -117,7 +117,7 @@
             "height": 456,
             "width": 3192,
             "x": 2568,
-            "y": -528
+            "y": -552
         },
         {
             "fileName": "city_d.json",
@@ -166,7 +166,7 @@
             "height": 816,
             "width": 1416,
             "x": -3312,
-            "y": -888
+            "y": -900
         },
         {
             "fileName": "forgotten_f.json",
