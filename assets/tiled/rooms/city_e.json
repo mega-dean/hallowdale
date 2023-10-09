@@ -255,21 +255,10 @@
                  "width":20,
                  "x":1514,
                  "y":171
-                }, 
-                {
-                 "height":21,
-                 "id":61,
-                 "name":"enemy:ELECTRICITY",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":132,
-                 "y":180
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -508,21 +497,10 @@
                  "width":113,
                  "x":1026,
                  "y":106
-                }, 
-                {
-                 "height":84,
-                 "id":62,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":78,
-                 "x":108,
-                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 

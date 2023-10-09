@@ -551,7 +551,7 @@
                  "visible":true,
                  "width":55,
                  "x":456,
-                 "y":371
+                 "y":374
                 }, 
                 {
                  "gid":6611,
@@ -612,17 +612,6 @@
          "id":9,
          "name":"triggers",
          "objects":[
-                {
-                 "height":32,
-                 "id":37,
-                 "name":"enemy:PENGUIN",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":36,
-                 "x":116,
-                 "y":109
-                }, 
                 {
                  "height":18,
                  "id":50,

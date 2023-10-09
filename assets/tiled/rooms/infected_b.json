@@ -668,8 +668,8 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":265,
-                 "x":1644,
+                 "width":121,
+                 "x":1788,
                  "y":168
                 }, 
                 {
@@ -682,17 +682,6 @@
                  "width":60,
                  "x":1836,
                  "y":180
-                }, 
-                {
-                 "height":96,
-                 "id":17,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":540,
-                 "x":1308,
-                 "y":156
                 }, 
                 {
                  "height":276,
@@ -913,10 +902,43 @@
                  "width":20,
                  "x":2066,
                  "y":519
+                }, 
+                {
+                 "height":84,
+                 "id":66,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":96,
+                 "x":1320,
+                 "y":108
+                }, 
+                {
+                 "height":48,
+                 "id":67,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":336,
+                 "x":1404,
+                 "y":84
+                }, 
+                {
+                 "height":60,
+                 "id":68,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":1728,
+                 "y":120
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1778,7 +1800,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":240,
          "x":0,
          "y":0
@@ -1929,7 +1951,7 @@
          "y":0
         }],
  "nextlayerid":23,
- "nextobjectid":66,
+ "nextobjectid":69,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
