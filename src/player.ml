@@ -563,7 +563,11 @@ let resolve_slash_collisions (state : state) (game : game) =
             maybe_begin_interaction state game (make_stub_trigger PURPLE_PEN "purple-pen" name)
           | _ -> ());
           destroy_tile_group layer tile_group;
-          add_phantom_floor game game.player.ghost.entity.dest.pos;
+          (match game.mode with
+          | CLASSIC -> ()
+          | STEEL_SOLE ->
+            if layer.name = "doors" then
+              add_phantom_floor game game.player.ghost.entity.dest.pos);
           if collision.direction = DOWN && layer.config.pogoable then
             pogo game.player;
           match tile_group.stub_sprite with
@@ -639,20 +643,25 @@ let resolve_slash_collisions (state : state) (game : game) =
     List.iter maybe_pogo_platform_spikes game.room.platform_spikes;
     List.iter resolve_enemy game.room.enemies
 
-let reset_current_status () =
+let reset_current_status ?(taking_hazard_damage = None) () =
   {
     wall = None;
     water = None;
     is_diving = false;
     is_c_dashing = false;
     is_charging_c_dash = false;
-    is_taking_hazard_damage = false;
+    is_taking_hazard_damage =
+      (match taking_hazard_damage with
+      | None -> false
+      | Some v -> v);
     can_dash = true;
     can_flap = true;
   }
 
 let take_damage (player : player) (damage : int) =
-  player.current <- reset_current_status ();
+  (* preserve the original value of is_taking_hazard_damage to prevent soft-locks when taking damage while hazard respawning *)
+  player.current <-
+    reset_current_status ~taking_hazard_damage:(Some player.current.is_taking_hazard_damage) ();
   player.children <- [];
   player.ghost.entity.current_floor <- None;
   player.health.current <- player.health.current - damage;
@@ -974,6 +983,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | DASH ->
       (* TODO the dash sound should have the footsteps at the end when the ghost lands *)
       play_sound state "dash";
+      game.player.ghost.entity.y_recoil <- None;
       game.player.history.dash
     | CAST spell_kind -> (
       game.player.soul.current <- game.player.soul.current - Config.action.soul_per_cast;
@@ -1000,7 +1010,6 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           ~scale:1.7 game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
-      (* PERF move this to respawn_ghost *)
       (match game.mode with
       | CLASSIC -> ()
       | STEEL_SOLE ->
@@ -1119,6 +1128,8 @@ let is_doing (player : player) (action_kind : ghost_action_kind) (frame_time : f
   | JUMP
   | TAKE_DAMAGE _ ->
     failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
+
+(* CLEANUP add is_attacking to consolidate the arbitrary directions *)
 
 let not_doing_any (player : player) (frame_time : float) (actions : ghost_action_kind list) : bool =
   not (List.exists (fun action -> is_doing player action frame_time) actions)
@@ -1269,14 +1280,18 @@ let handle_debug_keys (game : game) (state : state) =
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* swap_current_ghost_in_cutscene state game ANNIE *)
       (* show_ghost_location () *)
-      game.player.ghost.entity.sprite.facing_right <- true (* show_camera_location () *))
+      tmp "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage
+    (* () *)
+    (* game.player.ghost.entity.sprite.facing_right <- true *)
+    (* show_camera_location () *))
   else if key_pressed DEBUG_2 then
     (* toggle_ability game.ghost "mantis_claw" *)
     (* game.ghost.health.current <- game.ghost.health.current - 1 *)
     game.player.soul.current <- game.player.soul.max
   else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
     print "player water is_some: %b" (Option.is_some game.player.current.water)
-  else if key_pressed DEBUG_4 then (* toggle_ability game.player "desolate_dive" *)
+  else if key_pressed DEBUG_4 then
+    (* toggle_ability game.player "desolate_dive" *)
     (* toggle_ability game.player "ismas_tear" *)
     ()
   else if key_pressed DEBUG_1 then
@@ -1404,6 +1419,7 @@ let update (game : game) (state : state) =
         in
         let tile_w, tile_h = (game.room.json.tile_w, game.room.json.tile_h) in
 
+        (* CLEANUP get_tile_coords with optional offset args *)
         let set_layer_hidden (layer_name : string) hidden =
           match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
           | None -> failwithf "expected %s layer" layer_name
@@ -1433,7 +1449,7 @@ let update (game : game) (state : state) =
                 match game.mode with
                 | CLASSIC -> target.pos
                 | STEEL_SOLE ->
-                  (* FIXME 80 seems like too much to adjust by, but this works for the archives exits *)
+                  (* TODO 80 seems like too much to adjust by, but this works for the archives exits *)
                   { target.pos with y = target.pos.y -. 80. }
               in
               Room.change_current_room state game target_room_location target_pos
@@ -1701,6 +1717,7 @@ let update (game : game) (state : state) =
           match npc_step with
           | ENTITY entity_step -> handle_entity_step npc.entity entity_step
           | WALK_TO target_tile_x ->
+            (* CLEANUP duplicated in walk_ghost *)
             let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
             let dist = (tx *. Config.scale.room) -. npc.entity.dest.pos.x in
             still_walking := abs_float dist > 10.;
@@ -1924,10 +1941,16 @@ let update (game : game) (state : state) =
 
   let handle_dashing () : handled_action =
     let starting_dash () =
-      (* attack direction is arbitrary *)
+      let not_attacking () =
+        (not (is_doing game.player (ATTACK RIGHT) state.frame.time))
+        (* CLEANUP this mostly works to allow dashing immediately after pogoing, but if
+           the ghost bonks on a ceiling it cancels the y_recoil
+        *)
+        || Option.is_some game.player.ghost.entity.y_recoil
+      in
       game.player.abilities.mothwing_cloak
       && key_pressed_or_buffered DASH
-      && (not (is_doing game.player (ATTACK RIGHT) state.frame.time))
+      && not_attacking ()
       && (not (is_casting state game))
       && Option.is_none game.player.ghost.entity.x_recoil
       && game.player.current.can_dash

@@ -449,7 +449,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
     state.frame.time -. started.at < duration
   in
   match enemy.id with
-  (* TODO-4 update locker boy configs for new room location *)
+  (* TODO update locker boy configs for new room location *)
   | LOCKER_BOY ->
     (* TODO this isn't working after resizing the screen - definitely need to update
        config values, maybe some code too *)

@@ -15,7 +15,7 @@ module Draw = struct
   let rect_lines = draw_rectangle_lines_ex
   let rect = draw_rectangle
 
-  (* TODO-7 rename this *)
+  (* TODO rename this *)
   let image = draw_texture_pro
   let line_ex = draw_line_ex
 end
@@ -200,7 +200,7 @@ let draw_tiled_layer
             (* the Float.floor here fixes tile seams, and doesn't look noticeably jittery *)
             { pos = { x = Float.floor x; y = Float.floor y }; w; h }
           in
-          (* TODO-7 instead of drawing texture for each tile, use image_draw on the render buffer *)
+          (* FIXME instead of drawing texture for each tile, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
     let draw_spawned_fragment (f : entity) =

@@ -307,7 +307,7 @@ let init (params : room_params) : room =
             coll_rect
           :: !enemy_rects
       | "respawn" ->
-        (* TODO-8 try using connected objects instead of parsing coordinates from the name
+        (* TODO try using connected objects instead of parsing coordinates from the name
            - get only object in .properties, which should be the respawn:target object
            - get the coords from that object.id
 
@@ -319,7 +319,7 @@ let init (params : room_params) : room =
         let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "target" ->
-        (* TODO-8 add to respawn_targets : (int * vector) list
+        (* TODO add to respawn_targets : (int * vector) list
            - x/y here will be raw x/y, so shouldn't need to convert from tile_idx
         *)
         itmp "got a target: %s %s" name_prefix name_suffix;

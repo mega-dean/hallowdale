@@ -70,7 +70,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     in
     let read_sign = [ CURRENT_GHOST (SET_POSE READING); STEP (WAIT 0.4) ] in
 
-    (* TODO-2 add dialogue for Shirley Island npcs
+    (* TODO add dialogue for Shirley Island npcs
        HILDA -> "I live in the village. I love {{orange}} Abed.",
     *)
     match trigger.name_prefix with
