@@ -2,15 +2,10 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let convert_path path_with_separators =
-  let filename_parts = String.split_on_char Filename.dir_sep.[0] path_with_separators in
-  List.fold_left Filename.concat "" filename_parts
-
-let ls (dir : string) : string list = Sys.readdir (convert_path dir) |> Array.to_list
+let ls (dir : string) : string list = Sys.readdir dir |> Array.to_list
 
 let read (filename : string) : string =
-  let filename' = convert_path filename in
-  let ch = open_in_bin filename' in
+  let ch = open_in_bin filename in
   let s = really_input_string ch (in_channel_length ch) in
   close_in ch;
   s
@@ -23,12 +18,11 @@ let maybe_read (filename : string) : string option =
     None
 
 let write (filename : string) (contents : string) : bool =
-  let filename' = convert_path filename in
-  let ch = open_out filename' in
+  let ch = open_out filename in
   let s = Printf.fprintf ch "%s\n" contents in
   close_out ch;
   true
 
 let read_config file_name (convert : string -> 'a) : 'a =
-  let full_path = make_path [ ".."; "config"; fmt "%s.json" file_name ] |> convert_path in
+  let full_path = make_root_path [ "config"; fmt "%s.json" file_name ] in
   read full_path |> convert

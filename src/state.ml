@@ -823,8 +823,6 @@ let tick (state : state) =
             add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
           in
 
-          tmp "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage;
-
           show_triggers game.room.triggers.lore;
           show_triggers game.room.triggers.cutscene;
           show_triggers game.room.triggers.d_nail;

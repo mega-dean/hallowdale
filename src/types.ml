@@ -68,8 +68,13 @@ module Utils = struct
   let sample xs = List.nth xs (Random.int (List.length xs))
 end
 
+let root : string =
+  (* take dirname because executables are located in $root/dist/ *)
+  Filename.dirname (Unix.getcwd ())
+
 let make_path (segments : string list) : string = join ~sep:Filename.dir_sep segments
-let make_assets_path (segments : string list) : string = make_path (".." :: "assets" :: segments)
+let make_root_path (segments : string list) : string = make_path (root :: segments)
+let make_assets_path (segments : string list) : string = make_root_path ("assets" :: segments)
 
 type direction =
   | UP

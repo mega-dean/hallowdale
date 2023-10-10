@@ -56,6 +56,7 @@ let init (params : room_params) : room =
     | Some rp -> rp
   in
   let parse_room (path : string) : Json_t.room =
+    (* FIXME path *)
     let full_path = fmt "../assets/tiled/rooms/%s" path in
     (* TODO cache these instead of reloading the tileset between every room *)
     File.read full_path |> Json_j.room_of_string
@@ -470,7 +471,7 @@ let init (params : room_params) : room =
                   layer_name
               else
                 {
-                  render = { bg = has "bg"; fg = has "fg" };
+                  render = { bg = has "bg"; fg = has "fg" || has "hazard" };
                   collides_with_ghost = has "collides";
                   hazard = has "hazard";
                   pogoable = has "pogoable";
@@ -526,7 +527,7 @@ let init (params : room_params) : room =
   in
 
   let cache =
-    match List.assoc_opt (make_path [ ".."; "tilesets"; "jugs.json" ]) tilesets_by_path with
+    match List.assoc_opt (make_root_path [ "tilesets"; "jugs.json" ]) tilesets_by_path with
     | None -> { jug_fragments_by_gid = []; tilesets_by_path }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in

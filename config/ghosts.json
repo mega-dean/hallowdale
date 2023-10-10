@@ -76,8 +76,7 @@
     "shared_textures": [
         ["nail", {
             "count": 3,
-            "duration": 0.07,
-            "collision_shape": []
+            "duration": 0.07
         }],
         ["vengeful-cushion", {
             "count": 2,
@@ -146,8 +145,8 @@
             // - slash duration is based on the shared texture below (count *. duration)
             "duration": 0.0,
             // cooldown starts counting when action begins, so this is 0.41 + (duration of slash)
-            // "cooldown": 0.62,
-            "cooldown": 0.21,
+            "cooldown": 0.62,
+            // "cooldown": 0.21,
             "input_buffer": 0.2
         }],
 

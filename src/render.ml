@@ -200,7 +200,7 @@ let draw_tiled_layer
             (* the Float.floor here fixes tile seams, and doesn't look noticeably jittery *)
             { pos = { x = Float.floor x; y = Float.floor y }; w; h }
           in
-          (* FIXME instead of drawing texture for each tile, use image_draw on the render buffer *)
+          (* PERF instead of drawing texture for each tile, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
     let draw_spawned_fragment (f : entity) =

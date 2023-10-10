@@ -2,7 +2,7 @@ open Types
 
 [@@@ocaml.warning "-26-27-32"]
 
-let save_file_path idx = make_path [ "saves"; fmt "%d.json" idx ]
+let save_file_path idx = make_root_path [ "saves"; fmt "%d.json" idx ]
 
 let empty_save_file () : Json_t.save_file =
   let kings_pass_drop = { x = 1800.; y = 150. } in
@@ -54,7 +54,7 @@ let empty_save_file () : Json_t.save_file =
 
 let load_all_save_slots () : save_slots =
   let load_file save_file_idx : Json_t.save_file * bool =
-    match File.maybe_read (make_path [ ".."; save_file_path save_file_idx ]) with
+    match File.maybe_read (save_file_path save_file_idx) with
     | None -> (empty_save_file (), true)
     | Some save_file -> (Json_j.save_file_of_string save_file, false)
   in
@@ -90,7 +90,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       current_weapon = game.player.current_weapon.name;
     }
   in
-  let save_file_path = make_path [ ".."; "saves"; fmt "%d.json" game.save_file_slot ] in
+  let save_file_path = make_root_path [ "saves"; fmt "%d.json" game.save_file_slot ] in
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write save_file_path contents in
   if written then
@@ -99,6 +99,8 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
     failwith "error when trying to save"
 
 let initialize_steel_sole (save_file : Json_t.save_file) =
+  save_file.ghosts_in_party <- List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
+
   (* TODO not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
   save_file.abilities.crystal_heart <- true;
   save_file.abilities.ismas_tear <- true;

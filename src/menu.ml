@@ -9,7 +9,8 @@ let select_game_mode_menu save_file save_file_idx : menu =
   {
     choices =
       [
-        SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx));
+        (* TODO enable Classic mode *)
+        (* SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)); *)
         SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
         SELECT_GAME_MODE BACK;
       ];

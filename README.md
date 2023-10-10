@@ -6,44 +6,71 @@ An homage to Hollow Knight.
 ![main menu screenshot](./assets/main-menu-screenshot.png)
 ![world map screenshot](./assets/world-map.png)
 
-### Project goals
+[itch.io page](https://mega-dean.itch.io/hallowdale)
 
-- doable
-- passable
+### Instructions
 
-### Setup
+1. Either clone the repo from github, or download and unzip the game from itch.io
+2. Run the executable in `dist/` for your operating system
+
+### Game modes
+
+#### Classic
+
+This is like normal Hollow Knight gameplay, and has cutscenes that follow the episode "Geothermal
+Escapism". It is disabled until the map can be updated to handle both game modes (currently it's
+just a bunch of purple pen jars everywhere).
+
+#### Steel Sole
+
+This is like a "New Game +" mode where you start with all abilities, but can't stand on any surface
+(although you can land in water/acid safely). Cutscenes are disabled and abilities/lore are removed,
+so the only objective is to collect all 100 purple pens.
+
+C-dashing makes this game mode much easier, so for an additional challenge you can try to traverse
+the map without them. All of the purple pens can be collected without using them, except for some in
+the Computer Wing area, so c-dashes that are started in that area aren't counted.
+
+### Keybinds
+
+There is currently no menu for rebinding keys, but they can be overridden by placing a file at
+`config/keybinds.json` and restarting the game. See `config/keybinds.json.example` for an example.
+
+### Development
+
+#### Setup
 
 1. install `opam`
 2. use `opam` to install `ocaml` version 4.13
 3. use `opam` to install dependencies: `opam install dune yojson atdgen raylib ppx_expect ocamlformat`
 
-### Scripts
+#### Scripts
 
-#### build and run
+##### build and run
 
 ```
 dune exec hallowdale
 ```
 
-#### run tests
+##### run tests
 
 ```
 dune runtest
 ```
 
-#### promote test output
+##### promote test output
 
 ```
 dune promote
 ```
 
-#### regenerate and replace .atd
+##### regenerate and replace .atd
 
 ```
 rm src/json_* && atdgen -t src/json.atd && atdgen -j src/json.atd
 ```
 
-#### create release
+##### create release
 
 Trigger the github actions manually.
 
