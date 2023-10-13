@@ -3,10 +3,11 @@
 
 An homage to Hollow Knight.
 
+[itch.io page](https://mega-dean.itch.io/hallowdale)
+
 ![main menu screenshot](./assets/main-menu-screenshot.png)
 ![world map screenshot](./assets/world-map.png)
 
-[itch.io page](https://mega-dean.itch.io/hallowdale)
 
 ### Instructions
 

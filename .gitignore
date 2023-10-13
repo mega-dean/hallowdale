@@ -9,7 +9,6 @@
 *.cmti
 *.annot
 *.byte
-*.exe
 *.exe.manifest
 .depend
 .depend.nt
