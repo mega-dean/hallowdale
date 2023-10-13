@@ -527,11 +527,13 @@ let init (params : room_params) : room =
   in
 
   let cache =
-    match List.assoc_opt (make_root_path [ "tilesets"; "jugs.json" ]) tilesets_by_path with
+    (* this isn't using make_path because tilesets_by_path keys come from Tiled exported files *)
+    match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
     | None -> { jug_fragments_by_gid = []; tilesets_by_path }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
-      (* all of the `*. 2.` or `+ 2` in this function is here because jugs were originally written for a 24x24 tileset  *)
+      (* all of the `*. 2.` or `+ 2` in this function is here because jugs were originally
+         written for a 24x24 tileset *)
       let make_jug (config : jug_config) : int * jug_fragments =
         let make_stub width tile_x tile_y =
           (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
@@ -786,9 +788,8 @@ let handle_transitions (state : state) (game : game) =
       game.player.current.can_dash <- true;
       game.player.current.can_flap <- true;
       (match game.mode with
-       | CLASSIC -> ()
-       | STEEL_SOLE -> game.player.soul.current <- game.player.soul.max;
-      );
+      | CLASSIC -> ()
+      | STEEL_SOLE -> game.player.soul.current <- game.player.soul.max);
       let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
       List.iter hide_party_ghost game.party;
       true)

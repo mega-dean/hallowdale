@@ -1280,7 +1280,7 @@ let handle_debug_keys (game : game) (state : state) =
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* swap_current_ghost_in_cutscene state game ANNIE *)
       (* show_ghost_location () *)
-      tmp "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage
+      print "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage
     (* () *)
     (* game.player.ghost.entity.sprite.facing_right <- true *)
     (* show_camera_location () *))

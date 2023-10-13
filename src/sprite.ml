@@ -155,7 +155,6 @@ let build_texture_from_config
     ?(once = false)
     (texture_config : texture_config) : texture =
   let path = texture_path_to_string texture_config.path in
-  tmp " ------------ %s" path;
   let image = load_image path in
   build_texture' ~scale ~particle ~once texture_config image
 
