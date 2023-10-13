@@ -15,6 +15,12 @@ let rec loop (state : Hallowdale.Types.state) =
     state |> Hallowdale.State.tick |> Hallowdale.Render.tick |> loop
 
 let () =
+  let dev =
+    (* FIXME only want to chdir when running the executable in dist/ *)
+    Str.string_match (Str.regexp ".*_build") Sys.executable_name 0
+  in
+  if not dev then
+    Sys.chdir (Filename.dirname Sys.executable_name);
   Raylib.init_window Hallowdale.Config.window.width Hallowdale.Config.window.height "hallowdale";
   Raylib.init_audio_device ();
   Raylib.set_exit_key Raylib.Key.Backspace;
