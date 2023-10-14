@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let get_normal (line : line) : line =
   if line.b = 0. then
     { a = 0.; b = 1.; c = 0. }

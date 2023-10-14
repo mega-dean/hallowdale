@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let main_menu () : menu =
   { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
 

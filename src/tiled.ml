@@ -1,8 +1,6 @@
 open Types
 open Types.Utils
 
-[@@@ocaml.warning "-26-27-32"]
-
 let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room }
 
 let scale_rect x y w h =

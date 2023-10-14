@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let save_file_path idx = make_root_path [ "saves"; fmt "%d.json" idx ]
 
 let empty_save_file () : Json_t.save_file =

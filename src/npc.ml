@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let parse_name context name : npc_id =
   match name with
   | "ANNIES_BOOBS" -> ANNIES_BOOBS

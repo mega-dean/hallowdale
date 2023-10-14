@@ -1,8 +1,6 @@
 open Types
 open Types.Interaction
 
-[@@@ocaml.warning "-26-27-32"]
-
 let get_steps ?(increase_health = false) state game (trigger : trigger) : step list =
   let ability_text_outline x y =
     (* TODO move these to config *)

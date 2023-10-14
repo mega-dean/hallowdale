@@ -1,7 +1,5 @@
 open Hallowdale.Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let rec loop (state : Hallowdale.Types.state) =
   state.frame.time <- Raylib.get_time ();
   state.frame.idx <- 1 + state.frame.idx;

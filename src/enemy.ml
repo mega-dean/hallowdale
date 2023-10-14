@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let is_dead (enemy : enemy) : bool = enemy.health.current <= 0
 let is_alive (enemy : enemy) : bool = not (is_dead enemy)
 

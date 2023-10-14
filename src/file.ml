@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let ls (dir : string) : string list = Sys.readdir dir |> Array.to_list
 
 let read (filename : string) : string =

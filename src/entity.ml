@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let above_floor (e : entity) floor =
   floor.pos.x < e.dest.pos.x +. e.dest.w && floor.pos.x +. floor.w > e.dest.pos.x
 

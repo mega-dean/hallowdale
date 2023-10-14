@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let make_dest x y (t : texture) : rect =
   let w =
     match t.animation_src with

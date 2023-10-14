@@ -1,8 +1,6 @@
 open Types
 open Controls
 
-[@@@ocaml.warning "-26-27-32"]
-
 let parse_name name : ghost_id =
   match name with
   | "ABED" -> ABED

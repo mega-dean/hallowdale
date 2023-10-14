@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let get_pickup_indicators
     (room_progress : Json_t.room_progress)
     (texture : texture)

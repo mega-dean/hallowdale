@@ -4,8 +4,6 @@ module Rectangle = Raylib.Rectangle
 
 type text_config = Interaction.text_config
 
-[@@@ocaml.warning "-26-27-32"]
-
 (* these are just Raylib aliases now, but things like draw_entity could be here too *)
 module Draw = struct
   open Raylib

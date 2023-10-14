@@ -1,5 +1,3 @@
-[@@@ocaml.warning "-26-27-32"]
-
 (* TODO move all the values in this file to config / atd *)
 
 type scale_config = {

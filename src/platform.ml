@@ -1,7 +1,5 @@
 open Types
 
-[@@@ocaml.warning "-26-27-32"]
-
 let get_spikes (platform : platform) game =
   match List.assoc_opt platform.id game.room.platform_spikes with
   | None -> failwith "rotatable platform needs spikes"

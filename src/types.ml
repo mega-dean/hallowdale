@@ -1,4 +1,3 @@
-[@@@ocaml.warning "-26-27-32"]
 
 module StrSet = Set.Make (String)
 

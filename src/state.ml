@@ -1,8 +1,6 @@
 open Types
 open Controls
 
-[@@@ocaml.warning "-26-27-32"]
-
 (* this function initializes state and sets game_context to MAIN_MENU *)
 let init () : state =
   let print_line s =
