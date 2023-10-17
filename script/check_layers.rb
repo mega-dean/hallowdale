@@ -98,20 +98,26 @@ jsons.map do |json|
   end
 end
 
-# pen_counts.sort_by{|k, v| v}.each do |name, count|
-#   puts "#{name}: #{count}"
-# end
-
-
 with_shadow, without_shadow = jsons.partition do |json|
   json['layers'].any? { |layer| layer['name'] == 'shadow' }
 end
 
-if without_shadow.any?
-  puts "got #{without_shadow.count} rooms without shadows:"
+with_empty_shadow, with_complete_shadow = with_shadow.partition do |json|
+  shadow_layer = json['layers'].find{ |l| l['name'] == 'shadow' }
+  shadow_layer['data'].all?{|cell| cell == 0} &&
+    !json['filename'].start_with?('ac-repair')
 end
 
-without_shadow.each do |json|
-  puts "  #{json['filename']}"
+def show_layers(jsons, label)
+  if jsons.any?
+    puts "got #{jsons.count} rooms #{label}:"
+
+    jsons.each do |json|
+      puts "  #{json['filename']}"
+    end
+  end
 end
 
+show_layers(without_shadow, "without shadows")
+# show_layers(with_complete_shadow, "with complete shadows")
+show_layers(with_empty_shadow, "with empty shadows")
