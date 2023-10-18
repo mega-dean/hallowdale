@@ -91,7 +91,9 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
   | ITEM
   | CUTSCENE -> (
     match game.mode with
-    | STEEL_SOLE -> ()
+    | DEMO
+    | STEEL_SOLE ->
+      ()
     | CLASSIC -> begin_cutscene_interaction name trigger)
   | CAMERA _
   | LEVER _
@@ -562,7 +564,9 @@ let resolve_slash_collisions (state : state) (game : game) =
           | _ -> ());
           destroy_tile_group layer tile_group;
           (match game.mode with
-          | CLASSIC -> ()
+          | DEMO (* FIXME make sure this is right *)
+          | CLASSIC ->
+            ()
           | STEEL_SOLE ->
             if layer.name = "doors" then
               add_phantom_floor game game.player.ghost.entity.dest.pos);
@@ -1009,7 +1013,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         game.player.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
       (match game.mode with
-      | CLASSIC -> ()
+      | DEMO
+      | CLASSIC ->
+        ()
       | STEEL_SOLE ->
         game.player.soul.current <- game.player.soul.max;
         let jug_layers : layer list =
@@ -1383,7 +1389,9 @@ let update (game : game) (state : state) =
       | None -> ()
       | Some (new_respawn_pos, trigger) -> (
         match game.mode with
-        | CLASSIC -> game.room.respawn_pos <- new_respawn_pos
+        | DEMO
+        | CLASSIC ->
+          game.room.respawn_pos <- new_respawn_pos
         | STEEL_SOLE -> ()));
       List.length game.interaction.steps > 0
     in
@@ -1445,7 +1453,9 @@ let update (game : game) (state : state) =
               let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
               let target_pos =
                 match game.mode with
-                | CLASSIC -> target.pos
+                | DEMO
+                | CLASSIC ->
+                  target.pos
                 | STEEL_SOLE ->
                   (* TODO 80 seems like too much to adjust by, but this works for the archives exits *)
                   { target.pos with y = target.pos.y -. 80. }
@@ -1511,7 +1521,9 @@ let update (game : game) (state : state) =
             let text : Interaction.text =
               let content =
                 match game.mode with
-                | CLASSIC -> [ "Found a purple pen with a note:"; fmt "{{purple}} %s" line ]
+                | DEMO
+                | CLASSIC ->
+                  [ "Found a purple pen with a note:"; fmt "{{purple}} %s" line ]
                 | STEEL_SOLE -> [ line ]
               in
               { content; increases_health = false }
@@ -2219,7 +2231,8 @@ let update (game : game) (state : state) =
         game.player.current.is_taking_hazard_damage <- false;
         let hazard_respawn (state : state) (game : game) =
           (match game.mode with
-          | CLASSIC ->
+          | CLASSIC
+          | DEMO ->
             let transitioned_from_below =
               game.room.respawn_pos.y +. 50. > Tiled.Room.get_h game.room.json
             in
@@ -2315,7 +2328,9 @@ let update (game : game) (state : state) =
     let hazard_collisions, platform_spike_collisions' =
       let damage = Entity.get_damage_collisions game.room game.player.ghost.entity in
       match game.mode with
-      | CLASSIC -> (damage.hazards, damage.platform_spikes)
+      | CLASSIC
+      | DEMO ->
+        (damage.hazards, damage.platform_spikes)
       | STEEL_SOLE -> (
         let up_floor_collision : (collision * rect) option =
           (* this is supposed to fix the steel sole hazard respawns on wall seams *)

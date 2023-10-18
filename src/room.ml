@@ -786,7 +786,9 @@ let handle_transitions (state : state) (game : game) =
       game.player.current.can_flap <- true;
       (match game.mode with
       | CLASSIC -> ()
-      | STEEL_SOLE -> game.player.soul.current <- game.player.soul.max);
+      | DEMO
+      | STEEL_SOLE ->
+        game.player.soul.current <- game.player.soul.max);
       let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
       List.iter hide_party_ghost game.party;
       true)

@@ -10,6 +10,7 @@ let select_game_mode_menu save_file save_file_idx : menu =
         (* TODO enable Classic mode *)
         (* SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)); *)
         SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
+        SELECT_GAME_MODE (USE_MODE (DEMO, save_file, save_file_idx));
         SELECT_GAME_MODE BACK;
       ];
     current_choice_idx = 0;
@@ -176,8 +177,12 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     else (
       let game = Game.init state save_file save_file_idx in
       (match game.mode with
-      | CLASSIC -> ()
-      | STEEL_SOLE -> Player.add_phantom_floor game game.player.ghost.entity.dest.pos);
+      | CLASSIC
+      | DEMO ->
+        ()
+      | STEEL_SOLE ->
+        (* this prevents an immediate damage respawn from landing on the bench *)
+        Player.add_phantom_floor game game.player.ghost.entity.dest.pos);
       Game.start ~is_new_game state game save_file)
   in
 
@@ -198,11 +203,13 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     | SAVE_FILES SLOT_3 -> load_file 3
     | SAVE_FILES SLOT_4 -> load_file 4
     | SAVE_FILES BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
-    | SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)) ->
-      initialize_and_start_game CLASSIC save_file save_file_idx
-    | SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx)) ->
-      Game.initialize_steel_sole save_file;
-      initialize_and_start_game STEEL_SOLE save_file save_file_idx
+    | SELECT_GAME_MODE (USE_MODE (mode, save_file, save_file_idx)) ->
+      (match mode with
+      | DEMO
+      | CLASSIC
+      | STEEL_SOLE ->
+        Game.initialize_steel_sole save_file);
+      initialize_and_start_game mode save_file save_file_idx
     | SELECT_GAME_MODE BACK -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
     | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
   state

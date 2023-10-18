@@ -476,6 +476,7 @@ type main_menu_choice =
 type game_mode =
   | CLASSIC
   | STEEL_SOLE
+  | DEMO
 
 type select_game_mode_choice =
   | USE_MODE of game_mode * Json_t.save_file * int

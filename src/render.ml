@@ -140,8 +140,7 @@ let draw_entity
   Entity.adjust_sprite_dest ~skip_coll_offset:(Option.is_some render_offset) e;
   draw_sprite ~debug ~tint ~render_offset e.sprite
 
-let center (r : rect) : Raylib.Vector2.t =
-  Raylib.Vector2.create (rect_center_x r) (rect_center_y r)
+let center (r : rect) : Raylib.Vector2.t = Raylib.Vector2.create (rect_center_x r) (rect_center_y r)
 
 let draw_velocity (e : entity) : unit =
   let end_x, end_y = (e.sprite.dest.pos.x +. (e.v.x /. 3.), e.sprite.dest.pos.y +. (e.v.y /. 3.)) in
@@ -595,7 +594,9 @@ let tick (state : state) =
             ' '
         in
         match game.mode with
-        | CLASSIC -> (false, sep)
+        | CLASSIC
+        | DEMO ->
+          (false, sep)
         | STEEL_SOLE -> (true, sep))
       | _ -> (false, ' ')
     in
@@ -1240,7 +1241,9 @@ let tick (state : state) =
       in
       draw_soul game.player.soul;
       match game.mode with
-      | CLASSIC -> List.iteri draw_head (Utils.rangef game.player.health.max)
+      | CLASSIC
+      | DEMO ->
+        List.iteri draw_head (Utils.rangef game.player.health.max)
       | STEEL_SOLE -> ()
     in
 
@@ -1273,9 +1276,10 @@ let tick (state : state) =
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
-    Raylib.draw_fps
-      ((camera_x |> Float.to_int) + Config.window.width - 100)
-      (camera_y |> Float.to_int);
+    if development then
+      Raylib.draw_fps
+        ((camera_x |> Float.to_int) + Config.window.width - 100)
+        (camera_y |> Float.to_int);
     if state.debug.enabled then
       draw_debug_info ();
     if state.debug.show_frame_inputs then

@@ -765,7 +765,9 @@ let tick (state : state) =
       match state'.pause_menu with
       | Some menu ->
         (match game.mode with
-        | CLASSIC -> ()
+        | CLASSIC
+        | DEMO ->
+          ()
         | STEEL_SOLE ->
           let time, current_time =
             let current_time_frames = state.frame.idx in
@@ -842,7 +844,6 @@ let tick (state : state) =
             (List.map
                (fun (r : rect) -> (Raylib.Color.red, r))
                (game.room.spikes @ game.room.hazards @ List.map snd game.room.platform_spikes)));
-
 
         if state.should_save then (
           Game.save game state;

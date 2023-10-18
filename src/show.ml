@@ -356,6 +356,7 @@ let game_mode (game_mode : game_mode) : string =
   match game_mode with
   | CLASSIC -> "Classic"
   | STEEL_SOLE -> "Steel Sole"
+  | DEMO -> "Demo"
 
 let save_files_choice (choice : save_files_choice) =
   match choice with
