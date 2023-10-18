@@ -1,3 +1,17 @@
+let (development, project_root) : bool * string =
+  let is_dev = ref false in
+  let rec find_project_root path =
+    let dir = Filename.dirname path in
+    match Filename.basename dir with
+    | "hallowdale" -> dir
+    | "_build" ->
+      is_dev := true;
+      find_project_root dir
+    | _ -> find_project_root dir
+  in
+  let project_root = find_project_root Sys.executable_name in
+  Sys.chdir project_root;
+  (!is_dev, project_root)
 
 module StrSet = Set.Make (String)
 
@@ -67,12 +81,8 @@ module Utils = struct
   let sample xs = List.nth xs (Random.int (List.length xs))
 end
 
-let root : string =
-  (* take dirname because executables are located in $root/dist/ *)
-  Filename.dirname (Unix.getcwd ())
-
 let make_path (segments : string list) : string = join ~sep:Filename.dir_sep segments
-let make_root_path (segments : string list) : string = make_path (root :: segments)
+let make_root_path (segments : string list) : string = make_path (project_root :: segments)
 let make_assets_path (segments : string list) : string = make_root_path ("assets" :: segments)
 
 type direction =

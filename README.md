@@ -11,8 +11,25 @@ An homage to Hollow Knight.
 
 ### Instructions
 
-1. Either clone the repo from github, or download and unzip the game from itch.io
-2. Run the executable in `dist/` for your operating system
+The game can either be cloned from github, or downloaded/unzipped from itch.io. The executables are
+located in `dist/`.
+
+#### Linux
+
+This is built on Ubuntu and has been tested on Pop!_OS, so it probably works on most Debian-based
+distributions. It may work on other distributions that have OpenGL installed since it depends on
+Raylib, but I haven't tested this.
+
+#### MacOS
+
+I've tested on an M1 Macbook Air and it works, but the controls feel pretty sluggish. Also, the
+executable isn't notarized by Apple so it can't be run directly. After attempting to run it and
+dismissing the "this may be malware" warning, you can go to the Security page in System Preferences
+to whitelist it specifically.
+
+#### Windows
+
+Untested - please create an Issue if you run into any problems.
 
 ### Game modes
 

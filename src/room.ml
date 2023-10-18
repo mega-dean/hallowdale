@@ -54,8 +54,7 @@ let init (params : room_params) : room =
     | Some rp -> rp
   in
   let parse_room (path : string) : Json_t.room =
-    (* FIXME path *)
-    let full_path = fmt "../assets/tiled/rooms/%s" path in
+    let full_path = make_assets_path [ "tiled"; "rooms"; path ] in
     (* TODO cache these instead of reloading the tileset between every room *)
     File.read full_path |> Json_j.room_of_string
   in

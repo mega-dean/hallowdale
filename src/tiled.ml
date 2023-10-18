@@ -124,8 +124,7 @@ module Room = struct
   (* TODO this module is a little weird since it works on both json_room and room types *)
   type t = Json_t.room
 
-  let get_h (room : t) =
-    (room.h_in_tiles |> Int.to_float) *. room.tile_h
+  let get_h (room : t) = (room.h_in_tiles |> Int.to_float) *. room.tile_h
 
   let get_filename' area_id room_id : string =
     fmt "%s_%s" (Show.area_id area_id) (Show.room_id_filename room_id)
@@ -494,7 +493,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
       else (
         let full_path =
           (* kinda weird that this path ends up including "/tilesets/../tilesets/" *)
-          fmt "../assets/tiled/tilesets/%s" source.source
+          make_assets_path [ "tiled"; "tilesets"; source.source ]
         in
         Some (File.read full_path |> Json_j.tileset_of_string))
     in
