@@ -1516,12 +1516,19 @@ let update (game : game) (state : state) =
           | PURPLE_PEN_TEXT line ->
             Entity.freeze game.player.ghost.entity;
             let text : Interaction.text =
+              let content_with_prefix =
+                [ "Found a purple pen with a note:"; fmt "{{purple}} %s" line ]
+              in
+              let content_without_prefix = [ line ] in
               let content =
                 match game.mode with
-                | DEMO
-                | CLASSIC ->
-                  [ "Found a purple pen with a note:"; fmt "{{purple}} %s" line ]
-                | STEEL_SOLE -> [ line ]
+                | CLASSIC -> content_with_prefix
+                | STEEL_SOLE -> content_without_prefix
+                | DEMO ->
+                  if Room.in_teachers_archives game.room then
+                    content_without_prefix
+                  else
+                    content_with_prefix
               in
               { content; increases_health = false }
             in

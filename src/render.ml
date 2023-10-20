@@ -582,12 +582,17 @@ let tick (state : state) =
       w h color
   in
 
-  let display_paragraph (config : text_config) y_offset paragraph_idx (paragraph : string) =
+  let display_paragraph
+      ?(in_menu = false)
+      (config : text_config)
+      y_offset
+      paragraph_idx
+      (paragraph : string) =
     let is_steel_sole, word_separator =
       match state.game_context with
       | IN_PROGRESS game -> (
         let sep =
-          if game.room.id = LIB_A || game.room.id = LIB_B then
+          if Room.in_teachers_archives game.room && not in_menu then
             '-'
           else
             ' '
@@ -793,11 +798,13 @@ let tick (state : state) =
             [ save_slots'.slot_1; save_slots'.slot_2; save_slots'.slot_3; save_slots'.slot_4 ]
           @ [ Show.save_files_choice BACK ]
         in
-        List.iteri (display_paragraph config 0) save_slot_choices
+        List.iteri (display_paragraph ~in_menu:true config 0) save_slot_choices
       | None ->
-        List.iteri (display_paragraph config 0) (List.map (Show.menu_choice game) menu.choices));
+        List.iteri
+          (display_paragraph ~in_menu:true config 0)
+          (List.map (Show.menu_choice game) menu.choices));
       (* TODO better cursor for current item *)
-      display_paragraph config 0 menu.current_choice_idx
+      display_paragraph ~in_menu:true config 0 menu.current_choice_idx
         "*                                           *"
   in
 

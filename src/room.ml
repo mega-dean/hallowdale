@@ -1,5 +1,7 @@
 open Types
 
+let in_teachers_archives (room : room) = room.id = LIB_A || room.id = LIB_B
+
 let get_pickup_indicators
     (room_progress : Json_t.room_progress)
     (texture : texture)
