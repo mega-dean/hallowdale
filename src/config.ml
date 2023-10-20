@@ -32,6 +32,20 @@ let scale =
     paragraph_spacing = font_size * 2;
   }
 
+type world_map_config = {
+  scale : float;
+  room_x_offset : float;
+  room_y_offset : float;
+}
+
+let world_map : world_map_config =
+  {
+    scale = 45.8;
+    (* TODO not sure why these need to be offset *)
+    room_x_offset = 479.;
+    room_y_offset = 177.;
+  }
+
 type window_config = {
   width : int;
   height : int;

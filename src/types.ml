@@ -43,7 +43,7 @@ module Utils = struct
     (k, v) :: List.remove_assoc k xs
 
   (* returns the strings before and after the first occurrence of char c:
-     separate "a.b.c.d" '.' => "a", "b.c.d"
+     split_at_first "a.b.c.d" '.' => "a", "b.c.d"
   *)
   let split_at_first_opt c str : string option * string =
     match String.index_from_opt str 0 c with
@@ -494,6 +494,7 @@ type pause_menu_choice =
   | CONTINUE
   | CHANGE_GHOST
   | CHANGE_WEAPON
+  | WORLD_MAP
   | SETTINGS
   | QUIT_TO_MAIN_MENU
 
@@ -522,7 +523,7 @@ type menu_choice =
   | MAIN_MENU of main_menu_choice
   | SELECT_GAME_MODE of select_game_mode_choice
   | SETTINGS_MENU of settings_menu_choice
-  | CHANGE_SETTING of (settings_menu_choice * change_setting_choice)
+  | CHANGE_AUDIO_SETTING of (settings_menu_choice * change_setting_choice)
   | SAVE_FILES of save_files_choice
 
 type menu = {
@@ -1349,6 +1350,7 @@ type texture_cache = {
   rotating_platform : texture;
   skybox : texture;
   ghost_bodies : ghost_body_textures;
+  world_map : texture;
 }
 
 (* these are all things that are eager-loaded from json config files *)
@@ -1414,6 +1416,15 @@ type settings = {
   mutable sound_effects_volume : float;
 }
 
+type world_map = {
+  black_rects : rect list;
+  ghost_pos : vector;
+}
+
+type pause_menu =
+  | MENU of menu
+  | WORLD_MAP of world_map
+
 type state = {
   mutable game_context : game_context;
   world : world;
@@ -1421,7 +1432,7 @@ type state = {
   mutable camera : camera;
   mutable frame : frame_info;
   mutable should_save : bool;
-  mutable pause_menu : menu option;
+  mutable pause_menu : pause_menu option;
   frame_inputs : frame_inputs;
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)

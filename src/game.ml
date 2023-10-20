@@ -36,7 +36,7 @@ let empty_save_file () : Json_t.save_file =
         howling_wraiths = b;
       };
     progress =
-      { by_room = []; steel_sole = { purple_pens = []; dunks = 0; c_dashes = 0; frame_idx = 0 } };
+      { by_room = []; steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0; frame_idx = 0 } };
     weapons =
       [
         "Old Nail";
@@ -216,6 +216,7 @@ let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
       match save_file.game_mode with
       | "Classic" -> CLASSIC
       | "Steel Sole" -> STEEL_SOLE
+      | "Demo" -> DEMO
       | _ -> failwithf "invalid game_mode in save_file %d" save_file_idx)
   in
   let game = create mode' save_file state.global state.area_musics state.world save_file_idx in

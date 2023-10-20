@@ -46,17 +46,8 @@ let init () : state =
   let pickup_indicator = build_shared_npc_texture "pickup-indicator" in
   let main_menu = build_shared_npc_texture "main-menu" in
   let skybox = build_shared_npc_texture "skybox" in
-
-  let ability_outlines =
-    Sprite.build_texture_from_config
-      {
-        path = { asset_dir = GHOSTS; character_name = "shared"; pose_name = "ability-outlines" };
-        count = 1;
-        duration = { seconds = 0. };
-        x_offset = 0.;
-        y_offset = 0.;
-      }
-  in
+  let world_map = Sprite.build_static_texture "world-map" in
+  let ability_outlines = Sprite.build_static_texture ~asset_dir:GHOSTS "ability-outlines" in
 
   let ghost_bodies : ghost_body_textures =
     let load_ghost_body_texture name : ghost_body_texture =
@@ -202,6 +193,7 @@ let init () : state =
           rotating_platform;
           ghost_bodies;
           skybox;
+          world_map;
         };
       sounds;
     }
@@ -718,14 +710,14 @@ let tick (state : state) =
         print " disabled show_frame_inputs at %d\n\\----------------------/\n" state.frame.idx)
       else (
         state.debug.show_frame_inputs <- true;
-        print "\n/---------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
+        print "\n/----------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
     if Controls.key_pressed DEBUG_4 then
       if state.debug.enabled then (
         state.debug.enabled <- false;
         print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
       else (
         state.debug.enabled <- true;
-        print "\n/---------------------\\\n enabled debug at %d" state.frame.idx));
+        print "\n/----------------------\\\n enabled debug at %d" state.frame.idx));
 
   state.debug.rects <- [];
   match state.game_context with
@@ -786,19 +778,18 @@ let tick (state : state) =
               let hours = hours' mod 60 in
               fmt "%02d:%02d:%02d%s" hours minutes seconds ms
             in
-            if List.length game.progress.steel_sole.purple_pens = 0 then
+            if List.length game.progress.steel_sole.purple_pens_found = 0 then
               ("", get_time current_time_frames)
             else (
               let frames' =
                 (* take the first because newest entries are pushed to the front *)
-                List.hd game.progress.steel_sole.purple_pens |> fst
+                List.hd game.progress.steel_sole.purple_pens_found |> fst
               in
-              (get_time frames', get_time current_time_frames))
+              (fmt " in %s" (get_time frames'), get_time current_time_frames))
           in
           let pen_lore =
             (* TODO this is a pretty naive way to check for pen lore, maybe the json file should
                be an object instead of a list
-               - this same logic is in check_layers.rb
             *)
             List.filter (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0) state.global.lore
           in
@@ -807,8 +798,8 @@ let tick (state : state) =
             Some
               {
                 content =
-                  fmt "%d / %d pens in %s, %d dunks, %d c-dashes --- %s"
-                    (List.length game.progress.steel_sole.purple_pens)
+                  fmt "%d / %d purple pens found%s, %d dunks, %d c-dashes --- %s"
+                    (List.length game.progress.steel_sole.purple_pens_found)
                     total_purple_pen_count time game.progress.steel_sole.dunks
                     game.progress.steel_sole.c_dashes current_time;
                 visible = PAUSE_MENU;

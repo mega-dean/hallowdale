@@ -73,7 +73,7 @@ type texture_config = Json_t.texture_config = {
 type texture_configs = Json_t.texture_configs
 
 type steel_sole_progress = Json_t.steel_sole_progress = {
-  mutable purple_pens: (int * string) list;
+  mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
   mutable c_dashes: int;
   mutable frame_idx: int
@@ -3244,11 +3244,11 @@ let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
-      Buffer.add_string ob "\"purple_pens\":";
+      Buffer.add_string ob "\"purple_pens_found\":";
     (
       write__18
     )
-      ob x.purple_pens;
+      ob x.purple_pens_found;
     if !is_first then
       is_first := false
     else
@@ -3286,7 +3286,7 @@ let read_steel_sole_progress = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_purple_pens = ref (None) in
+    let field_purple_pens_found = ref (None) in
     let field_dunks = ref (None) in
     let field_c_dashes = ref (None) in
     let field_frame_idx = ref (None) in
@@ -3323,8 +3323,8 @@ let read_steel_sole_progress = (
                   -1
                 )
               )
-            | 11 -> (
-                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' then (
+            | 17 -> (
+                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
                   0
                 )
                 else (
@@ -3340,7 +3340,7 @@ let read_steel_sole_progress = (
       (
         match i with
           | 0 ->
-            field_purple_pens := (
+            field_purple_pens_found := (
               Some (
                 (
                   read__18
@@ -3408,8 +3408,8 @@ let read_steel_sole_progress = (
                     -1
                   )
                 )
-              | 11 -> (
-                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' then (
+              | 17 -> (
+                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
                     0
                   )
                   else (
@@ -3425,7 +3425,7 @@ let read_steel_sole_progress = (
         (
           match i with
             | 0 ->
-              field_purple_pens := (
+              field_purple_pens_found := (
                 Some (
                   (
                     read__18
@@ -3465,7 +3465,7 @@ let read_steel_sole_progress = (
     with Yojson.End_of_object -> (
         (
           {
-            purple_pens = (match !field_purple_pens with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "purple_pens");
+            purple_pens_found = (match !field_purple_pens_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "purple_pens_found");
             dunks = (match !field_dunks with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "dunks");
             c_dashes = (match !field_c_dashes with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "c_dashes");
             frame_idx = (match !field_frame_idx with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "frame_idx");

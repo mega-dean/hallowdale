@@ -558,13 +558,13 @@ let resolve_slash_collisions (state : state) (game : game) =
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
           | Some (PURPLE_PEN name) ->
-            game.progress.steel_sole.purple_pens <-
-              (state.frame.idx, name) :: game.progress.steel_sole.purple_pens;
+            game.progress.steel_sole.purple_pens_found <-
+              (state.frame.idx, name) :: game.progress.steel_sole.purple_pens_found;
             maybe_begin_interaction state game (make_stub_trigger PURPLE_PEN "purple-pen" name)
           | _ -> ());
           destroy_tile_group layer tile_group;
           (match game.mode with
-          | DEMO (* FIXME make sure this is right *)
+          | DEMO
           | CLASSIC ->
             ()
           | STEEL_SOLE ->
@@ -1133,8 +1133,6 @@ let is_doing (player : player) (action_kind : ghost_action_kind) (frame_time : f
   | TAKE_DAMAGE _ ->
     failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
 
-(* CLEANUP add is_attacking to consolidate the arbitrary directions *)
-
 let not_doing_any (player : player) (frame_time : float) (actions : ghost_action_kind list) : bool =
   not (List.exists (fun action -> is_doing player action frame_time) actions)
 
@@ -1425,7 +1423,6 @@ let update (game : game) (state : state) =
         in
         let tile_w, tile_h = (game.room.json.tile_w, game.room.json.tile_h) in
 
-        (* CLEANUP get_tile_coords with optional offset args *)
         let set_layer_hidden (layer_name : string) hidden =
           match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
           | None -> failwithf "expected %s layer" layer_name
@@ -1727,7 +1724,7 @@ let update (game : game) (state : state) =
           match npc_step with
           | ENTITY entity_step -> handle_entity_step npc.entity entity_step
           | WALK_TO target_tile_x ->
-            (* CLEANUP duplicated in walk_ghost *)
+            (* TODO duplicated in walk_ghost *)
             let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
             let dist = (tx *. Config.scale.room) -. npc.entity.dest.pos.x in
             still_walking := abs_float dist > 10.;
@@ -1953,9 +1950,6 @@ let update (game : game) (state : state) =
     let starting_dash () =
       let not_attacking () =
         (not (is_doing game.player (ATTACK RIGHT) state.frame.time))
-        (* CLEANUP this mostly works to allow dashing immediately after pogoing, but if
-           the ghost bonks on a ceiling it cancels the y_recoil
-        *)
         || Option.is_some game.player.ghost.entity.y_recoil
       in
       game.player.abilities.mothwing_cloak

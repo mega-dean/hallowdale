@@ -51,12 +51,11 @@ let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
   Draw.rect_lines (rect |> to_Rect) size color
 
 let debug_rect' color (rect : rect) =
-  let color' =
+  let transparent_color =
     Raylib.Color.create (Raylib.Color.r color) (Raylib.Color.g color) (Raylib.Color.b color) 100
   in
-  Draw.rect (rect.pos.x |> Float.to_int)
-    (rect.pos.y -. 2. |> Float.to_int)
-    (rect.w |> Float.to_int) (rect.h |> Float.to_int) color'
+  Draw.rect (rect.pos.x |> Float.to_int) (rect.pos.y |> Float.to_int) (rect.w |> Float.to_int)
+    (rect.h |> Float.to_int) transparent_color
 
 let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
   debug_rect' (Color.create r g b a) rect
@@ -768,7 +767,7 @@ let tick (state : state) =
         | CHANGE_GHOST_MENU _ -> (150, 50)
         | MAIN_MENU _ -> (50, 360)
         | SETTINGS_MENU _ -> (250, 220)
-        | CHANGE_SETTING _ -> (250, 220)
+        | CHANGE_AUDIO_SETTING _ -> (250, 220)
         | SAVE_FILES _ -> (50, 200)
       in
 
@@ -783,7 +782,8 @@ let tick (state : state) =
           let continue =
             match slot.game_mode with
             | "Classic" -> "Continue"
-            | "Steel Sole" -> "Continue (SS)"
+            | "Steel Sole" -> "Continue (Steel Sole)"
+            | "Demo" -> "Continue (Demo)"
             | _ -> failwith "bad game mode"
           in
           fmt "save %d: %s" (idx + 1) (if is_new_game then "New Game" else continue)
@@ -871,6 +871,16 @@ let tick (state : state) =
       let src = get_src state.global.textures.skybox in
       let dest = { pos = { x = camera_x; y = camera_y }; w = src.w; h = src.h } in
       draw_texture ~tint state.global.textures.skybox dest 0
+    in
+    let draw_world_map () =
+      let dest =
+        {
+          pos = { x = camera_x; y = camera_y };
+          w = Config.window.width |> Int.to_float;
+          h = Config.window.height |> Int.to_float;
+        }
+      in
+      draw_texture state.global.textures.world_map dest 0
     in
 
     let draw_object_trigger_indicators () =
@@ -1269,10 +1279,34 @@ let tick (state : state) =
     | Some alpha ->
       (* this is slightly larger than the window to add some padding for when the camera is moving *)
       draw_screen_fade alpha);
+
     (let interaction_text =
        match state.pause_menu with
        | None -> game.interaction.text
-       | Some pause_menu -> Some (MENU (pause_menu, None))
+       | Some (WORLD_MAP world_map) ->
+         draw_world_map ();
+         let draw_black_rect rect =
+           Draw.rect
+             (rect.pos.x +. camera_x |> Float.to_int)
+             (rect.pos.y +. camera_y |> Float.to_int)
+             (rect.w |> Float.to_int) (rect.h |> Float.to_int) Raylib.Color.black
+         in
+
+         List.iter draw_black_rect world_map.black_rects;
+         let draw_ghost_circle radius r g b speed =
+           let ghost_color r g b speed =
+             Raylib.Color.create r g b (state.frame.idx * speed mod 255)
+           in
+           Raylib.draw_circle
+             (world_map.ghost_pos.x +. camera_x |> Float.to_int)
+             (world_map.ghost_pos.y +. camera_y |> Float.to_int)
+             radius (ghost_color r g b speed)
+         in
+         draw_ghost_circle 6. 0 0 255 4;
+         draw_ghost_circle 4. 0 255 0 5;
+         draw_ghost_circle 2. 255 0 0 6;
+         None
+       | Some (MENU pause_menu) -> Some (MENU (pause_menu, None))
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;

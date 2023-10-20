@@ -81,7 +81,11 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
 
 let texture_path_to_string (texture_path : texture_path) : string =
   make_path
-    [ Show.asset_dir texture_path.asset_dir; texture_path.character_name; fmt "%s.png" texture_path.pose_name ]
+    [
+      Show.asset_dir texture_path.asset_dir;
+      texture_path.character_name;
+      fmt "%s.png" texture_path.pose_name;
+    ]
 
 let build_texture'
     ?(scale = Config.scale.ghost)
@@ -155,6 +159,16 @@ let build_texture_from_config
   let path = texture_path_to_string texture_config.path in
   let image = load_image path in
   build_texture' ~scale ~particle ~once texture_config image
+
+let build_static_texture ?(asset_dir = NPCS) name =
+  build_texture_from_config
+    {
+      path = { asset_dir; character_name = "shared"; pose_name = name };
+      count = 1;
+      duration = { seconds = 0. };
+      x_offset = 0.;
+      y_offset = 0.;
+    }
 
 let build_texture_from_image
     ?(scale = Config.scale.ghost)

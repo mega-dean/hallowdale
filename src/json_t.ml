@@ -70,7 +70,7 @@ type texture_config = {
 type texture_configs = (string * texture_config) list
 
 type steel_sole_progress = {
-  mutable purple_pens: (int * string) list;
+  mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
   mutable c_dashes: int;
   mutable frame_idx: int

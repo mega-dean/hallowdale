@@ -6,7 +6,7 @@ An homage to Hollow Knight.
 [itch.io page](https://mega-dean.itch.io/hallowdale)
 
 ![main menu screenshot](./assets/main-menu-screenshot.png)
-![world map screenshot](./assets/world-map.png)
+![world map screenshot](./assets/npcs/shared/world-map.png)
 
 
 ### Instructions
@@ -79,27 +79,11 @@ None of the other settings (like fps) are configurable yet.
 dune exec hallowdale
 ```
 
-##### run tests
-
-```
-dune runtest
-```
-
-##### promote test output
-
-```
-dune promote
-```
-
 ##### regenerate and replace .atd
 
 ```
 rm src/json_* && atdgen -t src/json.atd && atdgen -j src/json.atd
 ```
-
-##### create release
-
-Trigger the github actions manually.
 
 ### License
 

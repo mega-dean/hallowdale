@@ -21,6 +21,7 @@ let pause_menu ghost_count : menu =
     choices =
       [
         Some (PAUSE_MENU CONTINUE);
+        Some (PAUSE_MENU WORLD_MAP);
         (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
         Some (PAUSE_MENU CHANGE_WEAPON);
         Some (PAUSE_MENU SETTINGS);
@@ -40,9 +41,9 @@ let music_menu () : menu =
   {
     choices =
       [
-        CHANGE_SETTING (MUSIC, INCREASE);
-        CHANGE_SETTING (MUSIC, DECREASE);
-        CHANGE_SETTING (MUSIC, BACK);
+        CHANGE_AUDIO_SETTING (MUSIC, INCREASE);
+        CHANGE_AUDIO_SETTING (MUSIC, DECREASE);
+        CHANGE_AUDIO_SETTING (MUSIC, BACK);
       ];
     current_choice_idx = 0;
   }
@@ -51,9 +52,9 @@ let sound_effects_menu () : menu =
   {
     choices =
       [
-        CHANGE_SETTING (SOUND_EFFECTS, INCREASE);
-        CHANGE_SETTING (SOUND_EFFECTS, DECREASE);
-        CHANGE_SETTING (SOUND_EFFECTS, BACK);
+        CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE);
+        CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE);
+        CHANGE_AUDIO_SETTING (SOUND_EFFECTS, BACK);
       ];
     current_choice_idx = 0;
   }
@@ -96,14 +97,18 @@ let update_pause_menu (game : game) (state : state) : state =
     match state.pause_menu with
     | None ->
       play_sound state "menu-expand";
-      state.pause_menu <- Some (pause_menu (List.length (Player.ghost_ids_in_party game.party)))
+      state.pause_menu <-
+        Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
     | Some _ ->
       play_sound state "menu-close";
       state.pause_menu <- None);
 
   (match state.pause_menu with
   | None -> ()
-  | Some menu ->
+  | Some (WORLD_MAP rects) ->
+    (* the map is closed by unpausing, so there's nothing to do here *)
+    ()
+  | Some (MENU menu) ->
     update_menu_choice menu state;
     let get_new_volume increase v =
       Utils.bound 0.
@@ -131,9 +136,41 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU CONTINUE ->
         state.pause_menu <- None;
         game.interaction.text <- None
+      | PAUSE_MENU WORLD_MAP ->
+        let on_map x offset = (x /. Config.world_map.scale) +. offset in
+        let room_pos_on_map x y =
+          {
+            x = on_map x Config.world_map.room_x_offset;
+            y = on_map y Config.world_map.room_y_offset;
+          }
+        in
+        let black_rects =
+          let rooms_found = List.map fst game.progress.by_room in
+          let maybe_block_room (room_id, room_location) =
+            if game.room.id = room_id || List.mem room_location.filename rooms_found then
+              None
+            else
+              Some
+                {
+                  pos = room_pos_on_map room_location.global_x room_location.global_y;
+                  w = (room_location.w /. Config.world_map.scale) +. 2.;
+                  h = (room_location.h /. Config.world_map.scale) +. 2.;
+                }
+          in
+          List.filter_map maybe_block_room state.world
+        in
+        let ghost_pos =
+          let room_pos =
+            let room_location = List.assoc game.room.id state.world in
+            room_pos_on_map room_location.global_x room_location.global_y
+          in
+          let entity_pos = game.player.ghost.entity.dest.pos in
+          { x = on_map entity_pos.x room_pos.x; y = on_map entity_pos.y room_pos.y }
+        in
+        state.pause_menu <- Some (WORLD_MAP { black_rects; ghost_pos })
       | PAUSE_MENU CHANGE_WEAPON ->
-        state.pause_menu <- Some (change_weapon_menu (List.map fst game.player.weapons))
-      | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (change_ghost_menu game.party)
+        state.pause_menu <- Some (MENU (change_weapon_menu (List.map fst game.player.weapons)))
+      | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
         Raylib.seek_music_stream game.music.music.t 0.;
         Raylib.seek_music_stream state.menu_music.t 0.;
@@ -148,15 +185,16 @@ let update_pause_menu (game : game) (state : state) : state =
       | SETTINGS_MENU BACK
       | CHANGE_GHOST_MENU BACK
       | CHANGE_WEAPON_MENU BACK ->
-        state.pause_menu <- Some (pause_menu (List.length (Player.ghost_ids_in_party game.party)))
-      | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (settings_menu ())
-      | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (music_menu ())
-      | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (sound_effects_menu ())
-      | CHANGE_SETTING (MUSIC, INCREASE) -> change_music_volume true
-      | CHANGE_SETTING (MUSIC, DECREASE) -> change_music_volume false
-      | CHANGE_SETTING (SOUND_EFFECTS, INCREASE) -> change_sound_effects_volume true
-      | CHANGE_SETTING (SOUND_EFFECTS, DECREASE) -> change_sound_effects_volume false
-      | CHANGE_SETTING (_, BACK) -> state.pause_menu <- Some (settings_menu ())
+        state.pause_menu <-
+          Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
+      | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))
+      | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
+      | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
+      | CHANGE_AUDIO_SETTING (MUSIC, INCREASE) -> change_music_volume true
+      | CHANGE_AUDIO_SETTING (MUSIC, DECREASE) -> change_music_volume false
+      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE) -> change_sound_effects_volume true
+      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE) -> change_sound_effects_volume false
+      | CHANGE_AUDIO_SETTING (_, BACK) -> state.pause_menu <- Some (MENU (settings_menu ()))
       | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
 

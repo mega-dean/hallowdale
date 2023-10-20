@@ -216,8 +216,7 @@ type ghost_abilities = {
 }
 
 type steel_sole_progress = {
-  (* CLEANUP maybe rename to purple_pens_found *)
-  purple_pens <ocaml mutable> : (int * string) list;
+  purple_pens_found <ocaml mutable> : (int * string) list;
   dunks <ocaml mutable> : int;
   c_dashes <ocaml mutable> : int;
   frame_idx <ocaml mutable> : int;

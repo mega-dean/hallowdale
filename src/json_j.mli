@@ -73,7 +73,7 @@ type texture_config = Json_t.texture_config = {
 type texture_configs = Json_t.texture_configs
 
 type steel_sole_progress = Json_t.steel_sole_progress = {
-  mutable purple_pens: (int * string) list;
+  mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
   mutable c_dashes: int;
   mutable frame_idx: int
