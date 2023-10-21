@@ -674,10 +674,10 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
   state
 
 let update_frame_inputs (state : state) : state =
-  let update_frame_input key (input : frame_input) =
-    input.released <- key_released key;
-    input.down <- key_down key;
-    input.pressed <- key_pressed key;
+  let update_frame_input ?(direction = false) key (input : frame_input) =
+    input.released <- key_released ~direction key;
+    input.down <- key_down ~direction key;
+    input.pressed <- key_pressed ~direction key;
     if input.pressed then
       input.down_since <- Some { at = state.frame.time }
     else if input.down then
@@ -685,10 +685,10 @@ let update_frame_inputs (state : state) : state =
     else
       input.down_since <- None
   in
-  update_frame_input (ARROW UP) state.frame_inputs.up;
-  update_frame_input (ARROW DOWN) state.frame_inputs.down;
-  update_frame_input (ARROW LEFT) state.frame_inputs.left;
-  update_frame_input (ARROW RIGHT) state.frame_inputs.right;
+  update_frame_input ~direction:true (ARROW UP) state.frame_inputs.up;
+  update_frame_input ~direction:true (ARROW DOWN) state.frame_inputs.down;
+  update_frame_input ~direction:true (ARROW LEFT) state.frame_inputs.left;
+  update_frame_input ~direction:true (ARROW RIGHT) state.frame_inputs.right;
   update_frame_input CAST state.frame_inputs.cast;
   update_frame_input C_DASH state.frame_inputs.c_dash;
   update_frame_input DASH state.frame_inputs.dash;
@@ -718,7 +718,6 @@ let tick (state : state) =
       else (
         state.debug.enabled <- true;
         print "\n/----------------------\\\n enabled debug at %d" state.frame.idx));
-
   state.debug.rects <- [];
   match state.game_context with
   | SAVE_FILES (menu, save_slots)

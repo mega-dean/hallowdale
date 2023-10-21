@@ -21,5 +21,6 @@ _build/
 .merlin
 
 assets/tiled/hallowdale.tiled-session
-config/keybinds.json
+config/key_overrides.json
+config/button_overrides.json
 saves/

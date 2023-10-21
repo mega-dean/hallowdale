@@ -713,7 +713,6 @@ let change_current_room
   game.player.current.wall <- None;
   game.player.spawned_vengeful_spirits <- [];
   game.player.ghost.entity.dest.pos <- ghost_start_pos;
-  (* game.ghost.entity.dest.pos <- { x = ghost_start_pos.x *. 2.; y = ghost_start_pos.y *. 2.}; *)
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
      - not really sure about ^this comment, I don't know if different tileset order would break the
