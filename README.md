@@ -43,7 +43,7 @@ just a bunch of purple pen jars everywhere).
 
 This is a "New Game +" mode where you start with all abilities, but standing on any floor will
 cause a hazard respawn (although you can land in water/acid safely). Cutscenes are disabled and
-abilities/lore are removed, so the only objective is to collect all 100 purple pens.
+abilities/lore are removed, so the only objective is to collect all 120 purple pens.
 
 C-dashing makes this game mode much easier, so for an additional challenge you can try to traverse
 the map without them. All of the purple pens can be collected without using them, except for some in

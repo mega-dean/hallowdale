@@ -59,6 +59,8 @@ end
 
 pen_names = all_purple_pens.map{|pen| pen['name'].gsub('purple-pen:', '')}.sort
 
+dupe_count = 0
+
 if pen_names.length != pen_names.uniq.length
   puts "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   puts "!!!!!!!!!! got duplicate pen names !!!!!!!!!!"
@@ -67,10 +69,15 @@ if pen_names.length != pen_names.uniq.length
   pen_names.each.with_index do |name, i|
     if i != 0
       if name == pen_names[i - 1]
+        dupe_count += 1
         puts name
       end
     end
   end
+end
+
+if dupe_count > 0
+  puts "dupes: #{dupe_count}"
 end
 
 purple_pens_in_lore = []
@@ -84,7 +91,7 @@ end
 unused_purple_pens = purple_pens_in_lore - pen_names
 
 if unused_purple_pens.any?
-  puts "\nunused purple pens"
+  puts "\n#{unused_purple_pens.count} unused purple pens:"
   puts unused_purple_pens.join(', ')
 end
 
