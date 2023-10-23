@@ -494,7 +494,6 @@ type pause_menu_choice =
   | CONTINUE
   | CHANGE_GHOST
   | CHANGE_WEAPON
-  | WORLD_MAP
   | SETTINGS
   | QUIT_TO_MAIN_MENU
 
@@ -892,6 +891,7 @@ type frame_inputs = {
   jump : frame_input;
   nail : frame_input;
   pause : frame_input;
+  open_map : frame_input;
   interact : frame_input;
 }
 

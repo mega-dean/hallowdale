@@ -421,7 +421,6 @@ let menu_choice (game : game option) (choice : menu_choice) =
   let pause_menu_choice (choice : pause_menu_choice) =
     match choice with
     | CONTINUE -> "Continue"
-    | WORLD_MAP -> "Show World Map"
     | CHANGE_GHOST -> "Change Ghost"
     | CHANGE_WEAPON -> "Change Weapon"
     | SETTINGS -> "Settings"

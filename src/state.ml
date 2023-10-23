@@ -264,6 +264,7 @@ let init () : state =
         focus = { pressed = false; down = false; released = false; down_since = None };
         jump = { pressed = false; down = false; released = false; down_since = None };
         nail = { pressed = false; down = false; released = false; down_since = None };
+        open_map = { pressed = false; down = false; released = false; down_since = None };
         pause = { pressed = false; down = false; released = false; down_since = None };
         interact = { pressed = false; down = false; released = false; down_since = None };
       };
@@ -696,6 +697,7 @@ let update_frame_inputs (state : state) : state =
   update_frame_input FOCUS state.frame_inputs.focus;
   update_frame_input JUMP state.frame_inputs.jump;
   update_frame_input NAIL state.frame_inputs.nail;
+  update_frame_input OPEN_MAP state.frame_inputs.open_map;
   update_frame_input PAUSE state.frame_inputs.pause;
   update_frame_input INTERACT state.frame_inputs.interact;
   state

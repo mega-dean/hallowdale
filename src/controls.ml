@@ -12,6 +12,7 @@ type key_action =
   | JUMP
   | NAIL
   | PAUSE
+  | OPEN_MAP
   (* directions *)
   | ARROW of direction
   (* debug *)
@@ -37,6 +38,7 @@ let show_key_action k =
   | JUMP -> "JUMP"
   | NAIL -> "NAIL"
   | PAUSE -> "PAUSE"
+  | OPEN_MAP -> "OPEN_MAP"
   (* directions *)
   | ARROW direction -> fmt "ARROW (%s)" (Show.direction direction)
   (* debug *)
@@ -50,7 +52,7 @@ let show_key_action k =
   | DEBUG_LEFT -> "DEBUG_LEFT"
   | DEBUG_RIGHT -> "DEBUG_RIGHT"
 
-(* FIXME need some way to re-bind these after program start *)
+(* TODO need some way to re-bind these after program start *)
 let override_keybinds : (key_action * Raylib.Key.t) list =
   let keybinds_json : (string * string) list =
     try File.read_config "key_overrides" Json_j.keybinds_file_of_string with
@@ -152,6 +154,7 @@ let default_keybinds : (key_action * Raylib.Key.t) list =
     (D_NAIL, Raylib.Key.D);
     (CAST, Raylib.Key.F);
     (INTERACT, Raylib.Key.Left_shift);
+    (OPEN_MAP, Raylib.Key.Escape);
     (PAUSE, Raylib.Key.Space);
     (* directions *)
     (ARROW UP, Raylib.Key.Up);
@@ -236,6 +239,7 @@ let default_gamepad_buttons : (key_action * Raylib.GamepadButton.t) list =
     (D_NAIL, Raylib.GamepadButton.Right_face_up);
     (CAST, Raylib.GamepadButton.Right_face_right);
     (INTERACT, Raylib.GamepadButton.Right_trigger_2);
+    (OPEN_MAP, Raylib.GamepadButton.Middle_left);
     (PAUSE, Raylib.GamepadButton.Middle_right);
     (* directions *)
     (ARROW UP, Raylib.GamepadButton.Left_face_up);

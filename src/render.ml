@@ -361,7 +361,6 @@ let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : str
   let first_line : line = { segments = []; w = 0 } in
   iter [ first_line ] (new_segment "" 0 0) words
 
-
 let tick (state : state) =
   let camera_x, camera_y =
     ( Raylib.Vector2.x (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_x,
@@ -1104,17 +1103,21 @@ let tick (state : state) =
 
          List.iter draw_black_rect world_map.black_rects;
          let draw_ghost_circle radius r g b speed =
-           let ghost_color r g b speed =
-             Raylib.Color.create r g b (state.frame.idx * speed mod 255)
-           in
+           let ghost_color r g b a = Raylib.Color.create r g b a in
            Raylib.draw_circle
              (world_map.ghost_pos.x +. camera_x |> Float.to_int)
              (world_map.ghost_pos.y +. camera_y |> Float.to_int)
              radius (ghost_color r g b speed)
          in
-         draw_ghost_circle 6. 0 0 255 4;
-         draw_ghost_circle 4. 0 255 0 5;
-         draw_ghost_circle 2. 255 0 0 6;
+         let alpha =
+           let m = state.frame.idx * 5 mod 510 in
+           if m > 255 then
+             -m + 510
+           else
+             m
+         in
+         draw_ghost_circle 7. 0 0 0 alpha;
+         draw_ghost_circle 5. 255 255 255 alpha;
          None
        | Some (MENU pause_menu) -> Some (MENU (pause_menu, None))
      in
