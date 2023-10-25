@@ -57,9 +57,9 @@ you just want to run around the map and find the purple pens.
 ### Configuration
 
 There is currently no menu for rebinding keys, but they can be overridden by placing a file at
-`config/keybinds.json` and restarting the game. See `config/keybinds.json.example` for an example.
-
-Only keyboard input is supported, but gamepad support will be added once I get a gamepad to test with.
+`config/key_overrides.json` and restarting the game. Gamepad buttons can be rebound with a file at
+`config/button_overrides.json`, using button names for a Playstation controller. See
+`config/key_overrides.json.example` and `config/button_overrides.json.example` for examples.
 
 None of the other settings (like fps) are configurable yet.
 

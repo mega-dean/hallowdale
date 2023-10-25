@@ -1308,15 +1308,15 @@ let in_water (player : player) : bool = Option.is_some player.current.water
 let update (game : game) (state : state) =
   let stop_wall_sliding = ref false in
 
-  let key_pressed_or_buffered key_action =
+  let pressed_or_buffered game_action =
     let (input, buffer) : frame_input * float =
-      match key_action with
+      match game_action with
       | NAIL -> (state.frame_inputs.nail, game.player.history.nail.config.input_buffer.seconds)
       | JUMP -> (state.frame_inputs.jump, game.player.history.jump.config.input_buffer.seconds)
       | DASH -> (state.frame_inputs.dash, game.player.history.dash.config.input_buffer.seconds)
       | CAST -> (state.frame_inputs.cast, game.player.history.cast_vs.config.input_buffer.seconds)
       | C_DASH -> (state.frame_inputs.c_dash, game.player.history.c_dash.config.input_buffer.seconds)
-      | _ -> failwithf "bad key in key_pressed_or_buffered': %s" (show_key_action key_action)
+      | _ -> failwithf "bad key in pressed_or_buffered': %s" (show_game_action game_action)
     in
     let input_buffered () =
       match input.down_since with
@@ -1782,7 +1782,7 @@ let update (game : game) (state : state) =
 
   let handle_casting () : handled_action =
     let trying_cast =
-      key_pressed_or_buffered CAST
+      pressed_or_buffered CAST
       && game.player.soul.current >= Config.action.soul_per_cast
       && past_cooldown game.player.history.cast_vs state.frame.time
       && (not (is_doing game.player (ATTACK RIGHT) state.frame.time))
@@ -1871,7 +1871,7 @@ let update (game : game) (state : state) =
     let starting_charge () =
       (* attack direction is arbitrary *)
       game.player.abilities.crystal_heart
-      && key_pressed_or_buffered C_DASH
+      && pressed_or_buffered C_DASH
       && still_on_surface ()
       && (not (is_doing game.player (ATTACK RIGHT) state.frame.time))
       && (not (is_casting state game))
@@ -1960,7 +1960,7 @@ let update (game : game) (state : state) =
         || Option.is_some game.player.ghost.entity.y_recoil
       in
       game.player.abilities.mothwing_cloak
-      && key_pressed_or_buffered DASH
+      && pressed_or_buffered DASH
       && not_attacking ()
       && (not (is_casting state game))
       && Option.is_none game.player.ghost.entity.x_recoil
@@ -2030,7 +2030,7 @@ let update (game : game) (state : state) =
 
   let handle_wall_kicking () : handled_action =
     let starting_wall_kick () =
-      Option.is_some game.player.current.wall && key_pressed_or_buffered JUMP
+      Option.is_some game.player.current.wall && pressed_or_buffered JUMP
     in
     let continuing_wall_kick () =
       state.frame.time -. game.player.history.wall_kick.started.at
@@ -2057,7 +2057,7 @@ let update (game : game) (state : state) =
       match game.player.current.water with
       | None ->
         if
-          (* TODO key_pressed_or_buffered detects the same keypress as the initial jump *)
+          (* TODO pressed_or_buffered detects the same keypress as the initial jump *)
           game.player.abilities.monarch_wings
           && game.player.current.can_flap
           && state.frame_inputs.jump.pressed
@@ -2079,7 +2079,7 @@ let update (game : game) (state : state) =
       if is_doing game.player FLAP state.frame.time then
         (* TODO need a check like this for current_wall too (to prevent extra height from buffering jump off wallslide) *)
         cancel_action state game FLAP
-      else if key_pressed_or_buffered JUMP then
+      else if pressed_or_buffered JUMP then
         set_pose' (PERFORMING JUMP)
       else if game.player.ghost.entity.v.y > 0. then (
         stop_wall_sliding := true;
@@ -2094,7 +2094,7 @@ let update (game : game) (state : state) =
 
   let handle_attacking () =
     let starting_attack () =
-      past_cooldown game.player.history.nail state.frame.time && key_pressed_or_buffered NAIL
+      past_cooldown game.player.history.nail state.frame.time && pressed_or_buffered NAIL
     in
     if starting_attack () then (
       let direction : direction =

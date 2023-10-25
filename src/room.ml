@@ -730,14 +730,7 @@ let get_global_pos (current_pos : vector) (room_location : room_location) : vect
   { x = current_pos.x +. room_location.global_x; y = current_pos.y +. room_location.global_y }
 
 let handle_transitions (state : state) (game : game) =
-  let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
-    let room_location = List.assoc room_id world in
-    { x = global.x -. room_location.global_x; y = global.y -. room_location.global_y }
-  in
-  let colliding exit_rect =
-    (* TODO this might not be working sometimes with the new collision detection *)
-    Collision.with_entity game.player.ghost.entity exit_rect
-  in
+  let colliding exit_rect = Collision.with_entity game.player.ghost.entity exit_rect in
   match List.find_map colliding game.room.exits with
   | None -> false
   | Some collision ->
@@ -757,16 +750,29 @@ let handle_transitions (state : state) (game : game) =
         in
         Tiled.Room.locate_by_coords state.world global_x global_y
       in
+      let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
+        let room_location = List.assoc room_id world in
+        { x = global.x -. room_location.global_x; y = global.y -. room_location.global_y }
+      in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
+        let get_y () =
+          if game.player.ghost.entity.v.y > 0. then
+            (* this can cause the ghost to clip into a ceiling in the next room, but it prevents
+               them from falling through the floor (which can crash the game)
+            *)
+            start_pos'.y -. game.player.ghost.entity.dest.h
+          else
+            start_pos'.y
+        in
         (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
         match collision.direction with
         | LEFT ->
           game.player.ghost.entity.sprite.facing_right <- true;
-          { start_pos' with x = start_pos'.x +. game.player.ghost.entity.dest.w }
+          { x = start_pos'.x +. game.player.ghost.entity.dest.w; y = get_y () }
         | RIGHT ->
           game.player.ghost.entity.sprite.facing_right <- false;
-          { start_pos' with x = start_pos'.x -. game.player.ghost.entity.dest.w }
+          { x = start_pos'.x -. game.player.ghost.entity.dest.w; y = get_y () }
         | UP -> { start_pos' with y = start_pos'.y +. game.player.ghost.entity.dest.h }
         | DOWN -> { start_pos' with y = start_pos'.y -. game.player.ghost.entity.dest.h }
       in

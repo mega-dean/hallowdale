@@ -1,5 +1,10 @@
 [
+    ["CAST", "square"],
+    ["OPEN_MAP", "triangle"],
+    ["DASH", "circle"],
     ["NAIL", "x"],
-    ["JUMP", "square"],
-    ["INTERACT", "l2"]
+    ["C_DASH", "l1"],
+    ["INTERACT", "l2"],
+    ["FOCUS", "r1"],
+    ["CAST", "r2"]
 ]
