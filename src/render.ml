@@ -18,19 +18,6 @@ module Draw = struct
   let line_ex = draw_line_ex
 end
 
-let src_Rect' (texture : texture) facing_right : Raylib.Rectangle.t =
-  let src = get_src texture in
-  let w =
-    if facing_right then
-      abs_float src.w
-    else
-      -1. *. abs_float src.w
-  in
-  Raylib.Rectangle.create src.pos.x src.pos.y w src.h
-
-(* adjusts sign of w based on sprite.facing_right *)
-let src_Rect (s : sprite) : Raylib.Rectangle.t = src_Rect' s.texture s.facing_right
-
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
   let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
   let points = get_points adjusted_shape in
@@ -104,26 +91,23 @@ let draw_sprite
     ?(render_offset = None)
     (sprite : sprite) =
   let dest =
-    let dest' =
-      match render_offset with
-      | None -> sprite.dest
-      | Some offset ->
-        {
-          sprite.dest with
-          pos =
-            {
-              x =
-                (if sprite.facing_right then
-                   sprite.dest.pos.x +. offset.x
-                else
-                  sprite.dest.pos.x -. offset.x);
-              y = offset.y +. sprite.dest.pos.y;
-            };
-        }
-    in
-    dest' |> to_Rect
+    match render_offset with
+    | None -> sprite.dest
+    | Some offset ->
+      {
+        sprite.dest with
+        pos =
+          {
+            x =
+              (if sprite.facing_right then
+                 sprite.dest.pos.x +. offset.x
+              else
+                sprite.dest.pos.x -. offset.x);
+            y = offset.y +. sprite.dest.pos.y;
+          };
+      }
   in
-  Draw.image sprite.texture.image (src_Rect sprite) dest (Raylib.Vector2.create 0. 0.) 0. tint;
+  draw_texture sprite.texture ~tint dest (if sprite.facing_right then 0 else 4);
   match sprite.collision with
   | Some (SHAPE shape) ->
     if debug then
@@ -135,19 +119,10 @@ let draw_entity
     ?(tint = Color.create 255 255 255 255)
     ?(render_offset = None)
     (e : entity) =
-  (* drawing entity and drawing sprite are the same thing since sprite.dest is updated every frame to match entity.dest *)
   Entity.adjust_sprite_dest ~skip_coll_offset:(Option.is_some render_offset) e;
   draw_sprite ~debug ~tint ~render_offset e.sprite
 
 let center (r : rect) : Raylib.Vector2.t = Raylib.Vector2.create (rect_center_x r) (rect_center_y r)
-
-let draw_velocity (e : entity) : unit =
-  let end_x, end_y = (e.sprite.dest.pos.x +. (e.v.x /. 3.), e.sprite.dest.pos.y +. (e.v.y /. 3.)) in
-  Draw.line_ex
-    (Raylib.Vector2.create e.sprite.dest.pos.x e.sprite.dest.pos.y)
-    (Raylib.Vector2.create end_x end_y)
-    5. Color.purple;
-  Draw.circle_v (Raylib.Vector2.create end_x end_y) 5. Color.blue
 
 let draw_tiled_layer
     ?(debug = false)
@@ -732,6 +707,16 @@ let tick (state : state) =
 
     let draw_debug_info () =
       let draw_debug_ghost () =
+        let draw_velocity (e : entity) : unit =
+          let end_x, end_y =
+            (e.sprite.dest.pos.x +. (e.v.x /. 3.), e.sprite.dest.pos.y +. (e.v.y /. 3.))
+          in
+          Draw.line_ex
+            (Raylib.Vector2.create e.sprite.dest.pos.x e.sprite.dest.pos.y)
+            (Raylib.Vector2.create end_x end_y)
+            5. Color.purple;
+          Draw.circle_v (Raylib.Vector2.create end_x end_y) 5. Color.blue
+        in
         let s = game.player.ghost.entity.sprite in
         if game.player.ghost.entity.sprite.facing_right then
           Draw.rect
@@ -882,25 +867,16 @@ let tick (state : state) =
 
     let draw_ghost_head ~tint ghost =
       let head_dest =
+        (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
         let head_w, head_h = (40., 40.) in
         let neck_x, neck_y = (20., 26.) in
-        let dest' =
-          {
-            pos =
-              {
-                (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
-                x = ghost.entity.dest.pos.x -. neck_x;
-                y = ghost.entity.dest.pos.y -. neck_y;
-              };
-            w = head_w *. Config.scale.ghost;
-            h = head_h *. Config.scale.ghost;
-          }
-        in
-        dest' |> to_Rect
+        {
+          pos = { x = ghost.entity.dest.pos.x -. neck_x; y = ghost.entity.dest.pos.y -. neck_y };
+          w = head_w *. Config.scale.ghost;
+          h = head_h *. Config.scale.ghost;
+        }
       in
-      Draw.image ghost.head.image
-        (src_Rect' ghost.head ghost.entity.sprite.facing_right)
-        head_dest (Raylib.Vector2.create 0. 0.) 0. tint
+      draw_texture ghost.head head_dest (if ghost.entity.sprite.facing_right then 0 else 4)
     in
 
     let ghost_render_offset ghost =

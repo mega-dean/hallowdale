@@ -546,6 +546,7 @@ let resolve_slash_collisions (state : state) (game : game) =
           new_fragment.dest.pos <- { x = collision.rect.pos.x; y = collision.rect.pos.y };
           new_fragment.v <- { x = Random.float 501. -. 200.; y = Random.float 1000. -. 1000. };
           new_fragment.update_pos <- true;
+          new_fragment.sprite.facing_right <- Random.bool ();
           new_fragment
         in
         let destroy_object (tile_group : tile_group) (collision : collision) =

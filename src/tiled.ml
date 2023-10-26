@@ -388,6 +388,7 @@ module Room = struct
                           ident = "sprite stub";
                           texture = stub;
                           dest = stub_dest;
+                          (* sprite stubs keep track of exact transformation bits so this isn't used *)
                           facing_right = true;
                           collision = None;
                         }

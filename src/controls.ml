@@ -336,9 +336,7 @@ let holding_shift () =
   Raylib.is_key_down Raylib.Key.Left_shift || Raylib.is_key_down Raylib.Key.Right_shift
 
 let gamepad =
-  (* CLEANUP not sure if there is a better choice here
-     - raylib example also hardcodes 0
-  *)
+  (* not sure if there is a better choice here (raylib example also hardcodes 0) *)
   0
 
 let check_gamepad_input check_button direction k =
