@@ -446,6 +446,9 @@ let check_dream_nail_collisions (state : state) (game : game) =
     List.iter resolve_trigger game.room.triggers.d_nail
 
 let add_phantom_floor (game : game) (target : vector) =
+  (* need to set v.y to 0 here to prevent maybe_unset_current_floor from removing
+     the phantom floor *)
+  game.player.ghost.entity.v.y <- 0.;
   game.player.ghost.entity.current_floor <-
     Some
       ( {
@@ -2239,8 +2242,7 @@ let update (game : game) (state : state) =
               game.room.respawn_pos.y +. 50. > Tiled.Room.get_h game.room.json
             in
             if transitioned_from_below then
-              add_phantom_floor game game.room.respawn_pos;
-            ()
+              add_phantom_floor game game.room.respawn_pos
           | STEEL_SOLE -> add_phantom_floor game game.room.respawn_pos);
           Entity.unfreeze game.player.ghost.entity;
           state.camera.update_instantly <- true;
