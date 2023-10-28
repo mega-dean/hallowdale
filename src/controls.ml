@@ -357,7 +357,10 @@ let check_gamepad_input check_button direction k =
   | true, _ ->
     failwithf "tried checking direction input for non-ARROW action %s" (show_game_action k)
 
-let key_up k = Raylib.is_key_up (get_key k) && Raylib.is_gamepad_button_up gamepad (get_button k)
+let key_up k =
+  Raylib.is_key_up (get_key k)
+  && ((not (Raylib.is_gamepad_available gamepad))
+     || Raylib.is_gamepad_button_up gamepad (get_button k))
 
 let key_down ?(direction = false) k =
   Raylib.is_key_down (get_key k) || check_gamepad_input Raylib.is_gamepad_button_down direction k
