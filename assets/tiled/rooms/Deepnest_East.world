@@ -412,6 +412,13 @@
             "width": 1872,
             "x": -6012,
             "y": 1668
+        },
+        {
+            "fileName": "forgotten_test.json",
+            "height": 600,
+            "width": 600,
+            "x": -2976,
+            "y": 60
         }
     ],
     "onlyShowAdjacentMaps": false,

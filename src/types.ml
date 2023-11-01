@@ -1,18 +1,3 @@
-let (development, project_root) : bool * string =
-  let is_dev = ref false in
-  let rec find_project_root path =
-    let dir = Filename.dirname path in
-    match Filename.basename dir with
-    | "hallowdale" -> dir
-    | "_build" ->
-      is_dev := true;
-      find_project_root dir
-    | _ -> find_project_root dir
-  in
-  let project_root = find_project_root Sys.executable_name in
-  Sys.chdir project_root;
-  (!is_dev, project_root)
-
 module StrSet = Set.Make (String)
 
 type str_set = StrSet.t
@@ -64,7 +49,7 @@ module Utils = struct
   let find_idx x xs =
     let matches ((_i, x') : int * 'a) : bool = x = x' in
     match List.find_opt matches (List.mapi (fun i x -> (i, x)) xs) with
-    | None -> failwith "find_idx"
+    | None -> failwith "find_idx: no matches"
     | Some (idx, _) -> idx
 
   let filter_somes xs =
@@ -80,10 +65,6 @@ module Utils = struct
   (* returns a random element from xs *)
   let sample xs = List.nth xs (Random.int (List.length xs))
 end
-
-let make_path (segments : string list) : string = join ~sep:Filename.dir_sep segments
-let make_root_path (segments : string list) : string = make_path (project_root :: segments)
-let make_assets_path (segments : string list) : string = make_root_path ("assets" :: segments)
 
 type direction =
   | UP
@@ -118,6 +99,13 @@ let rect_center_x (rect : rect) = rect.pos.x +. (rect.w /. 2.)
 let rect_center_y (rect : rect) = rect.pos.y +. (rect.h /. 2.)
 let get_rect_center (rect : rect) = { x = rect_center_x rect; y = rect_center_y rect }
 
+let scale_rect scale rect =
+  {
+    pos = { x = rect.pos.x *. scale; y = rect.pos.y *. scale };
+    w = rect.w *. scale;
+    h = rect.h *. scale;
+  }
+
 type bounds = {
   min : vector;
   max : vector;
@@ -128,18 +116,22 @@ type duration = { seconds : float (* in seconds *) }
 type color = Raylib.Color.t
 
 module Zero = struct
+  (* create a new vector/rect/time each invocation in case they are updated later *)
   let vector () : vector = { x = 0.; y = 0. }
   let rect () : rect = { pos = vector (); w = 0.; h = 0. }
   let time () : time = { at = 0. }
+
+  (* these won't ever be updated later, so don't need to create a new one each time *)
+  let raylib_vector : Raylib.Vector2.t = Raylib.Vector2.create 0. 0.
 end
 
 (* the raw image file that a texture can source from *)
 type image = Raylib.Texture.t
 
-let load_tiled_asset path = Raylib.load_texture (make_assets_path [ "tiled"; path ])
+let load_tiled_asset path = Raylib.load_texture (File.make_assets_path [ "tiled"; path ])
 
 let load_image path : image =
-  let full_path = make_assets_path [ path ] in
+  let full_path = File.make_assets_path [ path ] in
   if Sys.file_exists full_path then
     Raylib.load_texture full_path
   else
@@ -228,7 +220,7 @@ let get_src (t : texture) : rect =
   | LOOPED animation ->
     (get_frame animation).src
 
-let get_scaled_texture_size ?(scale = Config.scale.room) (texture : texture) =
+let get_scaled_texture_size scale (texture : texture) =
   let src = get_src texture in
   (src.w *. scale, src.h *. scale)
 
@@ -646,18 +638,10 @@ module Interaction = struct
     | NPC of npc_id * npc_step
 
   type text_config = {
-    padding_x : int;
-    padding_y : int;
-    margin_x : int;
-    (* TODO rename to margin_y_top *)
-    margin_y : int;
-    margin_y_bottom : int;
-    outline_offset_y : int;
-    (* TODO
-       - move this to type text
-       - center text for ADD_WEAPON
-       - maybe rename this type to text_box_config
-    *)
+    padding : vector;
+    margin_x : float;
+    margin_y_top : float;
+    margin_y_bottom : float;
     centered : bool;
   }
 
@@ -1087,7 +1071,6 @@ type layer_config = {
   shaded : bool;
   animated : bool;
   (* TODO probably don't want these "single-use" properties (just check layer name, already doing this with "acid") *)
-  monkey : bool;
   water : bool;
 }
 
@@ -1165,6 +1148,7 @@ type room_id =
   | CPU_K
   | CPU_M
   (* FORGOTTEN_CLASSROOMS *)
+  | (* just for testing *) FORG_TEST
   | FORG_DEANS_PASS
   | FORG_A
   | FORG_B
@@ -1385,6 +1369,7 @@ type game = {
   progress : Json_t.game_progress;
   mutable save_file_slot : int;
   mutable debug_paused : bool;
+  mutable debug_safe_ss : bool;
 }
 
 type camera = {
@@ -1442,7 +1427,7 @@ type state = {
   settings : settings;
 }
 
-(* TODO probably should just move this to a new file, even if it's the only thing there *)
+(* TODO move to a new file *)
 let play_sound state sound_name =
   let sound = List.assoc sound_name state.global.sounds in
   if not (Raylib.is_sound_playing sound) then (

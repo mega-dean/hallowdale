@@ -1,5 +1,6 @@
 open Types
 
+let scale_room_rect x y w h = scale_rect Config.scale.room { pos = { x; y }; w; h }
 let in_teachers_archives (room : room) = room.id = LIB_A || room.id = LIB_B
 
 let get_pickup_indicators
@@ -56,7 +57,7 @@ let init (params : room_params) : room =
     | Some rp -> rp
   in
   let parse_room (path : string) : Json_t.room =
-    let full_path = make_assets_path [ "tiled"; "rooms"; path ] in
+    let full_path = File.make_assets_path [ "tiled"; "rooms"; path ] in
     (* TODO cache these instead of reloading the tileset between every room *)
     File.read full_path |> Json_j.room_of_string
   in
@@ -79,7 +80,7 @@ let init (params : room_params) : room =
   let respawn_triggers : (vector * trigger) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
-  let floor_rect rect =
+  let floored_rect rect =
     {
       pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
       w = rect.w |> Float.floor;
@@ -91,44 +92,35 @@ let init (params : room_params) : room =
 
   let get_object_rects (jl : Json_t.layer) =
     let get_object_rect ?(floor = false) ?(hidden = false) name (coll_rect : Json_t.coll_rect) =
-      let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       if floor then
-        (name, floor_rect rect)
+        (name, floored_rect rect)
       else if hidden then
         (name, { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } })
       else
         (name, rect)
     in
 
-    let make_floor idx (coll_rect : Json_t.coll_rect) =
-      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      floors := dest :: !floors
-    in
-
-    let make_spikes idx (coll_rect : Json_t.coll_rect) =
-      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      spikes := dest :: !spikes
-    in
-
-    let make_hazard idx (coll_rect : Json_t.coll_rect) =
-      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      hazards := dest :: !hazards
+    let add_object_rect (rects : 'a list ref) (coll_rect : Json_t.coll_rect) =
+      let dest = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      rects := dest :: !rects
     in
 
     let make_conveyor_belt idx (coll_rect : Json_t.coll_rect) =
-      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      conveyor_belts := (dest, coll_rect.name |> float_of_string) :: !conveyor_belts
+      let dest = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      conveyor_belts :=
+        (dest, (coll_rect.name |> float_of_string) *. Config.window.scale) :: !conveyor_belts
     in
 
     let make_platform idx (coll_rect : Json_t.coll_rect) =
       let texture_name, texture, platform_kind =
         Tiled.Room.look_up_platform json_room params.platforms coll_rect.gid
       in
-      let dest = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+      let dest = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       let sprite : sprite =
         {
           ident = fmt "%s_%d" texture_name idx;
-          dest = floor_rect dest;
+          dest = floored_rect dest;
           texture;
           facing_right = true;
           (* this could be Some DEST, but the rects are being checked directly like other floors *)
@@ -138,7 +130,7 @@ let init (params : room_params) : room =
       (match platform_kind with
       | Some (ROTATABLE _) ->
         let dest =
-          Tiled.scale_rect (coll_rect.x -. 1.)
+          scale_room_rect (coll_rect.x -. 1.)
             (coll_rect.y +. (coll_rect.h /. 2.))
             (coll_rect.w +. 2.) (coll_rect.h *. 0.55)
         in
@@ -156,7 +148,7 @@ let init (params : room_params) : room =
       in
 
       let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
-        let rect = Tiled.scale_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+        let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
         let dest : rect =
           if floor then
             (* these were preventing the pixels in the background from being distorted
@@ -337,9 +329,9 @@ let init (params : room_params) : room =
     match jl with
     | `OBJECT_LAYER json -> (
       match json.name with
-      | "spikes" -> List.iteri make_spikes json.objects
-      | "hazard" -> List.iteri make_hazard json.objects
-      | "floors" -> List.iteri make_floor json.objects
+      | "spikes" -> List.iter (add_object_rect spikes) json.objects
+      | "hazard" -> List.iter (add_object_rect hazards) json.objects
+      | "floors" -> List.iter (add_object_rect floors) json.objects
       | "platforms" -> List.iteri make_platform json.objects
       | "conveyor-belts" -> List.iteri make_conveyor_belt json.objects
       | "triggers" -> List.iter categorize_trigger json.objects
@@ -417,7 +409,6 @@ let init (params : room_params) : room =
             in
             let configs =
               match layer_name with
-              | "monkey-block" -> [ "collides"; "monkey"; "permanently_removable" ]
               | "floors" -> [ "fg" ]
               (* this is used for floors that are removed, like the bridge in c-dash room *)
               | "temporary-floors" -> [ "collides" ]
@@ -478,7 +469,6 @@ let init (params : room_params) : room =
                   permanently_removable = has "permanently_removable";
                   shaded = has "shaded";
                   animated = has "animated";
-                  monkey = has "monkey";
                   water = has "water";
                 }
             in
@@ -620,8 +610,8 @@ let init (params : room_params) : room =
     let w = (room.w_in_tiles |> Int.to_float) *. room.tile_w *. Config.scale.room in
     let h = (room.h_in_tiles |> Int.to_float) *. room.tile_h *. Config.scale.room in
     {
-      min = { x = Config.window.center_x; y = Config.window.center_y };
-      max = { x = w -. Config.window.center_x; y = h -. Config.window.center_y };
+      min = { x = Config.window.center.x; y = Config.window.center.y };
+      max = { x = w -. Config.window.center.x; y = h -. Config.window.center.y };
     }
   in
   let area =
@@ -724,7 +714,9 @@ let change_current_room
   Tiled.Room.reset_tile_groups game.room;
   state.camera.update_instantly <- true;
   state.camera.raylib <-
-    Tiled.create_camera_at (Raylib.Vector2.create ghost_start_pos.x ghost_start_pos.y) 0.
+    Tiled.create_camera_at
+      (Raylib.Vector2.create ghost_start_pos.x ghost_start_pos.y)
+      0. Config.window.center.x Config.window.center.y
 
 let get_global_pos (current_pos : vector) (room_location : room_location) : vector =
   { x = current_pos.x +. room_location.global_x; y = current_pos.y +. room_location.global_y }

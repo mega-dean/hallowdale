@@ -1,4 +1,9 @@
-open Types
+let make_path (segments : string list) : string = String.concat Filename.dir_sep segments
+
+let make_root_path (segments : string list) : string =
+  make_path (Env.project_root :: segments)
+
+let make_assets_path (segments : string list) : string = make_root_path ("assets" :: segments)
 
 let ls (dir : string) : string list = Sys.readdir dir |> Array.to_list
 
@@ -22,5 +27,5 @@ let write (filename : string) (contents : string) : bool =
   true
 
 let read_config file_name (convert : string -> 'a) : 'a =
-  let full_path = make_root_path [ "config"; fmt "%s.json" file_name ] in
+  let full_path = make_root_path [ "config"; Printf.sprintf "%s.json" file_name ] in
   read full_path |> convert

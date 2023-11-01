@@ -1,9 +1,9 @@
 open Types
 
-let save_file_path idx = make_root_path [ "saves"; fmt "%d.json" idx ]
+let save_file_path idx = File.make_root_path [ "saves"; fmt "%d.json" idx ]
 
 let empty_save_file () : Json_t.save_file =
-  let kings_pass_drop = { x = 1800.; y = 150. } in
+  let kings_pass_drop = { x = Config.other.kp_start_x; y = Config.other.kp_start_y } in
   let b =
     (* newgame *)
     false
@@ -17,7 +17,6 @@ let empty_save_file () : Json_t.save_file =
     ghosts_in_party = [ "BRITTA" ];
     ghost_x = kings_pass_drop.x;
     ghost_y = kings_pass_drop.y;
-    (* there aren't any hazards in king's pass for new games, so respawn_pos doesn't matter *)
     respawn_x = kings_pass_drop.x;
     respawn_y = kings_pass_drop.y;
     room_name = "forgotten_deans-pass";
@@ -36,7 +35,10 @@ let empty_save_file () : Json_t.save_file =
         howling_wraiths = b;
       };
     progress =
-      { by_room = []; steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0; frame_idx = 0 } };
+      {
+        by_room = [];
+        steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0; frame_idx = 0 };
+      };
     weapons =
       [
         "Old Nail";
@@ -60,6 +62,16 @@ let load_all_save_slots () : save_slots =
 
 let save ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress game;
+  game.room.respawn_pos <-
+    (match game.mode with
+    | CLASSIC
+    | DEMO ->
+      clone_vector game.player.ghost.entity.dest.pos
+    | STEEL_SOLE ->
+      {
+        game.player.ghost.entity.dest.pos with
+        y = game.player.ghost.entity.dest.pos.y -. Config.other.ss_respawn_y_offset;
+      });
   let save_file : Json_t.save_file =
     let ghosts' = game.party in
     {
@@ -72,10 +84,10 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
         [ game.player.ghost.id ] @ Player.ghost_ids_in_party ghosts'
         |> List.map Show.ghost_id
         |> Utils.uniq;
-      ghost_x = game.player.ghost.entity.dest.pos.x;
-      ghost_y = game.player.ghost.entity.dest.pos.y;
-      respawn_x = game.room.respawn_pos.x;
-      respawn_y = game.room.respawn_pos.y;
+      ghost_x = game.player.ghost.entity.dest.pos.x /. Config.window.scale;
+      ghost_y = game.player.ghost.entity.dest.pos.y /. Config.window.scale;
+      respawn_x = game.room.respawn_pos.x /. Config.window.scale;
+      respawn_y = game.room.respawn_pos.y /. Config.window.scale;
       room_name = Tiled.Room.get_filename game.room;
       abilities = game.player.abilities;
       progress =
@@ -88,7 +100,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       current_weapon = game.player.current_weapon.name;
     }
   in
-  let save_file_path = make_root_path [ "saves"; fmt "%d.json" game.save_file_slot ] in
+  let save_file_path = File.make_root_path [ "saves"; fmt "%d.json" game.save_file_slot ] in
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write save_file_path contents in
   if written then
@@ -125,13 +137,16 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
   state.game_context <- IN_PROGRESS game
 
 let create
+    (state : state)
     (mode : game_mode)
     (save_file : Json_t.save_file)
     (global : global_cache)
     (area_musics : area_music list)
     (world : world)
     (save_file_slot : int) : game =
-  let start_pos = { x = save_file.ghost_x; y = save_file.ghost_y } in
+  let start_pos =
+    { x = save_file.ghost_x *. Config.window.scale; y = save_file.ghost_y *. Config.window.scale }
+  in
   let ghosts_file : ghosts_file = Player.read_config () in
   let use_json_config ghost_id pose_name =
     (* PERF try using build_texture_from_image *)
@@ -180,7 +195,11 @@ let create
         npc_configs = global.npc_configs;
         pickup_indicator_texture = global.textures.pickup_indicator;
         lever_texture = global.textures.door_lever;
-        respawn_pos = { x = save_file.respawn_x; y = save_file.respawn_y };
+        respawn_pos =
+          {
+            x = save_file.respawn_x *. Config.window.scale;
+            y = save_file.respawn_y *. Config.window.scale;
+          };
         platforms = global.textures.platforms;
       }
   in
@@ -206,6 +225,7 @@ let create
     progress = { by_room = save_file.progress.by_room; steel_sole = save_file.progress.steel_sole };
     save_file_slot;
     debug_paused = false;
+    debug_safe_ss = false;
   }
 
 let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
@@ -219,7 +239,9 @@ let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
       | "Demo" -> DEMO
       | _ -> failwithf "invalid game_mode in save_file %d" save_file_idx)
   in
-  let game = create mode' save_file state.global state.area_musics state.world save_file_idx in
+  let game =
+    create state mode' save_file state.global state.area_musics state.world save_file_idx
+  in
   state.camera.update_instantly <- true;
   state.camera.raylib <-
     (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
@@ -227,5 +249,5 @@ let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
     *)
     Tiled.create_camera_at
       (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x game.player.ghost.entity.dest.pos.y)
-      0.;
+      0. Config.window.center.x Config.window.center.y;
   game

@@ -129,8 +129,8 @@ type weapons_file = (string * weapon) list
 type texture_config = {
   ~count <ocaml default="1"> : int;
   ~duration <ocaml default="0.066666"> : float;
-  ~x_offset <ocaml default="0"> : int;
-  ~y_offset <ocaml default="0"> : int;
+  ~x_offset <ocaml default="0.0"> : float;
+  ~y_offset <ocaml default="0.0"> : float;
 }
 
 type enemy_dream_nail_config = {
@@ -175,7 +175,6 @@ type ghost_action = {
 }
 
 type ghosts_file = {
-  (* head_textures_by_ghost : (string * texture_configs) list; *)
   body_textures : texture_configs;
   shared_textures : texture_configs;
   actions : (string * ghost_action) list;

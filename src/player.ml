@@ -18,8 +18,8 @@ let read_config () : ghosts_file =
       path = { asset_dir = GHOSTS; character_name; pose_name };
       count = config.count;
       duration = { seconds = config.duration };
-      x_offset = config.x_offset |> Int.to_float;
-      y_offset = config.y_offset |> Int.to_float;
+      x_offset = config.x_offset;
+      y_offset = config.y_offset;
     }
   in
   let parse_ghost_texture
@@ -136,7 +136,7 @@ let pogo (player : player) =
   player.current.can_dash <- true;
   player.current.can_flap <- true;
   player.ghost.entity.y_recoil <-
-    Some { speed = -800.; time_left = { seconds = 0.2 }; reset_v = true }
+    Some { speed = -.Config.ghost.recoil_speed; time_left = { seconds = 0.2 }; reset_v = true }
 
 (* - adjusts x position for side collisions to place sprite next to colliding rect
    - then adjusts y position for top/bottom collisions
@@ -159,8 +159,7 @@ let apply_collisions
         entity.current_floor <- Some (floor, floor_v);
         entity.dest.pos.y <- top_of floor -. entity.dest.h)
     | DOWN ->
-      entity.y_recoil <- None;
-      if entity.v.y < 0. then (
+      if entity.v.y < 0. || Option.is_some entity.y_recoil then (
         entity.v.y <- 0.;
         entity.dest.pos.y <- bottom_of floor)
     | LEFT -> entity.dest.pos.x <- left_of floor -. entity.dest.w
@@ -338,7 +337,7 @@ let spawn_child
     alignment
     texture =
   let child =
-    let w, h = get_scaled_texture_size ~scale texture in
+    let w, h = get_scaled_texture_size scale texture in
     make_ghost_child player ~in_front child_kind alignment texture w h
   in
   add_child player child_kind child
@@ -478,7 +477,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             | RIGHT ->
               (* TODO recoil enemy *)
               Entity.recoil_backwards game.player.ghost.entity
-                { speed = 800.; time_left = { seconds = 0.1 }; reset_v = true }
+                { speed = Config.ghost.recoil_speed; time_left = { seconds = 0.1 }; reset_v = true }
             | UP ->
               if game.player.ghost.entity.v.y < 0. then
                 game.player.ghost.entity.v.y <- 300.);
@@ -767,14 +766,19 @@ let set_pose player (new_pose : ghost_pose) (bodies : ghost_body_textures) (fram
     | TAKE_DAMAGE (damage, direction) ->
       let x_recoil_speed =
         match direction with
-        | LEFT -> -800.
-        | RIGHT -> 800.
-        | _ -> if player.ghost.entity.sprite.facing_right then 800. else -800.
+        | LEFT -> -.Config.ghost.recoil_speed
+        | RIGHT -> Config.ghost.recoil_speed
+        | _ ->
+          if player.ghost.entity.sprite.facing_right then
+            Config.ghost.recoil_speed
+          else
+            -.Config.ghost.recoil_speed
       in
       player.ghost.entity.x_recoil <-
         Some { speed = x_recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
       player.ghost.entity.y_recoil <-
-        Some { speed = -800.; time_left = { seconds = 0.06666 }; reset_v = true };
+        Some
+          { speed = -.Config.ghost.recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
       take_damage player damage;
       (* from recoiling upwards *)
       player.ghost.entity.current_floor <- None;
@@ -848,7 +852,7 @@ let past_cooldown ?(debug = false) pose_frames frame_time : bool =
 
 let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None) state game =
   let texture = game.player.shared_textures.vengeful_cushion in
-  let w, h = get_scaled_texture_size ~scale:Config.scale.ghost texture in
+  let w, h = get_scaled_texture_size Config.scale.ghost texture in
   let x, y =
     match start with
     | None -> (game.player.ghost.entity.dest.pos.x, game.player.ghost.entity.dest.pos.y)
@@ -976,7 +980,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         else
           ALIGNED (LEFT, CENTER)
       in
-      spawn_child game.player C_DASH_WHOOSH ~scale:6. alignment
+      spawn_child game.player C_DASH_WHOOSH ~scale:Config.ghost.c_dash_whoosh_scale alignment
         game.player.shared_textures.c_dash_whoosh;
       game.player.history.c_dash
     | C_DASH_CHARGE ->
@@ -1013,7 +1017,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       | HOWLING_WRAITHS ->
         spawn_child game.player WRAITHS
           (ALIGNED (CENTER, BOTTOM))
-          ~scale:1.7 game.player.shared_textures.howling_wraiths;
+          ~scale:Config.ghost.wraiths_scale game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
     | TAKE_DAMAGE_AND_RESPAWN ->
       (match game.mode with
@@ -1282,24 +1286,25 @@ let handle_debug_keys (game : game) (state : state) =
   else if key_down DEBUG_LEFT then
     game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x -. dv
   else if holding_shift () then (
-    if key_pressed DEBUG_1 then
+    if key_pressed DEBUG_1 then (
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* swap_current_ghost_in_cutscene state game ANNIE *)
-      (* show_ghost_location () *)
-      print "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage
-    (* () *)
-    (* game.player.ghost.entity.sprite.facing_right <- true *)
-    (* show_camera_location () *))
-  else if key_pressed DEBUG_2 then
-    (* toggle_ability game.ghost "mantis_claw" *)
-    (* game.ghost.health.current <- game.ghost.health.current - 1 *)
-    game.player.soul.current <- game.player.soul.max
-  else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
-    print "player water is_some: %b" (Option.is_some game.player.current.water)
-  else if key_pressed DEBUG_4 then
-    (* toggle_ability game.player "desolate_dive" *)
+      show_ghost_location ();
+      game.debug_safe_ss <- not game.debug_safe_ss
+      (* print "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage *)
+      (* () *)
+      (* game.player.ghost.entity.sprite.facing_right <- true *)
+      (* show_camera_location () *))
+    else if key_pressed DEBUG_2 then
+      (* toggle_ability game.ghost "mantis_claw" *)
+      (* game.ghost.health.current <- game.ghost.health.current - 1 *)
+      game.player.soul.current <- game.player.soul.max
+    else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
+      print "player water is_some: %b" (Option.is_some game.player.current.water)
+    else if key_pressed DEBUG_4 then
+      toggle_ability game.player "desolate_dive"
     (* toggle_ability game.player "ismas_tear" *)
-    ()
+    (* () *))
   else if key_pressed DEBUG_1 then
     game.debug_paused <- not game.debug_paused;
   state
@@ -2337,8 +2342,15 @@ let update (game : game) (state : state) =
         (damage.hazards, damage.platform_spikes)
       | STEEL_SOLE -> (
         let up_floor_collision : (collision * rect) option =
-          (* this is supposed to fix the steel sole hazard respawns on wall seams *)
-          if List.length floor_collisions > 1 || game.player.ghost.entity.v.y < 0. then
+          if game.debug_safe_ss then
+            None
+          else if
+            (* TODO this fixes the steel sole hazard respawns on wall seams, but allows
+               the ghost to walk on floors when colliding in a corner
+            *)
+            (* TODO add Entity.ascending/descending functions *)
+            List.length floor_collisions > 1 || game.player.ghost.entity.v.y < 0.
+          then
             None
           else
             List.find_opt (fun ((c : collision), _) -> c.direction = UP) floor_collisions
@@ -2640,7 +2652,7 @@ let init
 
 let init_party ghost_id (head_textures : ghost_head_textures) idle_texture start_pos in_party :
     party_ghost =
-  let w, h = get_scaled_texture_size ~scale:Config.scale.ghost idle_texture in
+  let w, h = get_scaled_texture_size Config.scale.ghost idle_texture in
   let dest = { pos = start_pos; w; h } in
   let entity =
     let entity' =

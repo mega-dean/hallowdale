@@ -66,8 +66,8 @@ type tile_layer = Json_t.tile_layer = {
 type texture_config = Json_t.texture_config = {
   count: int;
   duration: float;
-  x_offset: int;
-  y_offset: int
+  x_offset: float;
+  y_offset: float
 }
 
 type texture_configs = Json_t.texture_configs
@@ -2851,25 +2851,25 @@ let write_texture_config : _ -> texture_config -> _ = (
       )
         ob x.duration;
     );
-    if x.x_offset <> 0 then (
+    if x.x_offset <> 0.0 then (
       if !is_first then
         is_first := false
       else
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"x_offset\":";
       (
-        Yojson.Safe.write_int
+        Yojson.Safe.write_float
       )
         ob x.x_offset;
     );
-    if x.y_offset <> 0 then (
+    if x.y_offset <> 0.0 then (
       if !is_first then
         is_first := false
       else
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"y_offset\":";
       (
-        Yojson.Safe.write_int
+        Yojson.Safe.write_float
       )
         ob x.y_offset;
     );
@@ -2885,8 +2885,8 @@ let read_texture_config = (
     Yojson.Safe.read_lcurl p lb;
     let field_count = ref (1) in
     let field_duration = ref (0.066666) in
-    let field_x_offset = ref (0) in
-    let field_y_offset = ref (0) in
+    let field_x_offset = ref (0.0) in
+    let field_y_offset = ref (0.0) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -2962,7 +2962,7 @@ let read_texture_config = (
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_x_offset := (
                 (
-                  Atdgen_runtime.Oj_run.read_int
+                  Atdgen_runtime.Oj_run.read_number
                 ) p lb
               );
             )
@@ -2970,7 +2970,7 @@ let read_texture_config = (
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_y_offset := (
                 (
-                  Atdgen_runtime.Oj_run.read_int
+                  Atdgen_runtime.Oj_run.read_number
                 ) p lb
               );
             )
@@ -3053,7 +3053,7 @@ let read_texture_config = (
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_x_offset := (
                   (
-                    Atdgen_runtime.Oj_run.read_int
+                    Atdgen_runtime.Oj_run.read_number
                   ) p lb
                 );
               )
@@ -3061,7 +3061,7 @@ let read_texture_config = (
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_y_offset := (
                   (
-                    Atdgen_runtime.Oj_run.read_int
+                    Atdgen_runtime.Oj_run.read_number
                   ) p lb
                 );
               )

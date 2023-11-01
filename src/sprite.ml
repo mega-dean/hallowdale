@@ -80,7 +80,7 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
   if particle.should_despawn then None else Some sprite
 
 let texture_path_to_string (texture_path : texture_path) : string =
-  make_path
+  File.make_path
     [
       Show.asset_dir texture_path.asset_dir;
       texture_path.character_name;

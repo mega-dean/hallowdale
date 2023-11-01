@@ -2,7 +2,7 @@ open Types
 open Controls
 
 (* this function initializes state and sets game_context to MAIN_MENU *)
-let init () : state =
+let init window_w window_h window_scale : state =
   let print_line s =
     let left_line = String.make 10 '=' in
     let right_line = String.make (90 - String.length s) '=' in
@@ -46,7 +46,10 @@ let init () : state =
   let pickup_indicator = build_shared_npc_texture "pickup-indicator" in
   let main_menu = build_shared_npc_texture "main-menu" in
   let skybox = build_shared_npc_texture "skybox" in
-  let world_map = Sprite.build_static_texture "world-map" in
+  let world_map =
+    (* TODO make a world-map-small.png that doesn't look bad at small window sizes *)
+    Sprite.build_static_texture "world-map"
+  in
   let ability_outlines = Sprite.build_static_texture ~asset_dir:GHOSTS "ability-outlines" in
 
   let ghost_bodies : ghost_body_textures =
@@ -74,10 +77,11 @@ let init () : state =
               path = { asset_dir = GHOSTS; character_name = "body"; pose_name = name };
               count = config.count;
               duration = { seconds = config.duration };
-              x_offset = config.x_offset |> Int.to_float;
-              y_offset = config.y_offset |> Int.to_float;
+              x_offset = config.x_offset;
+              y_offset = config.y_offset;
             };
-        render_offset = { x = config.x_offset |> Int.to_float; y = config.y_offset |> Int.to_float };
+        render_offset =
+          { x = config.x_offset *. Config.scale.ghost; y = config.y_offset *. Config.scale.ghost };
       }
     in
     {
@@ -125,7 +129,7 @@ let init () : state =
     in
     let path =
       (* duplicated in Sprite.get_path *)
-      make_assets_path [ Show.asset_dir TILED; "platforms" ]
+      File.make_assets_path [ Show.asset_dir TILED; "platforms" ]
     in
 
     let check_file filename =
@@ -151,7 +155,7 @@ let init () : state =
   print_line "done loading platforms";
 
   let load_sound name =
-    let path = make_assets_path [ "audio"; "sound-effects"; fmt "%s.ogg" name ] in
+    let path = File.make_assets_path [ "audio"; "sound-effects"; fmt "%s.ogg" name ] in
     (name, Raylib.load_sound path)
   in
 
@@ -200,7 +204,9 @@ let init () : state =
   in
 
   let camera_target = Raylib.Vector2.create 0. 0. in
-  let camera = Tiled.create_camera_at camera_target 0. in
+  let camera =
+    Tiled.create_camera_at camera_target 0. Config.window.center.x Config.window.center.y
+  in
 
   print_line "done_initializing_state";
 
@@ -209,7 +215,7 @@ let init () : state =
 
   let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas : area_music =
     let music =
-      Raylib.load_music_stream (make_assets_path [ "audio"; "music"; fmt "%s.ogg" name ])
+      Raylib.load_music_stream (File.make_assets_path [ "audio"; "music"; fmt "%s.ogg" name ])
     in
     Raylib.set_music_volume music settings.music_volume;
     (* TODO this probably isn't a good way to do this
@@ -247,7 +253,7 @@ let init () : state =
         subject = GHOST;
         shake = 0.;
         update_instantly = false;
-        motion = SMOOTH (Config.window.camera_motion_x, Config.window.camera_motion_y);
+        motion = SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
       };
     screen_fade = None;
     frame = { idx = 0; dt = 0.; time = 0. };
@@ -309,8 +315,8 @@ let update_camera (game : game) (state : state) =
             | _ -> failwith "camera trigger needs CAMERA kind"
           in
           let x_bound =
-            let left = trigger.dest.pos.x +. Config.window.center_x in
-            let right = trigger.dest.pos.x +. trigger.dest.w -. Config.window.center_x in
+            let left = trigger.dest.pos.x +. Config.window.center.x in
+            let right = trigger.dest.pos.x +. trigger.dest.w -. Config.window.center.x in
             match x_config with
             | "gx" -> subject.x
             | ">x" -> Utils.bound left subject.x camera_state.room_bounds.max.x
@@ -319,8 +325,8 @@ let update_camera (game : game) (state : state) =
             | _ -> failwithf "invalid x_bound %s" x_config
           in
           let y_bound =
-            let top = trigger.dest.pos.y +. Config.window.center_y in
-            let bottom = trigger.dest.pos.y +. trigger.dest.h -. Config.window.center_y in
+            let top = trigger.dest.pos.y +. Config.window.center.y in
+            let bottom = trigger.dest.pos.y +. trigger.dest.h -. Config.window.center.y in
             match y_config with
             | "gy" -> subject.y
             | ">y" -> Utils.bound top subject.y camera_state.room_bounds.max.y
@@ -345,6 +351,7 @@ let update_camera (game : game) (state : state) =
         state.camera.update_instantly <- false;
         create_bounded_camera target_x target_y)
       else (
+        (* TODO adjust camera motion for fps *)
         let smooth_x, smooth_y =
           match state.camera.motion with
           | LINEAR speed ->
@@ -378,8 +385,8 @@ let update_camera (game : game) (state : state) =
 
         create_bounded_camera smooth_x smooth_y)
     in
-    let target = bounded_target () in
-    Tiled.create_camera_at target state.camera.shake
+    Tiled.create_camera_at (bounded_target ()) state.camera.shake Config.window.center.x
+      Config.window.center.y
   in
   state.camera.raylib <- new_camera;
   if state.camera.shake > 0. then
@@ -387,19 +394,19 @@ let update_camera (game : game) (state : state) =
   state
 
 (* return value is "keep spawned" *)
-let update_projectile p (frame_info : frame_info) : bool =
+let update_projectile p (state : state) : bool =
   let despawn_projectile =
     match p.despawn with
     | X_BOUNDS (min_x, max_x) ->
-      p.entity.dest.pos.x < min_x -. Config.window.center_x
-      || p.entity.dest.pos.x > max_x +. Config.window.center_x
-    | TIME_LEFT d -> frame_info.time -. p.spawned.at > d.seconds
+      p.entity.dest.pos.x < min_x -. Config.window.center.x
+      || p.entity.dest.pos.x > max_x +. Config.window.center.x
+    | TIME_LEFT d -> state.frame.time -. p.spawned.at > d.seconds
   in
   if despawn_projectile then
     false
   else (
-    Entity.apply_v frame_info.dt p.entity;
-    Sprite.advance_animation frame_info.time p.entity.sprite.texture p.entity.sprite;
+    Entity.apply_v state.frame.dt p.entity;
+    Sprite.advance_animation state.frame.time p.entity.sprite.texture p.entity.sprite;
     true)
 
 (* this is for inanimate objects like jug fragments or door levers *)
@@ -415,7 +422,7 @@ let update_environment (game : game) (state : state) =
     | Some lever_sprite -> ()
   in
   let update_projectile' projectile =
-    let keep_spawned = update_projectile projectile state.frame in
+    let keep_spawned = update_projectile projectile state in
     if keep_spawned then
       loose_projectiles := projectile :: !loose_projectiles
   in
@@ -549,7 +556,7 @@ let update_enemies (game : game) (state : state) =
   let update_enemy ((_, enemy) : enemy_id * enemy) =
     let unremoved_projectiles = ref [] in
     let update_projectile' (projectile : projectile) =
-      let keep_spawned = update_projectile projectile state.frame in
+      let keep_spawned = update_projectile projectile state in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
         if Player.is_vulnerable state game then (
@@ -663,7 +670,7 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
     List.iter maybe_damage_enemy game.room.enemies
   in
   let update_vengeful_spirit (projectile : projectile) =
-    let keep_spawned = update_projectile projectile state.frame in
+    let keep_spawned = update_projectile projectile state in
     if keep_spawned then
       damage_enemies projectile.spawned projectile.entity.sprite
     else
@@ -766,6 +773,9 @@ let tick (state : state) =
             let current_time_frames = state.frame.idx in
             let get_time frames =
               let ms' =
+                (* TODO this won't be consistent if a game is started with one fps, and loaded with a different one
+                   - need to convert and save hours/minutes/seconds/ms to save file, then use current fps to count up
+                *)
                 fmt "%.3f"
                   ((frames mod Config.window.fps |> Int.to_float)
                   /. (Config.window.fps |> Int.to_float))

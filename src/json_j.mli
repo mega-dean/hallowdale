@@ -66,8 +66,8 @@ type tile_layer = Json_t.tile_layer = {
 type texture_config = Json_t.texture_config = {
   count: int;
   duration: float;
-  x_offset: int;
-  y_offset: int
+  x_offset: float;
+  y_offset: float
 }
 
 type texture_configs = Json_t.texture_configs

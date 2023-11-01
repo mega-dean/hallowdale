@@ -63,8 +63,8 @@ type tile_layer = {
 type texture_config = {
   count: int;
   duration: float;
-  x_offset: int;
-  y_offset: int
+  x_offset: float;
+  y_offset: float
 }
 
 type texture_configs = (string * texture_config) list

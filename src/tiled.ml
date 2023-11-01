@@ -1,11 +1,6 @@
 open Types
 open Types.Utils
 
-let scale_vector x y = { x = x *. Config.scale.room; y = y *. Config.scale.room }
-
-let scale_rect x y w h =
-  { pos = scale_vector x y; w = w *. Config.scale.room; h = h *. Config.scale.room }
-
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
   match file_name with
@@ -42,6 +37,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "forgotten_f" -> (FORGOTTEN_CLASSROOMS, FORG_F)
   | "forgotten_g" -> (FORGOTTEN_CLASSROOMS, FORG_G)
   | "forgotten_h" -> (FORGOTTEN_CLASSROOMS, FORG_H)
+  | "forgotten_test" -> (FORGOTTEN_CLASSROOMS, FORG_TEST)
   | "infected_a" -> (INFECTED_CLASSROOMS, INF_A)
   | "infected_b" -> (INFECTED_CLASSROOMS, INF_B)
   | "infected_c" -> (INFECTED_CLASSROOMS, INF_C)
@@ -101,14 +97,15 @@ module Tile = struct
   let scale_dest_size ?(scale = 1.) w h =
     (w *. Config.scale.room *. scale, h *. Config.scale.room *. scale)
 
-  let dest_xy ?(parallax = None) offset_x offset_y tile_w tile_h idx width : float * float =
+  let dest_xy ?(scale = 1.) ?(parallax = None) offset_x offset_y tile_w tile_h idx width :
+      float * float =
     let scale_dest_position x y =
       match parallax with
       (* | None -> ((x *. Config.scale.room) +. offset_x, (y *. Config.scale.room) +. offset_y) *)
       | None -> ((x +. offset_x) *. Config.scale.room, (y +. offset_y) *. Config.scale.room)
       | Some frame_parallax ->
-        ( ((x +. offset_x) *. Config.scale.room) +. frame_parallax.x,
-          ((y +. offset_y) *. Config.scale.room) +. frame_parallax.y )
+        ( (((x +. offset_x) *. Config.scale.room) +. frame_parallax.x) *. scale,
+          (((y +. offset_y) *. Config.scale.room) +. frame_parallax.y) *. scale )
     in
     let x', y' = src_xy tile_w tile_h idx width in
     scale_dest_position x' y'
@@ -187,9 +184,10 @@ module Room = struct
     Tile.src_xy json_room.tile_w json_room.tile_h idx width
 
   (* TODO too many args, add labels *)
-  let dest_xy (json_room : t) ?(parallax_opt = None) offset_x offset_y idx width : float * float =
+  let dest_xy ?(scale = 1.) (json_room : t) ?(parallax_opt = None) offset_x offset_y idx width :
+      float * float =
     Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width
-      ~parallax:parallax_opt
+      ~parallax:parallax_opt ~scale
 
   let dest_wh (json_room : t) ?(scale = 1.) () : float * float =
     Tile.scale_dest_size json_room.tile_w json_room.tile_h ~scale
@@ -494,7 +492,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
       else (
         let full_path =
           (* kinda weird that this path ends up including "/tilesets/../tilesets/" *)
-          make_assets_path [ "tiled"; "tilesets"; source.source ]
+          File.make_assets_path [ "tiled"; "tilesets"; source.source ]
         in
         Some (File.read full_path |> Json_j.tileset_of_string))
     in
@@ -502,28 +500,28 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
     match parse_tileset source' with
     | None -> None
     | Some json ->
-      let image = load_tiled_asset (make_path [ "tilesets"; json.source ]) in
+      let image = load_tiled_asset (File.make_path [ "tilesets"; json.source ]) in
       Some (source'.source, { json; tiles = load_tiles room json image source' })
   in
   List.filter_map load_tileset room.tileset_sources
 
-let create_camera_at v (shake : float) =
+let create_camera_at v (shake : float) (center_x : float) (center_y : float) =
   let rotation = 0. in
   let zoom = 1. in
   let offset =
     if shake <= 0. then
-      Raylib.Vector2.(create Config.window.center_x Config.window.center_y)
+      Raylib.Vector2.(create center_x center_y)
     else (
       let angle = Random.float (3.14159 /. 2.) in
       let x_offset = shake *. cos angle *. 10. in
       let y_offset = shake *. sin angle *. 10. in
-      Raylib.Vector2.(
-        create (Config.window.center_x +. x_offset) (Config.window.center_y +. y_offset)))
+      Raylib.Vector2.(create (center_x +. x_offset) (center_y +. y_offset)))
   in
   Raylib.Camera2D.create offset v rotation zoom
 
 let init_world (path : string) : (room_id * room_location) list =
-  let full_path = make_assets_path [ "tiled"; "rooms"; fmt "%s.world" path ] in
+  let full_path = File.make_assets_path [ "tiled"; "rooms"; fmt "%s.world" path ] in
+  tmp "init_world with full_path: %s" full_path;
   let json_world : Json_t.world = File.read full_path |> Json_j.world_of_string in
   let filenames_in_world_file : str_set ref = ref StrSet.empty in
   let get_room_location (global_map : Json_t.global_map) : room_id * room_location =
@@ -545,7 +543,7 @@ let init_world (path : string) : (room_id * room_location) list =
     if Str.last_chars s 5 = ".json" then
       files_in_rooms_dir := StrSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
   in
-  File.ls (make_assets_path [ "tiled"; "rooms" ]) |> List.iter add_to_set;
+  File.ls (File.make_assets_path [ "tiled"; "rooms" ]) |> List.iter add_to_set;
   let filenames_without_files : str_set =
     StrSet.diff !filenames_in_world_file !files_in_rooms_dir
   in

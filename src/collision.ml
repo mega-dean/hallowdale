@@ -104,8 +104,10 @@ let between_rects (r1 : rect) (r2 : rect) : collision option =
         rect = cr;
         direction =
           (let feq a b =
-             (* Float.equal is too precise (causes issues for room transitions) *)
-             abs_float (a -. b) < 0.0001
+             (* Float.equal is too precise
+                - was previously comparing to 0.001, but that broke for small window_scale
+             *)
+             abs_float (a -. b) < 0.1
            in
            let up = feq r2.pos.y cr.pos.y in
            let down = feq (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in

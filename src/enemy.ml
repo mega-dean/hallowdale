@@ -195,7 +195,7 @@ let set_action (enemy : enemy) ?(current_duration_opt = None) pose_name' current
           enemy.entity.dest.pos.x <- x;
           enemy.entity.dest.pos.y <- 1340.)
         else (
-          let max_dx = Config.window.width - 300 |> Int.to_float in
+          let max_dx = Config.window.max_width -. 300. in
           let check_right () =
             if enemy.entity.dest.pos.x > get_json_prop enemy "wall_perch_left_x" +. max_dx then
               set_prop enemy "should_vanish" 1.
@@ -417,7 +417,7 @@ let maybe_take_damage
         { at = state.frame.time } enemy.history;
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
-    let texture_w, texture_h = get_scaled_texture_size damage_texture in
+    let texture_w, texture_h = get_scaled_texture_size Config.scale.room damage_texture in
     enemy.damage_sprites <-
       Sprite.spawn_particle
         (fmt "damage %s" (Show.enemy_name enemy))

@@ -4,18 +4,28 @@ module Rectangle = Raylib.Rectangle
 
 type text_config = Interaction.text_config
 
-(* these are just Raylib aliases now, but things like draw_entity could be here too *)
+let font_size = Config.scale.font_size
+let line_height = font_size |> Int.to_float
+let measure_text s = Raylib.measure_text s font_size
+
 module Draw = struct
   open Raylib
 
   let circle = draw_circle
   let circle_v = draw_circle_v
   let rect_lines = draw_rectangle_lines_ex
-  let rect = draw_rectangle
+
+  let rect (r : rect) (color : color) =
+    draw_rectangle_pro (r |> to_Rect) Zero.raylib_vector 0. color
 
   (* TODO rename this *)
   let image = draw_texture_pro
   let line_ex = draw_line_ex
+
+  let text ?(color = Color.white) (content : string) (pos : vector) =
+    draw_text_ex (get_font_default ()) content
+      (Raylib.Vector2.create pos.x pos.y)
+      (font_size |> Int.to_float) Config.text.spacing color
 end
 
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
@@ -41,14 +51,13 @@ let debug_rect' color (rect : rect) =
   let transparent_color =
     Raylib.Color.create (Raylib.Color.r color) (Raylib.Color.g color) (Raylib.Color.b color) 100
   in
-  Draw.rect (rect.pos.x |> Float.to_int) (rect.pos.y |> Float.to_int) (rect.w |> Float.to_int)
-    (rect.h |> Float.to_int) transparent_color
+  Draw.rect rect transparent_color
 
 let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
   debug_rect' (Color.create r g b a) rect
 
 let debug_xy x y = Draw.circle (x |> Float.to_int) (y |> Float.to_int) 4. Color.green
-let debug_v (v : Raylib.Vector2.t) = Draw.circle_v v 4. Color.green
+let debug_pos (pos : vector) = debug_xy pos.x pos.y
 
 (* TODO probably want to rename to be less similar to draw_texture_pro *)
 let draw_texture
@@ -129,19 +138,16 @@ let draw_tiled_layer
     (room : room)
     camera_x
     camera_y
-    frame_idx
+    state
     ?(tint = Color.create 255 255 255 255)
     ?(parallax = None)
     (layer : layer) : unit =
   let within_camera dest_x dest_y =
-    let camera_min_x, camera_max_x =
-      (camera_x -. 100., camera_x +. (Config.window.width + 100 |> Int.to_float))
-    in
-    let camera_min_y, camera_may_y =
-      (camera_y -. 100., camera_y +. (Config.window.height + 100 |> Int.to_float))
-    in
-    camera_min_x < dest_x && dest_x < camera_max_x && camera_min_y < dest_y && dest_y < camera_may_y
+    let camera_min_x, camera_max_x = (camera_x -. 100., camera_x +. Config.window.w +. 100.) in
+    let camera_min_y, camera_max_y = (camera_y -. 100., camera_y +. Config.window.h +. 100.) in
+    camera_min_x < dest_x && dest_x < camera_max_x && camera_min_y < dest_y && dest_y < camera_max_y
   in
+  let tile_count = ref 0 in
   if not layer.hidden then (
     let draw_stub (sprite, transformation_bits) =
       draw_texture ~tint sprite.texture sprite.dest transformation_bits
@@ -154,23 +160,21 @@ let draw_tiled_layer
             layer.json.offset_y idx layer.json.w
         in
         if within_camera x y then (
+          incr tile_count;
           let texture, transformations =
             let animation_offset =
               if layer.config.animated then
                 (* TODO this should probably just use an animated sprite instead of
                    this weird animation_offset for the tile gid
                 *)
-                4 * frame_idx / Config.window.fps mod 8
+                4 * state.frame.idx / Config.window.fps mod 8
               else
                 0
             in
             Tiled.Room.look_up_tile ~animation_offset room.json room.cache gid
           in
           let w, h = Tiled.Room.dest_wh room.json () in
-          let dest =
-            (* the Float.floor here fixes tile seams, and doesn't look noticeably jittery *)
-            { pos = { x = Float.floor x; y = Float.floor y }; w; h }
-          in
+          let dest = { pos = { x; y }; w; h } in
           (* PERF instead of drawing texture for each tile, use image_draw on the render buffer *)
           draw_texture ~tint:tint' texture dest transformations))
     in
@@ -180,10 +184,12 @@ let draw_tiled_layer
       draw_entity ~tint f
     in
     List.iteri render_data_tile layer.json.data;
+    (* if state.frame.idx mod 100 = 0 then
+     *   tmp "%s: drew %d tiles" layer.name !tile_count; *)
     List.iter draw_spawned_fragment layer.spawned_fragments;
     List.iter draw_stub layer.spawned_stub_sprites)
 
-let draw_tiles room camera_x camera_y frame_idx layers : unit =
+let draw_tiles room camera_x camera_y state layers : unit =
   let draw_parallax_layer (layer : layer) =
     let parallax =
       (* TODO maybe just pass in the parallax values and do this calculation somewhere like Tiled.Tile.dest_xy *)
@@ -193,26 +199,25 @@ let draw_tiles room camera_x camera_y frame_idx layers : unit =
           y = camera_y *. (1. -. layer.json.parallax_y);
         }
     in
-    draw_tiled_layer
-      ~debug:(layer.name = "bg-iso-walls" && frame_idx mod 1440 = 0)
-      ~tint:room.area.tint ~parallax room camera_x camera_y frame_idx layer
+    draw_tiled_layer ~tint:room.area.tint ~parallax ~debug:(layer.name = "floors2") room camera_x
+      camera_y state layer
   in
   List.iter draw_parallax_layer layers
 
-let draw_solid_tiles room camera_x camera_y frame_idx : unit =
+let draw_solid_tiles room camera_x camera_y state : unit =
   List.iter
-    (draw_tiled_layer room camera_x camera_y frame_idx)
+    (draw_tiled_layer room camera_x camera_y state)
     (List.filter (fun layer -> layer.config.collides_with_ghost || layer.config.hazard) room.layers)
 
-let draw_bg_tiles room camera_x camera_y frame_idx : unit =
-  draw_tiles room camera_x camera_y frame_idx
+let draw_bg_tiles room camera_x camera_y state : unit =
+  draw_tiles room camera_x camera_y state
     (List.filter (fun (layer : layer) -> layer.config.render.bg) room.layers)
 
-let draw_fg_tiles room camera_x camera_y frame_idx : unit =
-  draw_tiles room camera_x camera_y frame_idx
+let draw_fg_tiles room camera_x camera_y state : unit =
+  draw_tiles room camera_x camera_y state
     (List.filter (fun (layer : layer) -> layer.config.render.fg) room.layers)
 
-let draw_floating_platforms (room : room) camera_x camera_y frame_idx : unit =
+let draw_floating_platforms (room : room) state : unit =
   List.iter
     (fun (platform : platform) ->
       (* not sure if platforms should take the tint of the current area, since it makes them stand out from the bg less *)
@@ -231,7 +236,7 @@ type line_segment = {
 
 type line = {
   mutable segments : line_segment list;
-  mutable w : int;
+  mutable w : float;
 }
 
 let show_segment (line_segment : line_segment) : string =
@@ -241,9 +246,6 @@ let show_segment (line_segment : line_segment) : string =
     fmt "(color)%s" line_segment.content
 
 let show_line (line : line) : string = String.concat " | " (List.map show_segment line.segments)
-let font_size = Config.scale.font_size
-let line_height = font_size |> Int.to_float
-let measure_text s = Raylib.measure_text s font_size
 
 (* TODO this works ok for two kinds of interaction text input:
    - one single long line (that gets wrapped by this fn)
@@ -251,25 +253,16 @@ let measure_text s = Raylib.measure_text s font_size
 
    using several long lines sets the vertical spacing incorrectly so lines overlap each other
 *)
-let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : string list) :
-    line list =
+let get_lines ?(_debug = false) (w : float) (words : string list) : line list =
+  let measure s : float = Raylib.measure_text s font_size |> Int.to_float in
   let new_segment ?(color = Color.raywhite) content content_w line_w =
-    {
-      content;
-      dest =
-        {
-          pos = { x = line_w |> Int.to_float; y = 0. };
-          w = content_w |> Int.to_float;
-          h = line_height;
-        };
-      color;
-    }
+    { content; dest = { pos = { x = line_w; y = 0. }; w = content_w; h = line_height }; color }
   in
-  let empty_line () = { segments = []; w = 0 } in
+  let empty_line () = { segments = []; w = 0. } in
 
   let add_segment_to_last_line lines (segment : line_segment) : line list =
     let current_line = List.nth lines (List.length lines - 1) in
-    current_line.w <- current_line.w + measure segment.content;
+    current_line.w <- current_line.w +. measure segment.content;
     (* segments are appended in the correct order, so they never need to be reversed *)
     current_line.segments <- current_line.segments @ [ segment ];
     lines
@@ -279,17 +272,19 @@ let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : str
     add_segment_to_last_line lines segment @ [ empty_line () ]
   in
 
-  let add_word_to_segment (first_segment_in_line : bool) lines segment word segment_w word_w =
+  let add_word_to_segment
+      (first_segment_in_line : bool)
+      lines
+      segment
+      word
+      (segment_w : float)
+      (word_w : float) =
     let segments =
       if segment.content = "" && first_segment_in_line then
-        {
-          segment with
-          content = word;
-          dest = { segment.dest with w = segment_w + word_w |> Int.to_float };
-        }
+        { segment with content = word; dest = { segment.dest with w = segment_w +. word_w } }
       else (
         let content = fmt "%s %s" segment.content word in
-        { segment with content; dest = { segment.dest with w = measure content |> Int.to_float } })
+        { segment with content; dest = { segment.dest with w = measure content } })
     in
     (lines, segments)
   in
@@ -299,7 +294,8 @@ let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : str
     let segment_w = measure segment.content in
     let current_line = List.nth lines (List.length lines - 1) in
     let change_color color =
-      (add_segment_to_last_line lines segment, new_segment ~color "" 0 (segment_w + current_line.w))
+      ( add_segment_to_last_line lines segment,
+        new_segment ~color "" 0. (segment_w +. current_line.w) )
     in
     match word with
     | "{{white}}" -> change_color Raylib.Color.raywhite
@@ -318,8 +314,9 @@ let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : str
     | "{{darkpurple}}" -> change_color Raylib.Color.darkpurple
     | "{{darkpink}}" -> change_color (Raylib.Color.create 146 24 118 255)
     | _ ->
-      if word_w + segment_w + current_line.w > w then
-        (start_new_line lines segment, new_segment ~color:segment.color word word_w 0)
+      (* subtracting 25 because archives text  *)
+      if word_w +. segment_w +. current_line.w > w -. 25. then
+        (start_new_line lines segment, new_segment ~color:segment.color word word_w 0.)
       else
         add_word_to_segment
           (List.length current_line.segments = 0)
@@ -333,38 +330,46 @@ let get_lines ?(_debug = false) (measure : string -> int) (w : int) (words : str
       let next_lines, next_segment = add_word lines segment (List.hd rest) in
       iter next_lines next_segment (List.tl rest))
   in
-  let first_line : line = { segments = []; w = 0 } in
-  iter [ first_line ] (new_segment "" 0 0) words
+  let first_line : line = { segments = []; w = 0. } in
+  iter [ first_line ] (new_segment "" 0. 0.) words
 
 let tick (state : state) =
   let camera_x, camera_y =
-    ( Raylib.Vector2.x (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_x,
-      Raylib.Vector2.y (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center_y )
+    (* the Raylib coordinates are the center of the screen, so this is the top-left corner of
+       the screen
+    *)
+    ( Raylib.Vector2.x (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center.x,
+      Raylib.Vector2.y (Raylib.Camera2D.target state.camera.raylib) -. Config.window.center.y )
   in
-  let text_box_width (config : text_config) = Config.window.width - (2 * config.margin_x) in
+  let text_box_width (config : text_config) = Config.window.w -. (2. *. config.margin_x) in
 
   let draw_screen_fade alpha =
-    Raylib.draw_rectangle
-      (camera_x -. 5. |> Float.to_int)
-      (camera_y -. 5. |> Float.to_int)
-      (Config.window.width + 10) (Config.window.height + 10) (Color.create 0 0 0 alpha)
+    Draw.rect
+      {
+        pos = { x = camera_x -. 5.; y = camera_y -. 5. };
+        w = Config.window.w +. 10.;
+        h = Config.window.h +. 10.;
+      }
+      (Color.create 0 0 0 alpha)
   in
 
   let draw_text_bg_box ?(color = Color.create 0 0 0 200) (config : text_config) =
-    let w = Config.window.width - (2 * config.margin_x) in
-    let h = Config.window.height - (config.margin_y + config.margin_y_bottom) in
-    Draw.rect
-      ((camera_x |> Float.to_int) + config.margin_x)
-      ((camera_y |> Float.to_int) + config.margin_y)
-      w h color
+    let w = Config.window.w -. (2. *. config.margin_x) in
+    let h = Config.window.h -. (config.margin_y_top +. config.margin_y_bottom) in
+    let dest =
+      { pos = { x = camera_x +. config.margin_x; y = camera_y +. config.margin_y_top }; w; h }
+    in
+    Draw.rect dest color
   in
 
   let display_paragraph
       ?(in_menu = false)
       (config : text_config)
-      y_offset
+      (y_offset : float)
       paragraph_idx
       (paragraph : string) =
+    if state.frame.idx mod 100 = 0 then
+      itmp "display paragraph config:\n%s" (Show.text_config config);
     let is_steel_sole, word_separator =
       match state.game_context with
       | IN_PROGRESS game -> (
@@ -383,8 +388,8 @@ let tick (state : state) =
     in
     let display_line (config : text_config) y_offset line_idx (line : line) =
       let display_segment (segment : line_segment) =
-        let centered_x =
-          if config.centered then (text_box_width config - line.w) / 2 else config.padding_x
+        let padding_x =
+          if config.centered then (text_box_width config -. line.w) /. 2. else config.padding.x
         in
         let line_spacing = line_height *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
@@ -399,89 +404,65 @@ let tick (state : state) =
         in
         let color = if is_steel_sole then Raylib.Color.purple else segment.color in
 
-        Raylib.draw_text content
-          ((segment.dest.pos.x +. camera_x |> Float.to_int) + config.margin_x + centered_x)
-          ((dest_y |> Float.to_int) + (line_idx * font_size))
-          font_size color
+        let pos =
+          {
+            x = segment.dest.pos.x +. camera_x +. config.margin_x +. padding_x;
+            y = dest_y +. (line_idx * font_size |> Int.to_float);
+          }
+        in
+
+        Draw.text ~color content pos
       in
       List.iter display_segment line.segments
     in
 
-    let paragraph_offset = paragraph_idx * Config.scale.paragraph_spacing in
-    let y_offset' =
-      paragraph_offset + config.margin_y + config.padding_y + y_offset |> Int.to_float
-    in
+    let paragraph_offset = paragraph_idx * Config.scale.paragraph_spacing |> Int.to_float in
+    let y_offset' = paragraph_offset +. config.margin_y_top +. config.padding.y +. y_offset in
     let lines =
-      let w = text_box_width config - (2 * config.padding_x) in
-      get_lines measure_text w (String.split_on_char word_separator paragraph)
+      let w = text_box_width config -. (2. *. config.padding.x) in
+      get_lines w (String.split_on_char word_separator paragraph)
     in
     List.iteri (display_line config y_offset') lines
   in
 
-  (* PERF store the result of this in Interaction.t so it doesn't need to be computed every frame *)
   let maybe_draw_text (game : game option) (interaction_text : Interaction.text_kind option) =
     (* TODO add offset_x based on ghost.id, and make ability-outlines.png a grid of images *)
-    let draw_outline ?(offset_y = 0) (ability_text : Interaction.ability_text) =
+    let draw_outline ?(offset_y = 0.) (ability_text : Interaction.ability_text) =
       let texture =
         let animation_src = STILL ability_text.outline_src in
         { state.global.textures.ability_outlines with animation_src }
       in
       let w = ability_text.outline_src.w *. Config.scale.room in
       let h = ability_text.outline_src.h *. Config.scale.room in
-      let x = camera_x +. Config.window.center_x -. (w /. 2.) in
-      let y = camera_y +. Config.window.center_y -. (h /. 2.) -. (offset_y |> Int.to_float) in
+      let x = camera_x +. Config.window.center.x -. (w /. 2.) in
+      let y = camera_y +. Config.window.center.y -. (h /. 2.) -. offset_y in
       let dest = { pos = { x; y }; w; h } in
       draw_texture texture dest 0
     in
+    let base_config = Config.text.base_config in
+    let ability_config = { base_config with centered = true } in
 
-    let base_config : text_config =
-      {
-        margin_x = 50;
-        margin_y = 20;
-        margin_y_bottom = 20;
-        outline_offset_y = Config.window.height / 4;
-        padding_x = 50;
-        padding_y = 50;
-        centered = true;
-      }
-    in
-
-    (* TODO probably worth moving all these magic numbers into a config *)
     match interaction_text with
     | None -> ()
     | Some (ABILITY ability_text) ->
       draw_screen_fade 160;
-      draw_text_bg_box base_config;
-      draw_outline ~offset_y:base_config.outline_offset_y ability_text;
+      draw_text_bg_box ability_config;
+      draw_outline ~offset_y:Config.text.outline_offset_y ability_text;
 
       List.iteri
-        (display_paragraph base_config (base_config.outline_offset_y + 100))
+        (display_paragraph ability_config (Config.text.outline_offset_y +. Config.text.outline_h))
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
-      let config : text_config = { base_config with outline_offset_y = 50 } in
-
       draw_screen_fade 160;
-      draw_text_bg_box config;
-      draw_outline ~offset_y:config.outline_offset_y ability_text;
+      draw_text_bg_box ability_config;
+      draw_outline ~offset_y:Config.text.focus_outline_offset_y ability_text;
 
-      (* lots of hardcoded stuff in here, but I'm not sure if this will be used besides the focus-info text *)
-      let top_y_offset, bottom_y_offset = (0, 400) in
-      List.iteri (display_paragraph config top_y_offset) ability_text.top_paragraphs;
-      List.iteri (display_paragraph config bottom_y_offset) ability_text.bottom_paragraphs
+      List.iteri (display_paragraph ability_config 0.) ability_text.top_paragraphs;
+      List.iteri
+        (display_paragraph ability_config Config.text.focus_outline_bottom_offset_y)
+        ability_text.bottom_paragraphs
     | Some (DIALOGUE (speaker_name, text')) ->
-      let config : text_config =
-        {
-          margin_x = 250;
-          margin_y = 50;
-          margin_y_bottom =
-            (* this allows for ~4 lines of dialogue, but the bottom one is pretty close so < 3 lines works best *)
-            450;
-          outline_offset_y = 0;
-          padding_x = 30;
-          padding_y = 30;
-          centered = false;
-        }
-      in
+      let config : text_config = Config.text.dialogue_config in
       draw_text_bg_box config;
       let content = List.hd text'.content in
       if List.length (List.tl text'.content) > 0 then
@@ -505,7 +486,7 @@ let tick (state : state) =
             "{{maroon}}"
           | _ -> failwithf "unknown speaker: %s" speaker_name
         in
-        display_paragraph config 0 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name content))
+        display_paragraph config 0. 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name content))
     | Some (PLAIN text') ->
       let margin_y_bottom =
         let tall_text =
@@ -513,75 +494,52 @@ let tick (state : state) =
           String.length (List.nth text'.content (List.length text'.content - 1)) > 700
         in
         if tall_text then
-          50
+          Config.text.tall_margin_y_bottom
         else
-          350
+          Config.text.short_margin_y_bottom
       in
-      let config : text_config =
-        {
-          base_config with
-          margin_x = 150;
-          margin_y = 50;
-          margin_y_bottom;
-          outline_offset_y = 0;
-          centered = false;
-        }
-      in
+      let config : text_config = Config.get_plain_text_config margin_y_bottom in
       draw_text_bg_box config;
       if text'.increases_health then (
+        (* TODO may need to adjust this for scaled windows *)
         let increase_health_text_margin_y =
           (* print the line at the bottom of the text box *)
-          Config.window.height - config.margin_y_bottom - (2 * config.padding_y)
+          Config.window.h -. config.margin_y_bottom -. (2. *. config.padding.y)
         in
-        List.iteri (display_paragraph config 0) text'.content;
-        List.iteri
-          (display_paragraph { config with margin_y = increase_health_text_margin_y } 0)
-          [ "{{green}} max health increased by one" ])
+        List.iteri (display_paragraph config 0.) text'.content;
+        display_paragraph
+          { config with margin_y_top = increase_health_text_margin_y }
+          0. 0 "{{green}} max health increased by one")
       else
-        List.iteri (display_paragraph config 0) text'.content
+        List.iteri (display_paragraph config 0.) text'.content
     | Some (MENU (menu, save_slots)) ->
-      let margin_x, margin_y =
-        match List.nth menu.choices 0 with
-        (* TODO probably need these to be based on font size *)
-        | PAUSE_MENU _ -> (250, 220)
-        | SELECT_GAME_MODE _ -> (250, 220)
-        | CHANGE_WEAPON_MENU _ -> (150, 50)
-        | CHANGE_GHOST_MENU _ -> (150, 50)
-        | MAIN_MENU _ -> (50, 360)
-        | SETTINGS_MENU _ -> (250, 220)
-        | CHANGE_AUDIO_SETTING _ -> (250, 220)
-        | SAVE_FILES _ -> (50, 200)
+      let margin_x, margin_y_top = Config.get_text_margins (List.nth menu.choices 0) in
+      let margin_y_bottom = margin_y_top in
+      let config : text_config =
+        Config.get_menu_text_config margin_x margin_y_top margin_y_bottom
       in
-
-      let margin_y_bottom = margin_y in
-      let config : text_config = { base_config with margin_x; margin_y; margin_y_bottom } in
-      draw_text_bg_box config;
       let is_new_game (_, b) = b in
-
-      (match save_slots with
-      | Some save_slots' ->
-        let show_save_slot idx ((slot, is_new_game) : Json_t.save_file * bool) =
-          let continue =
-            match slot.game_mode with
-            | "Classic" -> "Continue"
-            | "Steel Sole" -> "Continue (Steel Sole)"
-            | "Demo" -> "Continue (Demo)"
-            | _ -> failwith "bad game mode"
+      let menu_choices =
+        match save_slots with
+        | None -> List.map (Show.menu_choice game) menu.choices
+        | Some save_slots' ->
+          let show_save_slot idx ((slot, is_new_game) : Json_t.save_file * bool) =
+            let continue =
+              match slot.game_mode with
+              | "Classic" -> "Continue"
+              | "Steel Sole" -> "Continue (Steel Sole)"
+              | "Demo" -> "Continue (Demo)"
+              | _ -> failwith "bad game mode"
+            in
+            fmt "save %d: %s" (idx + 1) (if is_new_game then "New Game" else continue)
           in
-          fmt "save %d: %s" (idx + 1) (if is_new_game then "New Game" else continue)
-        in
-        let save_slot_choices =
           List.mapi show_save_slot
             [ save_slots'.slot_1; save_slots'.slot_2; save_slots'.slot_3; save_slots'.slot_4 ]
           @ [ Show.save_files_choice BACK ]
-        in
-        List.iteri (display_paragraph ~in_menu:true config 0) save_slot_choices
-      | None ->
-        List.iteri
-          (display_paragraph ~in_menu:true config 0)
-          (List.map (Show.menu_choice game) menu.choices));
-      (* TODO better cursor for current item *)
-      display_paragraph ~in_menu:true config 0 menu.current_choice_idx
+      in
+      draw_text_bg_box config;
+      List.iteri (display_paragraph ~in_menu:true config 0.) menu_choices;
+      display_paragraph ~in_menu:true config 0. menu.current_choice_idx
         "*                                           *"
   in
 
@@ -590,10 +548,7 @@ let tick (state : state) =
     | None -> ()
     | Some tt ->
       let dest =
-        {
-          x = camera_x;
-          y = camera_y +. ((Config.window.height |> Int.to_float) -. (font_size |> Int.to_float));
-        }
+        { x = camera_x; y = camera_y +. (Config.window.h -. (font_size |> Int.to_float)) }
       in
       let alpha =
         match tt.visible with
@@ -611,20 +566,10 @@ let tick (state : state) =
         failwithf "dream nail text is too long: %s" tt.content;
 
       (* this config works pretty well for text that is one or two lines long *)
-      let config : text_config =
-        {
-          margin_x = 150;
-          margin_y = 50;
-          margin_y_bottom = Config.window.height * 3 / 4;
-          outline_offset_y = 0;
-          padding_x = 50;
-          padding_y = 50;
-          centered = true;
-        }
-      in
+      let config : text_config = Config.text.floating_config in
 
       draw_text_bg_box ~color:(Color.create 0 0 0 100) config;
-      List.iteri (display_paragraph config 0) [ tt.content ]
+      display_paragraph config 0. 0 tt.content
   in
 
   let show_main_menu menu save_slots =
@@ -632,15 +577,16 @@ let tick (state : state) =
     (* TODO bg image for main menu *)
     Raylib.clear_background (Color.create 0 0 0 255);
     Raylib.begin_mode_2d state.camera.raylib;
-    let w, h = get_scaled_texture_size state.global.textures.main_menu in
-    let x' = ((Config.window.width |> Int.to_float) -. w) /. 2. in
-    let x, y = (camera_x +. x', camera_y +. 50.) in
+    let w, h = get_scaled_texture_size Config.scale.room state.global.textures.main_menu in
+    let x' = (Config.window.w -. w) /. 2. in
+    let x, y = (camera_x +. x', camera_y +. Config.other.main_menu_y_offset) in
     let dest = { pos = { x; y }; w; h } in
     draw_texture state.global.textures.main_menu dest 0;
     maybe_draw_text None (Some (MENU (menu, save_slots)));
-    Raylib.draw_fps
-      ((camera_x |> Float.to_int) + Config.window.width - 100)
-      (camera_y |> Float.to_int);
+    if Env.development then
+      Raylib.draw_fps
+        (camera_x +. Config.window.w -. 100. |> Float.to_int)
+        (camera_y |> Float.to_int);
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
     state
@@ -658,11 +604,7 @@ let tick (state : state) =
     in
     let draw_world_map () =
       let dest =
-        {
-          pos = { x = camera_x; y = camera_y };
-          w = Config.window.width |> Int.to_float;
-          h = Config.window.height |> Int.to_float;
-        }
+        { pos = { x = camera_x; y = camera_y }; w = Config.window.w; h = Config.window.h }
       in
       draw_texture state.global.textures.world_map dest 0
     in
@@ -720,14 +662,20 @@ let tick (state : state) =
         let s = game.player.ghost.entity.sprite in
         if game.player.ghost.entity.sprite.facing_right then
           Draw.rect
-            (s.dest.pos.x +. s.dest.w |> Float.to_int)
-            (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
-            (s.dest.w |> Float.to_int) 3 Color.green
+            {
+              pos = { x = s.dest.pos.x +. s.dest.w; y = s.dest.pos.y +. (s.dest.h /. 2.) };
+              w = s.dest.w;
+              h = 3.;
+            }
+            Color.green
         else
           Draw.rect
-            (s.dest.pos.x -. s.dest.w |> Float.to_int)
-            (s.dest.pos.y +. (s.dest.h /. 2.) |> Float.to_int)
-            (s.dest.w |> Float.to_int) 4 Color.green;
+            {
+              pos = { x = s.dest.pos.x -. s.dest.w; y = s.dest.pos.y +. (s.dest.h /. 2.) };
+              w = s.dest.w;
+              h = 3.;
+            }
+            Color.green;
         draw_velocity game.player.ghost.entity;
         (match game.player.ghost.entity.current_floor with
         | None -> ()
@@ -748,17 +696,16 @@ let tick (state : state) =
     in
 
     let draw_frame_inputs () =
+      (* TODO window scale *)
       let button = 40. in
       let padding = 10. in
       let inputs_container =
         {
-          x =
-            camera_x +. (Config.window.width |> Int.to_float) -. ((8. *. button) +. (10. *. padding));
-          y =
-            camera_y +. (Config.window.height |> Int.to_float) -. ((2. *. button) +. (3. *. padding));
+          x = camera_x +. Config.window.w -. ((8. *. button) +. (10. *. padding));
+          y = camera_y +. Config.window.h -. ((2. *. button) +. (3. *. padding));
         }
       in
-      let draw_input (frame_input : frame_input) label dest =
+      let draw_input' (frame_input : frame_input) label dest =
         Raylib.draw_text label
           (dest.pos.x +. 5. |> Float.to_int)
           (dest.pos.y +. (button /. 4.) |> Float.to_int)
@@ -768,8 +715,8 @@ let tick (state : state) =
         if frame_input.down then
           debug_rect ~r:0 ~g:200 ~b:200 dest
       in
-      let draw_input' row_idx idx (label, input) =
-        draw_input input label
+      let draw_input row_idx idx (label, input) =
+        draw_input' input label
           {
             pos =
               {
@@ -784,7 +731,7 @@ let tick (state : state) =
           }
       in
       let draw_input_at label input x y =
-        draw_input input label
+        draw_input' input label
           {
             pos = { x = inputs_container.x +. x; y = inputs_container.y +. y };
             w = button;
@@ -816,14 +763,14 @@ let tick (state : state) =
         ((button +. padding) *. 7.)
         ((2. *. padding) +. button);
 
-      List.iteri (draw_input' 0.)
+      List.iteri (draw_input 0.)
         [
           ("focus", state.frame_inputs.focus);
           ("c-dash", state.frame_inputs.c_dash);
           ("d-nail", state.frame_inputs.dream_nail);
           ("cast", state.frame_inputs.cast);
         ];
-      List.iteri (draw_input' 1.)
+      List.iteri (draw_input 1.)
         [
           ("jump", state.frame_inputs.jump);
           ("nail", state.frame_inputs.nail);
@@ -867,24 +814,25 @@ let tick (state : state) =
 
     let draw_ghost_head ~tint ghost =
       let head_dest =
-        (* these hardcoded numbers assume every ghost head image is 40px by 40px, with the neck at (20, 30) *)
-        let head_w, head_h = (40., 40.) in
-        let neck_x, neck_y = (20., 26.) in
         {
-          pos = { x = ghost.entity.dest.pos.x -. neck_x; y = ghost.entity.dest.pos.y -. neck_y };
-          w = head_w *. Config.scale.ghost;
-          h = head_h *. Config.scale.ghost;
+          pos =
+            {
+              x = ghost.entity.dest.pos.x -. (Config.ghost.neck_x -. Config.ghost.entity_neck_x);
+              y = ghost.entity.dest.pos.y -. (Config.ghost.neck_y -. Config.ghost.entity_neck_y);
+            };
+          w = Config.ghost.head_w;
+          h = Config.ghost.head_h;
         }
       in
       draw_texture ghost.head head_dest (if ghost.entity.sprite.facing_right then 0 else 4)
     in
 
     let ghost_render_offset ghost =
-      let head_h =
-        (* head images are 40px tall, but the bottom of the neck is at (20,30) so this only needs to be 30 *)
-        30.
-      in
-      Some { x = ghost.body_render_offset.x; y = ghost.body_render_offset.y +. head_h }
+      Some
+        {
+          x = Config.ghost.entity_neck_x -. ghost.body_render_offset.x;
+          y = Config.ghost.entity_neck_y -. ghost.body_render_offset.y;
+        }
     in
 
     let draw_party_ghosts (ghosts_by_id : party_ghost list) =
@@ -974,7 +922,7 @@ let tick (state : state) =
     in
 
     let draw_hud () =
-      let padding = 8. in
+      let padding = Config.other.hud_padding in
       let energon_pod_image = game.player.shared_textures.energon_pod.image in
       let pod_src_w, pod_src_h =
         ( Raylib.Texture.width energon_pod_image / 2 |> Int.to_float,
@@ -1043,21 +991,20 @@ let tick (state : state) =
     in
 
     Raylib.begin_drawing ();
-    (* Raylib.clear_background (Color.create 128 128 128 255); *)
     Raylib.clear_background game.room.area.bg_color;
     Raylib.begin_mode_2d state.camera.raylib;
     draw_skybox game.room.area.tint;
-    draw_bg_tiles game.room camera_x camera_y state.frame.idx;
+    draw_bg_tiles game.room camera_x camera_y state;
     draw_levers ();
     draw_npcs game.room.npcs;
-    draw_solid_tiles game.room camera_x camera_y state.frame.idx;
+    draw_solid_tiles game.room camera_x camera_y state;
     draw_party_ghosts game.party;
     draw_player game.player;
     draw_enemies game.room.enemies;
-    draw_floating_platforms game.room camera_x camera_y state.frame.idx;
+    draw_floating_platforms game.room state.frame.idx;
     draw_object_trigger_indicators ();
     draw_loose_projectiles ();
-    draw_fg_tiles game.room camera_x camera_y state.frame.idx;
+    draw_fg_tiles game.room camera_x camera_y state;
     draw_hud ();
     (match state.screen_fade with
     | None -> ()
@@ -1072,9 +1019,8 @@ let tick (state : state) =
          draw_world_map ();
          let draw_black_rect rect =
            Draw.rect
-             (rect.pos.x +. camera_x |> Float.to_int)
-             (rect.pos.y +. camera_y |> Float.to_int)
-             (rect.w |> Float.to_int) (rect.h |> Float.to_int) Raylib.Color.black
+             { rect with pos = { x = rect.pos.x +. camera_x; y = rect.pos.y +. camera_y } }
+             Raylib.Color.black
          in
 
          List.iter draw_black_rect world_map.black_rects;
@@ -1086,9 +1032,10 @@ let tick (state : state) =
              radius (ghost_color r g b speed)
          in
          let alpha =
-           let m = state.frame.idx * 5 mod 510 in
-           if m > 255 then
-             -m + 510
+           let n = Config.window.fps * 3 in
+           let m = state.frame.idx * 5 mod n in
+           if m > n / 2 then
+             -m + n
            else
              m
          in
@@ -1099,14 +1046,16 @@ let tick (state : state) =
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
-    if development then
+    if Env.development then (
       Raylib.draw_fps
-        ((camera_x |> Float.to_int) + Config.window.width - 100)
+        (camera_x +. Config.window.w -. 100. |> Float.to_int)
         (camera_y |> Float.to_int);
-    if state.debug.enabled then
-      draw_debug_info ();
-    if state.debug.show_frame_inputs then
-      draw_frame_inputs ();
+      if state.debug.enabled then
+        draw_debug_info ();
+      if state.debug.show_frame_inputs then
+        draw_frame_inputs ());
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
+    if state.frame.idx mod 100 = 0 then
+      itmp "-----------------------------------";
     state

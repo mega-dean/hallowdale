@@ -184,6 +184,7 @@ let room_id id =
   | CPU_I -> "CPU_i"
   | CPU_K -> "CPU_k"
   | CPU_M -> "CPU_m"
+  | FORG_TEST -> "FORG_test"
   | FORG_A -> "FORG_a"
   | FORG_B -> "FORG_b"
   | FORG_C -> "FORG_c"
@@ -247,6 +248,7 @@ let room_id_filename id =
   | CPU_I -> "i"
   | CPU_K -> "k"
   | CPU_M -> "m"
+  | FORG_TEST -> "test"
   | FORG_A -> "a"
   | FORG_B -> "b"
   | FORG_C -> "c"
@@ -441,3 +443,8 @@ let menu_choice (game : game option) (choice : menu_choice) =
   | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice game choice
   | SETTINGS_MENU choice -> settings_menu_choice choice
   | CHANGE_AUDIO_SETTING (setting, choice) -> change_setting setting choice
+
+let text_config (config : Interaction.text_config) : string =
+  fmt "padding : %s;\nmargin_x : %f;\nmargin_y_top : %f;\nmargin_y_bottom : %f;\ncentered : %b;\n"
+    (vector config.padding) config.margin_x config.margin_y_top config.margin_y_bottom
+    config.centered

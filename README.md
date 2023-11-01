@@ -36,8 +36,7 @@ Untested - please create an Issue if you run into any problems.
 #### Classic
 
 This is like normal Hollow Knight gameplay, and has cutscenes that follow the episode "Geothermal
-Escapism". It is disabled until the map can be updated to handle both game modes (currently it's
-just a bunch of purple pen jars everywhere).
+Escapism". This game mode is disabled until the map can be updated to handle both game modes.
 
 #### Steel Sole
 
@@ -47,7 +46,8 @@ abilities/lore are removed, so the only objective is to collect all 120 purple p
 
 C-dashing makes this game mode much easier, so for an additional challenge you can try to traverse
 the map without them. All of the purple pens can be collected without using them, except for some in
-the Computer Wing area, so c-dashes that are started in that area aren't counted.
+the Computer Wing area, so c-dashes that are started in that area are allowed and not counted towards
+the total.
 
 #### Demo
 

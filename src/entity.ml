@@ -415,8 +415,8 @@ let to_texture_config asset_dir character_name ((pose_name, json) : string * Jso
   {
     count = json.count;
     duration = { seconds = json.duration };
-    x_offset = json.x_offset |> Int.to_float;
-    y_offset = json.y_offset |> Int.to_float;
+    x_offset = json.x_offset;
+    y_offset = json.y_offset;
     path = { asset_dir; character_name; pose_name };
   }
 
@@ -435,7 +435,9 @@ let create_from_textures
     List.nth texture_configs 0
   in
   let validate_configs_are_complete () =
-    let get_filenames asset_dir char_name = File.ls (make_assets_path [ asset_dir; char_name ]) in
+    let get_filenames asset_dir char_name =
+      File.ls (File.make_assets_path [ asset_dir; char_name ])
+    in
     let config_names =
       texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
     in
