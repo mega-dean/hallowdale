@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let get_spikes (platform : platform) game =

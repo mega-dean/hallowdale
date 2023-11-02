@@ -61,6 +61,7 @@ let window : window_config =
     144
     (* 60 *)
   in
+  let fps_scale = (fps |> Int.to_float) /. 144. in
   if fps < 60 then
     failwith
       (Printf.sprintf "got invalid fps %d, needs to be at least 60 to avoid dropping inputs" fps);
@@ -74,7 +75,7 @@ let window : window_config =
     min_width;
     min_height;
     fps;
-    camera_motion = { x = 60.; y = 12. };
+    camera_motion = { x = 60. *. fps_scale; y = 12. *. fps_scale };
   }
 
 type platform_config = {

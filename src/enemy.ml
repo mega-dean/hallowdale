@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let is_dead (enemy : enemy) : bool = enemy.health.current <= 0
@@ -67,7 +68,7 @@ let get_prop ?(default = None) key props : float =
   | Some v, _ -> v
 
 let get_bool_prop (enemy : enemy) prop : bool = get_prop ~default:(Some 0.) prop enemy.props = 1.
-let set_prop (e : enemy) key new_val = e.props <- Utils.replace_assoc key new_val e.props
+let set_prop (e : enemy) key new_val = e.props <- List.replace_assoc key new_val e.props
 
 let get_json_prop (e : enemy) key : float =
   match List.assoc_opt key e.json.props with
@@ -270,7 +271,7 @@ let continue_action
 
 (* this is for logging arbitrary actions that don't have to be a renderable pose *)
 let log_action (enemy : enemy) (action_name : string) (current : float) =
-  enemy.history <- Utils.replace_assoc (PERFORMED action_name) { at = current } enemy.history
+  enemy.history <- List.replace_assoc (PERFORMED action_name) { at = current } enemy.history
 
 (* this is only for poses that have a corresponding config and .png *)
 let start_and_log_action (enemy : enemy) (action_name : string) (current : float) current_props =
@@ -312,8 +313,8 @@ let set_frog_action (enemy : enemy) action (room : room) current_time current_pr
         let v' = 500. in
         (-1. *. v', v')
       in
-      let larger v = Utils.bound min_v (v +. 5. +. Random.float 10.) max_v in
-      let smaller v = Utils.bound min_v (v -. (5. +. Random.float 10.)) max_v in
+      let larger v = Float.bound min_v (v +. 5. +. Random.float 10.) max_v in
+      let smaller v = Float.bound min_v (v -. (5. +. Random.float 10.)) max_v in
       let ghost_x = get_prop "ghost_x" current_props in
       let ghost_y = get_prop "ghost_y" current_props in
       let vx =
@@ -412,7 +413,7 @@ let maybe_take_damage
 
   if ghost_action_started > took_damage_at enemy damage_kind then (
     enemy.history <-
-      Utils.replace_assoc
+      List.replace_assoc
         (TOOK_DAMAGE damage_kind : enemy_action)
         { at = state.frame.time } enemy.history;
     enemy.health.current <- enemy.health.current - damage;
@@ -613,7 +614,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
         enemy.entity.v.x <- new_vx;
         set_frog_action enemy `ASCEND game.room state.frame.time []);
       if enemy.entity.v.y > 0. then (
-        enemy.entity.v.y <- Utils.bound 0. enemy.entity.v.y 120.;
+        enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y 120.;
         set_pose enemy "idle-descending")
       else
         set_pose enemy "idle")
@@ -650,7 +651,7 @@ let create_from_rects
           ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs textures entity_dest
     in
 
-    texture_cache := Utils.replace_assoc id textures !texture_cache;
+    texture_cache := List.replace_assoc id textures !texture_cache;
 
     let json =
       match List.assoc_opt id enemy_configs with

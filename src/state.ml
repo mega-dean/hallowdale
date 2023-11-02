@@ -1,9 +1,10 @@
+open Utils
 open Types
 open Controls
 
 (* this function initializes state and sets game_context to MAIN_MENU *)
 let init window_w window_h window_scale : state =
-  let print_line s =
+  let print_with_line s =
     let left_line = String.make 10 '=' in
     let right_line = String.make (90 - String.length s) '=' in
     print "%s %s %s" left_line s right_line
@@ -114,7 +115,6 @@ let init window_w window_h window_scale : state =
       }
   in
 
-  print_line "loading platforms...";
   let platforms =
     let load_platform_texture name =
       ( name,
@@ -133,7 +133,7 @@ let init window_w window_h window_scale : state =
     in
 
     let check_file filename =
-      let name, extension = Utils.split_at_first '.' filename in
+      let name, extension = String.split_at_first '.' filename in
       if extension = "png" then
         Some name
       else
@@ -152,7 +152,6 @@ let init window_w window_h window_scale : state =
         y_offset = 0.;
       }
   in
-  print_line "done loading platforms";
 
   let load_sound name =
     let path = File.make_assets_path [ "audio"; "sound-effects"; fmt "%s.ogg" name ] in
@@ -208,7 +207,7 @@ let init window_w window_h window_scale : state =
     Tiled.create_camera_at camera_target 0. Config.window.center.x Config.window.center.y
   in
 
-  print_line "done_initializing_state";
+  print_with_line "done_initializing_state";
 
   (* TODO this should get saved to the save file instead of resetting every time *)
   let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
@@ -319,9 +318,9 @@ let update_camera (game : game) (state : state) =
             let right = trigger.dest.pos.x +. trigger.dest.w -. Config.window.center.x in
             match x_config with
             | "gx" -> subject.x
-            | ">x" -> Utils.bound left subject.x camera_state.room_bounds.max.x
-            | "<x" -> Utils.bound camera_state.room_bounds.min.x subject.x right
-            | "x" -> Utils.bound left subject.x right
+            | ">x" -> Float.bound left subject.x camera_state.room_bounds.max.x
+            | "<x" -> Float.bound camera_state.room_bounds.min.x subject.x right
+            | "x" -> Float.bound left subject.x right
             | _ -> failwithf "invalid x_bound %s" x_config
           in
           let y_bound =
@@ -329,9 +328,9 @@ let update_camera (game : game) (state : state) =
             let bottom = trigger.dest.pos.y +. trigger.dest.h -. Config.window.center.y in
             match y_config with
             | "gy" -> subject.y
-            | ">y" -> Utils.bound top subject.y camera_state.room_bounds.max.y
-            | "<y" -> Utils.bound camera_state.room_bounds.min.y subject.y bottom
-            | "y" -> Utils.bound top subject.y bottom
+            | ">y" -> Float.bound top subject.y camera_state.room_bounds.max.y
+            | "<y" -> Float.bound camera_state.room_bounds.min.y subject.y bottom
+            | "y" -> Float.bound top subject.y bottom
             | _ -> failwithf "invalid y_bound %s" y_config
           in
           (x_bound, y_bound)
@@ -344,8 +343,8 @@ let update_camera (game : game) (state : state) =
       let diff_x, diff_y = (abs_float (current_x -. target_x), abs_float (current_y -. target_y)) in
       let create_bounded_camera x y =
         Raylib.Vector2.create
-          (Utils.bound camera_state.room_bounds.min.x x camera_state.room_bounds.max.x)
-          (Utils.bound camera_state.room_bounds.min.y y camera_state.room_bounds.max.y)
+          (Float.bound camera_state.room_bounds.min.x x camera_state.room_bounds.max.x)
+          (Float.bound camera_state.room_bounds.min.y y camera_state.room_bounds.max.y)
       in
       if state.camera.update_instantly then (
         state.camera.update_instantly <- false;
@@ -731,7 +730,7 @@ let tick (state : state) =
   | MAIN_MENU (menu, save_slots) ->
     if Raylib.get_music_time_played state.menu_music.t > state.menu_music.loop_end.at then
       Raylib.seek_music_stream state.menu_music.t
-        (Utils.bound 0.1 state.menu_music.loop_start.at Float.max_float);
+        (Float.bound 0.1 state.menu_music.loop_start.at Float.max_float);
     Raylib.update_music_stream state.menu_music.t;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
   | IN_PROGRESS game ->
@@ -740,7 +739,7 @@ let tick (state : state) =
     *)
     let music = game.music.music in
     if Raylib.get_music_time_played music.t > music.loop_end.at then
-      Raylib.seek_music_stream music.t (Utils.bound 0.1 music.loop_start.at Float.max_float);
+      Raylib.seek_music_stream music.t (Float.bound 0.1 music.loop_start.at Float.max_float);
 
     Raylib.update_music_stream music.t;
 

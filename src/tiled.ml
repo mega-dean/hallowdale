@@ -1,5 +1,5 @@
+open Utils
 open Types
-open Types.Utils
 
 (* file_name should not have ".json" at the end *)
 let parse_room_filename source file_name : area_id * room_id =
@@ -132,7 +132,7 @@ module Room = struct
     Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
 
   let dest_from_coords' (json_room : Json_t.room) (coords : string) : vector =
-    let target_x', target_y' = Utils.split_at_first ',' coords in
+    let target_x', target_y' = String.split_at_first ',' coords in
     let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
     let x, y = Tile.tile_dest ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y) in
     { x; y }
@@ -356,8 +356,8 @@ module Room = struct
             in
             let stub_sprite, fragments =
               let all_raw_gids =
-                List.map (fun idx -> Tile.raw_gid (List.nth json_layer.data idx)) (!idxs |> uniq)
-                |> uniq
+                List.map (fun idx -> Tile.raw_gid (List.nth json_layer.data idx)) (!idxs |> List.uniq)
+                |> List.uniq
               in
               let keys = List.map fst room.cache.jug_fragments_by_gid in
               match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
@@ -401,7 +401,7 @@ module Room = struct
               | _ -> None
             in
             {
-              tile_idxs = !idxs |> uniq;
+              tile_idxs = !idxs |> List.uniq;
               dest = rect;
               stub_sprite;
               fragments;

@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let save_file_path idx = File.make_root_path [ "saves"; fmt "%d.json" idx ]
@@ -83,7 +84,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
         *)
         [ game.player.ghost.id ] @ Player.ghost_ids_in_party ghosts'
         |> List.map Show.ghost_id
-        |> Utils.uniq;
+        |> List.uniq;
       ghost_x = game.player.ghost.entity.dest.pos.x /. Config.window.scale;
       ghost_y = game.player.ghost.entity.dest.pos.y /. Config.window.scale;
       respawn_x = game.room.respawn_pos.x /. Config.window.scale;

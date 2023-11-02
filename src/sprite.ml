@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let make_dest x y (t : texture) : rect =
@@ -112,7 +113,7 @@ let build_texture'
               duration = { seconds = duration };
             }
           in
-          List.map make_frame (Utils.rangef frame_count)
+          List.map make_frame (Float.range frame_count)
         in
         let frames = make_frames count ~w ~h ~duration:texture_config.duration.seconds in
         if once then

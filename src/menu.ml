@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let main_menu () : menu =
@@ -26,7 +27,7 @@ let pause_menu ghost_count : menu =
         Some (PAUSE_MENU SETTINGS);
         Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
       ]
-      |> Utils.filter_somes;
+      |> List.filter_somes;
     current_choice_idx = 0;
   }
 
@@ -152,7 +153,7 @@ let update_pause_menu (game : game) (state : state) : state =
   | Some (MENU menu) ->
     update_menu_choice menu state;
     let get_new_volume increase v =
-      Utils.bound 0.
+      Float.bound 0.
         (if increase then
            v +. 0.1
         else

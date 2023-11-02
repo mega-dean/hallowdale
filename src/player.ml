@@ -1,3 +1,4 @@
+open Utils
 open Types
 open Controls
 
@@ -76,7 +77,7 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
       begin_interaction trigger)
   in
   let strip_blocking_interaction (full_name : string) : string =
-    Utils.maybe_trim_before '|' full_name
+    String.maybe_trim_before '|' full_name
   in
   let name = strip_blocking_interaction trigger.full_name in
   match trigger.kind with
@@ -313,7 +314,7 @@ let get_focus_sparkles ghost : sprite option =
 
 (* TODO move into spawn_child - can't do this until make_ghost_child goes away *)
 let add_child (player : player) (kind : ghost_child_kind) (child : ghost_child) =
-  player.children <- Utils.replace_assoc kind child player.children
+  player.children <- List.replace_assoc kind child player.children
 
 let remove_child (player : player) (kind : ghost_child_kind) =
   player.children <- List.remove_assoc kind player.children
@@ -413,14 +414,14 @@ let check_dream_nail_collisions (state : state) (game : game) =
               if List.length enemy.json.dream_nail.dialogues = 0 then
                 "I have no dreams."
               else
-                Utils.sample enemy.json.dream_nail.dialogues
+                List.sample enemy.json.dream_nail.dialogues
             in
             game.interaction.floating_text <-
               Some { content = text; visible = TIME { at = state.frame.time +. 1. } };
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
               game.player.soul.current <-
-                Utils.bound_int 0
+                Int.bound 0
                   (game.player.soul.current + Config.action.soul_per_cast)
                   game.player.soul.max;
               let recoil_speed =
@@ -432,7 +433,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
               enemy.entity.x_recoil <-
                 Some { speed = recoil_speed; time_left = { seconds = 0.1 }; reset_v = true };
               enemy.history <-
-                Utils.replace_assoc
+                List.replace_assoc
                   (TOOK_DAMAGE DREAM_NAIL : enemy_action)
                   { at = state.frame.time } enemy.history))
     in
@@ -482,7 +483,7 @@ let resolve_slash_collisions (state : state) (game : game) =
               if game.player.ghost.entity.v.y < 0. then
                 game.player.ghost.entity.v.y <- 300.);
             game.player.soul.current <-
-              Utils.bound_int 0
+              Int.bound 0
                 (game.player.soul.current + Config.action.soul_gained_per_nail)
                 game.player.soul.max);
           if slash.direction = DOWN && game.player.ghost.entity.y_recoil = None then (
@@ -508,7 +509,7 @@ let resolve_slash_collisions (state : state) (game : game) =
           | Some idxs -> idxs
         in
         game.room.progress.removed_idxs_by_layer <-
-          Utils.replace_assoc layer.name (tile_group.tile_idxs @ existing)
+          List.replace_assoc layer.name (tile_group.tile_idxs @ existing)
             game.room.progress.removed_idxs_by_layer)
     in
 
@@ -592,7 +593,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                 door_health.last_hit_at <- state.frame.time;
                 if door_health.hits > 1 then (
                   (* TODO this isn't quite working - the fragments are spawning on top of the door and not moving *)
-                  let make_random_fragment _n = Utils.sample tile_group.fragments in
+                  let make_random_fragment _n = List.sample tile_group.fragments in
                   let random_fragments = List.init (Random.int 3) make_random_fragment in
                   layer.spawned_fragments <-
                     List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
@@ -943,7 +944,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           state.frame.time
       in
       game.player.children <-
-        Utils.replace_assoc
+        List.replace_assoc
           (NAIL slash : ghost_child_kind)
           { relative_pos; sprite = slash.sprite; in_front = true }
           game.player.children;
@@ -1075,7 +1076,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       && game.player.soul.health_at_focus_start = game.player.health.current
     then
       game.player.health.current <-
-        Utils.bound_int 0 game.player.health.max (game.player.health.current + 1)
+        Int.bound 0 game.player.health.max (game.player.health.current + 1)
     else if state.frame.time -. game.player.soul.last_decremented.at > decr_dt then (
       game.player.soul.current <- game.player.soul.current - 1;
       game.player.soul.last_decremented <- { at = state.frame.time })
@@ -2455,7 +2456,7 @@ let update (game : game) (state : state) =
         | None -> vy +. dvy)
     in
     (* no max_vy applied when ascending, only descending *)
-    Utils.bound (-1. *. Float.max_float) vy' Config.ghost.max_vy
+    Float.bound (-1. *. Float.max_float) vy' Config.ghost.max_vy
   in
   let exiting = Room.handle_transitions state game in
   if not exiting then (

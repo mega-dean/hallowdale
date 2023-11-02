@@ -1,16 +1,32 @@
+open Utils
+
+let verbose =
+  if Array.length Sys.argv > 1 && Array.mem Sys.argv.(1) (Array.of_list [ "-v"; "--verbose" ]) then (
+    print "verbose enabled";
+    true)
+  else
+    false
+
 let (development, project_root) : bool * string =
   let is_dev = ref false in
-  let rec find_project_root path =
+  let rec find_project_root path : string =
     let dir = Filename.dirname path in
     match Filename.basename dir with
-    | "hallowdale" -> dir
+    | "/" -> failwithf "invalid dirname"
     | "_build" ->
       is_dev := true;
       find_project_root dir
-    | _ -> find_project_root dir
+    | basename -> (
+      try
+        let _ = Str.search_forward (Str.regexp "hallowdale") basename 0 in
+        dir
+      with
+      | Not_found -> find_project_root dir)
   in
   let project_root = find_project_root Sys.executable_name in
   Sys.chdir project_root;
+  if verbose then
+    print "env: %s\nroot: %s" (if !is_dev then "dev" else "prod") project_root;
   (!is_dev, project_root)
 
 let room_scale = 3
@@ -47,6 +63,8 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * int 
     else
       window_ratio
   in
+  if verbose then
+    print "window scale: %f" window_scale;
   ( max_width *. window_scale,
     max_height *. window_scale,
     window_scale,

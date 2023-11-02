@@ -1,3 +1,4 @@
+open Utils
 open Types
 module Color = Raylib.Color
 module Rectangle = Raylib.Rectangle
@@ -389,14 +390,15 @@ let tick (state : state) =
         in
         let line_spacing = line_height *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
-        let content' =
-          Str.global_replace (Str.regexp " ") (String.make 1 word_separator) segment.content
-        in
         let content =
-          if word_separator = '-' then
-            fmt "-%s-" content'
-          else
-            content'
+          match word_separator with
+          | ' ' -> segment.content
+          | '-' ->
+            let c =
+              Str.global_replace (Str.regexp " ") (String.make 1 word_separator) segment.content
+            in
+            fmt "-%s-" c
+          | _ -> failwithf "unknown word_separator: %c" word_separator
         in
         let color = if is_steel_sole then Raylib.Color.purple else segment.color in
 
@@ -982,7 +984,7 @@ let tick (state : state) =
       match game.mode with
       | CLASSIC
       | DEMO ->
-        List.iteri draw_head (Utils.rangef game.player.health.max)
+        List.iteri draw_head (Float.range game.player.health.max)
       | STEEL_SOLE -> ()
     in
 

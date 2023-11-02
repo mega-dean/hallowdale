@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let scale_room_rect x y w h = scale_rect Config.scale.room { pos = { x; y }; w; h }
@@ -39,7 +40,7 @@ let update_pickup_indicators (state : state) (game : game) =
 
 let save_progress (game : game) =
   let room_uuid = Tiled.Room.get_filename game.room in
-  game.progress.by_room <- Utils.replace_assoc room_uuid game.room.progress game.progress.by_room
+  game.progress.by_room <- List.replace_assoc room_uuid game.room.progress game.progress.by_room
 
 let init (params : room_params) : room =
   (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
@@ -142,9 +143,9 @@ let init (params : room_params) : room =
     in
 
     let categorize_trigger (coll_rect : Json_t.coll_rect) =
-      let name_prefix', name_suffix = Utils.split_at_first ':' coll_rect.name in
+      let name_prefix', name_suffix = String.split_at_first ':' coll_rect.name in
       let (blocking_interaction, name_prefix) : string option * string =
-        Utils.split_at_first_opt '|' name_prefix'
+        String.split_at_first_opt '|' name_prefix'
       in
 
       let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
@@ -183,17 +184,17 @@ let init (params : room_params) : room =
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
 
       let parse_warp_target name : warp_target =
-        let room_name, coords = Utils.split_at_first '@' name in
+        let room_name, coords = String.split_at_first '@' name in
         let pos = Tiled.Room.dest_from_coords' json_room coords in
         { room_name; pos }
       in
 
       match name_prefix with
       | "camera" ->
-        let x, y = Utils.split_at_first ',' name_suffix in
+        let x, y = String.split_at_first ',' name_suffix in
         camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
-        let direction', door_coords' = Utils.split_at_first '-' name_suffix in
+        let direction', door_coords' = String.split_at_first '-' name_suffix in
         let direction, transformation_bits =
           match direction' with
           | "up" -> (UP, 0)
@@ -203,7 +204,7 @@ let init (params : room_params) : room =
             failwithf "horizontal levers aren't supported" direction'
           | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction'
         in
-        let x', y' = Utils.split_at_first ',' door_coords' in
+        let x', y' = String.split_at_first ',' door_coords' in
         let door_tile_idx =
           Tiled.Tile.tile_idx_from_coords ~width:json_room.w_in_tiles
             (x' |> float_of_string, y' |> float_of_string)
@@ -374,7 +375,7 @@ let init (params : room_params) : room =
              - could do something like slightly alter the corkboard when the health has already been increased
           *)
           let (layer_name', hidden) : string * bool =
-            match Utils.split_at_first_opt '|' json.name with
+            match String.split_at_first_opt '|' json.name with
             | Some interaction_name, layer_name -> (
               let finished name = List.mem name room_progress.finished_interactions in
               match interaction_name.[0] with
@@ -578,7 +579,7 @@ let init (params : room_params) : room =
           in
           let collisions = List.filter in_this_column tileset.json.collisions in
           let fragments = List.mapi build_fragment collisions in
-          fragments |> Utils.filter_somes
+          fragments |> List.filter_somes
         in
 
         if List.length fragments = 0 then

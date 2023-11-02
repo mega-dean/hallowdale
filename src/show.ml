@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c

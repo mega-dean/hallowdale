@@ -1,3 +1,4 @@
+open Hallowdale.Utils
 open Hallowdale.Types
 
 let rec loop (state : Hallowdale.Types.state) =

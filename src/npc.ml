@@ -1,3 +1,4 @@
+open Utils
 open Types
 
 let parse_name context name : npc_id =
