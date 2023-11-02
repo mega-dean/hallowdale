@@ -63,6 +63,41 @@ There is currently no menu for rebinding keys, but they can be overridden by pla
 
 None of the other settings (like fps) are configurable yet.
 
+### Controls
+
+Most of the controls match the default Hollow Knight controls, but there are a few differences:
+    - no Inventory button yet
+    - additional Interact button, instead of pressing up/down
+    - cannot tap Focus to cast
+
+#### Keyboard
+
+Jump - Z
+Attack - X
+Dash - C
+Focus - A
+C-dash - S
+Dream nail - D
+Quick cast - F
+Interact - left shift
+Open map - tab
+Pause - Escape
+Movement - arrow keys
+
+#### Gamepad
+
+Jump - x
+Attack - square
+Dash - R2
+Focus - R1
+C-dash - L2
+Dream nail - triangle
+Quick cast - circle
+Interact - L1
+Open map - select
+Pause - start
+Movement - d-pad or left stick (although the stick doesn't work for menus because of a bug)
+
 ### Development
 
 #### Setup

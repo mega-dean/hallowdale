@@ -105,9 +105,13 @@ let update_pause_menu (game : game) (state : state) : state =
     match state.pause_menu with
     | None ->
       play_sound state "menu-expand";
-      let on_map x offset = ((x /. Config.world_map.scale) +. offset) *. Config.window.scale in
+      let on_map x offset = (x /. Config.world_map.scale) +. offset in
       let room_pos_on_map x y =
-        { x = on_map x Config.world_map.room_x_offset; y = on_map y Config.world_map.room_y_offset }
+        let x', y' =
+          (on_map x Config.world_map.room_x_offset, on_map y Config.world_map.room_y_offset)
+        in
+
+        { x = x' *. Config.window.scale; y = y' *. Config.window.scale }
       in
       let black_rects =
         let rooms_found = List.map fst game.progress.by_room in
@@ -130,12 +134,10 @@ let update_pause_menu (game : game) (state : state) : state =
           room_pos_on_map room_location.global_x room_location.global_y
         in
         let entity_pos = game.player.ghost.entity.dest.pos in
-        let x', y' =
-          ( on_map (entity_pos.x *. Config.window.scale) room_pos.x,
-            on_map (entity_pos.y *. Config.window.scale) room_pos.y )
-        in
-        (* CLEANUP probably some redundant scaling/unscaling happening here *)
-        { x = x' /. Config.window.scale; y = y' /. Config.window.scale }
+        {
+          x = on_map (entity_pos.x *. Config.window.scale) room_pos.x;
+          y = on_map (entity_pos.y *. Config.window.scale) room_pos.y;
+        }
       in
       state.pause_menu <- Some (WORLD_MAP { black_rects; ghost_pos })
     | Some _ ->

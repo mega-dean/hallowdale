@@ -688,9 +688,7 @@ let update_frame_inputs (state : state) : state =
     input.pressed <- key_pressed ~direction key;
     if input.pressed then
       input.down_since <- Some { at = state.frame.time }
-    else if input.down then
-      input.down_since <- input.down_since
-    else
+    else if not input.down then
       input.down_since <- None
   in
   update_frame_input ~direction:true (ARROW UP) state.frame_inputs.up;

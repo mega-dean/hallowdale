@@ -521,7 +521,6 @@ let create_camera_at v (shake : float) (center_x : float) (center_y : float) =
 
 let init_world (path : string) : (room_id * room_location) list =
   let full_path = File.make_assets_path [ "tiled"; "rooms"; fmt "%s.world" path ] in
-  tmp "init_world with full_path: %s" full_path;
   let json_world : Json_t.world = File.read full_path |> Json_j.world_of_string in
   let filenames_in_world_file : str_set ref = ref StrSet.empty in
   let get_room_location (global_map : Json_t.global_map) : room_id * room_location =

@@ -8,7 +8,7 @@
             "y_offset": 2
         }],
         ["dash", {
-            "count": 2,
+            "count": 4,
             "duration": 0.05,
             "x_offset": 29,
             "y_offset": 8
@@ -27,9 +27,8 @@
             "y_offset": 2
         }],
         ["focus", {
-            // FIXME this body is too small (might need custom head offset for this to work)
             "x_offset": 17,
-            "y_offset": 9
+            "y_offset": 10
         }],
         ["crawl", {
             "count": 4,
@@ -148,18 +147,16 @@
         }],
         ["nail", {
             // - slashes are PARTICLE animations that despawn when the animation completes, so this
-            //   config value doesn't get used
-            // - slash duration is based on the "nail" shared texture (count *. duration)
+            //   config value doesn't get used (actual duration is based on the "nail" shared
+            //   texture (count *. duration))
             "duration": 0.0,
-            // cooldown starts counting when action begins, so this is 0.41 + (duration of slash)
-            "cooldown": 0.50,
-            // "cooldown": 0.21,
+            // HK times: 0.41 without quickslash, 0.25 with quickslash
+            "cooldown": 0.41,
             "input_buffer": 0.2
         }],
 
         ["dream-nail", {
             // HK times: 1.75s without dream wielder, 1.1s with dream wielder
-            // "duration": 1.8,
             "duration": 1.1,
             "cooldown": 0.0,
             "input_buffer": 0.0

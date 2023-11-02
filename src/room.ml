@@ -314,7 +314,6 @@ let init (params : room_params) : room =
         (* TODO add to respawn_targets : (int * vector) list
            - x/y here will be raw x/y, so shouldn't need to convert from tile_idx
         *)
-        itmp "got a target: %s %s" name_prefix name_suffix;
         ()
       | "door-warp" ->
         let target = parse_warp_target name_suffix in

@@ -34,7 +34,6 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * int 
     let monitor = Raylib.get_current_monitor () in
     (Raylib.get_monitor_width monitor, Raylib.get_monitor_height monitor)
   in
-  print_endline (Printf.sprintf "config monitor w/h: %d, %d" monitor_w monitor_h);
   let window_ratio =
     let w_ratio = (monitor_w |> Int.to_float) /. max_width in
     let h_ratio = (monitor_h |> Int.to_float) /. max_height in

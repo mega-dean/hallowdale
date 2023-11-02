@@ -117,6 +117,7 @@ let overridden_keybinds : (game_action * Raylib.Key.t) list =
       | "[left]" -> Raylib.Key.Left
       | "[right]" -> Raylib.Key.Right
       | "[tab]" -> Raylib.Key.Tab
+      | "[escape]" -> Raylib.Key.Escape
       | "A" -> Raylib.Key.A
       | "B" -> Raylib.Key.B
       | "C" -> Raylib.Key.C
@@ -176,24 +177,41 @@ let default_keybinds : (game_action * Raylib.Key.t) list =
     (D_NAIL, Raylib.Key.D);
     (CAST, Raylib.Key.F);
     (INTERACT, Raylib.Key.Left_shift);
-    (OPEN_MAP, Raylib.Key.Escape);
-    (PAUSE, Raylib.Key.Space);
+    (* menus *)
+    (OPEN_MAP, Raylib.Key.Tab);
+    (PAUSE, Raylib.Key.Escape);
     (* directions *)
     (ARROW UP, Raylib.Key.Up);
     (ARROW DOWN, Raylib.Key.Down);
     (ARROW LEFT, Raylib.Key.Left);
     (ARROW RIGHT, Raylib.Key.Right);
-    (* debug *)
-    (DEBUG_1, Raylib.Key.One);
-    (DEBUG_2, Raylib.Key.Two);
-    (DEBUG_3, Raylib.Key.Three);
-    (DEBUG_4, Raylib.Key.Four);
-    (DEBUG_5, Raylib.Key.Five);
-    (DEBUG_UP, Raylib.Key.I);
-    (DEBUG_LEFT, Raylib.Key.J);
-    (DEBUG_DOWN, Raylib.Key.K);
-    (DEBUG_RIGHT, Raylib.Key.L);
   ]
+  (* debug *)
+  @
+  if Env.development then
+    [
+      (DEBUG_1, Raylib.Key.One);
+      (DEBUG_2, Raylib.Key.Two);
+      (DEBUG_3, Raylib.Key.Three);
+      (DEBUG_4, Raylib.Key.Four);
+      (DEBUG_5, Raylib.Key.Five);
+      (DEBUG_UP, Raylib.Key.I);
+      (DEBUG_LEFT, Raylib.Key.J);
+      (DEBUG_DOWN, Raylib.Key.K);
+      (DEBUG_RIGHT, Raylib.Key.L);
+    ]
+  else
+    [
+      (DEBUG_1, Raylib.Key.Null);
+      (DEBUG_2, Raylib.Key.Null);
+      (DEBUG_3, Raylib.Key.Null);
+      (DEBUG_4, Raylib.Key.Null);
+      (DEBUG_5, Raylib.Key.Null);
+      (DEBUG_UP, Raylib.Key.Null);
+      (DEBUG_LEFT, Raylib.Key.Null);
+      (DEBUG_DOWN, Raylib.Key.Null);
+      (DEBUG_RIGHT, Raylib.Key.Null);
+    ]
 
 let overridden_gamepad_buttons : (game_action * Raylib.GamepadButton.t) list =
   let keybinds_json : (string * string) list =
@@ -215,6 +233,8 @@ let overridden_gamepad_buttons : (game_action * Raylib.GamepadButton.t) list =
       | "r2" -> Raylib.GamepadButton.Right_trigger_2
       | "l1" -> Raylib.GamepadButton.Left_trigger_1
       | "l2" -> Raylib.GamepadButton.Left_trigger_1
+      | "[start]" -> Raylib.GamepadButton.Middle_left
+      | "[select]" -> Raylib.GamepadButton.Middle_right
       | _ -> failwithf "bad override gamepad button name: %s" key_name
     in
     (get_action action_name, key)
@@ -232,6 +252,7 @@ let default_gamepad_buttons : (game_action * Raylib.GamepadButton.t) list =
     (D_NAIL, Raylib.GamepadButton.Right_face_up);
     (CAST, Raylib.GamepadButton.Right_face_right);
     (INTERACT, Raylib.GamepadButton.Left_trigger_1);
+    (* menus *)
     (OPEN_MAP, Raylib.GamepadButton.Middle_left);
     (PAUSE, Raylib.GamepadButton.Middle_right);
     (* directions *)
@@ -367,7 +388,11 @@ let key_down ?(direction = false) k =
 
 let key_pressed ?(direction = false) k =
   Raylib.is_key_pressed (get_key k)
-  || check_gamepad_input Raylib.is_gamepad_button_pressed direction k
+  || (* TODO this isn't really correct: when the left stick is held in a direction, it is
+        registering as being pressed every frame
+        - need to check whether or not it was down the previous frame in State.update_frame_inputs
+     *)
+  check_gamepad_input Raylib.is_gamepad_button_pressed direction k
 
 let key_released ?(direction = false) k =
   Raylib.is_key_released (get_key k)

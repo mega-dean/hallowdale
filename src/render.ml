@@ -184,8 +184,6 @@ let draw_tiled_layer
       draw_entity ~tint f
     in
     List.iteri render_data_tile layer.json.data;
-    (* if state.frame.idx mod 100 = 0 then
-     *   tmp "%s: drew %d tiles" layer.name !tile_count; *)
     List.iter draw_spawned_fragment layer.spawned_fragments;
     List.iter draw_stub layer.spawned_stub_sprites)
 
@@ -368,8 +366,6 @@ let tick (state : state) =
       (y_offset : float)
       paragraph_idx
       (paragraph : string) =
-    if state.frame.idx mod 100 = 0 then
-      itmp "display paragraph config:\n%s" (Show.text_config config);
     let is_steel_sole, word_separator =
       match state.game_context with
       | IN_PROGRESS game -> (
@@ -1056,6 +1052,4 @@ let tick (state : state) =
         draw_frame_inputs ());
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
-    if state.frame.idx mod 100 = 0 then
-      itmp "-----------------------------------";
     state
