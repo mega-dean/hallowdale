@@ -9,16 +9,21 @@ let verbose =
 
 let (development, project_root) : bool * string =
   let is_dev = ref false in
+  let root_regex = ref "hallowdale-v[0-1]\\.[0-9]\\.[0-9]" in
   let rec find_project_root path : string =
     let dir = Filename.dirname path in
     match Filename.basename dir with
-    | "/" -> failwithf "invalid dirname"
+    | "/" ->
+      failwith
+        "could not find project root: make sure the executable is in a directory like \
+         `hallowdale-v0.1.2`"
     | "_build" ->
       is_dev := true;
+      root_regex := "hallowdale";
       find_project_root dir
     | basename -> (
       try
-        let _ = Str.search_forward (Str.regexp "hallowdale") basename 0 in
+        let _ = Str.search_forward (Str.regexp !root_regex) basename 0 in
         dir
       with
       | Not_found -> find_project_root dir)

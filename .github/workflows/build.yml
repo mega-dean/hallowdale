@@ -3,7 +3,12 @@ name: Build and Package Artifacts
 env:
   OUT_FILE: hallowdale.zip
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version"
+        required: true
 
 jobs:
   build-artifacts:
@@ -11,33 +16,35 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
+          - macos
+          - ubuntu
+          - windows
         ocaml-compiler:
           - 4.13.1
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
 
     steps:
-      - name: Checkout code
+      - name: checkout
         uses: actions/checkout@v3
 
-      - name: Re-synchronize the package index files on Ubuntu
+      - name: apt-get update
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update
 
-      - name: Use OCaml ${{ matrix.ocaml-version }}
+      - name: set up ocaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - run: |
+      - name: set up opam
+        run: |
           opam pin -n .
           opam install . --deps-only
           opam exec -- dune build --profile release
 
-      - uses: actions/upload-artifact@v3
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
         with:
           name: hallowdale-${{ matrix.os }}
           path: _build/default/bin/main.exe
@@ -46,21 +53,31 @@ jobs:
     needs: build-artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: download artifacts
+        uses: actions/download-artifact@v3
         with:
           path: ./dist/
 
-      - run: >
-          zip -r $OUT_FILE . \
-          --exclude ".git/*" \
-          "_build/*" \
-          "saves/*.json" \
-          assets/tiled/hallowdale.tiled-session \
-          config/key_overrides.json \
-          config/button_overrides.json
+      - name: mv artifacts
+        run: >
+          mv dist/hallowdale-windows/main.exe dist/windows.exe
+          mv dist/hallowdale-ubuntu/main.exe dist/linux.exe
+          mv dist/hallowdale-macos/main.exe dist/macos
+          rmdir dist/hallowdale-windows/ dist/hallowdale-ubuntu/ dist/hallowdale-macos/
+          sudo chmod a+x dist/windows.exe dist/linux.exe dist/macos
+          mkdir saves/
 
-      - uses: actions/upload-artifact@v3
+      - name: zip
+        run: >
+          zip -r $OUT_FILE . \
+            --include "assets/*" "config/*" \
+            --exclude "assets/tiled/hk-reference/*"
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: hallowdale
+          name: hallowdale-v${{ github.event.inputs.version }}
           path: ${{ env.OUT_FILE }}

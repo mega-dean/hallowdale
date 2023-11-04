@@ -101,9 +101,8 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       current_weapon = game.player.current_weapon.name;
     }
   in
-  let save_file_path = File.make_root_path [ "saves"; fmt "%d.json" game.save_file_slot ] in
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
-  let written = File.write save_file_path contents in
+  let written = File.write (save_file_path game.save_file_slot) contents in
   if written then
     after_fn state
   else

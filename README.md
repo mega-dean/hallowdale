@@ -9,10 +9,17 @@ An homage to Hollow Knight.
 ![world map screenshot](./assets/npcs/shared/world-map.png)
 
 
+### Release Versions
+
+The versions are not using semantic versioning, even though it is the same format:
+
+- v0.0._ -> unstable/pre-release, mostly for testing, major bugs are expected
+- v0._._ -> these should be stable and playable out-of-the-box but with content missing, bugs are expected
+- v1._._ -> released
+
 ### Instructions
 
-The game can either be cloned from github, or downloaded/unzipped from itch.io. The executables are
-located in `dist/`.
+Either use the github release or download from https://mega-dean.itch.io/hallowdale .
 
 #### Linux
 
@@ -22,10 +29,12 @@ Raylib, but I haven't tested this.
 
 #### MacOS
 
-I've tested on an M1 Macbook Air and it works, but the controls feel pretty sluggish. Also, the
-executable isn't notarized by Apple so it can't be run directly. After attempting to run it and
-dismissing the "this may be malware" warning, you can go to the Security page in System Preferences
-to whitelist it specifically.
+I've tested on an M1 Macbook Air and it works, but it's not great (sluggish controls, jittery, audio
+clipping).
+
+The executable isn't notarized by Apple so it can't be run directly. After
+attempting to run it and dismissing the "this may be malware" warning, you can go to the Security
+page in System Preferences to whitelist it specifically.
 
 #### Windows
 
@@ -66,37 +75,38 @@ None of the other settings (like fps) are configurable yet.
 ### Controls
 
 Most of the controls match the default Hollow Knight controls, but there are a few differences:
-    - no Inventory button yet
-    - additional Interact button, instead of pressing up/down
-    - cannot tap Focus to cast
+
+- no Inventory button yet
+- additional Interact button, instead of pressing up/down
+- cannot tap Focus to cast
 
 #### Keyboard
 
-Jump - Z
-Attack - X
-Dash - C
-Focus - A
-C-dash - S
-Dream nail - D
-Quick cast - F
-Interact - left shift
-Open map - tab
-Pause - Escape
-Movement - arrow keys
+- Jump - Z
+- Attack - X
+- Dash - C
+- Focus - A
+- C-dash - S
+- Dream nail - D
+- Quick cast - F
+- Interact - left shift
+- Open map - tab
+- Pause - Escape
+- Movement - arrow keys
 
 #### Gamepad
 
-Jump - x
-Attack - square
-Dash - R2
-Focus - R1
-C-dash - L2
-Dream nail - triangle
-Quick cast - circle
-Interact - L1
-Open map - select
-Pause - start
-Movement - d-pad or left stick (although the stick doesn't work for menus because of a bug)
+- Jump - x
+- Attack - square
+- Dash - R2
+- Focus - R1
+- C-dash - L2
+- Dream nail - triangle
+- Quick cast - circle
+- Interact - L1
+- Open map - select
+- Pause - start
+- Movement - d-pad or left stick (although the stick doesn't work for menus because of a bug)
 
 ### Development
 

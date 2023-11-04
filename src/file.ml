@@ -5,6 +5,7 @@ let make_root_path (segments : string list) : string =
 
 let make_assets_path (segments : string list) : string = make_root_path ("assets" :: segments)
 
+let mkdir (dir : string) : unit = Sys.mkdir dir 0o775
 let ls (dir : string) : string list = Sys.readdir dir |> Array.to_list
 
 let read (filename : string) : string =
