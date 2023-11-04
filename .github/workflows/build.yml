@@ -62,7 +62,7 @@ jobs:
           path: ./dist/
 
       - name: mv artifacts
-        run: >
+        run: |
           mv dist/hallowdale-windows/main.exe dist/windows.exe
           mv dist/hallowdale-ubuntu/main.exe dist/linux.exe
           mv dist/hallowdale-macos/main.exe dist/macos
