@@ -868,8 +868,11 @@ let tick (state : state) =
         in
         match child_kind with
         | NAIL slash ->
-          if state.debug.enabled then
+          if state.debug.enabled then (
             debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
+            match slash.collision with
+            | SHAPE shape -> debug_shape_outline ~size:2. ~color:Color.red slash.sprite shape
+            | _ -> ());
           let tint = player.current_weapon.tint in
           draw_child_sprite slash.sprite player.current_weapon.tint
         | DREAM_NAIL

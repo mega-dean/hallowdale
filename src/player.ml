@@ -232,17 +232,17 @@ let make_slash
   in
   let up_points =
     [
-      { x = 1.25 *. 0.; y = 189. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 4.; y = 110. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 12.; y = 63. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 25.; y = 25. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 35.; y = 8. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 45.; y = 0. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 60.; y = 1. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 73.; y = 14. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 87.; y = 46. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 97.; y = 86. *. player.current_weapon.scale_y };
-      { x = 1.25 *. 103.; y = 189. *. player.current_weapon.scale_y };
+      { x = 0.; y = 189. *. player.current_weapon.scale_y };
+      { x = 5.; y = 110. *. player.current_weapon.scale_y };
+      { x = 15.; y = 63. *. player.current_weapon.scale_y };
+      { x = 30.; y = 25. *. player.current_weapon.scale_y };
+      { x = 45.; y = 8. *. player.current_weapon.scale_y };
+      { x = 55.; y = 0. *. player.current_weapon.scale_y };
+      { x = 75.; y = 1. *. player.current_weapon.scale_y };
+      { x = 90.; y = 14. *. player.current_weapon.scale_y };
+      { x = 110.; y = 46. *. player.current_weapon.scale_y };
+      { x = 120.; y = 86. *. player.current_weapon.scale_y };
+      { x = 130.; y = 189. *. player.current_weapon.scale_y };
     ]
   in
   let down_points =
