@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - macos
+          - macos
           - ubuntu
-          # - windows
+          - windows
         ocaml-compiler:
           - 4.13.1
 
@@ -65,9 +65,9 @@ jobs:
 
       - name: move artifacts into dist/
         run: |
-          # mv artifacts/windows-$OUT_DIR/main.exe dist/windows.exe
+          mv artifacts/windows-$OUT_DIR/main.exe dist/windows.exe
           mv artifacts/ubuntu-$OUT_DIR/main.exe dist/linux
-          # mv artifacts/macos-$OUT_DIR/main.exe dist/macos
+          mv artifacts/macos-$OUT_DIR/main.exe dist/macos
           rm -rf artifacts
           sudo chmod a+x dist/linux dist/macos
 
@@ -81,4 +81,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.TARBALL }}
-          path: ${{ env.TARBALL }}
+          path: ${{ env.OUT_DIR }}/${{ env.TARBALL }}
