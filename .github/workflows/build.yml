@@ -66,11 +66,12 @@ jobs:
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
-          mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
-          mv artifacts/hallowdale-ubuntu-v$VERSION/main.exe dist/linux.exe
-          mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
+          # mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
+          mv artifacts/hallowdale-ubuntu-v$VERSION/main.exe dist/linux
+          # mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
           rm -rf artifacts
-          sudo chmod a+x dist/windows.exe dist/linux.exe dist/macos
+          # sudo chmod a+x dist/linux dist/macos
+          sudo chmod a+x dist/linux
 
       - name: tar
         run: >
