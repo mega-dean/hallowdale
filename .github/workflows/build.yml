@@ -8,7 +8,8 @@ on:
         required: true
 
 env:
-  OUT_FILE: hallowdale-v${{ github.event.inputs.version }}.tar.gz
+  OUT_DIR: hallowdale-v${{ github.event.inputs.version }}
+  TARBALL: ${{ env.OUT_DIR }}.tar.gz
 
 jobs:
   build-artifacts:
@@ -47,7 +48,7 @@ jobs:
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: hallowdale-${{ matrix.os }}-v${{ github.event.inputs.version }}
+          name: ${{ matrix.os }}-${{ env.OUT_DIR }}
           path: _build/default/bin/main.exe
 
   package-artifacts:
@@ -63,22 +64,21 @@ jobs:
           path: artifacts
 
       - name: move artifacts into dist/
-        env:
-          VERSION: ${{ github.event.inputs.version }}
         run: |
-          # mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
-          mv artifacts/hallowdale-ubuntu-v$VERSION/main.exe dist/linux
-          # mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
+          # mv artifacts/windows-$OUT_DIR/main.exe dist/windows.exe
+          mv artifacts/ubuntu-$OUT_DIR/main.exe dist/linux
+          # mv artifacts/macos-$OUT_DIR/main.exe dist/macos
           rm -rf artifacts
-          # sudo chmod a+x dist/linux dist/macos
-          sudo chmod a+x dist/linux
+          sudo chmod a+x dist/linux dist/macos
 
       - name: tar
         run: |
-          tar -czvf $OUT_FILE --exclude="assets/tiled/hk-reference/*" ./assets/ ./config/ ./dist/ ./saves/ LICENSE.md README.md CHANGELOG.md --no-recursion ./saves/
+          mkdir $OUT_DIR
+          tar -czvf $TARBALL --exclude="assets/tiled/hk-reference/*" ./assets/ ./config/ ./dist/ ./saves/ LICENSE.md README.md CHANGELOG.md --no-recursion ./saves/
+          mv $TARBALL $OUT_DIR
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.OUT_FILE }}
-          path: ${{ env.OUT_FILE }}
+          name: ${{ env.TARBALL }}
+          path: ${{ env.TARBALL }}
