@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos
+          #- macos
           - ubuntu
-          - windows
+          #- windows
         ocaml-compiler:
           - 4.13.1
 
@@ -62,15 +62,22 @@ jobs:
         with:
           path: artifacts
 
+      - name: debug
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          ls -l artifacts/
+          ls -l artifacts/hallowdale-ubuntu-*/*
+
       - name: move artifacts into dist/
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
-          mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
+          # mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
           mv artifacts/hallowdale-ubuntu-v$VERSION/main.exe dist/linux.exe
-          mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
+          # mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
           rm -rf artifacts
-          sudo chmod a+x artifacts/windows.exe artifacts/linux.exe artifacts/macos
+          # sudo chmod a+x artifacts/windows.exe artifacts/linux.exe artifacts/macos
           mkdir saves/
 
       - name: zip
