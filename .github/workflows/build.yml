@@ -8,7 +8,7 @@ on:
         required: true
 
 env:
-  OUT_FILE: hallowdale-v${{ github.event.inputs.version }}.zip
+  OUT_FILE: hallowdale-v${{ github.event.inputs.version }}.tar.gz
 
 jobs:
   build-artifacts:
@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          #- macos
+          - macos
           - ubuntu
-          #- windows
+          - windows
         ocaml-compiler:
           - 4.13.1
 
@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: apt-get update
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu'
         run: |
           sudo apt-get update
 
@@ -62,33 +62,24 @@ jobs:
         with:
           path: artifacts
 
-      - name: debug
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-        run: |
-          ls -l artifacts/
-          ls -l artifacts/hallowdale-ubuntu-*/*
-
       - name: move artifacts into dist/
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
-          # mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
+          mv artifacts/hallowdale-windows-v$VERSION/main.exe dist/windows.exe
           mv artifacts/hallowdale-ubuntu-v$VERSION/main.exe dist/linux.exe
-          # mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
+          mv artifacts/hallowdale-macos-v$VERSION/main.exe dist/macos
           rm -rf artifacts
-          # sudo chmod a+x artifacts/windows.exe artifacts/linux.exe artifacts/macos
-          mkdir saves/
+          sudo chmod a+x artifacts/windows.exe artifacts/linux.exe artifacts/macos
 
-      - name: zip
+      - name: tar
         run: >
-          zip -r $OUT_FILE . \
-            --include "assets/*" "config/*" "dist/*" "saves/" \
-            --exclude "assets/tiled/hk-reference/*"
+          tar -czvf $OUT_FILE --exclude="assets/tiled/hk-reference" \
+          ./assets/* ./config/* ./dist/* ./saves/ \
+          LICENSE.md README.md CHANGELOG.md
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
-          # the "outer" here is because of the double zip file created when downloading artifacts
-          name: outer-hallowdale-v${{ github.event.inputs.version }}
+          name: ${{ env.OUT_FILE }}
           path: ${{ env.OUT_FILE }}
