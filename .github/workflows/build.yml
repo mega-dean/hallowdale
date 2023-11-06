@@ -9,7 +9,7 @@ on:
 
 env:
   OUT_DIR: hallowdale-v${{ github.event.inputs.version }}
-  TARBALL: ${{ env.OUT_DIR }}.tar.gz
+  TARBALL: hallowdale-v${{ github.event.inputs.version }}.tar.gz
 
 jobs:
   build-artifacts:
