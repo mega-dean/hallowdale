@@ -74,10 +74,8 @@ jobs:
           sudo chmod a+x dist/linux
 
       - name: tar
-        run: >
-          tar -czvf $OUT_FILE --exclude="assets/tiled/hk-reference" \
-          ./assets/* ./config/* ./dist/* ./saves/ \
-          LICENSE.md README.md CHANGELOG.md
+        run: |
+          tar -czvf $OUT_FILE --exclude="assets/tiled/hk-reference/*" ./assets/ ./config/ ./dist/ ./saves/ LICENSE.md README.md CHANGELOG.md --no-recursion ./saves/
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
