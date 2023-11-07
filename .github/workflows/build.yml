@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos
+          # - macos
           - ubuntu
-          - windows
+          # - windows
         ocaml-compiler:
           - 4.13.1
 
@@ -63,22 +63,30 @@ jobs:
         with:
           path: artifacts
 
-      - name: move artifacts into dist/
-        run: |
-          mv artifacts/windows-$OUT_DIR/main.exe dist/windows.exe
-          mv artifacts/ubuntu-$OUT_DIR/main.exe dist/linux
-          mv artifacts/macos-$OUT_DIR/main.exe dist/macos
-          rm -rf artifacts
-          sudo chmod a+x dist/linux dist/macos
-
-      - name: tar
+      - name: move artifacts into ${{ env.OUT_DIR }}/dist
         run: |
           mkdir $OUT_DIR
-          tar -czvf $TARBALL --exclude="assets/tiled/hk-reference/*" ./assets/ ./config/ ./dist/ ./saves/ LICENSE.md README.md CHANGELOG.md --no-recursion ./saves/
-          mv $TARBALL $OUT_DIR
+          # mv artifacts/windows-$OUT_DIR/main.exe $OUT_DIR/dist/windows.exe
+          mv artifacts/ubuntu-$OUT_DIR/main.exe $OUT_DIR/dist/linux
+          # mv artifacts/macos-$OUT_DIR/main.exe $OUT_DIR/dist/macos
+          sudo chmod a+x $OUT_DIR/dist/linux
+
+      - name: copy everything else into ${{ env.OUT_DIR }}/
+        run: |
+          mkdir $OUT_DIR/saves
+          cp -r assets $OUT_DIR
+          rm -rf $OUT_DIR/assets/tiled/hk-reference
+          cp -r config $OUT_DIR
+          cp -r LICENSE.md $OUT_DIR
+          cp -r README.md $OUT_DIR
+          cp -r CHANGELOG.md $OUT_DIR
+
+      - name: make ${{ env.TARBALL }}
+        run: |
+          tar -czvf $TARBALL $OUT_DIR
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.TARBALL }}
-          path: ${{ env.OUT_DIR }}/${{ env.TARBALL }}
+          name: ${{ env.OUT_DIR }}
+          path: ${{ env.OUT_DIR }}
