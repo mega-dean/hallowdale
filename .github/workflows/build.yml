@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - macos
+          - macos
           - ubuntu
-          # - windows
+          - windows
         ocaml-compiler:
           - 4.13.1
 
@@ -65,11 +65,11 @@ jobs:
 
       - name: move artifacts into ${{ env.OUT_DIR }}/dist
         run: |
-          mkdir $OUT_DIR
-          # mv artifacts/windows-$OUT_DIR/main.exe $OUT_DIR/dist/windows.exe
+          mkdir -p $OUT_DIR/dist/
+          mv artifacts/windows-$OUT_DIR/main.exe $OUT_DIR/dist/windows.exe
           mv artifacts/ubuntu-$OUT_DIR/main.exe $OUT_DIR/dist/linux
-          # mv artifacts/macos-$OUT_DIR/main.exe $OUT_DIR/dist/macos
-          sudo chmod a+x $OUT_DIR/dist/linux
+          mv artifacts/macos-$OUT_DIR/main.exe $OUT_DIR/dist/macos
+          sudo chmod a+x $OUT_DIR/dist/linux $OUT_DIR/dist/macos
 
       - name: copy everything else into ${{ env.OUT_DIR }}/
         run: |
