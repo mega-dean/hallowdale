@@ -133,7 +133,7 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
     Player.maybe_begin_interaction state game trigger)
   else
     state.frame.idx <- save_file.progress.steel_sole.frame_idx;
-  Raylib.stop_music_stream state.menu_music.t;
+  Audio.stop_music state.menu_music.t;
   state.game_context <- IN_PROGRESS game
 
 let create

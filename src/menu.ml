@@ -86,26 +86,26 @@ let change_weapon_menu (weapon_names : string list) : menu =
 
 let update_menu_choice (menu : menu) state =
   if state.frame_inputs.down.pressed then (
-    play_sound state "click";
+    Audio.play_sound state "click";
     menu.current_choice_idx <- Int.min (menu.current_choice_idx + 1) (List.length menu.choices - 1));
   if state.frame_inputs.up.pressed then (
-    play_sound state "click";
+    Audio.play_sound state "click";
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1))
 
 let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
     | None ->
-      play_sound state "menu-expand";
+      Audio.play_sound state "menu-expand";
       state.pause_menu <-
         Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
     | Some _ ->
-      play_sound state "menu-close";
+      Audio.play_sound state "menu-close";
       state.pause_menu <- None)
   else if state.frame_inputs.open_map.pressed then (
     match state.pause_menu with
     | None ->
-      play_sound state "menu-expand";
+      Audio.play_sound state "menu-expand";
       let on_map x offset = (x /. Config.world_map.scale) +. offset in
       let room_pos_on_map x y =
         let x', y' =
@@ -142,7 +142,7 @@ let update_pause_menu (game : game) (state : state) : state =
       in
       state.pause_menu <- Some (WORLD_MAP { black_rects; ghost_pos })
     | Some _ ->
-      play_sound state "menu-close";
+      Audio.play_sound state "menu-close";
       state.pause_menu <- None);
 
   (match state.pause_menu with
@@ -152,39 +152,20 @@ let update_pause_menu (game : game) (state : state) : state =
     ()
   | Some (MENU menu) ->
     update_menu_choice menu state;
-    let get_new_volume increase v =
-      Float.bound 0.
-        (if increase then
-           v +. 0.1
-        else
-          v -. 0.1)
-        2.
-    in
-    let change_music_volume increase =
-      let new_volume = get_new_volume increase state.settings.music_volume in
-      state.settings.music_volume <- new_volume;
-      Raylib.set_music_volume game.music.music.t new_volume
-    in
-
-    let change_sound_effects_volume increase =
-      let new_volume = get_new_volume increase state.settings.sound_effects_volume in
-      state.settings.sound_effects_volume <- new_volume
-    in
 
     if state.frame_inputs.jump.pressed then (
       (* TODO this plays the confirm sound even when selecting "Back" *)
-      play_sound state "confirm";
+      Audio.play_sound state "confirm";
       match List.nth menu.choices menu.current_choice_idx with
       | PAUSE_MENU CONTINUE ->
         state.pause_menu <- None;
         game.interaction.text <- None
-      (* | PAUSE_MENU WORLD_MAP -> *)
       | PAUSE_MENU CHANGE_WEAPON ->
         state.pause_menu <- Some (MENU (change_weapon_menu (List.map fst game.player.weapons)))
       | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
-        Raylib.seek_music_stream game.music.music.t 0.;
-        Raylib.seek_music_stream state.menu_music.t 0.;
+        Audio.reset_music game.music.music;
+        Audio.reset_music state.menu_music;
         (* TODO unload textures *)
         state.pause_menu <- None;
         Game.save game state ~after_fn:(fun state ->
@@ -201,10 +182,10 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))
       | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
       | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
-      | CHANGE_AUDIO_SETTING (MUSIC, INCREASE) -> change_music_volume true
-      | CHANGE_AUDIO_SETTING (MUSIC, DECREASE) -> change_music_volume false
-      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE) -> change_sound_effects_volume true
-      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE) -> change_sound_effects_volume false
+      | CHANGE_AUDIO_SETTING (MUSIC, INCREASE) -> Audio.increase_music_volume state game
+      | CHANGE_AUDIO_SETTING (MUSIC, DECREASE) -> Audio.decrease_music_volume state game
+      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE) -> Audio.increase_sound_effects_volume state
+      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE) -> Audio.decrease_sound_effects_volume state
       | CHANGE_AUDIO_SETTING (_, BACK) -> state.pause_menu <- Some (MENU (settings_menu ()))
       | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
@@ -241,7 +222,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
   in
 
   if state.frame_inputs.jump.pressed then (
-    play_sound state "confirm";
+    Audio.play_sound state "confirm";
     match List.nth menu.choices menu.current_choice_idx with
     | MAIN_MENU START_GAME -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
     | MAIN_MENU QUIT ->

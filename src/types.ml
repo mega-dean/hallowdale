@@ -1365,13 +1365,6 @@ type state = {
   settings : settings;
 }
 
-(* TODO move to a new file *)
-let play_sound state sound_name =
-  let sound = List.assoc sound_name state.global.sounds in
-  if not (Raylib.is_sound_playing sound) then (
-    Raylib.set_sound_volume sound state.settings.sound_effects_volume;
-    Raylib.play_sound sound)
-
 let clone_vector (v : vector) : vector = { x = v.x; y = v.y }
 let clone_rect (r : rect) : rect = { pos = clone_vector r.pos; w = r.w; h = r.h }
 let clone_time (t : time) : time = { at = t.at }

@@ -212,35 +212,25 @@ let init window_w window_h window_scale : state =
   (* TODO this should get saved to the save file instead of resetting every time *)
   let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
 
-  let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas : area_music =
-    let music =
-      Raylib.load_music_stream (File.make_assets_path [ "audio"; "music"; fmt "%s.ogg" name ])
-    in
-    Raylib.set_music_volume music settings.music_volume;
-    (* TODO this probably isn't a good way to do this
-       - this is starting all ~8 area musics, and then only advancing the one for the current area
-       - should probably be using stop_music_stream
-    *)
-    Raylib.play_music_stream music;
-    { areas; music = { name; t = music; loop_start = { at = intro }; loop_end = { at = loop } } }
-  in
-
   let area_musics : area_music list =
     [
       (* TODO these loop times are not very precise *)
-      load_music "as-i-lay-me-down" ~intro:72.128 ~loop:171.947
-        [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ];
-      load_music "daybreak" [ AC_REPAIR_ANNEX ];
-      load_music "ending" [ COMPUTER_WING ];
-      load_music "greendale" [ LIBRARY; MEOW_MEOW_BEENZ ];
-      load_music "kiss-from-a-rose" ~intro:22.255 ~loop:73.545 [ CITY_OF_CHAIRS; OUTLANDS ];
-      load_music "mash-theme" ~loop:75.451 [ BASEMENT ];
-      load_music "somewhere-out-there" ~intro:35.306 ~loop:93.553 [ TRAMPOLINEPATH ];
+      Audio.load_music "as-i-lay-me-down" ~intro:72.128 ~loop:171.947
+        [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ]
+        settings.music_volume;
+      Audio.load_music "daybreak" [ AC_REPAIR_ANNEX ] settings.music_volume;
+      Audio.load_music "ending" [ COMPUTER_WING ] settings.music_volume;
+      Audio.load_music "greendale" [ LIBRARY; MEOW_MEOW_BEENZ ] settings.music_volume;
+      Audio.load_music "kiss-from-a-rose" ~intro:22.255 ~loop:73.545 [ CITY_OF_CHAIRS; OUTLANDS ]
+        settings.music_volume;
+      Audio.load_music "mash-theme" ~loop:75.451 [ BASEMENT ] settings.music_volume;
+      Audio.load_music "somewhere-out-there" ~intro:35.306 ~loop:93.553 [ TRAMPOLINEPATH ]
+        settings.music_volume;
     ]
   in
 
   {
-    menu_music = (load_music "opening" []).music;
+    menu_music = (Audio.load_music "opening" [] settings.music_volume).music;
     area_musics;
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
@@ -728,20 +718,13 @@ let tick (state : state) =
   match state.game_context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
-    if Raylib.get_music_time_played state.menu_music.t > state.menu_music.loop_end.at then
-      Raylib.seek_music_stream state.menu_music.t
-        (Float.bound 0.1 state.menu_music.loop_start.at Float.max_float);
-    Raylib.update_music_stream state.menu_music.t;
+    Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
   | IN_PROGRESS game ->
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
-    let music = game.music.music in
-    if Raylib.get_music_time_played music.t > music.loop_end.at then
-      Raylib.seek_music_stream music.t (Float.bound 0.1 music.loop_start.at Float.max_float);
-
-    Raylib.update_music_stream music.t;
+    Audio.play_game_music game;
 
     if game.debug_paused then
       if key_pressed DEBUG_2 then

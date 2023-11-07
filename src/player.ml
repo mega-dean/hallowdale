@@ -467,7 +467,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         match Collision.with_slash slash enemy.entity.sprite with
         | None -> ()
         | Some collision ->
-          play_sound state "punch";
+          Audio.play_sound state "punch";
           if
             Enemy.maybe_take_damage state enemy game.player.history.nail.started NAIL
               (get_damage game.player NAIL) collision
@@ -517,7 +517,7 @@ let resolve_slash_collisions (state : state) (game : game) =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
-        play_sound state "nail-hit-metal";
+        Audio.play_sound state "nail-hit-metal";
         match coll.direction with
         | DOWN -> (
           (* always pogo, but only un-rotate the platform if it is upright *)
@@ -534,7 +534,7 @@ let resolve_slash_collisions (state : state) (game : game) =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
-        play_sound state sound_name;
+        Audio.play_sound state sound_name;
         match coll.direction with
         | DOWN -> pogo game.player
         | _direction -> ())
@@ -554,9 +554,9 @@ let resolve_slash_collisions (state : state) (game : game) =
         in
         let destroy_object (tile_group : tile_group) (collision : collision) =
           (* TODO organize these sound effects (probably just combine these all into one) *)
-          play_sound state "break";
-          play_sound state "alarmswitch";
-          play_sound state "punch";
+          Audio.play_sound state "break";
+          Audio.play_sound state "alarmswitch";
+          Audio.play_sound state "punch";
           layer.spawned_fragments <-
             List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
@@ -598,8 +598,8 @@ let resolve_slash_collisions (state : state) (game : game) =
                   layer.spawned_fragments <-
                     List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
                   door_health.hits <- door_health.hits - 1;
-                  play_sound state "alarmswitch";
-                  play_sound state "punch";
+                  Audio.play_sound state "alarmswitch";
+                  Audio.play_sound state "punch";
                   new_tile_groups := tile_group :: !new_tile_groups)
                 else
                   destroy_object tile_group coll)
@@ -929,7 +929,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
   let action : ghost_action =
     match action_kind with
     | ATTACK direction ->
-      play_sound state "nail-swing";
+      Audio.play_sound state "nail-swing";
 
       let relative_pos =
         match direction with
@@ -965,13 +965,11 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.history.c_dash_cooldown
     | C_DASH ->
       (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
-      (* play_sound state "spray"; *)
+      (* Audio.play_sound state "spray"; *)
       (* TODO maybe only should track this stuff when game_mode is STEEL_SOLE *)
-      (match game.room.area.id with
-      | COMPUTER_WING ->
-        (* not counting these for now since there are some rooms that require it  *)
-        ()
-      | _ -> game.progress.steel_sole.c_dashes <- 1 + game.progress.steel_sole.c_dashes);
+      if game.room.area.id <> COMPUTER_WING then
+        (* not counting these in COMPUTER_WING since there are some rooms that require it  *)
+        game.progress.steel_sole.c_dashes <- 1 + game.progress.steel_sole.c_dashes;
       game.player.current.is_c_dashing <- true;
       game.player.current.is_charging_c_dash <- false;
       game.player.ghost.entity.current_floor <- None;
@@ -989,11 +987,11 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       make_c_dash_child game.player;
       game.player.history.charge_c_dash
     | SHADE_DASH ->
-      play_sound state "dash";
+      Audio.play_sound state "dash";
       game.player.history.shade_dash
     | DASH ->
       (* TODO the dash sound should have the footsteps at the end when the ghost lands *)
-      play_sound state "dash";
+      Audio.play_sound state "dash";
       game.player.ghost.entity.y_recoil <- None;
       game.player.history.dash
     | CAST spell_kind -> (
@@ -1041,7 +1039,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.history.take_damage_and_respawn
     | TAKE_DAMAGE _ ->
       (* TODO separate sound for this *)
-      play_sound state "punch";
+      Audio.play_sound state "punch";
       state.camera.shake <- 0.5;
       game.player.history.take_damage
     | DIVE_COOLDOWN -> game.player.history.dive_cooldown

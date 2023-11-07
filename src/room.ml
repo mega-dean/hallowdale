@@ -778,7 +778,7 @@ let handle_transitions (state : state) (game : game) =
       let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
       let target_area_music = get_music target_area_id in
       if current_area_music.music.name <> target_area_music.music.name then (
-        Raylib.seek_music_stream target_area_music.music.t 0.;
+        Audio.reset_music target_area_music.music;
         game.music <- target_area_music);
       change_current_room state game room_location start_pos;
       game.player.current.can_dash <- true;
