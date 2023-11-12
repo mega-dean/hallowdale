@@ -806,10 +806,7 @@ let tick (state : state) =
               });
         state'
       | None ->
-        (* CLEANUP maybe add Env.development check here
-           - or maybe not, since non-dev shouldn't be able to update the value of state.debug.enabled
-        *)
-        if state.debug.enabled then (
+        if state.debug.enabled && Env.development then (
           let show_triggers ?(color = Raylib.Color.blue) triggers =
             add_debug_rects state (List.map (fun r -> (color, r.dest)) triggers)
           in

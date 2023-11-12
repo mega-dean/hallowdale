@@ -29,9 +29,6 @@ module Draw = struct
       (font_size |> Int.to_float) Config.text.spacing color
 end
 
-(* CLEANUP add checks for Env.development
-   - will need to fix the code that is using these as non-debug (eg. text box bg)
-*)
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
   let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
   let points = get_points adjusted_shape in
@@ -1051,14 +1048,14 @@ let tick (state : state) =
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
-    if Env.development then
+    if Env.development then (
       Raylib.draw_fps
         (camera_x +. Config.window.w -. 100. |> Float.to_int)
         (camera_y |> Float.to_int);
-    if state.debug.enabled then
-      draw_debug_info ();
-    if state.debug.show_frame_inputs then
-      draw_frame_inputs ();
+      if state.debug.enabled then
+        draw_debug_info ();
+      if state.debug.show_frame_inputs then
+        draw_frame_inputs ());
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
     state

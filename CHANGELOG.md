@@ -5,6 +5,7 @@
 - show purple pen stats in pause menu for demo mode
 - reset progress after dying
 - prevent enemy damage while taking hazard damage
+- disable debug keys/rendering in non-development environment
 
 ## [0.0.2] - 2023-11-06
 
