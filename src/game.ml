@@ -188,24 +188,24 @@ let create
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
-  let room_params : room_params =
-    {
-      file_name = save_file.room_name;
-      progress_by_room = save_file.progress.by_room;
-      exits;
-      enemy_configs = global.enemy_configs;
-      npc_configs = global.npc_configs;
-      pickup_indicator_texture = global.textures.pickup_indicator;
-      lever_texture = global.textures.door_lever;
-      respawn_pos =
-        {
-          x = save_file.respawn_x *. Config.window.scale;
-          y = save_file.respawn_y *. Config.window.scale;
-        };
-      platforms = global.textures.platforms;
-    }
+  let room =
+    Room.init
+      {
+        file_name = save_file.room_name;
+        progress_by_room = save_file.progress.by_room;
+        exits;
+        enemy_configs = global.enemy_configs;
+        npc_configs = global.npc_configs;
+        pickup_indicator_texture = global.textures.pickup_indicator;
+        lever_texture = global.textures.door_lever;
+        respawn_pos =
+          {
+            x = save_file.respawn_x *. Config.window.scale;
+            y = save_file.respawn_y *. Config.window.scale;
+          };
+        platforms = global.textures.platforms;
+      }
   in
-  let room = Room.init room_params in
 
   Tiled.Room.reset_tile_groups room;
 
@@ -218,25 +218,20 @@ let create
   player.ghost.entity.update_pos <- true;
   Player.equip_weapon player save_file.current_weapon;
 
-  let g =
-    {
-      mode;
-      player;
-      party;
-      room;
-      music;
-      interaction =
-        { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
-      progress = clone_game_progress save_file.progress;
-      save_file;
-      save_file_slot;
-      debug_paused = false;
-      debug_safe_ss = false;
-    }
-  in
-  (* show_purple_pens "Game.create" g; *)
-  (* show_removed_idxs_by_layer "Game.create" g; *)
-  g
+  {
+    mode;
+    player;
+    party;
+    room;
+    music;
+    interaction =
+      { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
+    progress = clone_game_progress save_file.progress;
+    save_file;
+    save_file_slot;
+    debug_paused = false;
+    debug_safe_ss = false;
+  }
 
 let init state mode (save_file : Json_t.save_file) save_file_idx =
   let game = create state mode save_file state.global state.area_musics state.world save_file_idx in
