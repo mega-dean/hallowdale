@@ -114,24 +114,6 @@ let find_trigger_collision ghost (triggers : trigger list) =
 let find_respawn_trigger_collision ghost (triggers : (vector * trigger) list) =
   find_trigger_collision' ghost triggers (fun (_, t) -> t.dest)
 
-(* returns the first enemy collision *)
-let get_enemy_collision (player : player) (room : room) : (int * direction) option =
-  let find_colliding_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
-    if Enemy.is_dead enemy then
-      None
-    else if Collision.between_entities player.ghost.entity enemy.entity then (
-      let direction : direction =
-        if rect_center_x enemy.entity.dest > rect_center_x player.ghost.entity.dest then
-          LEFT
-        else
-          RIGHT
-      in
-      Some (enemy.damage, direction))
-    else
-      None
-  in
-  List.find_map find_colliding_enemy room.enemies
-
 let pogo (player : player) =
   player.ghost.entity.current_floor <- None;
   player.current.can_dash <- true;
@@ -750,8 +732,7 @@ let set_pose
       update_vx 0.;
       (player.ghost.head_textures.look_down, bodies.focus)
     | TAKE_DAMAGE_AND_RESPAWN -> (player.ghost.head_textures.take_damage, bodies.take_damage)
-    | DIE ->
-      (player.ghost.head_textures.take_damage, bodies.take_damage)
+    | DIE -> (player.ghost.head_textures.take_damage, bodies.take_damage)
     | TAKE_DAMAGE (damage, direction) ->
       (* from recoiling upwards *)
       player.ghost.entity.current_floor <- None;
@@ -1242,12 +1223,9 @@ let get_invincibility_kind (state : state) (game : game) : invincibility_kind op
   let in_dive_cooldown () =
     not (past_cooldown game.player.history.dive_cooldown state.frame.time)
   in
-  if not (past_cooldown game.player.history.take_damage state.frame.time) then
-    (* CLEANUP need to prevent enemy damage when taking hazard damage
-       - maybe reuse TOOK_DAMAGE
-       - maybe make new variant TAKING_HAZARD_DAMAGE (which should probably have a similar
-         cooldown period after respawning)
-    *)
+  if game.player.current.is_taking_hazard_damage then
+    Some TAKING_HAZARD_DAMAGE
+  else if not (past_cooldown game.player.history.take_damage state.frame.time) then
     Some TOOK_DAMAGE
   else if game.player.current.is_diving || in_dive_cooldown () then
     Some DIVE_IFRAMES
@@ -2210,6 +2188,27 @@ let update (game : game) (state : state) =
   in
 
   let handle_collisions () =
+    (* returns the first enemy collision *)
+    let get_enemy_collision (player : player) (room : room) : (int * direction) option =
+      let find_colliding_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
+        if Enemy.is_dead enemy then
+          None
+        else if Collision.between_entities player.ghost.entity enemy.entity then (
+          let direction : direction =
+            if rect_center_x enemy.entity.dest > rect_center_x player.ghost.entity.dest then
+              LEFT
+            else
+              RIGHT
+          in
+          Some (enemy.damage, direction))
+        else
+          None
+      in
+      if past_cooldown game.player.history.take_damage state.frame.time then
+        List.find_map find_colliding_enemy room.enemies
+      else
+        None
+    in
     let check_enemy_collisions () =
       if is_vulnerable state game then (
         match get_enemy_collision game.player game.room with

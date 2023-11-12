@@ -882,6 +882,7 @@ type ghost_child = {
 type invincibility_kind =
   (* TODO add something like | NO_FLASHING *)
   | DIVE_IFRAMES
+  | TAKING_HAZARD_DAMAGE
   | TOOK_DAMAGE
   | SHADE_CLOAK
 

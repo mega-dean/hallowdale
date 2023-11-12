@@ -857,6 +857,7 @@ let tick (state : state) =
           let d = state.frame.time -. game.player.history.take_damage.started.at in
           let a = get_flashing_tint d in
           match invincibility_kind with
+          | TAKING_HAZARD_DAMAGE -> Color.white
           | TOOK_DAMAGE -> Color.create 255 255 255 a
           | DIVE_IFRAMES -> Color.create a a a 255
           | SHADE_CLOAK -> Color.create 0 100 200 255)

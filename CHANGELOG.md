@@ -2,8 +2,9 @@
 
 ## [Unreleased]
 
-- handle death
 - show purple pen stats in pause menu for demo mode
+- reset progress after dying
+- prevent enemy damage while taking hazard damage
 
 ## [0.0.2] - 2023-11-06
 
