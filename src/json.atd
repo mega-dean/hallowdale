@@ -191,11 +191,13 @@ type npcs_file = {
   shared_textures : (string * texture_config) list;
 }
 
-(* this progress is permanently saved so eg. removed_idxs_by_layer is for doors that are permanently removed, but
-   not for jugs (which respawn when the room is re-entered, and are tracked by layer.tile_groups / .destroyed_tiles)
+(* - this progress is permanently saved so eg. removed_tile_idxs is for things that are permanently
+     removed, like doors or purple pen jars
+   - jugs are respawn when the room is re-entered, and are tracked by layer.tile_groups and
+     .destroyed_tiles
 *)
 type room_progress = {
-  removed_idxs_by_layer <ocaml mutable> : (string * int list) list;
+  removed_tile_idxs <ocaml mutable> : int list;
   finished_interactions <ocaml mutable> : string list;
   revealed_shadow_layers <ocaml mutable> : string list;
 }
@@ -218,12 +220,12 @@ type steel_sole_progress = {
   purple_pens_found <ocaml mutable> : (int * string) list;
   dunks <ocaml mutable> : int;
   c_dashes <ocaml mutable> : int;
-  frame_idx <ocaml mutable> : int;
 }
 
-
 type game_progress = {
+  frame_idx <ocaml mutable> : int;
   steel_sole : steel_sole_progress;
+  (* TODO deaths : int *)
   by_room <ocaml mutable> : (string * room_progress) list;
 }
 
@@ -234,7 +236,7 @@ type save_file = {
   ghost_y : float;
   respawn_x : float;
   respawn_y : float;
-  ghosts_in_party <ocaml mutable> : string list;
+  ghosts_in_party : string list;
   room_name : string;
   abilities : ghost_abilities;
   weapons : string list;

@@ -198,6 +198,11 @@
             "cooldown": 0.8,
             "input_buffer": -1.0
         }],
+        ["die", {
+            "duration": 5.0,
+            "cooldown": 0.0,
+            "input_buffer": -1.0
+        }],
 
         ["cast-vs", {
             "duration": 0.3,

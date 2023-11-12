@@ -75,12 +75,11 @@ type texture_configs = Json_t.texture_configs
 type steel_sole_progress = Json_t.steel_sole_progress = {
   mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
-  mutable c_dashes: int;
-  mutable frame_idx: int
+  mutable c_dashes: int
 }
 
 type room_progress = Json_t.room_progress = {
-  mutable removed_idxs_by_layer: (string * int list) list;
+  mutable removed_tile_idxs: int list;
   mutable finished_interactions: string list;
   mutable revealed_shadow_layers: string list
 }
@@ -98,6 +97,7 @@ type ghost_abilities = Json_t.ghost_abilities = {
 }
 
 type game_progress = Json_t.game_progress = {
+  mutable frame_idx: int;
   steel_sole: steel_sole_progress;
   mutable by_room: (string * room_progress) list
 }
@@ -109,7 +109,7 @@ type save_file = Json_t.save_file = {
   ghost_y: float;
   respawn_x: float;
   respawn_y: float;
-  mutable ghosts_in_party: string list;
+  ghosts_in_party: string list;
   room_name: string;
   abilities: ghost_abilities;
   weapons: string list;

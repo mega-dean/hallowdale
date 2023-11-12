@@ -1,5 +1,4 @@
 open Utils
-
 module StrSet = Set.Make (String)
 
 type str_set = StrSet.t
@@ -322,6 +321,7 @@ type ghost_action_kind =
   | FLAP
   | WALL_KICK
   | JUMP
+  | DIE
   | TAKE_DAMAGE_AND_RESPAWN
   | TAKE_DAMAGE of int * direction
   | CAST of spell_kind
@@ -759,6 +759,7 @@ type ghost_action_history = {
   wall_kick : ghost_action;
   take_damage : ghost_action;
   take_damage_and_respawn : ghost_action;
+  die : ghost_action;
   (* checking is_doing for nail/focus uses the ghost.child sprite, not
      the duration/doing_until/blocked_until like the other actions
   *)
@@ -817,8 +818,28 @@ type frame_inputs = {
   interact : frame_input;
 }
 
+(* These align with the inside of the parent:
+   x = LEFT, y = CENTER ->
+   pppppppppppppppp
+   p              p
+   ccccc          p
+   c   c          p
+   c   c          p
+   ccccc          p
+   p              p
+   pppppppppppppppp
+
+   x = CENTER, y = BOTTOM ->
+   pppppppppppppppp
+   p              p
+   p              p
+   p              p
+   p              p
+   p    cccccc    p
+   p    c    c    p
+   pppppccccccppppp
+*)
 type x_alignment =
-  (* TODO could add variants for LEFT/RIGHT _OUTSIDE, that don't overlap with the parent rect *)
   | LEFT
   | RIGHT
   | CENTER
@@ -846,9 +867,7 @@ type ghost_child_kind =
   | C_DASH_WALL_CHARGE_CRYSTALS
   | C_DASH_WHOOSH
   | SHADE_DASH_SPARKLES
-  (* TODO
-     | DASH_WHOOSH
-  *)
+  (* TODO | DASH_WHOOSH *)
   | WRAITHS
   | DIVE
   | DIVE_COOLDOWN
@@ -974,9 +993,7 @@ type door_health = {
   mutable last_hit_at : float;
 }
 
-(* - a rectangle of tiles that is grouped into a single collision
-   -  eg floors, jugs, doors
-*)
+(* a rectangle of tiles that is grouped into a single collision, eg. floors, jugs, doors *)
 type tile_group = {
   dest : rect;
   transformation_bits : int;
@@ -991,8 +1008,8 @@ type tile_group = {
 
 (* seems redundant to have both of these, but it's used to distinguish between things that are in the same plane as the ghost (ie parallax 1)
    - the "same plane" is tracked in "collides_with_ghost", since they should never be overlapping
-   - jugs are in the same plane as the ghost but don't collide, so they will still have fg or bg set
-   - there is validation to make sure that only one of "fg", "bg", or "collides" is configured
+   - jugs are in the same plane as the ghost but don't collide (except pogos), so they will still have fg or bg set
+   - there is validation to make sure that only one of "fg" or "bg" is configured
 *)
 type layer_render_config = {
   bg : bool;
@@ -1008,8 +1025,6 @@ type layer_config = {
   permanently_removable : bool;
   shaded : bool;
   animated : bool;
-  (* TODO probably don't want these "single-use" properties (just check layer name, already doing this with "acid") *)
-  water : bool;
 }
 
 (* a tilelayer in Tiled *)
@@ -1294,6 +1309,11 @@ type debug = {
   mutable rects : (color * rect) list;
 }
 
+type saved_game = {
+  room : room;
+  progress : Json_t.game_progress;
+}
+
 type game = {
   mode : game_mode;
   mutable player : player;
@@ -1304,8 +1324,13 @@ type game = {
   mutable room : room;
   mutable music : area_music;
   interaction : Interaction.t;
+  (* - game.progress keeps track of the the current progress, and gets saved to save_file.progress
+     when the game is saved
+     - when the player dies, game.progress is reset to the save_file.progress
+  *)
   progress : Json_t.game_progress;
-  mutable save_file_slot : int;
+  mutable save_file : Json_t.save_file;
+  save_file_slot : int;
   mutable debug_paused : bool;
   mutable debug_safe_ss : bool;
 }
@@ -1325,6 +1350,7 @@ type game_context =
   | MAIN_MENU of menu * save_slots
   | SAVE_FILES of menu * save_slots
   | IN_PROGRESS of game
+  | DIED of game
 
 type frame_info = {
   mutable idx : int;
@@ -1378,3 +1404,25 @@ let clone_entity (entity : entity) : entity =
     v = clone_vector entity.v;
   }
 
+let clone_room_progress (room_progress : Json_t.room_progress) : Json_t.room_progress =
+  {
+    removed_tile_idxs = room_progress.removed_tile_idxs;
+    finished_interactions = room_progress.finished_interactions;
+    revealed_shadow_layers = room_progress.revealed_shadow_layers;
+  }
+
+let clone_progress_by_room (progress_by_room : (string * Json_t.room_progress) list) :
+    (string * Json_t.room_progress) list =
+  List.map (fun (name, progress) -> (name, clone_room_progress progress)) progress_by_room
+
+let clone_game_progress (game_progress : Json_t.game_progress) : Json_t.game_progress =
+  {
+    by_room = clone_progress_by_room game_progress.by_room;
+    frame_idx = game_progress.frame_idx;
+    steel_sole =
+      {
+        purple_pens_found = game_progress.steel_sole.purple_pens_found;
+        dunks = game_progress.steel_sole.dunks;
+        c_dashes = game_progress.steel_sole.c_dashes;
+      };
+  }

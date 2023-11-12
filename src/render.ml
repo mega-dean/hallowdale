@@ -29,6 +29,9 @@ module Draw = struct
       (font_size |> Int.to_float) Config.text.spacing color
 end
 
+(* CLEANUP add checks for Env.development
+   - will need to fix the code that is using these as non-debug (eg. text box bg)
+*)
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
   let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
   let points = get_points adjusted_shape in
@@ -343,13 +346,14 @@ let tick (state : state) =
   let text_box_width (config : text_config) = Config.window.w -. (2. *. config.margin_x) in
 
   let draw_screen_fade alpha =
+    (* this is slightly larger than the window to add some padding for when the camera is moving *)
     Draw.rect
       {
         pos = { x = camera_x -. 5.; y = camera_y -. 5. };
         w = Config.window.w +. 10.;
         h = Config.window.h +. 10.;
       }
-      (Color.create 0 0 0 alpha)
+      (Color.create 0 0 0 (Int.bound 0 alpha 255))
   in
 
   let draw_text_bg_box ?(color = Color.create 0 0 0 200) (config : text_config) =
@@ -593,6 +597,7 @@ let tick (state : state) =
   match state.game_context with
   | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
   | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
+  | DIED _ -> state
   | IN_PROGRESS game ->
     let draw_skybox tint =
       (* TODO could add some parallax scrolling here, but this won't be visible very often *)
@@ -1009,9 +1014,7 @@ let tick (state : state) =
     draw_hud ();
     (match state.screen_fade with
     | None -> ()
-    | Some alpha ->
-      (* this is slightly larger than the window to add some padding for when the camera is moving *)
-      draw_screen_fade alpha);
+    | Some alpha -> draw_screen_fade alpha);
 
     (let interaction_text =
        match state.pause_menu with
@@ -1047,14 +1050,14 @@ let tick (state : state) =
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
-    if Env.development then (
+    if Env.development then
       Raylib.draw_fps
         (camera_x +. Config.window.w -. 100. |> Float.to_int)
         (camera_y |> Float.to_int);
-      if state.debug.enabled then
-        draw_debug_info ();
-      if state.debug.show_frame_inputs then
-        draw_frame_inputs ());
+    if state.debug.enabled then
+      draw_debug_info ();
+    if state.debug.show_frame_inputs then
+      draw_frame_inputs ();
     Raylib.end_mode_2d ();
     Raylib.end_drawing ();
     state

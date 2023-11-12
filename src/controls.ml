@@ -392,6 +392,7 @@ let key_pressed ?(direction = false) k =
   || (* TODO this isn't really correct: when the left stick is held in a direction, it is
         registering as being pressed every frame
         - need to check whether or not it was down the previous frame in State.update_frame_inputs
+        - I think this only affects menus, but might have other problems
      *)
   check_gamepad_input Raylib.is_gamepad_button_pressed direction k
 

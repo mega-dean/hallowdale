@@ -37,8 +37,9 @@ let empty_save_file () : Json_t.save_file =
       };
     progress =
       {
+        frame_idx = 0;
         by_room = [];
-        steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0; frame_idx = 0 };
+        steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0 };
       };
     weapons =
       [
@@ -62,7 +63,7 @@ let load_all_save_slots () : save_slots =
   { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
 
 let save ?(after_fn = ignore) (game : game) (state : state) =
-  Room.save_progress game;
+  Room.save_progress_to_game game;
   game.room.respawn_pos <-
     (match game.mode with
     | CLASSIC
@@ -91,39 +92,41 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       respawn_y = game.room.respawn_pos.y /. Config.window.scale;
       room_name = Tiled.Room.get_filename game.room;
       abilities = game.player.abilities;
-      progress =
-        {
-          game.progress with
-          steel_sole = { game.progress.steel_sole with frame_idx = state.frame.idx };
-        };
-      (* { by_room = game.progress.by_room; steel_sole = game.progress.steel_sole }; *)
+      progress = clone_game_progress game.progress;
       weapons = List.map fst game.player.weapons;
       current_weapon = game.player.current_weapon.name;
     }
   in
+  save_file.progress.frame_idx <- state.frame.idx;
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
   let written = File.write (save_file_path game.save_file_slot) contents in
-  if written then
-    after_fn state
+  if written then (
+    game.save_file <- save_file;
+    after_fn state)
   else
     failwith "error when trying to save"
 
 let initialize_steel_sole (save_file : Json_t.save_file) =
-  save_file.ghosts_in_party <- List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
-
-  (* TODO not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
-  save_file.abilities.crystal_heart <- true;
-  save_file.abilities.ismas_tear <- true;
-  save_file.abilities.mantis_claw <- true;
-  save_file.abilities.monarch_wings <- true;
-  save_file.abilities.mothwing_cloak <- true;
-
-  (* no dive because it can cause a soft-lock in water/acid (because it waits for current_floor
-     to know when it is done diving)
-  *)
-  save_file.abilities.vengeful_spirit <- true;
-  save_file.abilities.howling_wraiths <- true;
-  ()
+  {
+    save_file with
+    ghosts_in_party = List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
+    abilities =
+      {
+        crystal_heart = true;
+        ismas_tear = true;
+        mantis_claw = true;
+        monarch_wings = true;
+        mothwing_cloak = true;
+        vengeful_spirit = true;
+        howling_wraiths = true;
+        (* not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
+        shade_cloak = false;
+        (* no dive because it can cause a soft-lock in water/acid (because it waits for
+           current_floor to know when it is done diving)
+        *)
+        desolate_dive = false;
+      };
+  }
 
 let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
   if is_new_game then (
@@ -132,7 +135,7 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
     let trigger : trigger = make_stub_trigger INFO "cutscene" "opening-poem" in
     Player.maybe_begin_interaction state game trigger)
   else
-    state.frame.idx <- save_file.progress.steel_sole.frame_idx;
+    state.frame.idx <- save_file.progress.frame_idx;
   Audio.stop_music state.menu_music.t;
   state.game_context <- IN_PROGRESS game
 
@@ -185,27 +188,28 @@ let create
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
   let room_location = List.assoc room_id world in
   let exits = Tiled.Room.get_exits room_location in
-  let room : room =
-    Room.init
-      {
-        file_name = save_file.room_name;
-        progress_by_room = save_file.progress.by_room;
-        exits;
-        enemy_configs = global.enemy_configs;
-        npc_configs = global.npc_configs;
-        pickup_indicator_texture = global.textures.pickup_indicator;
-        lever_texture = global.textures.door_lever;
-        respawn_pos =
-          {
-            x = save_file.respawn_x *. Config.window.scale;
-            y = save_file.respawn_y *. Config.window.scale;
-          };
-        platforms = global.textures.platforms;
-      }
+  let room_params : room_params =
+    {
+      file_name = save_file.room_name;
+      progress_by_room = save_file.progress.by_room;
+      exits;
+      enemy_configs = global.enemy_configs;
+      npc_configs = global.npc_configs;
+      pickup_indicator_texture = global.textures.pickup_indicator;
+      lever_texture = global.textures.door_lever;
+      respawn_pos =
+        {
+          x = save_file.respawn_x *. Config.window.scale;
+          y = save_file.respawn_y *. Config.window.scale;
+        };
+      platforms = global.textures.platforms;
+    }
   in
+  let room = Room.init room_params in
+
   Tiled.Room.reset_tile_groups room;
 
-  let music = List.find (fun am -> List.mem room.area.id am.areas) area_musics in
+  let music = Audio.get_area_music room.area.id area_musics in
 
   let current_ghost_id = Player.parse_name save_file.ghost_id in
   let party_ghost = Option.get (Player.find_party_ghost current_ghost_id party) in
@@ -214,34 +218,28 @@ let create
   player.ghost.entity.update_pos <- true;
   Player.equip_weapon player save_file.current_weapon;
 
-  {
-    mode;
-    player;
-    party;
-    room;
-    music;
-    interaction =
-      { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
-    progress = { by_room = save_file.progress.by_room; steel_sole = save_file.progress.steel_sole };
-    save_file_slot;
-    debug_paused = false;
-    debug_safe_ss = false;
-  }
+  let g =
+    {
+      mode;
+      player;
+      party;
+      room;
+      music;
+      interaction =
+        { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
+      progress = clone_game_progress save_file.progress;
+      save_file;
+      save_file_slot;
+      debug_paused = false;
+      debug_safe_ss = false;
+    }
+  in
+  (* show_purple_pens "Game.create" g; *)
+  (* show_removed_idxs_by_layer "Game.create" g; *)
+  g
 
-let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
-  let mode' =
-    match mode with
-    | Some m -> m
-    | None -> (
-      match save_file.game_mode with
-      | "Classic" -> CLASSIC
-      | "Steel Sole" -> STEEL_SOLE
-      | "Demo" -> DEMO
-      | _ -> failwithf "invalid game_mode in save_file %d" save_file_idx)
-  in
-  let game =
-    create state mode' save_file state.global state.area_musics state.world save_file_idx
-  in
+let init state mode (save_file : Json_t.save_file) save_file_idx =
+  let game = create state mode save_file state.global state.area_musics state.world save_file_idx in
   state.camera.update_instantly <- true;
   state.camera.raylib <-
     (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
@@ -251,3 +249,16 @@ let init state ?(mode = None) (save_file : Json_t.save_file) save_file_idx =
       (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x game.player.ghost.entity.dest.pos.y)
       0. Config.window.center.x Config.window.center.y;
   game
+
+let load state (save_file : Json_t.save_file) save_file_idx =
+  let mode =
+    match save_file.game_mode with
+    | "Classic" -> CLASSIC
+    | "Steel Sole" -> STEEL_SOLE
+    | "Demo" -> DEMO
+    | _ -> failwithf "invalid game_mode in save_file %d" save_file_idx
+  in
+  init state mode save_file save_file_idx
+
+let create_new state mode (save_file : Json_t.save_file) save_file_idx =
+  init state mode save_file save_file_idx

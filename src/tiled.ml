@@ -64,7 +64,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "trampoline_f" -> (TRAMPOLINEPATH, TRAMP_F)
   | "trampoline_g" -> (TRAMPOLINEPATH, TRAMP_G)
   | "trampoline_h" -> (TRAMPOLINEPATH, TRAMP_H)
-  (* TODO add this again *)
+  (* TODO- add this again *)
   | "ventways_hub" -> (VENTWAYS, VENT_HUB)
   | _ -> failwithf "bad file name '%s' (from %s)" file_name source
 
@@ -291,10 +291,8 @@ module Room = struct
     let tile, _ = look_up_tile json_room room.cache gid in
     tile.coll_offset
 
-  let get_layer_tile_groups
-      ?(debug = false)
-      (room : room)
-      (removed_idxs_by_layer : (string * int list) list) : layer list =
+  let get_layer_tile_groups ?(debug = false) (room : room) (removed_door_idxs : int list) :
+      layer list =
     let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) :
         tile_group list =
       let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in
@@ -304,9 +302,10 @@ module Room = struct
       in
       let available_idxs : bool ref array = Array.make (List.length json_layer.data) (ref true) in
       let removed_idxs =
-        match List.assoc_opt layer_name removed_idxs_by_layer with
-        | None -> []
-        | Some idxs -> idxs
+        if String.ends_with ~suffix:"doors" layer_name then
+          removed_door_idxs
+        else
+          []
       in
       let partition_rects idx tile_gid =
         if not (List.mem idx removed_idxs) then (
@@ -356,7 +355,9 @@ module Room = struct
             in
             let stub_sprite, fragments =
               let all_raw_gids =
-                List.map (fun idx -> Tile.raw_gid (List.nth json_layer.data idx)) (!idxs |> List.uniq)
+                List.map
+                  (fun idx -> Tile.raw_gid (List.nth json_layer.data idx))
+                  (!idxs |> List.uniq)
                 |> List.uniq
               in
               let keys = List.map fst room.cache.jug_fragments_by_gid in
@@ -420,9 +421,9 @@ module Room = struct
       let rects =
         if
           (layer.config.collides_with_ghost
-          || layer.config.water
           || layer.config.destroyable
-          || layer.config.hazard)
+          || layer.config.hazard
+          || layer.name = "water")
           && not layer.hidden
         then
           get_rectangle_tile_groups layer.json layer.name
@@ -435,7 +436,7 @@ module Room = struct
     List.map set_tile_groups room.layers
 
   let reset_tile_groups (room : room) =
-    room.layers <- get_layer_tile_groups room room.progress.removed_idxs_by_layer
+    room.layers <- get_layer_tile_groups room room.progress.removed_tile_idxs
 end
 
 let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) :

@@ -13,7 +13,7 @@ An homage to Hollow Knight.
 
 The versions are not using semantic versioning, even though it is the same format:
 
-- v0.0.\_ -> unstable/pre-release, mostly for testing, major bugs are expected
+- v0.0.\_ -> unstable/demo/pre-release, mostly for testing, major bugs are expected
 - v0.\_.\_ -> these should be stable and playable out-of-the-box but with content missing, bugs are expected
 - v1.\_.\_ -> released
 

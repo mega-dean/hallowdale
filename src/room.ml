@@ -38,24 +38,26 @@ let update_pickup_indicators (state : state) (game : game) =
     get_pickup_indicators game.room.progress state.global.textures.pickup_indicator
       game.room.triggers.item_pickups
 
-let save_progress (game : game) =
+(* room.progress keeps track of the current (unsaved) progress for the room, and gets saved
+   into game.progress on room transition or on game save *)
+let save_progress_to_game (game : game) =
   let room_uuid = Tiled.Room.get_filename game.room in
   game.progress.by_room <- List.replace_assoc room_uuid game.room.progress game.progress.by_room
 
 let init (params : room_params) : room =
-  (* TODO sometimes this function gets called when area/room kinds are already known, so this lookup is redundant *)
+  (* TODO sometimes this function gets called when area/room kinds are already known, so this
+     lookup is redundant *)
   let (area_id, room_id) : area_id * room_id =
     Tiled.parse_room_filename "Room.init" params.file_name
   in
   let room_key = Tiled.Room.get_filename' area_id room_id in
   let new_room_progress () : Json_t.room_progress =
-    (* room_progress gets created here, but isn't saved into state.progress.rooms until the room is being unloaded at an exit *)
-    { finished_interactions = []; revealed_shadow_layers = []; removed_idxs_by_layer = [] }
+    { finished_interactions = []; revealed_shadow_layers = []; removed_tile_idxs = [] }
   in
   let room_progress =
     match List.assoc_opt room_key params.progress_by_room with
     | None -> new_room_progress ()
-    | Some rp -> rp
+    | Some rp -> clone_room_progress rp
   in
   let parse_room (path : string) : Json_t.room =
     let full_path = File.make_assets_path [ "tiled"; "rooms"; path ] in
@@ -416,14 +418,13 @@ let init (params : room_params) : room =
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
               | "acid" -> [ "animated"; "hazard" ]
-              | "water" -> [ "animated"; "water"; "fg" ]
-              (* TODO probably add "conveyor-belt" tiles that are animated like acid
-                 - or maybe just rename "acid"->"animated" layer and use it for conveyor belts too
-              *)
+              | "water" -> [ "animated"; "fg" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
               | "doors" ->
-                (* this is also used for purple pens *)
+                (* this is also used for purple pen jars
+                   TODO maybe add a "jars" layer that has the same config
+                *)
                 [ "collides"; "destroyable"; "permanently_removable" ]
               | "bg"
               | "bg-iso"
@@ -433,12 +434,6 @@ let init (params : room_params) : room =
                 [ "bg" ]
               | "fg"
               | "shadow" ->
-                (* TODO maybe move this validation somewhere else *)
-                (* if not (List.mem 0 json.data) then
-                 *   print
-                 *     "\n\n\n\n\
-                 *     \ -------------------- BAD SHADOW LAYER in room %s -------------------- \n\n\n\n"
-                 *     params.file_name; *)
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
@@ -469,16 +464,16 @@ let init (params : room_params) : room =
                   permanently_removable = has "permanently_removable";
                   shaded = has "shaded";
                   animated = has "animated";
-                  water = has "water";
                 }
             in
             build_config configs
           in
 
           let destroyed_tiles =
-            match List.assoc_opt json.name room_progress.removed_idxs_by_layer with
-            | None -> []
-            | Some idxs -> idxs
+            if String.ends_with ~suffix:"doors" json.name then
+              room_progress.removed_tile_idxs
+            else
+              []
           in
 
           layers :=
@@ -683,7 +678,7 @@ let change_current_room
     (room_location : room_location)
     (ghost_start_pos : vector) =
   let exits = Tiled.Room.get_exits room_location in
-  save_progress game;
+  save_progress_to_game game;
 
   let new_room : room =
     init

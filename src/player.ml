@@ -499,18 +499,9 @@ let resolve_slash_collisions (state : state) (game : game) =
 
     let destroy_tile_group layer tile_group =
       layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
-      if layer.config.permanently_removable then (
-        (* only doors should be permanently destroyed in state.progress - decorations refresh when a room is re-entered
-           - but this key still needs the layer.name so that render.ml can still draw other layers at that idx
-        *)
-        let existing =
-          match List.assoc_opt layer.name game.room.progress.removed_idxs_by_layer with
-          | None -> []
-          | Some idxs -> idxs
-        in
-        game.room.progress.removed_idxs_by_layer <-
-          List.replace_assoc layer.name (tile_group.tile_idxs @ existing)
-            game.room.progress.removed_idxs_by_layer)
+      if layer.config.permanently_removable then
+        game.room.progress.removed_tile_idxs <-
+          tile_group.tile_idxs @ game.room.progress.removed_tile_idxs
     in
 
     let maybe_pogo_platform_spikes (id, rect) =
@@ -664,19 +655,6 @@ let reset_current_status ?(taking_hazard_damage = None) () =
     can_flap = true;
   }
 
-let take_damage (player : player) (damage : int) =
-  (* preserve the original value of is_taking_hazard_damage to prevent soft-locks when taking damage while hazard respawning *)
-  player.current <-
-    reset_current_status ~taking_hazard_damage:(Some player.current.is_taking_hazard_damage) ();
-  player.children <- [];
-  player.ghost.entity.current_floor <- None;
-  player.health.current <- player.health.current - damage;
-  if player.health.current <= 0 then
-    (* TODO handle dying:
-       - reset in-progress boss interactions
-    *)
-    player.health.current <- player.health.max
-
 let set_new_body_texture ghost body_texture =
   ghost.body_render_offset <- body_texture.render_offset;
   Entity.update_sprite_texture ghost.entity body_texture.texture'
@@ -685,8 +663,16 @@ let set_ghost_textures ghost ~head_texture ~body_texture =
   ghost.head <- head_texture;
   set_new_body_texture ghost body_texture
 
-(* state updates for current pose, texture animation, and sprite *)
-let set_pose player (new_pose : ghost_pose) (bodies : ghost_body_textures) (frame_time : float) =
+(* - this function handles state updates that should happen every frame of a pose
+   - anything that only happens once should happen in start_pose
+   - anything that happens every frame except the first should happen in continue_pose
+*)
+let set_pose
+    (game : game)
+    (new_pose : ghost_pose)
+    (bodies : ghost_body_textures)
+    (frame_time : float) =
+  let player = game.player in
   let update_vx multiplier =
     let mult = if player.ghost.entity.sprite.facing_right then multiplier else -1. *. multiplier in
     player.ghost.entity.v.x <- mult *. Config.ghost.vx
@@ -764,23 +750,9 @@ let set_pose player (new_pose : ghost_pose) (bodies : ghost_body_textures) (fram
       update_vx 0.;
       (player.ghost.head_textures.look_down, bodies.focus)
     | TAKE_DAMAGE_AND_RESPAWN -> (player.ghost.head_textures.take_damage, bodies.take_damage)
+    | DIE ->
+      (player.ghost.head_textures.take_damage, bodies.take_damage)
     | TAKE_DAMAGE (damage, direction) ->
-      let x_recoil_speed =
-        match direction with
-        | LEFT -> -.Config.ghost.recoil_speed
-        | RIGHT -> Config.ghost.recoil_speed
-        | _ ->
-          if player.ghost.entity.sprite.facing_right then
-            Config.ghost.recoil_speed
-          else
-            -.Config.ghost.recoil_speed
-      in
-      player.ghost.entity.x_recoil <-
-        Some { speed = x_recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
-      player.ghost.entity.y_recoil <-
-        Some
-          { speed = -.Config.ghost.recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
-      take_damage player damage;
       (* from recoiling upwards *)
       player.ghost.entity.current_floor <- None;
       (player.ghost.head_textures.take_damage, bodies.take_damage)
@@ -898,6 +870,8 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   in
   game.player.spawned_vengeful_spirits <- projectile :: game.player.spawned_vengeful_spirits
 
+let respawn_ghost game = game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
+
 let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   let action =
     match action_kind with
@@ -918,6 +892,7 @@ let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind
     | C_DASH_WALL_COOLDOWN
     | DREAM_NAIL
     | ATTACK _
+    | DIE
     | FOCUS ->
       failwithf "cannot cancel action: %s" (Show.ghost_action_kind action_kind)
   in
@@ -1018,11 +993,12 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           (ALIGNED (CENTER, BOTTOM))
           ~scale:Config.ghost.wraiths_scale game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
+    | DIE -> game.player.history.die
     | TAKE_DAMAGE_AND_RESPAWN ->
       (match game.mode with
       | DEMO
       | CLASSIC ->
-        ()
+        game.player.health.current <- game.player.health.current - 1
       | STEEL_SOLE ->
         game.player.soul.current <- game.player.soul.max;
         let jug_layers : layer list =
@@ -1034,13 +1010,37 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         List.iter (fun layer -> layer.destroyed_tiles <- []) jug_layers;
         Tiled.Room.reset_tile_groups game.room);
       Entity.freeze game.player.ghost.entity;
-      (* TODO handle dying *)
-      game.player.health.current <- game.player.health.current - 1;
       game.player.history.take_damage_and_respawn
-    | TAKE_DAMAGE _ ->
+    | TAKE_DAMAGE (damage, direction) ->
       (* TODO separate sound for this *)
       Audio.play_sound state "punch";
       state.camera.shake <- 0.5;
+      let x_recoil_speed =
+        match direction with
+        | LEFT -> -.Config.ghost.recoil_speed
+        | RIGHT -> Config.ghost.recoil_speed
+        | _ ->
+          if game.player.ghost.entity.sprite.facing_right then
+            Config.ghost.recoil_speed
+          else
+            -.Config.ghost.recoil_speed
+      in
+      game.player.ghost.entity.x_recoil <-
+        Some { speed = x_recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
+      game.player.ghost.entity.y_recoil <-
+        Some
+          { speed = -.Config.ghost.recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
+      (* preserve the original value of is_taking_hazard_damage to prevent soft-locks when
+         recoiling away from hazard while hazard respawning *)
+      game.player.current <-
+        reset_current_status
+          ~taking_hazard_damage:(Some game.player.current.is_taking_hazard_damage) ();
+      game.player.children <- [];
+      (match game.mode with
+      | STEEL_SOLE -> ()
+      | CLASSIC
+      | DEMO ->
+        game.player.health.current <- game.player.health.current - damage);
       game.player.history.take_damage
     | DIVE_COOLDOWN -> game.player.history.dive_cooldown
     | FOCUS ->
@@ -1052,14 +1052,16 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         game.player.shared_textures.focus_sparkles;
       game.player.history.focus
     | JUMP -> game.player.history.jump
-    | FLAP -> game.player.history.flap
+    | FLAP ->
+      game.player.current.can_flap <- false;
+      game.player.history.flap
     | WALL_KICK -> game.player.history.wall_kick
   in
 
   action.started <- { at = state.frame.time };
   action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
-  set_pose game.player (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
+  set_pose game (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
 
 let continue_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   (match action_kind with
@@ -1068,9 +1070,8 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       game.player.history.focus.config.duration.seconds
       /. (Config.action.soul_per_cast + 0 |> Int.to_float)
     in
-    (* TODO probably should be checking >= *)
     if
-      game.player.soul.at_focus_start - game.player.soul.current > Config.action.soul_per_cast
+      game.player.soul.at_focus_start - game.player.soul.current >= Config.action.soul_per_cast
       && game.player.soul.health_at_focus_start = game.player.health.current
     then
       game.player.health.current <-
@@ -1084,7 +1085,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       game.player.history.jump.config.input_buffer.seconds -. 0.05
     in
     if state.frame.time -. game.player.history.flap.started.at > flap_duration then
-      game.player.ghost.entity.v.y <- Config.ghost.jump_vy *. 0.8
+      game.player.ghost.entity.v.y <- Config.ghost.flap_vy
   | DREAM_NAIL ->
     if
       state.frame.time -. game.player.history.dream_nail.started.at
@@ -1097,6 +1098,22 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
           ALIGNED (RIGHT, CENTER)
       in
       spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash)
+  | DIE ->
+    state.screen_fade <-
+      (match state.screen_fade with
+      | None -> Some 1
+      | Some fade ->
+        if fade > 300 then (
+          respawn_ghost game;
+          game.player.health.current <- game.player.health.max;
+          state.game_context <- DIED game;
+          None)
+        else (
+          let new_fade =
+            (state.frame.time -. game.player.history.die.started.at) *. 100. |> Float.to_int
+          in
+          Some (1 + new_fade)));
+    ()
   | C_DASH
   | C_DASH_CHARGE
   | SHADE_DASH
@@ -1111,7 +1128,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
   | C_DASH_WALL_COOLDOWN
   | ATTACK _ ->
     ());
-  set_pose game.player (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
+  set_pose game (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
 
 let is_doing (player : player) (action_kind : ghost_action_kind) (frame_time : float) : bool =
   let check_action action =
@@ -1135,7 +1152,8 @@ let is_doing (player : player) (action_kind : ghost_action_kind) (frame_time : f
   | TAKE_DAMAGE_AND_RESPAWN -> check_action player.history.take_damage_and_respawn
   | FLAP -> check_action player.history.flap
   | DREAM_NAIL -> check_action player.history.dream_nail
-  | WALL_KICK
+  | DIE -> check_action player.history.die
+  | WALL_KICK -> check_action player.history.wall_kick
   | JUMP
   | TAKE_DAMAGE _ ->
     failwithf "is_doing - invalid action %s" (Show.ghost_action_kind action_kind)
@@ -1225,6 +1243,11 @@ let get_invincibility_kind (state : state) (game : game) : invincibility_kind op
     not (past_cooldown game.player.history.dive_cooldown state.frame.time)
   in
   if not (past_cooldown game.player.history.take_damage state.frame.time) then
+    (* CLEANUP need to prevent enemy damage when taking hazard damage
+       - maybe reuse TOOK_DAMAGE
+       - maybe make new variant TAKING_HAZARD_DAMAGE (which should probably have a similar
+         cooldown period after respawning)
+    *)
     Some TOOK_DAMAGE
   else if game.player.current.is_diving || in_dive_cooldown () then
     Some DIVE_IFRAMES
@@ -1236,6 +1259,7 @@ let get_invincibility_kind (state : state) (game : game) : invincibility_kind op
 let is_vulnerable (state : state) (game : game) : bool =
   Option.is_none (get_invincibility_kind state game)
 
+(* TODO only handle these in Env.development *)
 let handle_debug_keys (game : game) (state : state) =
   let show_camera_location () =
     let camera =
@@ -1288,22 +1312,22 @@ let handle_debug_keys (game : game) (state : state) =
     if key_pressed DEBUG_1 then (
       (* game.ghost.soul.current <- game.ghost.soul.max *)
       (* swap_current_ghost_in_cutscene state game ANNIE *)
-      show_ghost_location ();
-      game.debug_safe_ss <- not game.debug_safe_ss
-      (* print "ghost is_taking_hazard_damage: %b" game.player.current.is_taking_hazard_damage *)
-      (* () *)
-      (* game.player.ghost.entity.sprite.facing_right <- true *)
-      (* show_camera_location () *))
-    else if key_pressed DEBUG_2 then
+      (* show_camera_location () *)
+      (* game.debug_safe_ss <- not game.debug_safe_ss *)
+      (* show_ghost_location (); *)
+      game.player.health.current <- 1;
+      ())
+    else if key_pressed DEBUG_2 then (
       (* toggle_ability game.ghost "mantis_claw" *)
       (* game.ghost.health.current <- game.ghost.health.current - 1 *)
-      game.player.soul.current <- game.player.soul.max
+      game.player.soul.current <- game.player.soul.max;
+      ())
     else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
       print "player water is_some: %b" (Option.is_some game.player.current.water)
-    else if key_pressed DEBUG_4 then
-      toggle_ability game.player "desolate_dive"
-    (* toggle_ability game.player "ismas_tear" *)
-    (* () *))
+    else if key_pressed DEBUG_4 then (
+      toggle_ability game.player "desolate_dive";
+      (* toggle_ability game.player "ismas_tear" *)
+      ()))
   else if key_pressed DEBUG_1 then
     game.debug_paused <- not game.debug_paused;
   state
@@ -1334,7 +1358,7 @@ let update (game : game) (state : state) =
     input.pressed || input_buffered ()
   in
   let set_pose' (pose : ghost_pose) =
-    set_pose game.player pose state.global.textures.ghost_bodies state.frame.time
+    set_pose game pose state.global.textures.ghost_bodies state.frame.time
   in
 
   (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
@@ -1667,8 +1691,7 @@ let update (game : game) (state : state) =
 
         let handle_ghost_step (player : player) (step : Interaction.ghost_step) =
           match step with
-          | SET_POSE pose ->
-            set_pose player pose state.global.textures.ghost_bodies state.frame.time
+          | SET_POSE pose -> set_pose game pose state.global.textures.ghost_bodies state.frame.time
           | FILL_LIFE_VAPOR -> player.soul.current <- player.soul.max
           | INCREASE_HEALTH_TEXT (increases_health, str) ->
             if increases_health then (
@@ -1836,7 +1859,7 @@ let update (game : game) (state : state) =
 
         match continuing_spell_kind with
         | None ->
-          if game.player.current.is_diving then
+          if game.player.current.is_diving then (* TODO also need to check if ghost is in water *)
             if Option.is_some game.player.ghost.entity.current_floor then (
               state.camera.shake <- 1.;
               game.player.current.is_diving <- false;
@@ -2040,10 +2063,7 @@ let update (game : game) (state : state) =
     let starting_wall_kick () =
       Option.is_some game.player.current.wall && pressed_or_buffered JUMP
     in
-    let continuing_wall_kick () =
-      state.frame.time -. game.player.history.wall_kick.started.at
-      < game.player.history.wall_kick.config.duration.seconds
-    in
+    let continuing_wall_kick () = is_doing game.player WALL_KICK state.frame.time in
     let this_frame =
       if starting_wall_kick () then (
         stop_wall_sliding := true;
@@ -2065,13 +2085,13 @@ let update (game : game) (state : state) =
       match game.player.current.water with
       | None ->
         if
-          (* TODO pressed_or_buffered detects the same keypress as the initial jump *)
           game.player.abilities.monarch_wings
           && game.player.current.can_flap
+          (* using .pressed because pressed_or_buffered detects the same keypress as
+             the initial jump *)
           && state.frame_inputs.jump.pressed
-        then (
-          game.player.current.can_flap <- false;
-          start_action state game FLAP)
+        then
+          start_action state game FLAP
         else if is_doing game.player FLAP state.frame.time then (
           set_pose' (AIRBORNE new_vy);
           if state.frame_inputs.jump.down then
@@ -2091,12 +2111,6 @@ let update (game : game) (state : state) =
         set_pose' (PERFORMING JUMP)
       else if game.player.ghost.entity.v.y > 0. then (
         stop_wall_sliding := true;
-        (* TODO this is a very naive hardfall check, probably need to keep track of "airborne_duration" to check dy
-           - airborne_duration would be reset when can_dash/flap are reset (pogo, wall_slide)
-           - use ghost.history
-        *)
-        (* if game.player.ghost.entity.v.y >= Config.ghost.max_vy then
-         *   state.camera.shake <- 1.; *)
         set_pose' (LANDING (floor, floor_v)))
   in
 
@@ -2250,10 +2264,11 @@ let update (game : game) (state : state) =
           | STEEL_SOLE -> add_phantom_floor game game.room.respawn_pos);
           Entity.unfreeze game.player.ghost.entity;
           state.camera.update_instantly <- true;
-          game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
+          respawn_ghost game
         in
-        hazard_respawn state game)
-      else (
+        if game.player.health.current > 0 then
+          hazard_respawn state game)
+      else if game.player.health.current > 0 then (
         state.camera.shake <- 1.;
         game.player.current.is_taking_hazard_damage <- true;
         start_action state game TAKE_DAMAGE_AND_RESPAWN)
@@ -2428,72 +2443,79 @@ let update (game : game) (state : state) =
         layer.hidden <- true)
   in
 
-  game.player.ghost.entity.current_platforms <- [];
-  Entity.apply_v
-    ~debug:(if state.debug.enabled then Some (fmt "%d" state.frame.idx) else None)
-    state.frame.dt game.player.ghost.entity;
-  (match game.player.ghost.entity.current_floor with
-  | None -> ()
-  | Some (floor, v) ->
-    let e = game.player.ghost.entity in
-    let dt = state.frame.dt in
-    (* only need to update x here because conveyor belts are only horizontal *)
-    e.dest.pos.x <- e.dest.pos.x +. (v.x *. dt));
+  if game.player.health.current <= 0 then
+    if is_doing game.player DIE state.frame.time then
+      continue_action state game DIE
+    else
+      start_action state game DIE
+    (* set_pose game (PERFORMING DIE) state.global.textures.ghost_bodies state.frame.time *)
+  else (
+    game.player.ghost.entity.current_platforms <- [];
+    Entity.apply_v
+      ~debug:(if state.debug.enabled then Some (fmt "%d" state.frame.idx) else None)
+      state.frame.dt game.player.ghost.entity;
+    (match game.player.ghost.entity.current_floor with
+    | None -> ()
+    | Some (floor, v) ->
+      let e = game.player.ghost.entity in
+      let dt = state.frame.dt in
+      (* only need to update x here because conveyor belts are only horizontal *)
+      e.dest.pos.x <- e.dest.pos.x +. (v.x *. dt));
 
-  let new_vy =
-    let vy' =
-      let vy = game.player.ghost.entity.v.y in
-      let ascending = vy < 0. in
-      let dvy = Config.physics.gravity *. state.frame.dt in
-      if key_up JUMP && ascending then
-        (vy *. Config.physics.jump_damping) +. dvy
-      else (
-        match game.player.current.wall with
-        (* could check current_floor here and set to 0, but this already happens by set_pose *)
-        | Some _ -> Config.ghost.wall_slide_vy
-        | None -> vy +. dvy)
+    let new_vy =
+      let vy' =
+        let vy = game.player.ghost.entity.v.y in
+        let ascending = vy < 0. in
+        let dvy = Config.physics.gravity *. state.frame.dt in
+        if key_up JUMP && ascending then
+          (vy *. Config.physics.jump_damping) +. dvy
+        else (
+          match game.player.current.wall with
+          (* could check current_floor here and set to 0, but this already happens by set_pose *)
+          | Some _ -> Config.ghost.wall_slide_vy
+          | None -> vy +. dvy)
+      in
+      (* no max_vy applied when ascending, only descending *)
+      Float.bound (-1. *. Float.max_float) vy' Config.ghost.max_vy
     in
-    (* no max_vy applied when ascending, only descending *)
-    Float.bound (-1. *. Float.max_float) vy' Config.ghost.max_vy
-  in
-  let exiting = Room.handle_transitions state game in
-  if not exiting then (
-    let interacting = handle_interactions () in
-    if interacting then
-      Entity.update_pos game.room game.player.ghost.entity state.frame.dt
-    else (
-      reveal_shadows ();
-      if game.player.ghost.entity.update_pos then (
-        let cooling_down =
-          check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
-        in
-        if not cooling_down then
-          if not (in_water game.player) then (
-            let dream_nailing = handle_dream_nail () in
-            if not dream_nailing.this_frame then (
-              let focusing = handle_focusing () in
-              if not focusing.this_frame then (
-                let c_dashing = handle_c_dashing () in
-                if not c_dashing.this_frame then (
-                  let dashing = handle_dashing () in
-                  if not dashing.this_frame then (
-                    let casting = handle_casting () in
-                    if not casting.this_frame then (
-                      let wall_kicking = handle_wall_kicking () in
-                      if not wall_kicking.this_frame then (
-                        handle_walking ();
-                        handle_jumping new_vy);
-                      handle_attacking ();
-                      resolve_slash_collisions state game))))))
-          else (
-            handle_walking ();
-            handle_jumping new_vy))));
+    let exiting = Room.handle_transitions state game in
+    if not exiting then (
+      let interacting = handle_interactions () in
+      if interacting then
+        Entity.update_pos game.room game.player.ghost.entity state.frame.dt
+      else (
+        reveal_shadows ();
+        if game.player.ghost.entity.update_pos then (
+          let cooling_down =
+            check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
+          in
+          if not cooling_down then
+            if not (in_water game.player) then (
+              let dream_nailing = handle_dream_nail () in
+              if not dream_nailing.this_frame then (
+                let focusing = handle_focusing () in
+                if not focusing.this_frame then (
+                  let c_dashing = handle_c_dashing () in
+                  if not c_dashing.this_frame then (
+                    let dashing = handle_dashing () in
+                    if not dashing.this_frame then (
+                      let casting = handle_casting () in
+                      if not casting.this_frame then (
+                        let wall_kicking = handle_wall_kicking () in
+                        if not wall_kicking.this_frame then (
+                          handle_walking ();
+                          handle_jumping new_vy);
+                        handle_attacking ();
+                        resolve_slash_collisions state game))))))
+            else (
+              handle_walking ();
+              handle_jumping new_vy))));
 
-  animate_and_despawn_children state.frame.time game.player;
-  handle_collisions ();
-  Entity.maybe_unset_current_floor game.player.ghost.entity game.room;
-  Sprite.advance_animation state.frame.time game.player.ghost.entity.sprite.texture
-    game.player.ghost.entity.sprite;
+    animate_and_despawn_children state.frame.time game.player;
+    handle_collisions ();
+    Entity.maybe_unset_current_floor game.player.ghost.entity game.room;
+    Sprite.advance_animation state.frame.time game.player.ghost.entity.sprite.texture
+      game.player.ghost.entity.sprite);
   state
 
 let load_shared_textures (shared_texture_configs : (string * texture_config) list) =
@@ -2613,6 +2635,7 @@ let init
         c_dash = make_action "c-dash";
         c_dash_cooldown = make_action "c-dash-cooldown";
         c_dash_wall_cooldown = make_action "c-dash-cooldown";
+        die = make_action "die";
         dream_nail = make_action "dream-nail";
         dash = make_action "dash";
         dive_cooldown = make_action "dive-cooldown";

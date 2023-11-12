@@ -105,6 +105,7 @@ type ghost_config = {
   height : float;
   vx : float;
   wall_slide_vy : float;
+  flap_vy : float;
   jump_vy : float;
   wall_jump_vy : float;
   dash_duration : int;
@@ -136,6 +137,7 @@ let ghost : ghost_config =
     wraiths_scale = 1.7 *. window_scale;
     vx = 400. *. window_scale;
     jump_vy;
+    flap_vy = jump_vy *. 0.8;
     wall_jump_vy;
     wall_slide_vy = 400. *. window_scale;
     dash_duration = 20;

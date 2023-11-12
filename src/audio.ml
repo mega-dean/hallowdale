@@ -13,6 +13,7 @@ let play_music music =
     Raylib.seek_music_stream music.t (Float.bound 0.1 music.loop_start.at Float.max_float);
   Raylib.update_music_stream music.t
 
+let get_area_music area_id area_musics = List.find (fun am -> List.mem area_id am.areas) area_musics
 let get_new_volume initial change = Float.bound 0. (initial +. change) 1.
 
 let change_music_volume change state game =
@@ -33,7 +34,7 @@ let play_game_music game = play_music game.music.music
 let stop_music music = Raylib.stop_music_stream music
 let reset_music music = Raylib.seek_music_stream music.t 0.
 
-let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas music_volume = (
+let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas music_volume =
   let music =
     Raylib.load_music_stream (File.make_assets_path [ "audio"; "music"; fmt "%s.ogg" name ])
   in
@@ -44,4 +45,3 @@ let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas music_volume =
   *)
   Raylib.play_music_stream music;
   { areas; music = { name; t = music; loop_start = { at = intro }; loop_end = { at = loop } } }
-)

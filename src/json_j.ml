@@ -75,12 +75,11 @@ type texture_configs = Json_t.texture_configs
 type steel_sole_progress = Json_t.steel_sole_progress = {
   mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
-  mutable c_dashes: int;
-  mutable frame_idx: int
+  mutable c_dashes: int
 }
 
 type room_progress = Json_t.room_progress = {
-  mutable removed_idxs_by_layer: (string * int list) list;
+  mutable removed_tile_idxs: int list;
   mutable finished_interactions: string list;
   mutable revealed_shadow_layers: string list
 }
@@ -98,6 +97,7 @@ type ghost_abilities = Json_t.ghost_abilities = {
 }
 
 type game_progress = Json_t.game_progress = {
+  mutable frame_idx: int;
   steel_sole: steel_sole_progress;
   mutable by_room: (string * room_progress) list
 }
@@ -109,7 +109,7 @@ type save_file = Json_t.save_file = {
   ghost_y: float;
   respawn_x: float;
   respawn_y: float;
-  mutable ghosts_in_party: string list;
+  ghosts_in_party: string list;
   room_name: string;
   abilities: ghost_abilities;
   weapons: string list;
@@ -3166,7 +3166,7 @@ let read_texture_configs = (
 )
 let texture_configs_of_string s =
   read_texture_configs (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__18 = (
+let write__17 = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -3184,11 +3184,11 @@ let write__18 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__18 ?(len = 1024) x =
+let string_of__17 ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__18 ob x;
+  write__17 ob x;
   Buffer.contents ob
-let read__18 = (
+let read__17 = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -3234,8 +3234,8 @@ let read__18 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _18_of_string s =
-  read__18 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _17_of_string s =
+  read__17 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
   fun ob (x : steel_sole_progress) ->
     Buffer.add_char ob '{';
@@ -3246,7 +3246,7 @@ let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"purple_pens_found\":";
     (
-      write__18
+      write__17
     )
       ob x.purple_pens_found;
     if !is_first then
@@ -3267,15 +3267,6 @@ let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
       Yojson.Safe.write_int
     )
       ob x.c_dashes;
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"frame_idx\":";
-    (
-      Yojson.Safe.write_int
-    )
-      ob x.frame_idx;
     Buffer.add_char ob '}';
 )
 let string_of_steel_sole_progress ?(len = 1024) x =
@@ -3289,7 +3280,6 @@ let read_steel_sole_progress = (
     let field_purple_pens_found = ref (None) in
     let field_dunks = ref (None) in
     let field_c_dashes = ref (None) in
-    let field_frame_idx = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -3315,14 +3305,6 @@ let read_steel_sole_progress = (
                   -1
                 )
               )
-            | 9 -> (
-                if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'x' then (
-                  3
-                )
-                else (
-                  -1
-                )
-              )
             | 17 -> (
                 if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
                   0
@@ -3343,7 +3325,7 @@ let read_steel_sole_progress = (
             field_purple_pens_found := (
               Some (
                 (
-                  read__18
+                  read__17
                 ) p lb
               )
             );
@@ -3357,14 +3339,6 @@ let read_steel_sole_progress = (
             );
           | 2 ->
             field_c_dashes := (
-              Some (
-                (
-                  Atdgen_runtime.Oj_run.read_int
-                ) p lb
-              )
-            );
-          | 3 ->
-            field_frame_idx := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_int
@@ -3400,14 +3374,6 @@ let read_steel_sole_progress = (
                     -1
                   )
                 )
-              | 9 -> (
-                  if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'x' then (
-                    3
-                  )
-                  else (
-                    -1
-                  )
-                )
               | 17 -> (
                   if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
                     0
@@ -3428,7 +3394,7 @@ let read_steel_sole_progress = (
               field_purple_pens_found := (
                 Some (
                   (
-                    read__18
+                    read__17
                   ) p lb
                 )
               );
@@ -3448,14 +3414,6 @@ let read_steel_sole_progress = (
                   ) p lb
                 )
               );
-            | 3 ->
-              field_frame_idx := (
-                Some (
-                  (
-                    Atdgen_runtime.Oj_run.read_int
-                  ) p lb
-                )
-              );
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -3468,83 +3426,12 @@ let read_steel_sole_progress = (
             purple_pens_found = (match !field_purple_pens_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "purple_pens_found");
             dunks = (match !field_dunks with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "dunks");
             c_dashes = (match !field_c_dashes with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "c_dashes");
-            frame_idx = (match !field_frame_idx with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "frame_idx");
           }
          : steel_sole_progress)
       )
 )
 let steel_sole_progress_of_string s =
   read_steel_sole_progress (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__17 = (
-  Atdgen_runtime.Oj_run.write_list (
-    fun ob x ->
-      Buffer.add_char ob '(';
-      (let x, _ = x in
-      (
-        Yojson.Safe.write_string
-      ) ob x
-      );
-      Buffer.add_char ob ',';
-      (let _, x = x in
-      (
-        write__1
-      ) ob x
-      );
-      Buffer.add_char ob ')';
-  )
-)
-let string_of__17 ?(len = 1024) x =
-  let ob = Buffer.create len in
-  write__17 ob x;
-  Buffer.contents ob
-let read__17 = (
-  Atdgen_runtime.Oj_run.read_list (
-    fun p lb ->
-      Yojson.Safe.read_space p lb;
-      let std_tuple = Yojson.Safe.start_any_tuple p lb in
-      let len = ref 0 in
-      let end_of_tuple = ref false in
-      (try
-        let x0 =
-          let x =
-            (
-              Atdgen_runtime.Oj_run.read_string
-            ) p lb
-          in
-          incr len;
-          Yojson.Safe.read_space p lb;
-          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
-          x
-        in
-        let x1 =
-          let x =
-            (
-              read__1
-            ) p lb
-          in
-          incr len;
-          (try
-            Yojson.Safe.read_space p lb;
-            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
-          with Yojson.End_of_tuple -> end_of_tuple := true);
-          x
-        in
-        if not !end_of_tuple then (
-          try
-            while true do
-              Yojson.Safe.skip_json p lb;
-              Yojson.Safe.read_space p lb;
-              Yojson.Safe.read_tuple_sep2 p std_tuple lb;
-            done
-          with Yojson.End_of_tuple -> ()
-        );
-        (x0, x1)
-      with Yojson.End_of_tuple ->
-        Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
-  )
-)
-let _17_of_string s =
-  read__17 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__10 = (
   Atdgen_runtime.Oj_run.write_list (
     Yojson.Safe.write_string
@@ -3569,11 +3456,11 @@ let write_room_progress : _ -> room_progress -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
-      Buffer.add_string ob "\"removed_idxs_by_layer\":";
+      Buffer.add_string ob "\"removed_tile_idxs\":";
     (
-      write__17
+      write__1
     )
-      ob x.removed_idxs_by_layer;
+      ob x.removed_tile_idxs;
     if !is_first then
       is_first := false
     else
@@ -3602,7 +3489,7 @@ let read_room_progress = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_removed_idxs_by_layer = ref (None) in
+    let field_removed_tile_idxs = ref (None) in
     let field_finished_interactions = ref (None) in
     let field_revealed_shadow_layers = ref (None) in
     try
@@ -3614,27 +3501,21 @@ let read_room_progress = (
           if pos < 0 || len < 0 || pos + len > String.length s then
             invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           match len with
+            | 17 -> (
+                if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 't' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 'e' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'i' && String.unsafe_get s (pos+14) = 'd' && String.unsafe_get s (pos+15) = 'x' && String.unsafe_get s (pos+16) = 's' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
             | 21 -> (
-                match String.unsafe_get s pos with
-                  | 'f' -> (
-                      if String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'r' && String.unsafe_get s (pos+14) = 'a' && String.unsafe_get s (pos+15) = 'c' && String.unsafe_get s (pos+16) = 't' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'o' && String.unsafe_get s (pos+19) = 'n' && String.unsafe_get s (pos+20) = 's' then (
-                        1
-                      )
-                      else (
-                        -1
-                      )
-                    )
-                  | 'r' -> (
-                      if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'x' && String.unsafe_get s (pos+11) = 's' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'b' && String.unsafe_get s (pos+14) = 'y' && String.unsafe_get s (pos+15) = '_' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 'a' && String.unsafe_get s (pos+18) = 'y' && String.unsafe_get s (pos+19) = 'e' && String.unsafe_get s (pos+20) = 'r' then (
-                        0
-                      )
-                      else (
-                        -1
-                      )
-                    )
-                  | _ -> (
-                      -1
-                    )
+                if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'r' && String.unsafe_get s (pos+14) = 'a' && String.unsafe_get s (pos+15) = 'c' && String.unsafe_get s (pos+16) = 't' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'o' && String.unsafe_get s (pos+19) = 'n' && String.unsafe_get s (pos+20) = 's' then (
+                  1
+                )
+                else (
+                  -1
+                )
               )
             | 22 -> (
                 if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'v' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'l' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'h' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'd' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'w' && String.unsafe_get s (pos+15) = '_' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 'a' && String.unsafe_get s (pos+18) = 'y' && String.unsafe_get s (pos+19) = 'e' && String.unsafe_get s (pos+20) = 'r' && String.unsafe_get s (pos+21) = 's' then (
@@ -3653,10 +3534,10 @@ let read_room_progress = (
       (
         match i with
           | 0 ->
-            field_removed_idxs_by_layer := (
+            field_removed_tile_idxs := (
               Some (
                 (
-                  read__17
+                  read__1
                 ) p lb
               )
             );
@@ -3689,27 +3570,21 @@ let read_room_progress = (
             if pos < 0 || len < 0 || pos + len > String.length s then
               invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             match len with
+              | 17 -> (
+                  if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 't' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 'e' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'i' && String.unsafe_get s (pos+14) = 'd' && String.unsafe_get s (pos+15) = 'x' && String.unsafe_get s (pos+16) = 's' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 21 -> (
-                  match String.unsafe_get s pos with
-                    | 'f' -> (
-                        if String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'r' && String.unsafe_get s (pos+14) = 'a' && String.unsafe_get s (pos+15) = 'c' && String.unsafe_get s (pos+16) = 't' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'o' && String.unsafe_get s (pos+19) = 'n' && String.unsafe_get s (pos+20) = 's' then (
-                          1
-                        )
-                        else (
-                          -1
-                        )
-                      )
-                    | 'r' -> (
-                        if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'x' && String.unsafe_get s (pos+11) = 's' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'b' && String.unsafe_get s (pos+14) = 'y' && String.unsafe_get s (pos+15) = '_' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 'a' && String.unsafe_get s (pos+18) = 'y' && String.unsafe_get s (pos+19) = 'e' && String.unsafe_get s (pos+20) = 'r' then (
-                          0
-                        )
-                        else (
-                          -1
-                        )
-                      )
-                    | _ -> (
-                        -1
-                      )
+                  if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'r' && String.unsafe_get s (pos+14) = 'a' && String.unsafe_get s (pos+15) = 'c' && String.unsafe_get s (pos+16) = 't' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'o' && String.unsafe_get s (pos+19) = 'n' && String.unsafe_get s (pos+20) = 's' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
                 )
               | 22 -> (
                   if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'v' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'l' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'h' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'd' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'w' && String.unsafe_get s (pos+15) = '_' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 'a' && String.unsafe_get s (pos+18) = 'y' && String.unsafe_get s (pos+19) = 'e' && String.unsafe_get s (pos+20) = 'r' && String.unsafe_get s (pos+21) = 's' then (
@@ -3728,10 +3603,10 @@ let read_room_progress = (
         (
           match i with
             | 0 ->
-              field_removed_idxs_by_layer := (
+              field_removed_tile_idxs := (
                 Some (
                   (
-                    read__17
+                    read__1
                   ) p lb
                 )
               );
@@ -3760,7 +3635,7 @@ let read_room_progress = (
     with Yojson.End_of_object -> (
         (
           {
-            removed_idxs_by_layer = (match !field_removed_idxs_by_layer with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "removed_idxs_by_layer");
+            removed_tile_idxs = (match !field_removed_tile_idxs with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "removed_tile_idxs");
             finished_interactions = (match !field_finished_interactions with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "finished_interactions");
             revealed_shadow_layers = (match !field_revealed_shadow_layers with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "revealed_shadow_layers");
           }
@@ -4259,7 +4134,7 @@ let read_ghost_abilities = (
 )
 let ghost_abilities_of_string s =
   read_ghost_abilities (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__19 = (
+let write__18 = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -4277,11 +4152,11 @@ let write__19 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__19 ?(len = 1024) x =
+let string_of__18 ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__19 ob x;
+  write__18 ob x;
   Buffer.contents ob
-let read__19 = (
+let read__18 = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -4327,12 +4202,21 @@ let read__19 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _19_of_string s =
-  read__19 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _18_of_string s =
+  read__18 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_game_progress : _ -> game_progress -> _ = (
   fun ob (x : game_progress) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"frame_idx\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.frame_idx;
     if !is_first then
       is_first := false
     else
@@ -4348,7 +4232,7 @@ let write_game_progress : _ -> game_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"by_room\":";
     (
-      write__19
+      write__18
     )
       ob x.by_room;
     Buffer.add_char ob '}';
@@ -4361,6 +4245,7 @@ let read_game_progress = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
+    let field_frame_idx = ref (None) in
     let field_steel_sole = ref (None) in
     let field_by_room = ref (None) in
     try
@@ -4374,7 +4259,15 @@ let read_game_progress = (
           match len with
             | 7 -> (
                 if String.unsafe_get s pos = 'b' && String.unsafe_get s (pos+1) = 'y' && String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' && String.unsafe_get s (pos+6) = 'm' then (
-                  1
+                  2
+                )
+                else (
+                  -1
+                )
+              )
+            | 9 -> (
+                if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'x' then (
+                  0
                 )
                 else (
                   -1
@@ -4382,7 +4275,7 @@ let read_game_progress = (
               )
             | 10 -> (
                 if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 'o' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'e' then (
-                  0
+                  1
                 )
                 else (
                   -1
@@ -4397,6 +4290,14 @@ let read_game_progress = (
       (
         match i with
           | 0 ->
+            field_frame_idx := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 1 ->
             field_steel_sole := (
               Some (
                 (
@@ -4404,11 +4305,11 @@ let read_game_progress = (
                 ) p lb
               )
             );
-          | 1 ->
+          | 2 ->
             field_by_room := (
               Some (
                 (
-                  read__19
+                  read__18
                 ) p lb
               )
             );
@@ -4427,7 +4328,15 @@ let read_game_progress = (
             match len with
               | 7 -> (
                   if String.unsafe_get s pos = 'b' && String.unsafe_get s (pos+1) = 'y' && String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' && String.unsafe_get s (pos+6) = 'm' then (
-                    1
+                    2
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 9 -> (
+                  if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = 'x' then (
+                    0
                   )
                   else (
                     -1
@@ -4435,7 +4344,7 @@ let read_game_progress = (
                 )
               | 10 -> (
                   if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 's' && String.unsafe_get s (pos+7) = 'o' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'e' then (
-                    0
+                    1
                   )
                   else (
                     -1
@@ -4450,6 +4359,14 @@ let read_game_progress = (
         (
           match i with
             | 0 ->
+              field_frame_idx := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 1 ->
               field_steel_sole := (
                 Some (
                   (
@@ -4457,11 +4374,11 @@ let read_game_progress = (
                   ) p lb
                 )
               );
-            | 1 ->
+            | 2 ->
               field_by_room := (
                 Some (
                   (
-                    read__19
+                    read__18
                   ) p lb
                 )
               );
@@ -4474,6 +4391,7 @@ let read_game_progress = (
     with Yojson.End_of_object -> (
         (
           {
+            frame_idx = (match !field_frame_idx with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "frame_idx");
             steel_sole = (match !field_steel_sole with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "steel_sole");
             by_room = (match !field_by_room with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "by_room");
           }

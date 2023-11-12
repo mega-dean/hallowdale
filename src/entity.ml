@@ -149,13 +149,15 @@ let get_floor_collisions (room : room) (entity : entity) : (collision * rect) li
   @ get_platform_collisions entity room.platforms
   @ get_rect_collisions entity room.floors
 
-let get_water_collisions (room : room) (entity : entity) : (collision * rect) list =
-  let layers = List.filter (fun (l : layer) -> l.config.water) room.layers in
+let get_collisions name room entity =
+  let layers = List.filter (fun (l : layer) -> l.name = name) room.layers in
   get_tile_collisions layers entity
 
+let get_water_collisions (room : room) (entity : entity) : (collision * rect) list =
+  get_collisions "water" room entity
+
 let get_acid_collisions (room : room) (entity : entity) : (collision * rect) list =
-  let layers = List.filter (fun (l : layer) -> l.name = "acid") room.layers in
-  get_tile_collisions layers entity
+  get_collisions "acid" room entity
 
 type damage_collisions = {
   hazards : (collision * rect) list;

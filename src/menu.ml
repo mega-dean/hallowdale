@@ -205,7 +205,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     if is_new_game then
       state.game_context <- MAIN_MENU (select_game_mode_menu save_file save_file_idx, save_slots)
     else (
-      let game = Game.init state save_file save_file_idx in
+      let game = Game.load state save_file save_file_idx in
       (match game.mode with
       | CLASSIC
       | DEMO ->
@@ -216,8 +216,8 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       Game.start ~is_new_game state game save_file)
   in
 
-  let initialize_and_start_game game_mode save_file save_file_idx =
-    let game = Game.init state ~mode:(Some game_mode) save_file save_file_idx in
+  let start_new_game game_mode save_file save_file_idx =
+    let game = Game.create_new state game_mode save_file save_file_idx in
     Game.start state game save_file
   in
 
@@ -234,12 +234,14 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
     | SAVE_FILES SLOT_4 -> load_file 4
     | SAVE_FILES BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
     | SELECT_GAME_MODE (USE_MODE (mode, save_file, save_file_idx)) ->
-      (match mode with
-      | DEMO
-      | CLASSIC
-      | STEEL_SOLE ->
-        Game.initialize_steel_sole save_file);
-      initialize_and_start_game mode save_file save_file_idx
+      let save_file' =
+        match mode with
+        | CLASSIC -> save_file
+        | DEMO
+        | STEEL_SOLE ->
+          Game.initialize_steel_sole save_file
+      in
+      start_new_game mode save_file' save_file_idx
     | SELECT_GAME_MODE BACK -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
     | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
   state

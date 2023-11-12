@@ -1,6 +1,11 @@
 open Utils
 open Types
 
+let option (to_str : 'a -> string) (v : 'a option) =
+  match v with
+  | None -> "None"
+  | Some a -> a |> to_str
+
 let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c
 
 let line_mx_b (line : line) : string =
@@ -112,6 +117,7 @@ let ghost_action_config (config : ghost_action_config) =
 
 let ghost_action_kind id =
   match id with
+  | DIE -> "DIE"
   | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (direction direction')
   | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)

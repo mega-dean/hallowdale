@@ -696,6 +696,12 @@ let update_frame_inputs (state : state) : state =
   update_frame_input INTERACT state.frame_inputs.interact;
   state
 
+let maybe_save_game game state =
+  if state.should_save then (
+    Game.save game state;
+    state.should_save <- false);
+  state
+
 let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
 
 let tick (state : state) =
@@ -720,6 +726,10 @@ let tick (state : state) =
   | MAIN_MENU (menu, save_slots) ->
     Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
+  | DIED game ->
+    let saved_game_before_dying = Game.load state game.save_file game.save_file_slot in
+    state.game_context <- IN_PROGRESS saved_game_before_dying;
+    state
   | IN_PROGRESS game ->
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
@@ -745,9 +755,8 @@ let tick (state : state) =
       match state'.pause_menu with
       | Some menu ->
         (match game.mode with
-        | CLASSIC
-        | DEMO ->
-          ()
+        | CLASSIC -> ()
+        | DEMO
         | STEEL_SOLE ->
           let time, current_time =
             let current_time_frames = state.frame.idx in
@@ -797,6 +806,9 @@ let tick (state : state) =
               });
         state'
       | None ->
+        (* CLEANUP maybe add Env.development check here
+           - or maybe not, since non-dev shouldn't be able to update the value of state.debug.enabled
+        *)
         if state.debug.enabled then (
           let show_triggers ?(color = Raylib.Color.blue) triggers =
             add_debug_rects state (List.map (fun r -> (color, r.dest)) triggers)
@@ -827,10 +839,6 @@ let tick (state : state) =
                (fun (r : rect) -> (Raylib.Color.red, r))
                (game.room.spikes @ game.room.hazards @ List.map snd game.room.platform_spikes)));
 
-        if state.should_save then (
-          Game.save game state;
-          state.should_save <- false);
-
         state'
         |> Player.handle_debug_keys game
         |> Player.update game
@@ -839,4 +847,5 @@ let tick (state : state) =
         |> update_npcs game
         |> update_environment game
         |> update_interaction_text game
-        |> update_camera game)
+        |> update_camera game
+        |> maybe_save_game game)
