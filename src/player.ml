@@ -1341,9 +1341,6 @@ let update (game : game) (state : state) =
     set_pose game pose state.global.textures.ghost_bodies state.frame.time
   in
 
-  (* TODO need to block inputs during transitions to prevent re-exiting immediately and warping
-     - also bound velocity to prevent falling through floors with high vy through horizontal doors
-  *)
   let handle_interactions () =
     (* the ghost can only collide with one trigger of each type per frame *)
     let all_finished_interactions =
@@ -1458,18 +1455,19 @@ let update (game : game) (state : state) =
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
             match trigger_kind with
-            | WARP target ->
+            | WARP target -> (
               let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
-              let target_pos =
-                match game.mode with
-                | DEMO
-                | CLASSIC ->
-                  target.pos
-                | STEEL_SOLE ->
-                  (* TODO 80 seems like too much to adjust by, but this works for the archives exits *)
-                  { target.pos with y = target.pos.y -. 80. }
+              let warp_to target =
+                Room.change_current_room state game target_room_location target
               in
-              Room.change_current_room state game target_room_location target_pos
+              match game.mode with
+              | DEMO
+              | CLASSIC ->
+                warp_to target.pos
+              | STEEL_SOLE ->
+                (* TODO 80 seems like too much to adjust by, but this works for the archives exits *)
+                warp_to { target.pos with y = target.pos.y -. 80. };
+                add_phantom_floor game game.room.respawn_pos)
             | _ ->
               failwithf "need WARP trigger kind for WARP steps, got '%s'"
                 (Show.trigger_kind trigger_kind))
