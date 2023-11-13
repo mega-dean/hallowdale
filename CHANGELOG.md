@@ -7,6 +7,7 @@
 - prevent enemy damage while taking hazard damage
 - disable debug keys/rendering in non-development environment
 - add Kentucky Fried Chicken 11 Herbs and Space Experience tram
+- add ventways for fast travel
 
 ## [0.0.2] - 2023-11-06
 

@@ -272,6 +272,7 @@ type other = {
   kp_start_x : float;
   kp_start_y : float;
   ss_respawn_y_offset : float;
+  ss_warp_y_offset : float;
   main_menu_y_offset : float;
   hud_padding : float;
 }
@@ -282,6 +283,7 @@ let other =
     kp_start_x = 1800.;
     kp_start_y = 150.;
     ss_respawn_y_offset = 10. *. window_scale;
+    ss_warp_y_offset = 80. *. window_scale;
     main_menu_y_offset = 50. *. window_scale;
     hud_padding = 8. *. window_scale;
   }

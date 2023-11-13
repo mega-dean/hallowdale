@@ -340,7 +340,7 @@
                 {
                  "height":27,
                  "id":35,
-                 "name":"lever:down-82,57",
+                 "name":"lever:down@82,57",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -351,7 +351,7 @@
                 {
                  "height":27,
                  "id":37,
-                 "name":"lever:up-67,11",
+                 "name":"lever:up@67,11",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -362,7 +362,7 @@
                 {
                  "height":27,
                  "id":40,
-                 "name":"lever:down-49,47",
+                 "name":"lever:down@49,47",
                  "rotation":0,
                  "type":"",
                  "visible":true,

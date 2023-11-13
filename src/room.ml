@@ -196,7 +196,7 @@ let init (params : room_params) : room =
         let x, y = String.split_at_first ',' name_suffix in
         camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
-        let direction', door_coords' = String.split_at_first '-' name_suffix in
+        let direction', door_coords' = String.split_at_first '@' name_suffix in
         let direction, transformation_bits =
           match direction' with
           | "up" -> (UP, 0)

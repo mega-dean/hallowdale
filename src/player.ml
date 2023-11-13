@@ -1293,9 +1293,10 @@ let handle_debug_keys (game : game) (state : state) =
         (* game.ghost.soul.current <- game.ghost.soul.max *)
         (* swap_current_ghost_in_cutscene state game ANNIE *)
         (* show_camera_location () *)
-        (* game.debug_safe_ss <- not game.debug_safe_ss *)
+        game.debug_safe_ss <- not game.debug_safe_ss;
+        tmp "set debug_safe_ss: %b" game.debug_safe_ss;
         (* show_ghost_location (); *)
-        game.player.health.current <- 1;
+        (* game.player.health.current <- 1; *)
         ())
       else if key_pressed DEBUG_2 then (
         (* toggle_ability game.ghost "mantis_claw" *)
@@ -1465,9 +1466,19 @@ let update (game : game) (state : state) =
               | CLASSIC ->
                 warp_to target.pos
               | STEEL_SOLE ->
-                (* TODO 80 seems like too much to adjust by, but this works for the archives exits *)
-                warp_to { target.pos with y = target.pos.y -. 80. };
-                add_phantom_floor game game.room.respawn_pos)
+                let target_y =
+                  if target.room_name = "ventways_hub" || game.room.id = VENT_HUB then (
+                    (* this prevents ghost from continuing jump after warping back into the
+                       vent they came from *)
+                    game.player.ghost.entity.v.y <- 0.;
+                    target.pos.y)
+                  else
+                    target.pos.y -. Config.other.ss_warp_y_offset
+                in
+                warp_to { target.pos with y = target_y };
+                (* can't take floor damage in vents, so ghost doesn't need a phantom floor *)
+                if target.room_name <> "ventways_hub" then
+                  add_phantom_floor game game.room.respawn_pos)
             | _ ->
               failwithf "need WARP trigger kind for WARP steps, got '%s'"
                 (Show.trigger_kind trigger_kind))
@@ -2355,11 +2366,14 @@ let update (game : game) (state : state) =
         (damage.hazards, damage.platform_spikes)
       | STEEL_SOLE -> (
         let up_floor_collision : (collision * rect) option =
-          if game.debug_safe_ss then
+          (* safe to walk on the ground in the vents *)
+          if game.debug_safe_ss || game.room.area.id = VENTWAYS then
             None
           else if
             (* TODO this fixes the steel sole hazard respawns on wall seams, but allows
                the ghost to walk on floors when colliding in a corner
+               - this doesn't work because now it allows landing on seams
+               - maybe just check that _both_ floor_collisions are UP, and return Some in that case
             *)
             (* TODO add Entity.ascending/descending functions *)
             List.length floor_collisions > 1 || game.player.ghost.entity.v.y < 0.

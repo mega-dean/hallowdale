@@ -412,6 +412,13 @@
             "width": 1872,
             "x": -6012,
             "y": 1668
+        },
+        {
+            "fileName": "ventways_hub.json",
+            "height": 720,
+            "width": 960,
+            "x": -1320,
+            "y": -2076
         }
     ],
     "onlyShowAdjacentMaps": false,

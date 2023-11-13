@@ -64,7 +64,6 @@ let parse_room_filename source file_name : area_id * room_id =
   | "trampoline_f" -> (TRAMPOLINEPATH, TRAMP_F)
   | "trampoline_g" -> (TRAMPOLINEPATH, TRAMP_G)
   | "trampoline_h" -> (TRAMPOLINEPATH, TRAMP_H)
-  (* TODO- add this again *)
   | "ventways_hub" -> (VENTWAYS, VENT_HUB)
   | _ -> failwithf "bad file name '%s' (from %s)" file_name source
 

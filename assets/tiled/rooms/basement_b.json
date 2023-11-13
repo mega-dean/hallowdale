@@ -347,7 +347,7 @@
                 {
                  "height":56,
                  "id":72,
-                 "name":"lever:down-18,38",
+                 "name":"lever:down@18,38",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -358,7 +358,7 @@
                 {
                  "height":56,
                  "id":73,
-                 "name":"lever:down-109,28",
+                 "name":"lever:down@109,28",
                  "rotation":0,
                  "type":"",
                  "visible":true,
