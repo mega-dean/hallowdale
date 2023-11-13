@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.3] - 2023-11-13
+
 - show purple pen stats in pause menu for demo mode
 - reset progress after dying
 - prevent enemy damage while taking hazard damage
@@ -19,5 +21,6 @@
 
 - demo release
 
+[0.0.3]: https://github.com/mega-dean/hallowdale/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/mega-dean/hallowdale/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/mega-dean/hallowdale/releases/tag/v0.0.1
