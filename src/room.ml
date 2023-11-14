@@ -436,6 +436,8 @@ let init (params : room_params) : room =
               | "shadow" ->
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
+              | "fg-flowers" -> [ "fg"; "destroyable" ]
+              | "bg-flowers" -> [ "bg"; "destroyable" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
               | "bg-jugs" -> [ "bg"; "destroyable"; "pogoable" ]
               | unknown -> failwithf "unknown layer name '%s' in room %s" unknown params.file_name
