@@ -1,15 +1,9 @@
 name: Build and Package Artifacts
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version"
-        required: true
-
-env:
-  OUT_DIR: hallowdale-v${{ github.event.inputs.version }}
-  TARBALL: hallowdale-v${{ github.event.inputs.version }}.tar.gz
+  push:
+    tags:
+      - 'v[0-1].[0-9]+.[0-9]+'
 
 jobs:
   build-artifacts:
@@ -48,10 +42,12 @@ jobs:
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-${{ env.OUT_DIR }}
+          name: ${{ matrix.os }}-hallowdale-${{ github.ref_name }}
           path: _build/default/bin/main.exe
 
   package-artifacts:
+    env:
+      OUT_DIR: hallowdale-${{ github.ref_name }}
     needs: build-artifacts
     runs-on: ubuntu-latest
     steps:
@@ -81,12 +77,12 @@ jobs:
           cp -r README.md $OUT_DIR
           cp -r CHANGELOG.md $OUT_DIR
 
-      - name: make ${{ env.TARBALL }}
+      - name: make ${{ env.OUT_DIR }}.tar.gz
         run: |
-          tar -czvf $TARBALL $OUT_DIR
+          tar -czvf $OUT_DIR.tar.gz $OUT_DIR
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.OUT_DIR }}
-          path: ${{ env.TARBALL }}
+          path: ${{ env.OUT_DIR }}.tar.gz
