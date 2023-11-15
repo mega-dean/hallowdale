@@ -223,6 +223,7 @@ let create
     player;
     party;
     room;
+    room_changed_last_frame = false;
     music;
     interaction =
       { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };

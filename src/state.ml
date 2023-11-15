@@ -836,13 +836,20 @@ let tick (state : state) =
                (fun (r : rect) -> (Raylib.Color.red, r))
                (game.room.spikes @ game.room.hazards @ List.map snd game.room.platform_spikes)));
 
-        state'
-        |> Player.handle_debug_keys game
-        |> Player.update game
-        |> update_spawned_vengeful_spirits game
-        |> update_enemies game
-        |> update_npcs game
-        |> update_environment game
-        |> update_interaction_text game
-        |> update_camera game
-        |> maybe_save_game game)
+        (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
+           so this skips position updates to prevent the ghost from falling through floors
+        *)
+        if game.room_changed_last_frame then (
+          game.room_changed_last_frame <- false;
+          state')
+        else
+          state'
+          |> Player.handle_debug_keys game
+          |> Player.update game
+          |> update_spawned_vengeful_spirits game
+          |> update_enemies game
+          |> update_npcs game
+          |> update_environment game
+          |> update_interaction_text game
+          |> update_camera game
+          |> maybe_save_game game)

@@ -1280,6 +1280,10 @@ let handle_debug_keys (game : game) (state : state) =
       print "party ghost positions:\n%s" positions;
       print "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos)
     in
+    let toggle_safe_ss () =
+      game.debug_safe_ss <- not game.debug_safe_ss;
+      print "set debug_safe_ss: %b" game.debug_safe_ss
+    in
     if key_down DEBUG_UP then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
     else if key_down DEBUG_DOWN then
@@ -1293,9 +1297,7 @@ let handle_debug_keys (game : game) (state : state) =
         (* game.ghost.soul.current <- game.ghost.soul.max *)
         (* swap_current_ghost_in_cutscene state game ANNIE *)
         (* show_camera_location () *)
-        game.debug_safe_ss <- not game.debug_safe_ss;
-        tmp "set debug_safe_ss: %b" game.debug_safe_ss;
-        (* show_ghost_location (); *)
+        show_ghost_location ();
         (* game.player.health.current <- 1; *)
         ())
       else if key_pressed DEBUG_2 then (

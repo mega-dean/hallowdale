@@ -1323,6 +1323,7 @@ type game = {
   *)
   mutable party : party_ghost list;
   mutable room : room;
+  mutable room_changed_last_frame : bool;
   mutable music : area_music;
   interaction : Interaction.t;
   (* - game.progress keeps track of the the current progress, and gets saved to save_file.progress

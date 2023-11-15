@@ -745,23 +745,14 @@ let handle_transitions (state : state) (game : game) =
       in
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
-        let get_y () =
-          if game.player.ghost.entity.v.y > 0. then
-            (* this can cause the ghost to clip into a ceiling in the next room, but it prevents
-               them from falling through the floor (which can crash the game)
-            *)
-            start_pos'.y -. game.player.ghost.entity.dest.h
-          else
-            start_pos'.y
-        in
         (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
         match collision.direction with
         | LEFT ->
           game.player.ghost.entity.sprite.facing_right <- true;
-          { x = start_pos'.x +. game.player.ghost.entity.dest.w; y = get_y () }
+          { x = start_pos'.x +. game.player.ghost.entity.dest.w; y = start_pos'.y }
         | RIGHT ->
           game.player.ghost.entity.sprite.facing_right <- false;
-          { x = start_pos'.x -. game.player.ghost.entity.dest.w; y = get_y () }
+          { x = start_pos'.x -. game.player.ghost.entity.dest.w; y = start_pos'.y }
         | UP -> { start_pos' with y = start_pos'.y +. game.player.ghost.entity.dest.h }
         | DOWN -> { start_pos' with y = start_pos'.y -. game.player.ghost.entity.dest.h }
       in
@@ -778,6 +769,7 @@ let handle_transitions (state : state) (game : game) =
         Audio.reset_music target_area_music.music;
         game.music <- target_area_music);
       change_current_room state game room_location start_pos;
+      game.room_changed_last_frame <- true;
       game.player.current.can_dash <- true;
       game.player.current.can_flap <- true;
       (match game.mode with
