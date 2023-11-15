@@ -3,6 +3,7 @@ open Types
 
 let scale_room_rect x y w h = scale_rect Config.scale.room { pos = { x; y }; w; h }
 let in_teachers_archives (room : room) = room.id = LIB_A || room.id = LIB_B
+let show_ghost_on_map (room : room) = not (in_teachers_archives room || room.id = VENT_HUB)
 
 let get_pickup_indicators
     (room_progress : Json_t.room_progress)

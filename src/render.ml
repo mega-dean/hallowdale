@@ -1041,8 +1041,9 @@ let tick (state : state) =
            else
              m
          in
-         draw_ghost_circle 7. 0 0 0 alpha;
-         draw_ghost_circle 5. 255 255 255 alpha;
+         if Room.show_ghost_on_map game.room then (
+           draw_ghost_circle 7. 0 0 0 alpha;
+           draw_ghost_circle 5. 255 255 255 alpha);
          None
        | Some (MENU pause_menu) -> Some (MENU (pause_menu, None))
      in
