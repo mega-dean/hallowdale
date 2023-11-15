@@ -697,10 +697,32 @@ let change_current_room
         platforms = state.global.textures.platforms;
       }
   in
+  let get_music area_id =
+    List.find
+      (fun (area_music : area_music) -> List.mem area_id area_music.areas)
+      state.area_musics
+  in
+  let current_area_music = get_music game.room.area.id in
+  let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
+  let target_area_music = get_music target_area_id in
+  if current_area_music.music.name <> target_area_music.music.name then (
+    Audio.reset_music target_area_music.music;
+    game.music <- target_area_music);
+
+  game.room_changed_last_frame <- true;
   game.player.ghost.entity.current_floor <- None;
   game.player.current.wall <- None;
   game.player.spawned_vengeful_spirits <- [];
   game.player.ghost.entity.dest.pos <- ghost_start_pos;
+  game.player.current.can_dash <- true;
+  game.player.current.can_flap <- true;
+  (match game.mode with
+   | CLASSIC -> ()
+   | DEMO
+   | STEEL_SOLE ->
+     game.player.soul.current <- game.player.soul.max);
+  let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
+  List.iter hide_party_ghost game.party;
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
      - not really sure about ^this comment, I don't know if different tileset order would break the
@@ -757,27 +779,5 @@ let handle_transitions (state : state) (game : game) =
         | UP -> { start_pos' with y = start_pos'.y +. game.player.ghost.entity.dest.h }
         | DOWN -> { start_pos' with y = start_pos'.y -. game.player.ghost.entity.dest.h }
       in
-
-      let get_music area_id =
-        List.find
-          (fun (area_music : area_music) -> List.mem area_id area_music.areas)
-          state.area_musics
-      in
-      let current_area_music = get_music game.room.area.id in
-      let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
-      let target_area_music = get_music target_area_id in
-      if current_area_music.music.name <> target_area_music.music.name then (
-        Audio.reset_music target_area_music.music;
-        game.music <- target_area_music);
       change_current_room state game room_location start_pos;
-      game.room_changed_last_frame <- true;
-      game.player.current.can_dash <- true;
-      game.player.current.can_flap <- true;
-      (match game.mode with
-      | CLASSIC -> ()
-      | DEMO
-      | STEEL_SOLE ->
-        game.player.soul.current <- game.player.soul.max);
-      let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
-      List.iter hide_party_ghost game.party;
       true)
