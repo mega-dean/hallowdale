@@ -1019,13 +1019,14 @@ type layer_render_config = {
 
 type layer_config = {
   render : layer_render_config;
-  collides_with_ghost : bool;
-  hazard : bool;
-  pogoable : bool;
-  destroyable : bool;
-  permanently_removable : bool;
-  shaded : bool;
   animated : bool;
+  collides_with_ghost : bool;
+  destroyable : bool;
+  hazard : bool;
+  permanently_removable : bool;
+  pogoable : bool;
+  shaded : bool;
+  silent : bool;
 }
 
 (* a tilelayer in Tiled *)

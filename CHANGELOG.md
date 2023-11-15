@@ -5,6 +5,9 @@
 - fix ghost falling through floors on room transitions
 - don't show ghost on map in archives or ventways
 - fix music change when entering/exiting ventways
+- improve some sound effects:
+  - add death sound effect
+  - make flowers silent
 
 ## [0.0.4] - 2023-11-14
 

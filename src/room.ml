@@ -437,8 +437,8 @@ let init (params : room_params) : room =
               | "shadow" ->
                 [ "fg" ]
               | "close-fg" -> [ "fg"; "shaded" ]
-              | "fg-flowers" -> [ "fg"; "destroyable" ]
-              | "bg-flowers" -> [ "bg"; "destroyable" ]
+              | "fg-flowers" -> [ "fg"; "destroyable"; "silent" ]
+              | "bg-flowers" -> [ "bg"; "destroyable"; "silent" ]
               | "fg-jugs" -> [ "fg"; "destroyable"; "pogoable" ]
               | "bg-jugs" -> [ "bg"; "destroyable"; "pogoable" ]
               | unknown -> failwithf "unknown layer name '%s' in room %s" unknown params.file_name
@@ -460,13 +460,14 @@ let init (params : room_params) : room =
               else
                 {
                   render = { bg = has "bg"; fg = has "fg" || has "hazard" };
-                  collides_with_ghost = has "collides";
-                  hazard = has "hazard";
-                  pogoable = has "pogoable";
-                  destroyable = has "destroyable";
-                  permanently_removable = has "permanently_removable";
-                  shaded = has "shaded";
                   animated = has "animated";
+                  collides_with_ghost = has "collides";
+                  destroyable = has "destroyable";
+                  hazard = has "hazard";
+                  permanently_removable = has "permanently_removable";
+                  pogoable = has "pogoable";
+                  shaded = has "shaded";
+                  silent = has "silent";
                 }
             in
             build_config configs

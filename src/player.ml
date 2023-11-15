@@ -527,9 +527,10 @@ let resolve_slash_collisions (state : state) (game : game) =
         in
         let destroy_object (tile_group : tile_group) (collision : collision) =
           (* TODO organize these sound effects (probably just combine these all into one) *)
-          Audio.play_sound state "break";
-          Audio.play_sound state "alarmswitch";
-          Audio.play_sound state "punch";
+          if not layer.config.silent then (
+            Audio.play_sound state "break";
+            Audio.play_sound state "alarmswitch";
+            Audio.play_sound state "punch");
           layer.spawned_fragments <-
             List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
@@ -974,7 +975,10 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           (ALIGNED (CENTER, BOTTOM))
           ~scale:Config.ghost.wraiths_scale game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
-    | DIE -> game.player.history.die
+    | DIE ->
+      Audio.play_sound state "break";
+      Audio.play_sound state "spray";
+      game.player.history.die
     | TAKE_DAMAGE_AND_RESPAWN ->
       (match game.mode with
       | DEMO
@@ -1085,6 +1089,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       | None -> Some 1
       | Some fade ->
         if fade > 300 then (
+          Audio.stop_sound state "spray";
           respawn_ghost game;
           game.player.health.current <- game.player.health.max;
           state.game_context <- DIED game;

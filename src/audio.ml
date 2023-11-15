@@ -1,12 +1,16 @@
 open Utils
 open Types
 
-(* TODO move to a new file *)
 let play_sound state sound_name =
   let sound = List.assoc sound_name state.global.sounds in
   if not (Raylib.is_sound_playing sound) then (
     Raylib.set_sound_volume sound state.settings.sound_effects_volume;
     Raylib.play_sound sound)
+
+let stop_sound state sound_name =
+  let sound = List.assoc sound_name state.global.sounds in
+  if Raylib.is_sound_playing sound then
+    Raylib.stop_sound sound
 
 let play_music music =
   if Raylib.get_music_time_played music.t > music.loop_end.at then
