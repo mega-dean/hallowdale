@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.5] - 2023-11-15
+
 - fix ghost falling through floors on room transitions
 - don't show ghost on map in archives or ventways
 - fix music change when entering/exiting ventways
@@ -32,6 +34,7 @@
 
 - demo release
 
+[0.0.5]: https://github.com/mega-dean/hallowdale/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/mega-dean/hallowdale/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/mega-dean/hallowdale/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/mega-dean/hallowdale/compare/v0.0.1...v0.0.2
