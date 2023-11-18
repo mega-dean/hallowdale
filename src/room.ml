@@ -481,19 +481,14 @@ let init (params : room_params) : room =
           in
 
           let data =
-            (* CLEANUP maybe add Matrix.pad fn *)
-            (* CLEANUP probably only need to pad by 1 *)
+            (* padding zeros on right/bottom sides of grid prevents errors because  *)
             let matrix : int Matrix.t = Matrix.make json.data json.w in
-            let append_zero row = Array.append row [| 0; 0 |] in
-            let rows' : int Matrix.t = Array.map append_zero matrix in
-            let new_rows : int Matrix.t =
-              [|
-                Array.init (Array.length rows'.(0)) (fun _ -> 0);
-                Array.init (Array.length rows'.(0)) (fun _ -> 0);
-              |]
+            let append_zero row = Array.append row [| 0 |] in
+            let padded_rows : int Matrix.t = Array.map append_zero matrix in
+            let zero_row : int Matrix.t =
+              [| Array.init (Array.length padded_rows.(0)) (fun _ -> 0) |]
             in
-
-            Array.append rows' new_rows
+            Array.append padded_rows zero_row
           in
 
           layers :=

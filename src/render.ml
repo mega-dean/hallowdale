@@ -80,12 +80,13 @@ let draw_texture
     | 7 -> ({ r with w = -1. *. r.w }, 90.)
     | _n -> (r, 0.)
   in
-  let tile_size = (* CLEANUP move to config *) 12. *. Config.scale.room in
   let dest' =
     match rotation with
     | 0. -> dest |> to_Rect
-    | 90. -> { dest with pos = { dest.pos with x = dest.pos.x +. tile_size } } |> to_Rect
-    | 270. -> { dest with pos = { dest.pos with y = dest.pos.y +. tile_size } } |> to_Rect
+    | 90. ->
+      { dest with pos = { dest.pos with x = dest.pos.x +. Config.window.tile_size } } |> to_Rect
+    | 270. ->
+      { dest with pos = { dest.pos with y = dest.pos.y +. Config.window.tile_size } } |> to_Rect
     | _ -> dest |> to_Rect
   in
   if debug then
@@ -143,15 +144,13 @@ let draw_tiled_layer
     ?(tint = Color.create 255 255 255 255)
     ?(parallax = None)
     (layer : layer) : unit =
-  let render_data_tile_calls = ref 0 in
   let w, h = Tiled.Room.dest_wh room.json () in
   if not layer.hidden then (
     let draw_stub (sprite, transformation_bits) =
       draw_texture ~tint sprite.texture sprite.dest transformation_bits
     in
     let tint' = if layer.config.shaded then Color.black else tint in
-    let render_data_tile (idx : int) (gid : int) =
-      incr render_data_tile_calls;
+    let render_tile (idx : int) (gid : int) =
       if gid <> 0 && not (List.mem idx layer.destroyed_tiles) then (
         let x, y =
           Tiled.Room.dest_xy ~parallax room.json layer.json.offset_x layer.json.offset_y idx
@@ -179,36 +178,31 @@ let draw_tiled_layer
     in
 
     let mx, my =
-      match parallax with
-      | None ->
-        Tiled.Tile.tile_coords' ~tile_w:(12. *. Config.scale.room)
-          ~tile_h:(12. *. Config.scale.room) (camera_x, camera_y)
-      | Some p ->
-        let mx', my' =
-          Tiled.Tile.tile_coords' ~tile_w:(12. *. Config.scale.room)
-            ~tile_h:(12. *. Config.scale.room)
-            (camera_x -. p.x, camera_y -. p.y)
-        in
-        (* FIXME this breaks when saving very close to the edge of the screen *)
-        (mx', my')
+      let x', y' =
+        match parallax with
+        | None -> (camera_x, camera_y)
+        | Some p -> (camera_x -. p.x, camera_y -. p.y)
+      in
+      Tiled.Tile.tile_coords' ~tile_w:Config.window.tile_size ~tile_h:Config.window.tile_size
+        (x', y')
     in
 
     let layer_data_in_camera : int array array =
+      (* Config.window.w/h_tiles are the exact window size, so  *)
       match Matrix.sub layer.data mx my (Config.window.w_tiles + 1) (Config.window.h_tiles + 1) with
       | Ok m -> m
       | Error msg -> failwithf "layer %s: %s" layer.name msg
     in
-    (* CLEANUP rename *)
-    let render_data_tile' col_idx (rows : int array) =
-      let render_data_tile'' row_idx (gid : int) =
+    let render_data_tile col_idx (rows : int array) =
+      let render row_idx (gid : int) =
         let idx =
           Tiled.Tile.tile_idx_from_coords' ~width:room.json.w_in_tiles (row_idx + mx, col_idx + my)
         in
-        render_data_tile idx gid
+        render_tile idx gid
       in
-      Array.iteri render_data_tile'' rows
+      Array.iteri render rows
     in
-    Array.iteri render_data_tile' layer_data_in_camera;
+    Array.iteri render_data_tile layer_data_in_camera;
     List.iter draw_spawned_fragment layer.spawned_fragments;
     List.iter draw_stub layer.spawned_stub_sprites)
 
