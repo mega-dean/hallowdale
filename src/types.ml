@@ -1033,6 +1033,7 @@ type layer_config = {
 type layer = {
   name : string;
   json : Json_t.tile_layer;
+  data : int array array;
   config : layer_config;
   mutable hidden : bool;
   mutable tile_groups : tile_group list;

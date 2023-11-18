@@ -36,6 +36,7 @@ let (development, project_root) : bool * string =
 
 let room_scale = 3
 let tile_size = 12
+let w_tiles, h_tiles = (44, 24)
 
 let max_width, max_height =
   let tiles (x_tiles, y_tiles) =
@@ -43,7 +44,7 @@ let max_width, max_height =
     ( x_tiles * tile_size * room_scale |> Int.to_float,
       y_tiles * tile_size * room_scale |> Int.to_float )
   in
-  tiles (44, 24)
+  tiles (w_tiles, h_tiles)
 
 let min_width, min_height = (max_width /. 2., max_height /. 2.)
 

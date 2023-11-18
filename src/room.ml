@@ -480,10 +480,27 @@ let init (params : room_params) : room =
               []
           in
 
+          let data =
+            (* CLEANUP maybe add Matrix.pad fn *)
+            (* CLEANUP probably only need to pad by 1 *)
+            let matrix : int Matrix.t = Matrix.make json.data json.w in
+            let append_zero row = Array.append row [| 0; 0 |] in
+            let rows' : int Matrix.t = Array.map append_zero matrix in
+            let new_rows : int Matrix.t =
+              [|
+                Array.init (Array.length rows'.(0)) (fun _ -> 0);
+                Array.init (Array.length rows'.(0)) (fun _ -> 0);
+              |]
+            in
+
+            Array.append rows' new_rows
+          in
+
           layers :=
             {
               json;
               name = layer_name';
+              data;
               config;
               (* tile_groups gets populated later *)
               tile_groups = [];
@@ -699,9 +716,7 @@ let change_current_room
       }
   in
   let get_music area_id =
-    List.find
-      (fun (area_music : area_music) -> List.mem area_id area_music.areas)
-      state.area_musics
+    List.find (fun (area_music : area_music) -> List.mem area_id area_music.areas) state.area_musics
   in
   let current_area_music = get_music game.room.area.id in
   let target_area_id, _ = Tiled.parse_room_filename "room transition" room_location.filename in
@@ -718,10 +733,10 @@ let change_current_room
   game.player.current.can_dash <- true;
   game.player.current.can_flap <- true;
   (match game.mode with
-   | CLASSIC -> ()
-   | DEMO
-   | STEEL_SOLE ->
-     game.player.soul.current <- game.player.soul.max);
+  | CLASSIC -> ()
+  | DEMO
+  | STEEL_SOLE ->
+    game.player.soul.current <- game.player.soul.max);
   let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
   List.iter hide_party_ghost game.party;
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them

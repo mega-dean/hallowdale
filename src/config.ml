@@ -44,6 +44,8 @@ type window_config = {
   scale : float;
   w : float;
   h : float;
+  w_tiles : int;
+  h_tiles : int;
   center : vector;
   max_width : float;
   max_height : float;
@@ -69,6 +71,8 @@ let window : window_config =
     scale = window_scale;
     w = window_w;
     h = window_h;
+    w_tiles;
+    h_tiles;
     center = { x = window_w /. 2.; y = window_h /. 2. };
     max_width;
     max_height;

@@ -52,6 +52,8 @@ module List = struct
     in
     List.iter add_x xs;
     !res
+
+  let to_array xs = Array.of_list xs
 end
 
 module String = struct
@@ -75,4 +77,50 @@ module String = struct
     match split_at_first_opt c str with
     | Some prefix, rest -> rest
     | None, _ -> str
+end
+
+module Array = struct
+  include Array
+
+  let sub = ArrayLabels.sub
+end
+
+(* 2-d array *)
+module Matrix = struct
+  type 'a t = 'a array array
+
+  let make (xs : 'a list) (w : int) : 'a t =
+    if List.length xs mod w <> 0 then
+      failwithf "Matrix.make - can't evenly split list of length %d into rows of width %d"
+        (List.length xs) w
+    else (
+      let json_data = xs |> List.to_array in
+      let row_count = Array.length json_data / w in
+      let make_row row_idx = Array.sub json_data ~pos:(row_idx * w) ~len:w in
+      Array.map make_row (Int.range row_count |> List.to_array))
+
+  let sub (matrix : 'a t) x y w h : ('a t, string) Result.t =
+    try
+      let rows : 'a t = Array.sub matrix ~pos:y ~len:h in
+      Result.ok (Array.map (fun row -> Array.sub row ~pos:x ~len:w) rows)
+    with
+    | e ->
+      let msg =
+        if Array.length matrix = 0 then
+          "empty array"
+        else if Array.length matrix.(0) = 0 then
+          "empty rows"
+        else if x < 0 then
+          fmt "x too small (%d)" x
+        else if x + w > Array.length matrix.(0) - 1 then
+          fmt "x + w too large (%d + %d > %d)" x w (Array.length matrix.(0) - 1)
+        else if y < 0 then
+          fmt "y too small (%d < 0)" y
+        else if y + h > Array.length matrix - 1 then
+          fmt "y + h too large (%d + %d > %d)" y h (Array.length matrix - 1)
+        else (
+          print "Matrix.sub unknown error (boundary checks passed)";
+          raise e)
+      in
+      Result.error (fmt "Matrix.sub: %s" msg)
 end

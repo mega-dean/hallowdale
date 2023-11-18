@@ -1302,7 +1302,8 @@ let handle_debug_keys (game : game) (state : state) =
         (* game.ghost.soul.current <- game.ghost.soul.max *)
         (* swap_current_ghost_in_cutscene state game ANNIE *)
         (* show_camera_location () *)
-        show_ghost_location ();
+        (* show_ghost_location (); *)
+        toggle_safe_ss ();
         (* game.player.health.current <- 1; *)
         ())
       else if key_pressed DEBUG_2 then (

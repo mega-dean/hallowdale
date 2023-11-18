@@ -80,7 +80,7 @@ let draw_texture
     | 7 -> ({ r with w = -1. *. r.w }, 90.)
     | _n -> (r, 0.)
   in
-  let tile_size = 12. *. Config.scale.room in
+  let tile_size = (* CLEANUP move to config *) 12. *. Config.scale.room in
   let dest' =
     match rotation with
     | 0. -> dest |> to_Rect
@@ -143,48 +143,72 @@ let draw_tiled_layer
     ?(tint = Color.create 255 255 255 255)
     ?(parallax = None)
     (layer : layer) : unit =
-  let within_camera dest_x dest_y =
-    let camera_min_x, camera_max_x = (camera_x -. 100., camera_x +. Config.window.w +. 100.) in
-    let camera_min_y, camera_max_y = (camera_y -. 100., camera_y +. Config.window.h +. 100.) in
-    camera_min_x < dest_x && dest_x < camera_max_x && camera_min_y < dest_y && dest_y < camera_max_y
-  in
-  let tile_count = ref 0 in
+  let render_data_tile_calls = ref 0 in
+  let w, h = Tiled.Room.dest_wh room.json () in
   if not layer.hidden then (
     let draw_stub (sprite, transformation_bits) =
       draw_texture ~tint sprite.texture sprite.dest transformation_bits
     in
     let tint' = if layer.config.shaded then Color.black else tint in
     let render_data_tile (idx : int) (gid : int) =
+      incr render_data_tile_calls;
       if gid <> 0 && not (List.mem idx layer.destroyed_tiles) then (
         let x, y =
-          Tiled.Room.dest_xy room.json ~parallax_opt:parallax layer.json.offset_x
-            layer.json.offset_y idx layer.json.w
+          Tiled.Room.dest_xy ~parallax room.json layer.json.offset_x layer.json.offset_y idx
+            layer.json.w
         in
-        if within_camera x y then (
-          incr tile_count;
-          let texture, transformations =
-            let animation_offset =
-              if layer.config.animated then
-                (* TODO this should probably just use an animated sprite instead of
-                   this weird animation_offset for the tile gid
-                *)
-                4 * state.frame.idx / Config.window.fps mod 8
-              else
-                0
-            in
-            Tiled.Room.look_up_tile ~animation_offset room.json room.cache gid
+        let texture, transformations =
+          let animation_offset =
+            if layer.config.animated then
+              (* TODO this should probably just use an animated sprite instead of
+                 this weird animation_offset for the tile gid
+              *)
+              4 * state.frame.idx / Config.window.fps mod 8
+            else
+              0
           in
-          let w, h = Tiled.Room.dest_wh room.json () in
-          let dest = { pos = { x; y }; w; h } in
-          (* PERF instead of drawing texture for each tile, use image_draw on the render buffer *)
-          draw_texture ~tint:tint' texture dest transformations))
+          Tiled.Room.look_up_tile ~animation_offset room.json room.cache gid
+        in
+        let dest = { pos = { x; y }; w; h } in
+        draw_texture ~tint:tint' texture dest transformations)
     in
     let draw_spawned_fragment (f : entity) =
       if debug then
         debug_rect f.dest;
       draw_entity ~tint f
     in
-    List.iteri render_data_tile layer.json.data;
+
+    let mx, my =
+      match parallax with
+      | None ->
+        Tiled.Tile.tile_coords' ~tile_w:(12. *. Config.scale.room)
+          ~tile_h:(12. *. Config.scale.room) (camera_x, camera_y)
+      | Some p ->
+        let mx', my' =
+          Tiled.Tile.tile_coords' ~tile_w:(12. *. Config.scale.room)
+            ~tile_h:(12. *. Config.scale.room)
+            (camera_x -. p.x, camera_y -. p.y)
+        in
+        (* FIXME this breaks when saving very close to the edge of the screen *)
+        (mx', my')
+    in
+
+    let layer_data_in_camera : int array array =
+      match Matrix.sub layer.data mx my (Config.window.w_tiles + 1) (Config.window.h_tiles + 1) with
+      | Ok m -> m
+      | Error msg -> failwithf "layer %s: %s" layer.name msg
+    in
+    (* CLEANUP rename *)
+    let render_data_tile' col_idx (rows : int array) =
+      let render_data_tile'' row_idx (gid : int) =
+        let idx =
+          Tiled.Tile.tile_idx_from_coords' ~width:room.json.w_in_tiles (row_idx + mx, col_idx + my)
+        in
+        render_data_tile idx gid
+      in
+      Array.iteri render_data_tile'' rows
+    in
+    Array.iteri render_data_tile' layer_data_in_camera;
     List.iter draw_spawned_fragment layer.spawned_fragments;
     List.iter draw_stub layer.spawned_stub_sprites)
 
@@ -198,8 +222,7 @@ let draw_tiles room camera_x camera_y state layers : unit =
           y = camera_y *. (1. -. layer.json.parallax_y);
         }
     in
-    draw_tiled_layer ~tint:room.area.tint ~parallax ~debug:(layer.name = "floors2") room camera_x
-      camera_y state layer
+    draw_tiled_layer ~tint:room.area.tint ~parallax room camera_x camera_y state layer
   in
   List.iter draw_parallax_layer layers
 

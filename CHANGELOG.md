@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- optimize tile rendering
+
 ## [0.0.5] - 2023-11-15
 
 - fix ghost falling through floors on room transitions

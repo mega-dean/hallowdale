@@ -74,37 +74,43 @@ module Tileset = struct
 end
 
 module Tile = struct
+  (* CLEANUP consolidate *)
   let tile_idx_from_coords ~width (x, y) : int =
     let tile_x, tile_y = (x |> Float.to_int, y |> Float.to_int) in
     tile_x + (tile_y * width)
 
+  let tile_idx_from_coords' ~width (x, y) : int = x + (y * width)
+
   let tile_idx ~tile_w ~tile_h ~width (x, y) : int =
     tile_idx_from_coords ~width (x /. tile_w, y /. tile_h)
 
+  (* CLEANUP consolidate/rename:
+     - this should be "coords_at_tile"
+  *)
   let tile_coords ~tile_w ~tile_h (x, y) : float * float =
     ((x |> Int.to_float) *. tile_w, (y |> Int.to_float) *. tile_h)
+
+  let tile_coords' ~tile_w ~tile_h ((x, y) : float * float) : int * int =
+    (x /. tile_w |> Float.to_int, y /. tile_h |> Float.to_int)
 
   let tile_dest ~tile_w ~tile_h (x, y) : float * float =
     ( (x |> Int.to_float) *. tile_w *. Config.scale.room,
       (y |> Int.to_float) *. tile_h *. Config.scale.room )
 
-  let tile_xy idx width : int * int = (idx mod width, idx / width)
-
   let src_xy tile_w tile_h idx width : float * float =
+    let tile_xy idx width : int * int = (idx mod width, idx / width) in
     tile_coords ~tile_w ~tile_h (tile_xy idx width)
 
   let scale_dest_size ?(scale = 1.) w h =
     (w *. Config.scale.room *. scale, h *. Config.scale.room *. scale)
 
-  let dest_xy ?(scale = 1.) ?(parallax = None) offset_x offset_y tile_w tile_h idx width :
-      float * float =
+  let dest_xy ?(parallax = None) offset_x offset_y tile_w tile_h idx width : float * float =
     let scale_dest_position x y =
       match parallax with
-      (* | None -> ((x *. Config.scale.room) +. offset_x, (y *. Config.scale.room) +. offset_y) *)
       | None -> ((x +. offset_x) *. Config.scale.room, (y +. offset_y) *. Config.scale.room)
       | Some frame_parallax ->
-        ( (((x +. offset_x) *. Config.scale.room) +. frame_parallax.x) *. scale,
-          (((y +. offset_y) *. Config.scale.room) +. frame_parallax.y) *. scale )
+        ( ((x +. offset_x) *. Config.scale.room) +. frame_parallax.x,
+          ((y +. offset_y) *. Config.scale.room) +. frame_parallax.y )
     in
     let x', y' = src_xy tile_w tile_h idx width in
     scale_dest_position x' y'
@@ -183,10 +189,8 @@ module Room = struct
     Tile.src_xy json_room.tile_w json_room.tile_h idx width
 
   (* TODO too many args, add labels *)
-  let dest_xy ?(scale = 1.) (json_room : t) ?(parallax_opt = None) offset_x offset_y idx width :
-      float * float =
-    Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width
-      ~parallax:parallax_opt ~scale
+  let dest_xy (json_room : t) ?(parallax = None) offset_x offset_y idx width : float * float =
+    Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width ~parallax
 
   let dest_wh (json_room : t) ?(scale = 1.) () : float * float =
     Tile.scale_dest_size json_room.tile_w json_room.tile_h ~scale
