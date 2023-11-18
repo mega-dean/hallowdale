@@ -1326,7 +1326,7 @@ type handled_action = { this_frame : bool }
 
 let in_water (player : player) : bool = Option.is_some player.current.water
 
-let update (game : game) (state : state) =
+let tick (game : game) (state : state) =
   let stop_wall_sliding = ref false in
 
   let pressed_or_buffered game_action =

@@ -213,7 +213,9 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
       | STEEL_SOLE ->
         (* this prevents an immediate damage respawn from landing on the bench *)
         Player.add_phantom_floor game game.player.ghost.entity.dest.pos);
-      Game.start ~is_new_game state game save_file)
+      (* tick camera to ensure it is entirely inside room before trying to render *)
+      let state' = Camera.tick game state in
+      Game.start ~is_new_game state' game save_file)
   in
 
   let start_new_game game_mode save_file save_file_idx =

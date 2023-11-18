@@ -236,14 +236,9 @@ let create
 
 let init state mode (save_file : Json_t.save_file) save_file_idx =
   let game = create state mode save_file state.global state.area_musics state.world save_file_idx in
+  (* update the camera when a file is loaded so the ghost doesn't start too far offscreen *)
+  let _ = Camera.tick game state in
   state.camera.update_instantly <- true;
-  state.camera.raylib <-
-    (* update the camera when a file is loaded so the ghost doesn't start too far offscreen
-       TODO can maybe improve this, since it can still be off if the camera is bounded
-    *)
-    Tiled.create_camera_at
-      (Raylib.Vector2.create game.player.ghost.entity.dest.pos.x game.player.ghost.entity.dest.pos.y)
-      0. Config.window.center.x Config.window.center.y;
   game
 
 let load state (save_file : Json_t.save_file) save_file_idx =
