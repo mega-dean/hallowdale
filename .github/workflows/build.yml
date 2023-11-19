@@ -39,15 +39,16 @@ jobs:
           opam pin -n .
           opam install . --deps-only
 
-      - name: dune build (Windows)
-        if: matrix.os == 'windows'
-        run: |
-          opam exec -- dune build --profile release-windows
-
-      - name: dune build (non-Windows)
-        if: matrix.os != 'windows'
+      - name: dune build
         run: |
           opam exec -- dune build --profile release
+
+      - name: upload libwinpthread-1.dll
+        if: matrix.os == 'windows'
+        uses: actions/upload-artifact@v3
+        with:
+          name: libwinpthread-1.dll
+          path: C:\ghcup\ghc\9.4.7\mingw\bin\libwinpthread-1.dll
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
@@ -73,6 +74,7 @@ jobs:
         run: |
           mkdir -p $OUT_DIR/dist/
           mv artifacts/windows-$OUT_DIR/main.exe $OUT_DIR/dist/windows.exe
+          mv artifacts/libwinpthread-1.dll $OUT_DIR/dist/libwinpthread-1.dll
           mv artifacts/ubuntu-$OUT_DIR/main.exe $OUT_DIR/dist/linux
           mv artifacts/macos-$OUT_DIR/main.exe $OUT_DIR/dist/macos
           sudo chmod a+x $OUT_DIR/dist/linux $OUT_DIR/dist/macos
