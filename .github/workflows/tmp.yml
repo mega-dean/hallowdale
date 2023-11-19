@@ -3,9 +3,9 @@ name: check for libwinpthread
 on: workflow_dispatch
 
 jobs:
-  build:
+  check:
     runs-on: windows-latest
     steps:
     - name: Check for libwinpthread.a
       run: |
-        where /R C:\ libwinpthread.a
+        Get-ChildItem -Path C:\ -Filter libwinpthread.a -Recurse -ErrorAction SilentlyContinue -Force
