@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.8] - 2023-11-19
+
+- include libwinpthread-1.dll directly instead of copying it from Windows CI runner
+
 ## [0.0.7] - 2023-11-19
 
 - include libwinpthread-1.dll for Windows
@@ -43,6 +47,7 @@
 
 - demo release
 
+[0.0.8]: https://github.com/mega-dean/hallowdale/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/mega-dean/hallowdale/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/mega-dean/hallowdale/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/mega-dean/hallowdale/compare/v0.0.4...v0.0.5
