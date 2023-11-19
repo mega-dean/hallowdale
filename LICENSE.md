@@ -14,6 +14,7 @@ libwinpthread-1.dll
 ==================
 The .dll file distributed uses the same MIT license as above, with this additional text:
 
+```
 /*
  * Parts of this library are derived by:
  *
@@ -50,6 +51,7 @@ The .dll file distributed uses the same MIT license as above, with this addition
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+```
 
 from https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/mingw-w64-libraries/winpthreads/COPYING
 
