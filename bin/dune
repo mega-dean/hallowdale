@@ -2,6 +2,6 @@
   (public_name hallowdale)
   (name        main)
   (libraries   hallowdale)
-  (flags (:standard -w -26-27-32))
+  (flags (:standard -w -26-27-32 -ccopt -static))
   )
 
