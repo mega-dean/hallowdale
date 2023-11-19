@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.6] - 2023-11-19
+
 - optimize tile rendering
+- try to fix libwinpthread error on Windows
 
 ## [0.0.5] - 2023-11-15
 
@@ -36,6 +39,7 @@
 
 - demo release
 
+[0.0.6]: https://github.com/mega-dean/hallowdale/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/mega-dean/hallowdale/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/mega-dean/hallowdale/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/mega-dean/hallowdale/compare/v0.0.2...v0.0.3
