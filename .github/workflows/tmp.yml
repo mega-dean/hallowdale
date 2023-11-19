@@ -1,0 +1,11 @@
+name: check for libwinpthread
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Check for libwinpthread.a
+      run: |
+        where /R C:\ libwinpthread.a
