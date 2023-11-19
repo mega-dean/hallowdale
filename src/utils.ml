@@ -119,7 +119,7 @@ module Matrix = struct
         else if y + h > Array.length matrix - 1 then
           fmt "y + h too large (%d + %d > %d)" y h (Array.length matrix - 1)
         else (
-          print "Matrix.sub unknown error (boundary checks passed ¯\_(ツ)_/¯)";
+          print "Matrix.sub unknown error (boundary checks passed)";
           raise e)
       in
       Result.error (fmt "Matrix.sub: %s" msg)
