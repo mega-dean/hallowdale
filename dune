@@ -1,3 +1,6 @@
 (env
  (release
-  (ocamlopt_flags (:standard -O2))))
+  (ocamlopt_flags (:standard -O2)))
+ (release-windows
+  (ocamlopt_flags (:standard -O2 -ccopt -static)))
+  )

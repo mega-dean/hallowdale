@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-1].[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 jobs:
   build-artifacts:
@@ -37,6 +38,15 @@ jobs:
         run: |
           opam pin -n .
           opam install . --deps-only
+
+      - name: dune build (Windows)
+        if: matrix.os == 'windows'
+        run: |
+          opam exec -- dune build --profile release-windows
+
+      - name: dune build (non-Windows)
+        if: matrix.os != 'windows'
+        run: |
           opam exec -- dune build --profile release
 
       - name: upload artifact
