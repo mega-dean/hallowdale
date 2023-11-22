@@ -717,7 +717,6 @@ let set_pose
       (player.ghost.head_textures.look_down, bodies.focus)
     | SHADE_DASH
     | DASH ->
-      player.current.can_dash <- false;
       player.ghost.entity.v.y <- 0.;
       update_vx 2.;
       (player.ghost.head_textures.idle, bodies.dash)
@@ -950,6 +949,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       (* TODO the dash sound should have the footsteps at the end when the ghost lands *)
       Audio.play_sound state "dash";
       game.player.ghost.entity.y_recoil <- None;
+      (* set this based on current_floor to allow ghost to dash again after dashing off a ledge *)
+      game.player.current.can_dash <- Option.is_some game.player.ghost.entity.current_floor;
       game.player.history.dash
     | CAST spell_kind -> (
       game.player.soul.current <- game.player.soul.current - Config.action.soul_per_cast;

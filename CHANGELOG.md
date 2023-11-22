@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- allow another dash in the air after dashing off a ledge
+
 ## [0.0.8] - 2023-11-19
 
 - include libwinpthread-1.dll directly instead of copying it from Windows CI runner
