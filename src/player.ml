@@ -2118,14 +2118,14 @@ let tick (game : game) (state : state) =
     in
     if starting_attack () then (
       let direction : direction =
-        match (state.frame_inputs.up.down, state.frame_inputs.down.down) with
-        | true, false -> UP
-        | false, true ->
+        match (game.player.current.wall, state.frame_inputs.up.down, state.frame_inputs.down.down) with
+        | None, true, false -> UP
+        | None, false, true ->
           if Entity.on_ground game.player.ghost.entity then
             if game.player.ghost.entity.sprite.facing_right then RIGHT else LEFT
           else
             DOWN
-        | _, _ ->
+        | _, _, _ ->
           (* don't really care about socd for up/down *)
           if game.player.ghost.entity.sprite.facing_right then RIGHT else LEFT
       in
