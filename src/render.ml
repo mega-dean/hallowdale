@@ -84,9 +84,11 @@ let draw_texture
     match rotation with
     | 0. -> dest |> to_Rect
     | 90. ->
-      { dest with pos = { dest.pos with x = dest.pos.x +. Config.window.tile_size } } |> to_Rect
+      { dest with pos = { dest.pos with x = dest.pos.x +. Config.window.dest_tile_size } }
+      |> to_Rect
     | 270. ->
-      { dest with pos = { dest.pos with y = dest.pos.y +. Config.window.tile_size } } |> to_Rect
+      { dest with pos = { dest.pos with y = dest.pos.y +. Config.window.dest_tile_size } }
+      |> to_Rect
     | _ -> dest |> to_Rect
   in
   if debug then
@@ -144,7 +146,7 @@ let draw_tiled_layer
     ?(tint = Color.create 255 255 255 255)
     ?(parallax = None)
     (layer : layer) : unit =
-  let w, h = Tiled.Room.dest_wh room.json () in
+  let w, h = Tiled.JsonRoom.dest_wh room.json () in
   if not layer.hidden then (
     let draw_stub (sprite, transformation_bits) =
       draw_texture ~tint sprite.texture sprite.dest transformation_bits
@@ -153,7 +155,7 @@ let draw_tiled_layer
     let render_tile (idx : int) (gid : int) =
       if gid <> 0 && not (List.mem idx layer.destroyed_tiles) then (
         let x, y =
-          Tiled.Room.dest_xy ~parallax room.json layer.json.offset_x layer.json.offset_y idx
+          Tiled.JsonRoom.dest_xy ~parallax room.json layer.json.offset_x layer.json.offset_y idx
             layer.json.w
         in
         let texture, transformations =
@@ -166,7 +168,7 @@ let draw_tiled_layer
             else
               0
           in
-          Tiled.Room.look_up_tile ~animation_offset room.json room.cache gid
+          Tiled.JsonRoom.look_up_tile ~animation_offset room.json room.cache gid
         in
         let dest = { pos = { x; y }; w; h } in
         draw_texture ~tint:tint' texture dest transformations)
@@ -178,13 +180,12 @@ let draw_tiled_layer
     in
 
     let mx, my =
-      let x', y' =
+      let pos =
         match parallax with
-        | None -> (camera_x, camera_y)
-        | Some p -> (camera_x -. p.x, camera_y -. p.y)
+        | None -> { x = camera_x; y = camera_y }
+        | Some p -> { x = camera_x -. p.x; y = camera_y -. p.y }
       in
-      Tiled.Tile.tile_coords' ~tile_w:Config.window.tile_size ~tile_h:Config.window.tile_size
-        (x', y')
+      pos |> Tiled.Tile.pos_to_coords
     in
 
     let layer_data_in_camera : int array array =
@@ -196,7 +197,7 @@ let draw_tiled_layer
     let render_data_tile col_idx (rows : int array) =
       let render row_idx (gid : int) =
         let idx =
-          Tiled.Tile.tile_idx_from_coords' ~width:room.json.w_in_tiles (row_idx + mx, col_idx + my)
+          (row_idx + mx, col_idx + my) |> Tiled.Tile.coords_to_idx ~width:room.json.w_in_tiles
         in
         render_tile idx gid
       in

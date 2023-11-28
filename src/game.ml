@@ -90,7 +90,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       ghost_y = game.player.ghost.entity.dest.pos.y /. Config.window.scale;
       respawn_x = game.room.respawn_pos.x /. Config.window.scale;
       respawn_y = game.room.respawn_pos.y /. Config.window.scale;
-      room_name = Tiled.Room.get_filename game.room;
+      room_name = Room.get_filename game.room;
       abilities = game.player.abilities;
       progress = clone_game_progress game.progress;
       weapons = List.map fst game.player.weapons;
@@ -187,7 +187,7 @@ let create
 
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
   let room_location = List.assoc room_id world in
-  let exits = Tiled.Room.get_exits room_location in
+  let exits = Tiled.JsonRoom.get_exits room_location in
   let room =
     Room.init
       {
@@ -207,7 +207,7 @@ let create
       }
   in
 
-  Tiled.Room.reset_tile_groups room;
+  Room.reset_tile_groups room;
 
   let music = Audio.get_area_music room.area.id area_musics in
 

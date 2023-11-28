@@ -600,9 +600,13 @@ let resolve_slash_collisions (state : state) (game : game) =
         | _ -> failwith "lever trigger needs LEVER kind"
       in
       match Collision.with_slash slash lever_sprite with
-      (* TODO don't really need to check slash collisions after a lever's door has already been opened *)
       | None -> ()
       | Some collision -> (
+        (* CLEANUP add sound effect
+           - can't do it here though since this is run every frame that the nail slash collides
+           - maybe add frame_idx:int to triggers.levers
+        *)
+        tmp "lever";
         lever_sprite.texture <- state.global.textures.door_lever_struck;
         let has_tile_idx tile_group = List.mem door_tile_idx tile_group.tile_idxs in
         match List.find_opt has_tile_idx layer.tile_groups with
@@ -647,6 +651,7 @@ let set_ghost_textures ghost ~head_texture ~body_texture =
   set_new_body_texture ghost body_texture
 
 (* - this function handles state updates that should happen every frame of a pose
+   -- but some actions don't use start/continue_action, so they set things on every frame
    - anything that only happens once should happen in start_pose
    - anything that happens every frame except the first should happen in continue_pose
 *)
@@ -682,6 +687,7 @@ let set_pose
       (player.ghost.head_textures.walk, bodies.cast)
   in
 
+  (* CLEANUP try moving can_dash/flap updates to start_action *)
   let handle_action_kind action_kind : texture * ghost_body_texture =
     match action_kind with
     | ATTACK direction ->
@@ -999,7 +1005,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
             game.room.layers
         in
         List.iter (fun layer -> layer.destroyed_tiles <- []) jug_layers;
-        Tiled.Room.reset_tile_groups game.room);
+        Room.reset_tile_groups game.room);
       Entity.freeze game.player.ghost.entity;
       game.player.history.take_damage_and_respawn
     | TAKE_DAMAGE (damage, direction) ->
@@ -1271,7 +1277,7 @@ let handle_debug_keys (game : game) (state : state) =
       let room_location = List.assoc game.room.id state.world in
       print "================\nghost global pos: %s"
         (Show.vector (Room.get_global_pos game.player.ghost.entity.dest.pos room_location));
-      print "room %s" (Tiled.Room.get_filename game.room);
+      print "room %s" (Room.get_filename game.room);
       print "full room_id: %s" (Show.room_id game.room.id);
       print "room_location global x/y: %f, %f" room_location.global_x room_location.global_y
     in
@@ -1445,12 +1451,12 @@ let tick (game : game) (state : state) =
           *)
           ref false
         in
-        let tile_w, tile_h = (game.room.json.tile_w, game.room.json.tile_h) in
 
         let set_layer_hidden (layer_name : string) hidden =
-          match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
+          (match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
           | None -> failwithf "expected %s layer" layer_name
-          | Some layer_to_hide -> layer_to_hide.hidden <- hidden
+          | Some layer_to_hide -> layer_to_hide.hidden <- hidden);
+          Room.reset_tile_groups game.room
         in
 
         (* could divide these up into some smaller groups like TEXT or LAYER to get rid of more of the duplication, but
@@ -1471,7 +1477,9 @@ let tick (game : game) (state : state) =
           | WARP trigger_kind -> (
             match trigger_kind with
             | WARP target -> (
-              let target_room_location = Tiled.Room.locate_by_name state.world target.room_name in
+              let target_room_location =
+                Tiled.JsonRoom.locate_by_name state.world target.room_name
+              in
               let warp_to target =
                 Room.change_current_room state game target_room_location target
               in
@@ -1512,8 +1520,8 @@ let tick (game : game) (state : state) =
             game.interaction.text <-
               Some (ABILITY { top_paragraphs = []; outline_src; bottom_paragraphs })
           | SET_FIXED_CAMERA (tile_x, tile_y) ->
-            let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (tile_x, tile_y) in
-            let x, y = (tx *. Config.scale.room, ty *. Config.scale.room) in
+            let tile = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
+            let x, y = (tile.x *. Config.scale.room, tile.y *. Config.scale.room) in
             state.camera.subject <- FIXED { x; y }
           | SET_CAMERA_MOTION motion -> state.camera.motion <- motion
           | SET_GHOST_CAMERA ->
@@ -1521,21 +1529,13 @@ let tick (game : game) (state : state) =
             Entity.unfreeze game.player.ghost.entity;
             state.camera.subject <- GHOST
           | WAIT time -> new_wait := time -. state.frame.dt
-          | HIDE_BOSS_DOORS ->
-            set_layer_hidden "boss-doors" true;
-            Tiled.Room.reset_tile_groups game.room
-          | UNHIDE_BOSS_DOORS ->
-            set_layer_hidden "boss-doors" false;
-            Tiled.Room.reset_tile_groups game.room
-          | HIDE_LAYER layer_name ->
-            set_layer_hidden layer_name true;
-            Tiled.Room.reset_tile_groups game.room
-          | UNHIDE_LAYER layer_name ->
-            set_layer_hidden layer_name false;
-            Tiled.Room.reset_tile_groups game.room
+          | HIDE_BOSS_DOORS -> set_layer_hidden "boss-doors" true
+          | UNHIDE_BOSS_DOORS -> set_layer_hidden "boss-doors" false
+          | HIDE_LAYER layer_name -> set_layer_hidden layer_name true
+          | UNHIDE_LAYER layer_name -> set_layer_hidden layer_name false
           | SPAWN_VENGEFUL_SPIRIT (direction, end_tile_x, end_tile_y) ->
-            let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (end_tile_x, end_tile_y) in
-            let end_x, end_y = (tx *. Config.scale.room, ty *. Config.scale.room) in
+            let tile = (end_tile_x, end_tile_y) |> Tiled.Tile.coords_to_pos in
+            let end_x, end_y = (tile.x *. Config.scale.room, tile.y *. Config.scale.room) in
             let vs_length =
               (* end_tile_x is off by a few tiles to the left, but this step is probably only going to be
                  used once so it's probably not worth fixing *)
@@ -1576,9 +1576,9 @@ let tick (game : game) (state : state) =
           | SET_FACING direction -> Entity.set_facing direction entity
           | UNHIDE -> Entity.unhide entity
           | UNHIDE_AT (start_tile_x, start_tile_y, x_offset, y_offset) ->
-            let tx, ty = Tiled.Tile.tile_coords ~tile_w ~tile_h (start_tile_x, start_tile_y) in
+            let tile = (start_tile_x, start_tile_y) |> Tiled.Tile.coords_to_pos in
             let x, y =
-              ((tx +. x_offset) *. Config.scale.room, (ty +. y_offset) *. Config.scale.room)
+              ((tile.x +. x_offset) *. Config.scale.room, (tile.y +. y_offset) *. Config.scale.room)
             in
             state.debug.rects <- (Raylib.Color.green, entity.dest) :: state.debug.rects;
             Entity.unhide_at entity { x; y }
@@ -1681,8 +1681,8 @@ let tick (game : game) (state : state) =
             | _ -> ());
             handle_entity_step party_ghost.ghost.entity entity_step
           | WALK_TO target_tile_x ->
-            let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
-            let dist = (tx *. Config.scale.room) -. party_ghost.ghost.entity.dest.pos.x in
+            let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
+            let dist = (tile.x *. Config.scale.room) -. party_ghost.ghost.entity.dest.pos.x in
             still_walking := abs_float dist > 10.;
             if not !still_walking then
               set_interaction_pose IDLE
@@ -1724,9 +1724,8 @@ let tick (game : game) (state : state) =
           match enemy_step with
           | WALK_TO target_tile_x ->
             apply_to_only "WALK_TO" (fun (e : enemy) ->
-                (* TODO figure out how to do nested modules in .mli files *)
-                let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
-                let dist = (tx *. Config.scale.room) -. e.entity.dest.pos.x in
+                let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
+                let dist = (tile.x *. Config.scale.room) -. e.entity.dest.pos.x in
                 still_walking := abs_float dist > 10.;
                 if not !still_walking then (
                   e.entity.v.x <- 0.;
@@ -1766,8 +1765,8 @@ let tick (game : game) (state : state) =
           | ENTITY entity_step -> handle_entity_step npc.entity entity_step
           | WALK_TO target_tile_x ->
             (* TODO duplicated in walk_ghost *)
-            let tx, _ = Tiled.Tile.tile_coords ~tile_w ~tile_h (target_tile_x, 1) in
-            let dist = (tx *. Config.scale.room) -. npc.entity.dest.pos.x in
+            let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
+            let dist = (tile.x *. Config.scale.room) -. npc.entity.dest.pos.x in
             still_walking := abs_float dist > 10.;
             if not !still_walking then (
               npc.entity.v.x <- 0.;
@@ -2123,7 +2122,9 @@ let tick (game : game) (state : state) =
     in
     if starting_attack () then (
       let direction : direction =
-        match (game.player.current.wall, state.frame_inputs.up.down, state.frame_inputs.down.down) with
+        match
+          (game.player.current.wall, state.frame_inputs.up.down, state.frame_inputs.down.down)
+        with
         | None, true, false -> UP
         | None, false, true ->
           if Entity.on_ground game.player.ghost.entity then
@@ -2281,7 +2282,7 @@ let tick (game : game) (state : state) =
           | CLASSIC
           | DEMO ->
             let transitioned_from_below =
-              game.room.respawn_pos.y +. 50. > Tiled.Room.get_h game.room.json
+              game.room.respawn_pos.y +. 50. > Tiled.JsonRoom.get_h game.room.json
             in
             if transitioned_from_below then
               add_phantom_floor game game.room.respawn_pos

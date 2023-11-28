@@ -47,6 +47,7 @@ type window_config = {
   w_tiles : int;
   h_tiles : int;
   tile_size : float;
+  dest_tile_size : float;
   center : vector;
   max_width : float;
   max_height : float;
@@ -74,7 +75,8 @@ let window : window_config =
     h = window_h;
     w_tiles;
     h_tiles;
-    tile_size = (Env.tile_size |> Int.to_float) *. scale.room;
+    tile_size = (Env.tile_size |> Int.to_float);
+    dest_tile_size = (Env.tile_size |> Int.to_float) *. scale.room;
     center = { x = window_w /. 2.; y = window_h /. 2. };
     max_width;
     max_height;

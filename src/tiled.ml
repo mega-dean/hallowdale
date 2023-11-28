@@ -74,46 +74,38 @@ module Tileset = struct
 end
 
 module Tile = struct
-  (* CLEANUP consolidate *)
-  let tile_idx_from_coords ~width (x, y) : int =
-    let tile_x, tile_y = (x |> Float.to_int, y |> Float.to_int) in
-    tile_x + (tile_y * width)
+  let coords_to_idx ~width (x, y) : int = x + (y * width)
 
-  let tile_idx_from_coords' ~width (x, y) : int = x + (y * width)
+  let coords_to_pos ((x, y) : int * int) : vector =
+    {
+      x = (x |> Int.to_float) *. Config.window.tile_size;
+      y = (y |> Int.to_float) *. Config.window.tile_size;
+    }
 
-  let tile_idx ~tile_w ~tile_h ~width (x, y) : int =
-    tile_idx_from_coords ~width (x /. tile_w, y /. tile_h)
-
-  (* CLEANUP consolidate/rename:
-     - this should be "coords_at_tile"
-  *)
-  let tile_coords ~tile_w ~tile_h (x, y) : float * float =
-    ((x |> Int.to_float) *. tile_w, (y |> Int.to_float) *. tile_h)
-
-  let tile_coords' ~tile_w ~tile_h ((x, y) : float * float) : int * int =
-    (x /. tile_w |> Float.to_int, y /. tile_h |> Float.to_int)
+  let pos_to_coords (pos : vector) : int * int =
+    ( pos.x /. Config.window.dest_tile_size |> Float.to_int,
+      pos.y /. Config.window.dest_tile_size |> Float.to_int )
 
   let tile_dest ~tile_w ~tile_h (x, y) : float * float =
     ( (x |> Int.to_float) *. tile_w *. Config.scale.room,
       (y |> Int.to_float) *. tile_h *. Config.scale.room )
 
-  let src_xy tile_w tile_h idx width : float * float =
-    let tile_xy idx width : int * int = (idx mod width, idx / width) in
-    tile_coords ~tile_w ~tile_h (tile_xy idx width)
+  let src_pos idx width : vector =
+    let tile_coords idx width : int * int = (idx mod width, idx / width) in
+    tile_coords idx width |> coords_to_pos
 
-  let scale_dest_size ?(scale = 1.) w h =
-    (w *. Config.scale.room *. scale, h *. Config.scale.room *. scale)
+  let scale_dest_size w h = (w *. Config.scale.room, h *. Config.scale.room)
 
   let dest_xy ?(parallax = None) offset_x offset_y tile_w tile_h idx width : float * float =
-    let scale_dest_position x y =
+    let scale_dest_position dest =
       match parallax with
-      | None -> ((x +. offset_x) *. Config.scale.room, (y +. offset_y) *. Config.scale.room)
+      | None ->
+        ((dest.x +. offset_x) *. Config.scale.room, (dest.y +. offset_y) *. Config.scale.room)
       | Some frame_parallax ->
-        ( ((x +. offset_x) *. Config.scale.room) +. frame_parallax.x,
-          ((y +. offset_y) *. Config.scale.room) +. frame_parallax.y )
+        ( ((dest.x +. offset_x) *. Config.scale.room) +. frame_parallax.x,
+          ((dest.y +. offset_y) *. Config.scale.room) +. frame_parallax.y )
     in
-    let x', y' = src_xy tile_w tile_h idx width in
-    scale_dest_position x' y'
+    src_pos idx width |> scale_dest_position
 
   let raw_gid (gid : int) : int = 0b00001111111111111111111111111111 land gid
 
@@ -122,27 +114,20 @@ module Tile = struct
     (0b11100000000000000000000000000000 land gid) lsr 29
 end
 
-module Room = struct
-  (* TODO this module is a little weird since it works on both json_room and room types *)
+module JsonRoom = struct
   type t = Json_t.room
 
   let get_h (room : t) = (room.h_in_tiles |> Int.to_float) *. room.tile_h
 
-  let get_filename' area_id room_id : string =
-    fmt "%s_%s" (Show.area_id area_id) (Show.room_id_filename room_id)
+  let tile_idx (room : t) (x, y) =
+    (x /. room.tile_w |> Float.to_int, y /. room.tile_h |> Float.to_int)
+    |> Tile.coords_to_idx ~width:room.w_in_tiles
 
-  let get_filename (room : room) : string = get_filename' room.area.id room.id
-
-  let tile_idx (room : Json_t.room) (x, y) =
-    Tile.tile_idx ~tile_w:room.tile_w ~tile_h:room.tile_h ~width:room.w_in_tiles (x, y)
-
-  let dest_from_coords' (json_room : Json_t.room) (coords : string) : vector =
+  let coords_to_dest (json_room : t) (coords : string) : vector =
     let target_x', target_y' = String.split_at_first ',' coords in
     let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
     let x, y = Tile.tile_dest ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y) in
     { x; y }
-
-  let dest_from_coords (room : room) (coords : string) : vector = dest_from_coords' room.json coords
 
   let locate_by_coords (world : world) global_x global_y : room_id * room_location =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =
@@ -158,10 +143,6 @@ module Room = struct
   let locate_by_name (world : world) room_name : room_location =
     let _area_id, room_id = parse_room_filename (fmt ".world file") room_name in
     List.assoc room_id world
-
-  let unload_tilesets (room : room) : unit =
-    let unload_tileset (_path, tileset) = Raylib.unload_texture (Tileset.image tileset) in
-    List.iter unload_tileset room.cache.tilesets_by_path
 
   let get_exits (room_location : room_location) : rect list =
     let left = 0. in
@@ -180,20 +161,14 @@ module Room = struct
       { pos = { x = right; y = top }; w = rect_size; h = room_location.h };
     ]
 
-  let tile_coords (json_room : t) ~tile_x ~tile_y : float * float =
-    Tile.tile_coords ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y)
-
-  let src_wh (json_room : t) : float * float = (json_room.tile_w, json_room.tile_h)
-
-  let src_xy (json_room : t) idx width : float * float =
-    Tile.src_xy json_room.tile_w json_room.tile_h idx width
+  let src_xy (json_room : t) idx width : vector = Tile.src_pos idx width
 
   (* TODO too many args, add labels *)
   let dest_xy (json_room : t) ?(parallax = None) offset_x offset_y idx width : float * float =
     Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width ~parallax
 
-  let dest_wh (json_room : t) ?(scale = 1.) () : float * float =
-    Tile.scale_dest_size json_room.tile_w json_room.tile_h ~scale
+  let dest_wh (json_room : t) () : float * float =
+    Tile.scale_dest_size json_room.tile_w json_room.tile_h
 
   let look_up_platform (json_room : t) platform_textures_by_name (gid' : int) :
       string * texture * platform_kind option =
@@ -287,153 +262,6 @@ module Room = struct
   let lookup_coll_offsets room (gid : int) (json_room : Json_t.room) : vector =
     let tile, _ = look_up_tile json_room room.cache gid in
     tile.coll_offset
-
-  let get_layer_tile_groups ?(debug = false) (room : room) (removed_door_idxs : int list) :
-      layer list =
-    let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) :
-        tile_group list =
-      let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in
-      let tile_groups : tile_group list ref =
-        (* keeps track of gid indexes too so they can be not rendered after they are destroyed *)
-        ref []
-      in
-      let available_idxs : bool ref array = Array.make (List.length json_layer.data) (ref true) in
-      let removed_idxs =
-        if String.ends_with ~suffix:"doors" layer_name then
-          removed_door_idxs
-        else
-          []
-      in
-      let partition_rects idx tile_gid =
-        if not (List.mem idx removed_idxs) then (
-          let x, y =
-            Tile.dest_xy json_layer.offset_x json_layer.offset_y tile_w tile_h idx json_layer.w
-          in
-          let get_rectangle_tile_group () : tile_group =
-            let idxs = ref [ idx ] in
-            let mark_idx_as_nonzero i' =
-              available_idxs.(i') <- ref false;
-              idxs := i' :: !idxs
-            in
-            let get_width () : int =
-              (* iterate horizontally until 0 or end of row *)
-              let rec find_idx i w =
-                let at_end_of_row () = i mod json_layer.w = 0 in
-                let at_end_of_data () = i = List.length json_layer.data in
-                if at_end_of_data () || List.nth json_layer.data i = 0 || at_end_of_row () then
-                  w
-                else (
-                  mark_idx_as_nonzero i;
-                  find_idx (i + 1) (w + 1))
-              in
-              find_idx (idx + 1) 1
-            in
-            let get_height width' : int =
-              (* iterate vertically until 0 or bottom row *)
-              let rec find_idx i h =
-                let at_bottom_row () = i >= List.length json_layer.data in
-                if at_bottom_row () || List.nth json_layer.data i = 0 then
-                  h
-                else (
-                  let idxs' = List.init width' (fun n -> n + i) in
-                  List.iter mark_idx_as_nonzero idxs';
-                  find_idx (i + json_layer.w) (h + 1))
-              in
-              find_idx (idx + json_layer.w) 1
-            in
-            let w = get_width () in
-            let h = get_height w in
-            let rect =
-              {
-                pos = { x; y };
-                w = (w |> Int.to_float) *. (tile_w *. Config.scale.room);
-                h = (h |> Int.to_float) *. (tile_h *. Config.scale.room);
-              }
-            in
-            let stub_sprite, fragments =
-              let all_raw_gids =
-                List.map
-                  (fun idx -> Tile.raw_gid (List.nth json_layer.data idx))
-                  (!idxs |> List.uniq)
-                |> List.uniq
-              in
-              let keys = List.map fst room.cache.jug_fragments_by_gid in
-              match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
-              | None -> (None, [])
-              | Some raw_gid -> (
-                match List.assoc_opt raw_gid room.cache.jug_fragments_by_gid with
-                | None -> (None, [])
-                | Some destroy_resources ->
-                  let sprite =
-                    match destroy_resources.stub with
-                    | None -> None
-                    | Some stub ->
-                      let y_offset =
-                        (* multiply by 2 because jugs are 2 tiles high *)
-                        rect.h -. (2. *. tile_h *. Config.scale.room)
-                      in
-                      let stub_dest =
-                        {
-                          pos = { x = rect.pos.x; y = rect.pos.y +. y_offset };
-                          w = rect.w;
-                          h = rect.h -. y_offset;
-                        }
-                      in
-                      Some
-                        {
-                          ident = "sprite stub";
-                          texture = stub;
-                          dest = stub_dest;
-                          (* sprite stubs keep track of exact transformation bits so this isn't used *)
-                          facing_right = true;
-                          collision = None;
-                        }
-                  in
-                  (sprite, destroy_resources.fragments))
-            in
-            let door_health =
-              (* TODO these numbers are "number of hits - 1" because checking `> 0` in the slash-resolving
-                 code makes things a little simpler *)
-              match List.assoc_opt idx room.idx_configs with
-              | Some (DOOR_HITS n) -> Some { hits = n; last_hit_at = -1. }
-              | _ -> None
-            in
-            {
-              tile_idxs = !idxs |> List.uniq;
-              dest = rect;
-              stub_sprite;
-              fragments;
-              transformation_bits = Tile.transformation_bits tile_gid;
-              door_health;
-            }
-          in
-          if tile_gid <> 0 then
-            if !(available_idxs.(idx)) then
-              tile_groups := get_rectangle_tile_group () :: !tile_groups)
-      in
-      List.iteri partition_rects json_layer.data;
-      !tile_groups
-    in
-    let set_tile_groups (layer : layer) =
-      let rects =
-        if
-          (layer.config.collides_with_ghost
-          || layer.config.destroyable
-          || layer.config.hazard
-          || layer.name = "water")
-          && not layer.hidden
-        then
-          get_rectangle_tile_groups layer.json layer.name
-        else
-          []
-      in
-      layer.tile_groups <- rects;
-      layer
-    in
-    List.map set_tile_groups room.layers
-
-  let reset_tile_groups (room : room) =
-    room.layers <- get_layer_tile_groups room room.progress.removed_tile_idxs
 end
 
 let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) :
@@ -455,7 +283,7 @@ let load_tiles
     image
     (tileset_source : Json_t.tileset_source) : texture array =
   let load_tile idx : texture =
-    let x, y = Room.src_xy room idx json_tileset.columns in
+    let src = JsonRoom.src_xy room idx json_tileset.columns in
     let get_coll_offsets id : vector =
       match get_object_collision json_tileset tileset_source.firstgid id with
       | None -> Zero.vector ()
@@ -465,7 +293,7 @@ let load_tiles
     {
       ident = fmt "tile %d" idx;
       image;
-      animation_src = STILL { w = json_tileset.tile_w; h = json_tileset.tile_h; pos = { x; y } };
+      animation_src = STILL { w = json_tileset.tile_w; h = json_tileset.tile_h; pos = src };
       coll_offset = get_coll_offsets (idx + tileset_source.firstgid);
     }
   in

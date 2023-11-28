@@ -39,10 +39,15 @@ let update_pickup_indicators (state : state) (game : game) =
     get_pickup_indicators game.room.progress state.global.textures.pickup_indicator
       game.room.triggers.item_pickups
 
+let get_filename_from_ids area_id room_id : string =
+  fmt "%s_%s" (Show.area_id area_id) (Show.room_id_filename room_id)
+
+let get_filename (room : room) : string = get_filename_from_ids room.area.id room.id
+
 (* room.progress keeps track of the current (unsaved) progress for the room, and gets saved
    into game.progress on room transition or on game save *)
 let save_progress_to_game (game : game) =
-  let room_uuid = Tiled.Room.get_filename game.room in
+  let room_uuid = get_filename game.room in
   game.progress.by_room <- List.replace_assoc room_uuid game.room.progress game.progress.by_room
 
 let init (params : room_params) : room =
@@ -51,7 +56,7 @@ let init (params : room_params) : room =
   let (area_id, room_id) : area_id * room_id =
     Tiled.parse_room_filename "Room.init" params.file_name
   in
-  let room_key = Tiled.Room.get_filename' area_id room_id in
+  let room_key = get_filename_from_ids area_id room_id in
   let new_room_progress () : Json_t.room_progress =
     { finished_interactions = []; revealed_shadow_layers = []; removed_tile_idxs = [] }
   in
@@ -118,7 +123,7 @@ let init (params : room_params) : room =
 
     let make_platform idx (coll_rect : Json_t.coll_rect) =
       let texture_name, texture, platform_kind =
-        Tiled.Room.look_up_platform json_room params.platforms coll_rect.gid
+        Tiled.JsonRoom.look_up_platform json_room params.platforms coll_rect.gid
       in
       let dest = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       let sprite : sprite =
@@ -182,13 +187,13 @@ let init (params : room_params) : room =
       let tile_idx () =
         (* this fn finds the tile_idx that the trigger object's top-left corner is in, so trigger objects that are
            used like this (purple-pen, door-health) don't need to be placed exactly at that tile's coordinates *)
-        Tiled.Room.tile_idx json_room (coll_rect.x, coll_rect.y)
+        Tiled.JsonRoom.tile_idx json_room (coll_rect.x, coll_rect.y)
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
 
       let parse_warp_target name : warp_target =
         let room_name, coords = String.split_at_first '@' name in
-        let pos = Tiled.Room.dest_from_coords' json_room coords in
+        let pos = coords |> Tiled.JsonRoom.coords_to_dest json_room in
         { room_name; pos }
       in
 
@@ -209,8 +214,8 @@ let init (params : room_params) : room =
         in
         let x', y' = String.split_at_first ',' door_coords' in
         let door_tile_idx =
-          Tiled.Tile.tile_idx_from_coords ~width:json_room.w_in_tiles
-            (x' |> float_of_string, y' |> float_of_string)
+          (x' |> int_of_string, y' |> int_of_string)
+          |> Tiled.Tile.coords_to_idx ~width:json_room.w_in_tiles
         in
         let lever_sprite : sprite =
           let shape =
@@ -312,7 +317,7 @@ let init (params : room_params) : room =
            - so probably just read all "respawn" triggers into a list, process "target" triggers into respawn_targets,
              and then after all triggers, build the respawn_triggers from the list + respawn_targets
         *)
-        let respawn_pos = Tiled.Room.dest_from_coords' json_room name_suffix in
+        let respawn_pos = name_suffix |> Tiled.JsonRoom.coords_to_dest json_room in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "target" ->
         (* TODO add to respawn_targets : (int * vector) list
@@ -537,14 +542,14 @@ let init (params : room_params) : room =
       let make_jug (config : jug_config) : int * jug_fragments =
         let make_stub width tile_x tile_y =
           (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
-          let x, y = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
+          let stub_pos = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
           let stub_h =
             (* two tiles for some big stubs, but most are only one tile high *)
             json_room.tile_h *. 2.
           in
           Some
             (Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
-               (Some { w = json_room.tile_w *. width; h = stub_h; pos = { x; y } }))
+               (Some { w = json_room.tile_w *. width; h = stub_h; pos = stub_pos }))
         in
         let fragments : entity list =
           let tile_x = config.tile_x in
@@ -561,17 +566,17 @@ let init (params : room_params) : room =
           let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
           let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option =
             let make_fragment name y_offset w h : entity =
-              let x', y' = Tiled.Room.tile_coords json_room ~tile_x ~tile_y in
-              let x, y = (x', y' +. y_offset) in
+              let fragment_pos' = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
+              let fragment_pos = { fragment_pos' with y = fragment_pos'.y +. y_offset } in
               let texture =
                 Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
-                  (Some { pos = { x; y }; w; h })
+                  (Some { pos = fragment_pos; w; h })
               in
               let sprite =
                 Sprite.create
                   (fmt "fragment sprite %s %0.1f" name y_offset)
                   texture
-                  { pos = { x; y }; w = w *. Config.scale.room; h = h *. Config.scale.room }
+                  { pos = fragment_pos; w = w *. Config.scale.room; h = h *. Config.scale.room }
               in
               let entity =
                 Entity.create_for_sprite sprite ~inanimate:true
@@ -688,12 +693,160 @@ let init (params : room_params) : room =
     cache;
   }
 
+let reset_tile_groups (room : room) =
+  let get_layer_tile_groups ?(debug = false) (room : room) (removed_door_idxs : int list) :
+      layer list =
+    let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) :
+        tile_group list =
+      let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in
+      let tile_groups : tile_group list ref =
+        (* keeps track of gid indexes too so they can be not rendered after they are destroyed *)
+        ref []
+      in
+      let available_idxs : bool ref array = Array.make (List.length json_layer.data) (ref true) in
+      let removed_idxs =
+        if String.ends_with ~suffix:"doors" layer_name then
+          removed_door_idxs
+        else
+          []
+      in
+      let partition_rects idx tile_gid =
+        if not (List.mem idx removed_idxs) then (
+          let x, y =
+            Tiled.Tile.dest_xy json_layer.offset_x json_layer.offset_y tile_w tile_h idx
+              json_layer.w
+          in
+          let get_rectangle_tile_group () : tile_group =
+            let idxs = ref [ idx ] in
+            let mark_idx_as_nonzero i' =
+              available_idxs.(i') <- ref false;
+              idxs := i' :: !idxs
+            in
+            let get_width () : int =
+              (* iterate horizontally until 0 or end of row *)
+              let rec find_idx i w =
+                let at_end_of_row () = i mod json_layer.w = 0 in
+                let at_end_of_data () = i = List.length json_layer.data in
+                if at_end_of_data () || List.nth json_layer.data i = 0 || at_end_of_row () then
+                  w
+                else (
+                  mark_idx_as_nonzero i;
+                  find_idx (i + 1) (w + 1))
+              in
+              find_idx (idx + 1) 1
+            in
+            let get_height width' : int =
+              (* iterate vertically until 0 or bottom row *)
+              let rec find_idx i h =
+                let at_bottom_row () = i >= List.length json_layer.data in
+                if at_bottom_row () || List.nth json_layer.data i = 0 then
+                  h
+                else (
+                  let idxs' = List.init width' (fun n -> n + i) in
+                  List.iter mark_idx_as_nonzero idxs';
+                  find_idx (i + json_layer.w) (h + 1))
+              in
+              find_idx (idx + json_layer.w) 1
+            in
+            let w = get_width () in
+            let h = get_height w in
+            let rect =
+              {
+                pos = { x; y };
+                w = (w |> Int.to_float) *. (tile_w *. Config.scale.room);
+                h = (h |> Int.to_float) *. (tile_h *. Config.scale.room);
+              }
+            in
+            let stub_sprite, fragments =
+              let all_raw_gids =
+                List.map
+                  (fun idx -> Tiled.Tile.raw_gid (List.nth json_layer.data idx))
+                  (!idxs |> List.uniq)
+                |> List.uniq
+              in
+              let keys = List.map fst room.cache.jug_fragments_by_gid in
+              match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
+              | None -> (None, [])
+              | Some raw_gid -> (
+                match List.assoc_opt raw_gid room.cache.jug_fragments_by_gid with
+                | None -> (None, [])
+                | Some destroy_resources ->
+                  let sprite =
+                    match destroy_resources.stub with
+                    | None -> None
+                    | Some stub ->
+                      let y_offset =
+                        (* multiply by 2 because jugs are 2 tiles high *)
+                        rect.h -. (2. *. tile_h *. Config.scale.room)
+                      in
+                      let stub_dest =
+                        {
+                          pos = { x = rect.pos.x; y = rect.pos.y +. y_offset };
+                          w = rect.w;
+                          h = rect.h -. y_offset;
+                        }
+                      in
+                      Some
+                        {
+                          ident = "sprite stub";
+                          texture = stub;
+                          dest = stub_dest;
+                          (* sprite stubs keep track of exact transformation bits so this isn't used *)
+                          facing_right = true;
+                          collision = None;
+                        }
+                  in
+                  (sprite, destroy_resources.fragments))
+            in
+            let door_health =
+              (* TODO these numbers are "number of hits - 1" because checking `> 0` in the slash-resolving
+                 code makes things a little simpler *)
+              match List.assoc_opt idx room.idx_configs with
+              | Some (DOOR_HITS n) -> Some { hits = n; last_hit_at = -1. }
+              | _ -> None
+            in
+            {
+              tile_idxs = !idxs |> List.uniq;
+              dest = rect;
+              stub_sprite;
+              fragments;
+              transformation_bits = Tiled.Tile.transformation_bits tile_gid;
+              door_health;
+            }
+          in
+          if tile_gid <> 0 then
+            if !(available_idxs.(idx)) then
+              tile_groups := get_rectangle_tile_group () :: !tile_groups)
+      in
+      List.iteri partition_rects json_layer.data;
+      !tile_groups
+    in
+    let set_tile_groups (layer : layer) =
+      let rects =
+        if
+          (layer.config.collides_with_ghost
+          || layer.config.destroyable
+          || layer.config.hazard
+          || layer.name = "water")
+          && not layer.hidden
+        then
+          get_rectangle_tile_groups layer.json layer.name
+        else
+          []
+      in
+      layer.tile_groups <- rects;
+      layer
+    in
+    List.map set_tile_groups room.layers
+  in
+  room.layers <- get_layer_tile_groups room room.progress.removed_tile_idxs
+
 let change_current_room
     (state : state)
     (game : game)
     (room_location : room_location)
     (ghost_start_pos : vector) =
-  let exits = Tiled.Room.get_exits room_location in
+  let exits = Tiled.JsonRoom.get_exits room_location in
   save_progress_to_game game;
 
   let new_room : room =
@@ -709,6 +862,14 @@ let change_current_room
         respawn_pos = ghost_start_pos;
         platforms = state.global.textures.platforms;
       }
+  in
+  let hide_party_ghosts () =
+    let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
+    List.iter hide_party_ghost game.party
+  in
+  let unload_tilesets (room : room) : unit =
+    let unload_tileset (_path, tileset) = Raylib.unload_texture (Tiled.Tileset.image tileset) in
+    List.iter unload_tileset room.cache.tilesets_by_path
   in
   let get_music area_id =
     List.find (fun (area_music : area_music) -> List.mem area_id area_music.areas) state.area_musics
@@ -732,17 +893,16 @@ let change_current_room
   | DEMO
   | STEEL_SOLE ->
     game.player.soul.current <- game.player.soul.max);
-  let hide_party_ghost (party_ghost : party_ghost) = Entity.hide party_ghost.ghost.entity in
-  List.iter hide_party_ghost game.party;
+  hide_party_ghosts ();
   (* all rooms are using the same tilesets now, but still unload them here (and re-load them
      in load_room) every time because the tilesets could be in a different order per room
      - not really sure about ^this comment, I don't know if different tileset order would break the
        tile lookup code now, so just unload/reload to be safe ¯\_(ツ)_/¯
   *)
   (* TODO probably need to unload things like enemy textures *)
-  Tiled.Room.unload_tilesets game.room;
+  unload_tilesets game.room;
   game.room <- new_room;
-  Tiled.Room.reset_tile_groups game.room;
+  reset_tile_groups game.room;
   state.camera.update_instantly <- true;
   state.camera.raylib <-
     Tiled.create_camera_at
@@ -771,7 +931,7 @@ let handle_transitions (state : state) (game : game) =
           ( rect_center_x cr +. current_room_location.global_x,
             rect_center_y cr +. current_room_location.global_y )
         in
-        Tiled.Room.locate_by_coords state.world global_x global_y
+        Tiled.JsonRoom.locate_by_coords state.world global_x global_y
       in
       let get_local_pos (global : vector) (room_id : room_id) (world : world) : vector =
         let room_location = List.assoc room_id world in
