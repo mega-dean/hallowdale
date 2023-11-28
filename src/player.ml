@@ -951,6 +951,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.current.can_dash <- Option.is_some game.player.ghost.entity.current_floor;
       game.player.history.dash
     | CAST spell_kind -> (
+      game.player.current.wall <- None;
       game.player.soul.current <- game.player.soul.current - Config.action.soul_per_cast;
       match spell_kind with
       | VENGEFUL_SPIRIT ->
