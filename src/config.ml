@@ -166,8 +166,9 @@ type action_config = {
   max_soul : int;
   soul_per_cast : int;
   soul_gained_per_nail : int;
-  vengeful_spirit_vx : float;
   attack_duration : float;
+  vengeful_spirit_vx : float;
+  vengeful_spirit_recoil : float;
   vengeful_spirit_duration : float;
 }
 
@@ -178,6 +179,7 @@ let action : action_config =
     soul_gained_per_nail = 11;
     attack_duration = 0.07;
     vengeful_spirit_vx = 800. *. window_scale;
+    vengeful_spirit_recoil = 80. *. window_scale;
     vengeful_spirit_duration = 1.5;
   }
 

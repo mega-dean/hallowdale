@@ -673,8 +673,6 @@ let set_pose
   let handle_cast (spell_kind : spell_kind) : texture * ghost_body_texture =
     match spell_kind with
     | VENGEFUL_SPIRIT ->
-      Entity.recoil_backwards player.ghost.entity
-        { speed = 80.; time_left = { seconds = 0.16666 }; reset_v = true };
       player.ghost.entity.v.y <- 0.;
       (player.ghost.head_textures.walk, bodies.cast)
     | DESOLATE_DIVE -> (player.ghost.head_textures.look_up, bodies.dive)
@@ -956,6 +954,12 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.soul.current <- game.player.soul.current - Config.action.soul_per_cast;
       match spell_kind with
       | VENGEFUL_SPIRIT ->
+        Entity.recoil_backwards game.player.ghost.entity
+          {
+            speed = Config.action.vengeful_spirit_recoil;
+            time_left = { seconds = game.player.history.cast_vs.config.duration.seconds };
+            reset_v = true;
+          };
         spawn_vengeful_spirit state game;
         game.player.history.cast_vs
       | DESOLATE_DIVE ->
