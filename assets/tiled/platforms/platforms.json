@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":22,
+ "tilecount":23,
  "tiledversion":"1.10.2",
  "tileheight":72,
  "tiles":[
@@ -106,7 +106,7 @@
         {
          "id":16,
          "image":"bookshelf.png",
-         "imageheight":21,
+         "imageheight":42,
          "imagewidth":70
         }, 
         {
@@ -144,6 +144,12 @@
          "image":"bookshelf-small.png",
          "imageheight":28,
          "imagewidth":44
+        }, 
+        {
+         "id":23,
+         "image":"bookshelf-wide.png",
+         "imageheight":28,
+         "imagewidth":96
         }],
  "tilewidth":264,
  "type":"tileset",

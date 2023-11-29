@@ -202,7 +202,7 @@
          "name":"platforms",
          "objects":[
                 {
-                 "gid":17173,
+                 "gid":18933,
                  "height":48,
                  "id":17,
                  "name":"",
@@ -694,7 +694,7 @@
          "source":"..\/tilesets\/other.json"
         }, 
         {
-         "firstgid":17161,
+         "firstgid":18921,
          "source":"..\/platforms\/platforms.json"
         }],
  "tilewidth":12,

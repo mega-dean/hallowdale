@@ -208,6 +208,7 @@ module JsonRoom = struct
         ("bench", None);
         ("kp-drop", Some (TEMPORARY VISIBLE));
         ("bookshelf-small", None);
+        ("bookshelf-wide", None);
       ]
     in
     let texture_name, platform_kind =
