@@ -97,7 +97,7 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
       ()
     | CLASSIC -> begin_cutscene_interaction name trigger)
   | CAMERA _
-  | LEVER _
+  | LEVER
   | SHADOW
   | RESPAWN ->
     failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
@@ -585,30 +585,23 @@ let resolve_slash_collisions (state : state) (game : game) =
         layer.tile_groups <- !new_tile_groups)
     in
 
-    let resolve_lever ((lever_sprite, _, trigger) : sprite * int * trigger) =
+    let resolve_lever (lever : lever) =
       let layer =
         match List.find_opt (fun (l : layer) -> l.name = "lever-doors") game.room.layers with
         | None ->
           failwithf "room %s has levers '%s', but no lever-doors layer" (Show.room_id game.room.id)
-            trigger.full_name
+            lever.trigger.full_name
         | Some l -> l
       in
       let new_tile_groups : tile_group list ref = ref [] in
-      let door_tile_idx =
-        match trigger.kind with
-        | LEVER lever -> lever.door_tile_idx
-        | _ -> failwith "lever trigger needs LEVER kind"
-      in
-      match Collision.with_slash slash lever_sprite with
+      match Collision.with_slash slash lever.sprite with
       | None -> ()
       | Some collision -> (
-        (* CLEANUP add sound effect
-           - can't do it here though since this is run every frame that the nail slash collides
-           - maybe add frame_idx:int to triggers.levers
-        *)
-        tmp "lever";
-        lever_sprite.texture <- state.global.textures.door_lever_struck;
-        let has_tile_idx tile_group = List.mem door_tile_idx tile_group.tile_idxs in
+        if lever.sprite.texture = state.global.textures.door_lever then (
+          Audio.play_sound state "nail-hit-metal";
+          Audio.play_sound state "punch");
+        lever.sprite.texture <- state.global.textures.door_lever_struck;
+        let has_tile_idx tile_group = List.mem lever.door_tile_idx tile_group.tile_idxs in
         match List.find_opt has_tile_idx layer.tile_groups with
         | None ->
           (* TODO maybe check that the lever has actually been destroyed, to validate the door_coords are correct

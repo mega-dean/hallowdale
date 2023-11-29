@@ -291,9 +291,9 @@ let update_environment (game : game) (state : state) =
   let all_spawned_fragments =
     List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
   in
-  let update_lever (lever_sprite, _, trigger) =
-    match Sprite.advance_or_despawn state.frame.time lever_sprite.texture lever_sprite with
-    | None -> lever_sprite.texture <- state.global.textures.door_lever
+  let update_lever lever =
+    match Sprite.advance_or_despawn state.frame.time lever.sprite.texture lever.sprite with
+    | None -> lever.sprite.texture <- state.global.textures.door_lever
     | Some lever_sprite -> ()
   in
   let update_projectile' projectile =

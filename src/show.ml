@@ -62,7 +62,7 @@ let platform_kind_opt (kind : platform_kind option) =
 let trigger_kind (kind : trigger_kind) =
   match kind with
   | CAMERA (x, y) -> fmt "CAMERA_%s-%s" x y
-  | LEVER lever -> fmt "LEVER (%s, %d)" (direction lever.direction) lever.door_tile_idx
+  | LEVER -> "LEVER"
   | INFO -> "INFO"
   | HEALTH -> "HEALTH"
   | ITEM -> "ITEM"

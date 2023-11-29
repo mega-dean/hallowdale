@@ -86,7 +86,7 @@ type animation_frame = {
 type animation = {
   frames : animation_frame list;
   mutable frame_idx : int;
-  mutable frame_started : time;
+  mutable time_started : time;
 }
 
 type animation_src =
@@ -141,16 +141,16 @@ type texture = {
   coll_offset : vector;
 }
 
-let animation_loop_duration (t : texture) : float =
-  match t.animation_src with
+let animation_loop_duration (texture : texture) : float =
+  match texture.animation_src with
   | STILL _ -> failwith "can't get animation_loop_duration for STILL"
   | ONCE animation
   | PARTICLE animation
   | LOOPED animation ->
     (get_frame animation).duration.seconds *. (List.length animation.frames |> Int.to_float)
 
-let get_src (t : texture) : rect =
-  match t.animation_src with
+let get_src (texture : texture) : rect =
+  match texture.animation_src with
   | STILL frame_src -> frame_src
   | ONCE animation
   | PARTICLE animation
@@ -468,14 +468,9 @@ type save_slots = {
   slot_4 : Json_t.save_file * bool;
 }
 
-type lever = {
-  direction : direction;
-  door_tile_idx : int;
-}
-
 type trigger_kind =
   | CAMERA of string * string
-  | LEVER of lever
+  | LEVER
   | HEALTH
   | INFO
   | ITEM
@@ -1188,13 +1183,19 @@ let make_stub_trigger kind name_prefix name_suffix : trigger =
     blocking_interaction = None;
   }
 
+type lever = {
+  sprite : sprite;
+  trigger : trigger;
+  transformation : int;
+  door_tile_idx : int;
+}
+
 type triggers = {
   camera : trigger list;
   cutscene : trigger list;
   d_nail : trigger list;
   item_pickups : trigger list;
-  (* sprite to render and transformation_bits *)
-  levers : (sprite * int * trigger) list;
+  levers : lever list;
   (* this is used for any infinitely-repeatable interactions, like reading lore or warping
      TODO maybe use a separate field for warp : (vector * string * trigger) list
      target x/y, target room name

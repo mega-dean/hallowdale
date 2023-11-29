@@ -50,7 +50,7 @@ let advance_animation (current_clock : float) (sprite : sprite) =
         List.nth animation.frames current_animation_idx
     in
     let should_advance_frame () =
-      current_clock -. animation.frame_started.at > animation_frame.duration.seconds
+      current_clock -. animation.time_started.at > animation_frame.duration.seconds
     in
     if should_advance_frame () then (
       match sprite.texture.animation_src with
@@ -59,7 +59,7 @@ let advance_animation (current_clock : float) (sprite : sprite) =
       | PARTICLE next_animation
       | LOOPED next_animation ->
         next_animation.frame_idx <- current_animation_idx + 1;
-        next_animation.frame_started.at <- current_clock)
+        next_animation.time_started.at <- current_clock)
 
 type particle_animation = { should_despawn : bool }
 
@@ -117,15 +117,15 @@ let build_texture'
         in
         let frames = make_frames count ~w ~h ~duration:texture_config.duration.seconds in
         if once then
-          ONCE { frame_idx = 0; frames; frame_started = { at = 0. } }
+          ONCE { frame_idx = 0; frames; time_started = { at = 0. } }
         else if particle then
-          PARTICLE { frame_idx = 0; frames; frame_started = { at = 0. } }
+          PARTICLE { frame_idx = 0; frames; time_started = { at = 0. } }
         else (
-          let frame_started =
-            (* frame_started.at will be updated before the first time it starts, so this value is arbitrary *)
+          let time_started =
+            (* time_started.at will be updated before the first time it starts, so this value is arbitrary *)
             { at = -100. }
           in
-          LOOPED { frame_idx = 0; frames; frame_started }))
+          LOOPED { frame_idx = 0; frames; time_started }))
   in
   {
     ident = texture_path_to_string texture_config.path;
@@ -245,5 +245,5 @@ let spawn_particle
     failwithf "tried to spawn particle with %s" (Show.animation_src texture.animation_src)
   | PARTICLE animation ->
     animation.frame_idx <- 0;
-    animation.frame_started.at <- frame_time);
+    animation.time_started.at <- frame_time);
   { ident = fmt "Sprite[%s]" name; texture; facing_right; dest; collision }

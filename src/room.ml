@@ -80,7 +80,7 @@ let init (params : room_params) : room =
   let hazards : rect list ref = ref [] in
   let idx_configs : (int * idx_config) list ref = ref [] in
   let camera_triggers : trigger list ref = ref [] in
-  let lever_triggers : (sprite * int * trigger) list ref = ref [] in
+  let lever_triggers : lever list ref = ref [] in
   let shadow_triggers : trigger list ref = ref [] in
   let lore_triggers : trigger list ref = ref [] in
   let d_nail_triggers : trigger list ref = ref [] in
@@ -203,7 +203,7 @@ let init (params : room_params) : room =
         camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
         let direction', door_coords' = String.split_at_first '@' name_suffix in
-        let direction, transformation_bits =
+        let direction, transformation =
           match direction' with
           | "up" -> (UP, 0)
           | "down" -> (DOWN, 2)
@@ -241,17 +241,21 @@ let init (params : room_params) : room =
           }
         in
         lever_triggers :=
-          ( lever_sprite,
-            transformation_bits,
-            {
-              full_name = coll_rect.name;
-              name_prefix;
-              name_suffix;
-              kind = LEVER { direction; door_tile_idx };
-              dest = lever_sprite.dest;
-              label = None;
-              blocking_interaction = None;
-            } )
+          {
+            sprite = lever_sprite;
+            transformation;
+            door_tile_idx;
+            trigger =
+              {
+                full_name = coll_rect.name;
+                name_prefix;
+                name_suffix;
+                kind = LEVER;
+                dest = lever_sprite.dest;
+                label = None;
+                blocking_interaction = None;
+              };
+          }
           :: !lever_triggers
       | "door-health" ->
         let door_health =

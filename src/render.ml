@@ -656,12 +656,12 @@ let tick (state : state) =
 
     let draw_levers () =
       List.iter
-        (fun ((sprite, transformation_bits, trigger) : sprite * int * trigger) ->
+        (fun lever ->
           if state.debug.enabled then (
-            match sprite.collision with
-            | Some (SHAPE shape) -> debug_shape_outline sprite shape
+            match lever.sprite.collision with
+            | Some (SHAPE shape) -> debug_shape_outline lever.sprite shape
             | _ -> ());
-          draw_texture sprite.texture sprite.dest transformation_bits)
+          draw_texture lever.sprite.texture lever.sprite.dest lever.transformation)
         game.room.triggers.levers
     in
 

@@ -4,8 +4,9 @@
 
 - allow another dash in the air after dashing off a ledge
 - fix slash direction when wall-sliding
-- fix vs recoil
+- fix Vengeful Spirit recoil
 - cancel wall-sliding when casting
+- add sound effect for striking levers
 
 ## [0.0.8] - 2023-11-19
 
