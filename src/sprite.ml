@@ -36,7 +36,7 @@ let reset_texture (texture : texture) : unit =
   | LOOPED animation ->
     animation.frame_idx <- 0
 
-let advance_animation (current_clock : float) next_texture (sprite : sprite) =
+let advance_animation (current_clock : float) (sprite : sprite) =
   match sprite.texture.animation_src with
   | STILL _ -> ()
   | ONCE animation
@@ -53,7 +53,7 @@ let advance_animation (current_clock : float) next_texture (sprite : sprite) =
       current_clock -. animation.frame_started.at > animation_frame.duration.seconds
     in
     if should_advance_frame () then (
-      match next_texture.animation_src with
+      match sprite.texture.animation_src with
       | STILL _ -> ()
       | ONCE next_animation
       | PARTICLE next_animation
@@ -73,7 +73,7 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
     | ONCE animation
     | PARTICLE animation ->
       let start_idx = get_current_frame_idx sprite.texture.animation_src in
-      advance_animation current_clock next_texture sprite;
+      advance_animation current_clock sprite;
       let should_despawn = animation.frame_idx = List.length animation.frames in
       { should_despawn }
   in

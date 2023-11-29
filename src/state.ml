@@ -269,19 +269,19 @@ let init window_w window_h window_scale : state =
   }
 
 (* return value is "keep spawned" *)
-let update_projectile p (state : state) : bool =
+let update_projectile projectile (state : state) : bool =
   let despawn_projectile =
-    match p.despawn with
+    match projectile.despawn with
     | X_BOUNDS (min_x, max_x) ->
-      p.entity.dest.pos.x < min_x -. Config.window.center.x
-      || p.entity.dest.pos.x > max_x +. Config.window.center.x
-    | TIME_LEFT d -> state.frame.time -. p.spawned.at > d.seconds
+      projectile.entity.dest.pos.x < min_x -. Config.window.center.x
+      || projectile.entity.dest.pos.x > max_x +. Config.window.center.x
+    | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
   in
   if despawn_projectile then
     false
   else (
-    Entity.apply_v state.frame.dt p.entity;
-    Sprite.advance_animation state.frame.time p.entity.sprite.texture p.entity.sprite;
+    Entity.apply_v state.frame.dt projectile.entity;
+    Sprite.advance_animation state.frame.time projectile.entity.sprite;
     true)
 
 (* this is for inanimate objects like jug fragments or door levers *)
@@ -456,7 +456,7 @@ let update_enemies (game : game) (state : state) =
     let interacting () = List.length game.interaction.steps > 0 in
     if (not (interacting ())) && enemy.status.choose_behavior then
       Enemy.choose_behavior enemy state game;
-    Sprite.advance_animation state.frame.time enemy.entity.sprite.texture enemy.entity.sprite;
+    Sprite.advance_animation state.frame.time enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) =
       Sprite.advance_or_despawn state.frame.time sprite.texture sprite
     in
@@ -509,16 +509,16 @@ let update_enemies (game : game) (state : state) =
 let update_npcs (game : game) (state : state) =
   let update_npc (npc : npc) =
     Entity.update_pos game.room npc.entity state.frame.dt;
-    Sprite.advance_animation state.frame.time npc.entity.sprite.texture npc.entity.sprite
+    Sprite.advance_animation state.frame.time npc.entity.sprite
   in
 
   let update_pickup_indicators (sprite : sprite) =
-    Sprite.advance_animation state.frame.time sprite.texture sprite
+    Sprite.advance_animation state.frame.time sprite
   in
 
   let update_ghost (party_ghost : party_ghost) =
     let ghost = party_ghost.ghost in
-    Sprite.advance_animation state.frame.time ghost.entity.sprite.texture ghost.entity.sprite;
+    Sprite.advance_animation state.frame.time ghost.entity.sprite;
     if ghost.entity.update_pos then (
       Entity.update_pos game.room ghost.entity state.frame.dt;
       Entity.maybe_unset_current_floor ghost.entity game.room)

@@ -362,7 +362,7 @@ let animate_and_despawn_children frame_time ghost : unit =
       | _ -> ( (* already advanced *) ))
     | STILL _
     | LOOPED _ ->
-      Sprite.advance_animation frame_time child.sprite.texture child.sprite
+      Sprite.advance_animation frame_time child.sprite
   in
   List.iter advance ghost.children
 
@@ -687,7 +687,6 @@ let set_pose
       (player.ghost.head_textures.walk, bodies.cast)
   in
 
-  (* CLEANUP try moving can_dash/flap updates to start_action *)
   let handle_action_kind action_kind : texture * ghost_body_texture =
     match action_kind with
     | ATTACK direction ->
@@ -2518,7 +2517,10 @@ let tick (game : game) (state : state) =
             check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
           in
           if not cooling_down then
-            if not (in_water game.player) then (
+            if in_water game.player then (
+              handle_walking ();
+              handle_jumping new_vy)
+            else (
               let dream_nailing = handle_dream_nail () in
               if not dream_nailing.this_frame then (
                 let focusing = handle_focusing () in
@@ -2534,16 +2536,11 @@ let tick (game : game) (state : state) =
                           handle_walking ();
                           handle_jumping new_vy);
                         handle_attacking ();
-                        resolve_slash_collisions state game))))))
-            else (
-              handle_walking ();
-              handle_jumping new_vy))));
-
+                        resolve_slash_collisions state game)))))))));
     animate_and_despawn_children state.frame.time game.player;
     handle_collisions ();
     Entity.maybe_unset_current_floor game.player.ghost.entity game.room;
-    Sprite.advance_animation state.frame.time game.player.ghost.entity.sprite.texture
-      game.player.ghost.entity.sprite);
+    Sprite.advance_animation state.frame.time game.player.ghost.entity.sprite);
   state
 
 let load_shared_textures (shared_texture_configs : (string * texture_config) list) =
