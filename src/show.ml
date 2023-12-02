@@ -367,23 +367,36 @@ let game_mode (game_mode : game_mode) : string =
   | STEEL_SOLE -> "Steel Sole"
   | DEMO -> "Demo"
 
-let save_files_choice (choice : save_files_choice) =
-  match choice with
-  | SLOT_1 -> "1:"
-  | SLOT_2 -> "2:"
-  | SLOT_3 -> "3:"
-  | SLOT_4 -> "4:"
-  | BACK -> "Back"
+let save_slot idx save_slot =
+  let continue =
+    match save_slot.file.game_mode with
+    | "Classic" -> "Continue"
+    | "Steel Sole" -> "Continue (Steel Sole)"
+    | "Demo" -> "Continue (Demo)"
+    | _ -> failwith "bad game mode"
+  in
+  fmt "file %d: %s" (idx + 1) (if save_slot.new_game then "New Game" else continue)
 
-let menu_choice (game : game option) (choice : menu_choice) =
+let menu_choice ?(save_slots = []) (game_opt : game option) (choice : menu_choice) =
+  let save_files_choice (choice : save_files_choice) =
+    match choice with
+    | START_SLOT n -> save_slot (n - 1) (List.nth save_slots (n - 1))
+    | DELETE_SAVE_FILE n -> fmt "Delete save file %d" n
+    | BACK -> "Back"
+  in
+  let confirm_delete_choice (choice : confirm_delete_choice) =
+    match choice with
+    | CONFIRM_DELETE n -> fmt "Delete file %d" n
+    | CANCEL -> "Cancel"
+  in
   let game_mode_choice (game_mode_choice : select_game_mode_choice) : string =
     match game_mode_choice with
     | USE_MODE (mode, _, _) -> fmt "Start %s" (game_mode mode)
-    | BACK -> "BACK"
+    | BACK -> "Back"
   in
-  let change_ghost_menu_choice (game : game option) (choice : change_ghost_menu_choice) =
-    let menu_ghost_id (game : game option) id =
-      match game with
+  let change_ghost_menu_choice (choice : change_ghost_menu_choice) =
+    let menu_ghost_id id =
+      match game_opt with
       | None -> failwith "need to have a game to show weapons menu"
       | Some game' -> (
         let show name =
@@ -400,11 +413,11 @@ let menu_choice (game : game option) (choice : menu_choice) =
         | TROY -> show "Troy")
     in
     match choice with
-    | USE_GHOST id -> menu_ghost_id game id
+    | USE_GHOST id -> menu_ghost_id id
     | BACK -> "Back"
   in
-  let change_weapon_menu_choice (game : game option) (choice : change_weapon_menu_choice) =
-    match game with
+  let change_weapon_menu_choice (choice : change_weapon_menu_choice) =
+    match game_opt with
     | None -> failwith "need to have a game to show weapons menu"
     | Some game' -> (
       match choice with
@@ -443,11 +456,12 @@ let menu_choice (game : game option) (choice : menu_choice) =
   in
   match choice with
   | MAIN_MENU choice -> main_menu_choice choice
-  | SAVE_FILES choice -> save_files_choice choice
+  | CONFIRM_DELETE_MENU choice -> confirm_delete_choice choice
+  | SAVE_FILES_MENU choice -> save_files_choice choice
   | PAUSE_MENU choice -> pause_menu_choice choice
   | SELECT_GAME_MODE choice -> game_mode_choice choice
-  | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice game choice
-  | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice game choice
+  | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice choice
+  | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice choice
   | SETTINGS_MENU choice -> settings_menu_choice choice
   | CHANGE_AUDIO_SETTING (setting, choice) -> change_setting setting choice
 

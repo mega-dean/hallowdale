@@ -49,7 +49,7 @@ type bounds = {
 }
 
 type time = { mutable at : float }
-type duration = { seconds : float (* in seconds *) }
+type duration = { seconds : float }
 type color = Raylib.Color.t
 
 module Zero = struct
@@ -413,12 +413,13 @@ type select_game_mode_choice =
   | BACK
 
 type save_files_choice =
-  | SLOT_1
-  | SLOT_2
-  | SLOT_3
-  | SLOT_4
-  (* TODO add buttons for DELETE_SLOT_N *)
+  | START_SLOT of int
+  | DELETE_SAVE_FILE of int
   | BACK
+
+type confirm_delete_choice =
+  | CONFIRM_DELETE of int
+  | CANCEL
 
 type pause_menu_choice =
   | CONTINUE
@@ -453,19 +454,17 @@ type menu_choice =
   | SELECT_GAME_MODE of select_game_mode_choice
   | SETTINGS_MENU of settings_menu_choice
   | CHANGE_AUDIO_SETTING of (settings_menu_choice * change_setting_choice)
-  | SAVE_FILES of save_files_choice
+  | SAVE_FILES_MENU of save_files_choice
+  | CONFIRM_DELETE_MENU of confirm_delete_choice
 
 type menu = {
   choices : menu_choice list;
   mutable current_choice_idx : int;
 }
 
-(* bool is true for new games *)
-type save_slots = {
-  slot_1 : Json_t.save_file * bool;
-  slot_2 : Json_t.save_file * bool;
-  slot_3 : Json_t.save_file * bool;
-  slot_4 : Json_t.save_file * bool;
+type save_slot = {
+  file : Json_t.save_file;
+  new_game : bool;
 }
 
 type trigger_kind =
@@ -575,7 +574,7 @@ module Interaction = struct
     margin_x : float;
     margin_y_top : float;
     margin_y_bottom : float;
-    centered : bool;
+    mutable centered : bool;
   }
 
   type ability_text = {
@@ -598,7 +597,7 @@ module Interaction = struct
     | FOCUS_ABILITY of ability_text
     | ABILITY of ability_text
     | DIALOGUE of string * text
-    | MENU of menu * save_slots option
+    | MENU of menu * save_slot list option
 
   type transient_text_visible =
     | TIME of time
@@ -1351,9 +1350,13 @@ type camera = {
   mutable motion : camera_motion;
 }
 
+type save_files_action =
+  | LOAD
+  | DELETE
+
 type game_context =
-  | MAIN_MENU of menu * save_slots
-  | SAVE_FILES of menu * save_slots
+  | MAIN_MENU of menu * save_slot list
+  | SAVE_FILES of menu * save_slot list * save_files_action
   | IN_PROGRESS of game
   | DIED of game
 

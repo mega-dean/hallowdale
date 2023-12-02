@@ -1,72 +1,69 @@
 open Utils
 open Types
 
-let main_menu () : menu =
-  { choices = [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]; current_choice_idx = 0 }
+let make_menu choices : menu = { choices; current_choice_idx = 0 }
+let main_menu () : menu = make_menu [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]
 
 let select_game_mode_menu save_file save_file_idx : menu =
-  {
-    choices =
-      [
-        (* TODO enable Classic mode *)
-        (* SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)); *)
-        SELECT_GAME_MODE (USE_MODE (DEMO, save_file, save_file_idx));
-        SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
-        SELECT_GAME_MODE BACK;
-      ];
-    current_choice_idx = 0;
-  }
+  make_menu
+    [
+      (* TODO enable Classic mode *)
+      (* SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)); *)
+      SELECT_GAME_MODE (USE_MODE (DEMO, save_file, save_file_idx));
+      SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
+      SELECT_GAME_MODE BACK;
+    ]
 
 let pause_menu ghost_count : menu =
-  {
-    choices =
-      [
-        Some (PAUSE_MENU CONTINUE);
-        (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
-        Some (PAUSE_MENU CHANGE_WEAPON);
-        Some (PAUSE_MENU SETTINGS);
-        Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
-      ]
-      |> List.filter_somes;
-    current_choice_idx = 0;
-  }
+  make_menu
+    ([
+       Some (PAUSE_MENU CONTINUE);
+       (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
+       Some (PAUSE_MENU CHANGE_WEAPON);
+       Some (PAUSE_MENU SETTINGS);
+       Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
+     ]
+    |> List.filter_somes)
 
 let settings_menu () : menu =
-  {
-    choices = [ SETTINGS_MENU MUSIC; SETTINGS_MENU SOUND_EFFECTS; SETTINGS_MENU BACK ];
-    current_choice_idx = 0;
-  }
+  make_menu [ SETTINGS_MENU MUSIC; SETTINGS_MENU SOUND_EFFECTS; SETTINGS_MENU BACK ]
 
 let music_menu () : menu =
-  {
-    choices =
-      [
-        CHANGE_AUDIO_SETTING (MUSIC, INCREASE);
-        CHANGE_AUDIO_SETTING (MUSIC, DECREASE);
-        CHANGE_AUDIO_SETTING (MUSIC, BACK);
-      ];
-    current_choice_idx = 0;
-  }
+  make_menu
+    [
+      CHANGE_AUDIO_SETTING (MUSIC, INCREASE);
+      CHANGE_AUDIO_SETTING (MUSIC, DECREASE);
+      CHANGE_AUDIO_SETTING (MUSIC, BACK);
+    ]
 
 let sound_effects_menu () : menu =
-  {
-    choices =
-      [
-        CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE);
-        CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE);
-        CHANGE_AUDIO_SETTING (SOUND_EFFECTS, BACK);
-      ];
-    current_choice_idx = 0;
-  }
+  make_menu
+    [
+      CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE);
+      CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE);
+      CHANGE_AUDIO_SETTING (SOUND_EFFECTS, BACK);
+    ]
 
-let save_files_menu () : menu =
-  {
-    choices =
-      [
-        SAVE_FILES SLOT_1; SAVE_FILES SLOT_2; SAVE_FILES SLOT_3; SAVE_FILES SLOT_4; SAVE_FILES BACK;
-      ];
-    current_choice_idx = 0;
-  }
+let get_save_file_choices save_slots : menu_choice list =
+  let saved_games = List.filter (fun save -> not save.new_game) save_slots in
+  let delete_save_files =
+    let maybe_delete_save_file idx =
+      let slot = List.nth save_slots idx in
+      if slot.new_game then
+        None
+      else
+        Some (SAVE_FILES_MENU (DELETE_SAVE_FILE (idx + 1)))
+    in
+    List.map maybe_delete_save_file (Int.range Config.other.save_slots) |> List.filter_somes
+  in
+  List.map (fun i -> SAVE_FILES_MENU (START_SLOT (i + 1))) (Int.range Config.other.save_slots)
+  @ delete_save_files
+  @ [ SAVE_FILES_MENU BACK ]
+
+let save_files_menu save_slots : menu = make_menu (get_save_file_choices save_slots)
+
+let confirm_delete_menu idx =
+  make_menu [ CONFIRM_DELETE_MENU (CONFIRM_DELETE idx); CONFIRM_DELETE_MENU CANCEL ]
 
 let change_ghost_menu (ghosts : party_ghost list) : menu =
   let ghost_choices =
@@ -78,11 +75,11 @@ let change_ghost_menu (ghosts : party_ghost list) : menu =
           None)
       ghosts
   in
-  { choices = ghost_choices @ [ CHANGE_GHOST_MENU BACK ]; current_choice_idx = 0 }
+  make_menu (ghost_choices @ [ CHANGE_GHOST_MENU BACK ])
 
 let change_weapon_menu (weapon_names : string list) : menu =
   let weapon_choices = List.map (fun name -> CHANGE_WEAPON_MENU (EQUIP_WEAPON name)) weapon_names in
-  { choices = weapon_choices @ [ CHANGE_WEAPON_MENU BACK ]; current_choice_idx = 0 }
+  make_menu (weapon_choices @ [ CHANGE_WEAPON_MENU BACK ])
 
 let update_menu_choice (menu : menu) state =
   if state.frame_inputs.down.pressed then (
@@ -190,22 +187,20 @@ let update_pause_menu (game : game) (state : state) : state =
       | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
   state
 
-let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : state =
+let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state) : state =
   update_menu_choice menu state;
 
   let load_file save_file_idx =
-    let (save_file, is_new_game) : Json_t.save_file * bool =
-      match save_file_idx with
-      | 1 -> save_slots.slot_1
-      | 2 -> save_slots.slot_2
-      | 3 -> save_slots.slot_3
-      | 4 -> save_slots.slot_4
-      | _ -> failwithf "bad save file idx: %d" save_file_idx
+    let save_slot : save_slot =
+      match List.nth_opt save_slots (save_file_idx - 1) with
+      | None -> failwithf "bad save file idx: %d" save_file_idx
+      | Some slot -> slot
     in
-    if is_new_game then
-      state.game_context <- MAIN_MENU (select_game_mode_menu save_file save_file_idx, save_slots)
+    if save_slot.new_game then
+      state.game_context <-
+        MAIN_MENU (select_game_mode_menu save_slot.file save_file_idx, save_slots)
     else (
-      let game = Game.load state save_file save_file_idx in
+      let game = Game.load state save_slot.file save_file_idx in
       (match game.mode with
       | CLASSIC
       | DEMO ->
@@ -215,7 +210,7 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
         Player.add_phantom_floor game game.player.ghost.entity.dest.pos);
       (* tick camera to ensure it is entirely inside room before trying to render *)
       let state' = Camera.tick game state in
-      Game.start ~is_new_game state' game save_file)
+      Game.start ~is_new_game:save_slot.new_game state' game save_slot.file)
   in
 
   let start_new_game game_mode save_file save_file_idx =
@@ -226,15 +221,20 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
   if state.frame_inputs.jump.pressed then (
     Audio.play_sound state "confirm";
     match List.nth menu.choices menu.current_choice_idx with
-    | MAIN_MENU START_GAME -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
+    | MAIN_MENU START_GAME ->
+      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots, LOAD)
     | MAIN_MENU QUIT ->
       print "exiting";
       exit 0
-    | SAVE_FILES SLOT_1 -> load_file 1
-    | SAVE_FILES SLOT_2 -> load_file 2
-    | SAVE_FILES SLOT_3 -> load_file 3
-    | SAVE_FILES SLOT_4 -> load_file 4
-    | SAVE_FILES BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
+    | SAVE_FILES_MENU (START_SLOT n) -> load_file n
+    | SAVE_FILES_MENU (DELETE_SAVE_FILE n) ->
+      state.game_context <- MAIN_MENU (confirm_delete_menu n, save_slots)
+    | SAVE_FILES_MENU BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
+    | CONFIRM_DELETE_MENU (CONFIRM_DELETE n) ->
+      File.delete_save n;
+      let reloaded_save_slots = Game.load_all_save_slots () in
+      state.game_context <-
+        SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots, LOAD)
     | SELECT_GAME_MODE (USE_MODE (mode, save_file, save_file_idx)) ->
       let save_file' =
         match mode with
@@ -244,6 +244,8 @@ let update_main_menu (menu : menu) (save_slots : save_slots) (state : state) : s
           Game.initialize_steel_sole save_file
       in
       start_new_game mode save_file' save_file_idx
-    | SELECT_GAME_MODE BACK -> state.game_context <- SAVE_FILES (save_files_menu (), save_slots)
+    | CONFIRM_DELETE_MENU CANCEL
+    | SELECT_GAME_MODE BACK ->
+      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots, LOAD)
     | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
   state

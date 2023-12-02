@@ -271,7 +271,7 @@ let show_line (line : line) : string = String.concat " | " (List.map show_segmen
    using several long lines sets the vertical spacing incorrectly so lines overlap each other
 *)
 let get_lines ?(_debug = false) (w : float) (words : string list) : line list =
-  let measure s : float = Raylib.measure_text s font_size |> Int.to_float in
+  let measure s : float = measure_text s |> Int.to_float in
   let new_segment ?(color = Color.raywhite) content content_w line_w =
     { content; dest = { pos = { x = line_w; y = 0. }; w = content_w; h = line_height }; color }
   in
@@ -382,6 +382,7 @@ let tick (state : state) =
 
   let display_paragraph
       ?(in_menu = false)
+      ?(is_cursor = false)
       (config : text_config)
       (y_offset : float)
       paragraph_idx
@@ -400,12 +401,19 @@ let tick (state : state) =
         | DEMO ->
           (false, sep)
         | STEEL_SOLE -> (true, sep))
-      | _ -> (false, ' ')
+      | MAIN_MENU (_, _)
+      | SAVE_FILES (_, _, _)
+      | DIED _ ->
+        (false, ' ')
     in
     let display_line (config : text_config) y_offset line_idx (line : line) =
       let display_segment (segment : line_segment) =
         let padding_x =
-          if config.centered then (text_box_width config -. line.w) /. 2. else config.padding.x
+          match (config.centered, is_cursor) with
+          | true, _ -> (text_box_width config -. line.w) /. 2.
+          | false, true ->
+            ((text_box_width config -. line.w) /. 2.) -. (measure_text "*  " |> Int.to_float)
+          | false, false -> config.padding.x
         in
         let line_spacing = line_height *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
@@ -442,7 +450,7 @@ let tick (state : state) =
     List.iteri (display_line config y_offset') lines
   in
 
-  let maybe_draw_text (game : game option) (interaction_text : Interaction.text_kind option) =
+  let maybe_draw_text (game_opt : game option) (interaction_text : Interaction.text_kind option) =
     (* TODO add offset_x based on ghost.id, and make ability-outlines.png a grid of images *)
     let draw_outline ?(offset_y = 0.) (ability_text : Interaction.ability_text) =
       let texture =
@@ -532,32 +540,26 @@ let tick (state : state) =
     | Some (MENU (menu, save_slots)) ->
       let margin_x, margin_y_top = Config.get_text_margins (List.nth menu.choices 0) in
       let margin_y_bottom = margin_y_top in
-      let config : text_config =
+      let config' : text_config =
         Config.get_menu_text_config margin_x margin_y_top margin_y_bottom
       in
-      let is_new_game (_, b) = b in
-      let menu_choices =
+      let menu_choices, config =
         match save_slots with
-        | None -> List.map (Show.menu_choice game) menu.choices
+        | None -> (List.map (Show.menu_choice game_opt) menu.choices, config')
         | Some save_slots' ->
-          let show_save_slot idx ((slot, is_new_game) : Json_t.save_file * bool) =
-            let continue =
-              match slot.game_mode with
-              | "Classic" -> "Continue"
-              | "Steel Sole" -> "Continue (Steel Sole)"
-              | "Demo" -> "Continue (Demo)"
-              | _ -> failwith "bad game mode"
-            in
-            fmt "save %d: %s" (idx + 1) (if is_new_game then "New Game" else continue)
-          in
-          List.mapi show_save_slot
-            [ save_slots'.slot_1; save_slots'.slot_2; save_slots'.slot_3; save_slots'.slot_4 ]
-          @ [ Show.save_files_choice BACK ]
+          ( List.map (Show.menu_choice ~save_slots:save_slots' game_opt) (Menu.get_save_file_choices save_slots'),
+            {
+              config' with
+              centered = false;
+              (* update margin here because text should still be in the center of the screen
+                 (just not center-aligned) *)
+              margin_x = config'.margin_x *. 10.;
+            } )
       in
       draw_text_bg_box config;
       List.iteri (display_paragraph ~in_menu:true config 0.) menu_choices;
-      display_paragraph ~in_menu:true config 0. menu.current_choice_idx
-        "*                                           *"
+      display_paragraph ~in_menu:true ~is_cursor:true config 0. menu.current_choice_idx
+        "*                                               *"
   in
 
   let draw_other_text game =
@@ -610,7 +612,7 @@ let tick (state : state) =
   in
 
   match state.game_context with
-  | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
+  | SAVE_FILES (menu, save_slots, _) -> show_main_menu menu (Some save_slots)
   | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
   | DIED _ -> state
   | IN_PROGRESS game ->

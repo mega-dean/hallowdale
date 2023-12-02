@@ -608,7 +608,7 @@ let tick (state : state) =
         print "\n/----------------------\\\n enabled debug at %d" state.frame.idx));
   state.debug.rects <- [];
   match state.game_context with
-  | SAVE_FILES (menu, save_slots)
+  | SAVE_FILES (menu, save_slots, _)
   | MAIN_MENU (menu, save_slots) ->
     Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots

@@ -7,6 +7,7 @@
 - fix Vengeful Spirit recoil
 - cancel wall-sliding when casting
 - add sound effect for striking levers
+- add menu option for deleting save files
 
 ## [0.0.8] - 2023-11-19
 

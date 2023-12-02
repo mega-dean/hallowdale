@@ -1,8 +1,6 @@
 open Utils
 open Types
 
-let save_file_path idx = File.make_root_path [ "saves"; fmt "%d.json" idx ]
-
 let empty_save_file () : Json_t.save_file =
   let kings_pass_drop = { x = Config.other.kp_start_x; y = Config.other.kp_start_y } in
   let b =
@@ -54,13 +52,14 @@ let empty_save_file () : Json_t.save_file =
     current_weapon = "Old Nail";
   }
 
-let load_all_save_slots () : save_slots =
-  let load_file save_file_idx : Json_t.save_file * bool =
-    match File.maybe_read (save_file_path save_file_idx) with
-    | None -> (empty_save_file (), true)
-    | Some save_file -> (Json_j.save_file_of_string save_file, false)
+let load_all_save_slots () : save_slot list =
+  let load_file save_file_idx : save_slot =
+    match File.maybe_read (File.save_file_path save_file_idx) with
+    | None -> { file = empty_save_file (); new_game = true }
+    | Some save_file -> { file = Json_j.save_file_of_string save_file; new_game = false }
   in
-  { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 }
+  List.map (fun i -> load_file (i + 1)) (Int.range Config.other.save_slots)
+(* { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 } *)
 
 let save ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress_to_game game;
@@ -99,7 +98,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
   in
   save_file.progress.frame_idx <- state.frame.idx;
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
-  let written = File.write (save_file_path game.save_file_slot) contents in
+  let written = File.write (File.save_file_path game.save_file_slot) contents in
   if written then (
     game.save_file <- save_file;
     after_fn state)

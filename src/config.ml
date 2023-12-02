@@ -75,7 +75,7 @@ let window : window_config =
     h = window_h;
     w_tiles;
     h_tiles;
-    tile_size = (Env.tile_size |> Int.to_float);
+    tile_size = Env.tile_size |> Int.to_float;
     dest_tile_size = (Env.tile_size |> Int.to_float) *. scale.room;
     center = { x = window_w /. 2.; y = window_h /. 2. };
     max_width;
@@ -180,7 +180,7 @@ let action : action_config =
     soul_per_cast = 33;
     soul_gained_per_nail = 11;
     attack_duration = 0.07;
-    vengeful_spirit_vx = 800. *. window_scale;
+    vengeful_spirit_vx = 1000. *. window_scale;
     vengeful_spirit_recoil = 80. *. window_scale;
     vengeful_spirit_duration = 1.5;
   }
@@ -214,16 +214,21 @@ type text = {
 }
 
 let get_text_margins menu_choice =
+  let main_menu_margins = (50., 360.) in
+  let pause_menu_margins = (250., 220.) in
   let margin_x, margin_y_top =
     match menu_choice with
-    | PAUSE_MENU _ -> (250., 220.)
-    | SELECT_GAME_MODE _ -> (250., 220.)
-    | CHANGE_WEAPON_MENU _ -> (150., 50.)
-    | CHANGE_GHOST_MENU _ -> (150., 50.)
-    | MAIN_MENU _ -> (50., 360.)
-    | SETTINGS_MENU _ -> (250., 220.)
-    | CHANGE_AUDIO_SETTING _ -> (250., 220.)
-    | SAVE_FILES _ -> (50., 200.)
+    | PAUSE_MENU _
+    | CHANGE_WEAPON_MENU _
+    | CHANGE_GHOST_MENU _
+    | SETTINGS_MENU _
+    | CHANGE_AUDIO_SETTING _ ->
+      pause_menu_margins
+    | SELECT_GAME_MODE _
+    | MAIN_MENU _
+    | CONFIRM_DELETE_MENU _
+    | SAVE_FILES_MENU _ ->
+      main_menu_margins
   in
   (margin_x *. window_scale, margin_y_top *. window_scale)
 
@@ -285,6 +290,7 @@ type other = {
   ss_warp_y_offset : float;
   main_menu_y_offset : float;
   hud_padding : float;
+  save_slots : int;
 }
 
 let other =
@@ -296,6 +302,7 @@ let other =
     ss_warp_y_offset = 80. *. window_scale;
     main_menu_y_offset = 50. *. window_scale;
     hud_padding = 8. *. window_scale;
+    save_slots = 4;
   }
 
 type debug_keys = {
