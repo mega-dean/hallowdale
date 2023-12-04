@@ -402,7 +402,7 @@ let tick (state : state) =
           (false, sep)
         | STEEL_SOLE -> (true, sep))
       | MAIN_MENU (_, _)
-      | SAVE_FILES (_, _, _)
+      | SAVE_FILES (_, _)
       | DIED _ ->
         (false, ' ')
     in
@@ -612,7 +612,7 @@ let tick (state : state) =
   in
 
   match state.game_context with
-  | SAVE_FILES (menu, save_slots, _) -> show_main_menu menu (Some save_slots)
+  | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
   | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
   | DIED _ -> state
   | IN_PROGRESS game ->

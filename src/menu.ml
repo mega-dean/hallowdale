@@ -222,7 +222,7 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
     Audio.play_sound state "confirm";
     match List.nth menu.choices menu.current_choice_idx with
     | MAIN_MENU START_GAME ->
-      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots, LOAD)
+      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots)
     | MAIN_MENU QUIT ->
       print "exiting";
       exit 0
@@ -233,8 +233,7 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
     | CONFIRM_DELETE_MENU (CONFIRM_DELETE n) ->
       File.delete_save n;
       let reloaded_save_slots = Game.load_all_save_slots () in
-      state.game_context <-
-        SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots, LOAD)
+      state.game_context <- SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots)
     | SELECT_GAME_MODE (USE_MODE (mode, save_file, save_file_idx)) ->
       let save_file' =
         match mode with
@@ -246,6 +245,6 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
       start_new_game mode save_file' save_file_idx
     | CONFIRM_DELETE_MENU CANCEL
     | SELECT_GAME_MODE BACK ->
-      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots, LOAD)
+      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots)
     | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
   state

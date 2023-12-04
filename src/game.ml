@@ -229,8 +229,6 @@ let create
     progress = clone_game_progress save_file.progress;
     save_file;
     save_file_slot;
-    debug_paused = false;
-    debug_safe_ss = false;
   }
 
 let init state mode (save_file : Json_t.save_file) save_file_idx =

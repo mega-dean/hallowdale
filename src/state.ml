@@ -3,7 +3,7 @@ open Types
 open Controls
 
 (* this function initializes state and sets game_context to MAIN_MENU *)
-let init window_w window_h window_scale : state =
+let init () : state =
   let print_with_line s =
     let left_line = String.make 10 '=' in
     let right_line = String.make (90 - String.length s) '=' in
@@ -263,7 +263,8 @@ let init window_w window_h window_scale : state =
         pause = { pressed = false; down = false; released = false; down_since = None };
         interact = { pressed = false; down = false; released = false; down_since = None };
       };
-    debug = { enabled = false; show_frame_inputs = true; rects = [] };
+    debug =
+      { enabled = false; show_frame_inputs = true; rects = []; paused = false; safe_ss = false };
     global;
     settings;
   }
@@ -608,7 +609,7 @@ let tick (state : state) =
         print "\n/----------------------\\\n enabled debug at %d" state.frame.idx));
   state.debug.rects <- [];
   match state.game_context with
-  | SAVE_FILES (menu, save_slots, _)
+  | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
     Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
@@ -622,7 +623,7 @@ let tick (state : state) =
     *)
     Audio.play_game_music game;
 
-    if game.debug_paused then
+    if state.debug.paused then
       if key_pressed DEBUG_2 then
         state
         |> update_frame_inputs

@@ -1290,8 +1290,8 @@ let handle_debug_keys (game : game) (state : state) =
       print "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos)
     in
     let toggle_safe_ss () =
-      game.debug_safe_ss <- not game.debug_safe_ss;
-      print "set debug_safe_ss: %b" game.debug_safe_ss
+      state.debug.safe_ss <- not state.debug.safe_ss;
+      print "set debug.safe_ss: %b" state.debug.safe_ss
     in
     if key_down DEBUG_UP then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
@@ -1322,7 +1322,7 @@ let handle_debug_keys (game : game) (state : state) =
         (* toggle_ability game.player "ismas_tear" *)
         ()))
     else if key_pressed DEBUG_1 then
-      game.debug_paused <- not game.debug_paused;
+      state.debug.paused <- not state.debug.paused;
     state)
 
 (* this is used for actions that block other actions from happening during the same frame *)
@@ -2374,7 +2374,7 @@ let tick (game : game) (state : state) =
       | STEEL_SOLE -> (
         let up_floor_collision : (collision * rect) option =
           (* safe to walk on the ground in the vents *)
-          if game.debug_safe_ss || game.room.area.id = VENTWAYS then
+          if state.debug.safe_ss || game.room.area.id = VENTWAYS then
             None
           else if
             (* TODO this fixes the steel sole hazard respawns on wall seams, but allows

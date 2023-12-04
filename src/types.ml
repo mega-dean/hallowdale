@@ -1310,11 +1310,8 @@ type debug = {
   mutable enabled : bool;
   mutable show_frame_inputs : bool;
   mutable rects : (color * rect) list;
-}
-
-type saved_game = {
-  room : room;
-  progress : Json_t.game_progress;
+  mutable paused : bool;
+  mutable safe_ss : bool;
 }
 
 type game = {
@@ -1335,8 +1332,6 @@ type game = {
   progress : Json_t.game_progress;
   mutable save_file : Json_t.save_file;
   save_file_slot : int;
-  mutable debug_paused : bool;
-  mutable debug_safe_ss : bool;
 }
 
 type camera = {
@@ -1350,13 +1345,9 @@ type camera = {
   mutable motion : camera_motion;
 }
 
-type save_files_action =
-  | LOAD
-  | DELETE
-
 type game_context =
   | MAIN_MENU of menu * save_slot list
-  | SAVE_FILES of menu * save_slot list * save_files_action
+  | SAVE_FILES of menu * save_slot list
   | IN_PROGRESS of game
   | DIED of game
 
