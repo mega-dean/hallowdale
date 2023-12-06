@@ -51,20 +51,12 @@
             "dream_nail": {},
             "kind": "multi-boss",
             "props": [
-                // ["wall_perch_left_x", 1344.0],
-                // ["wall_perch_right_x", 1812.0],
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
                 ["projectile_vx", 600.0],
                 ["dash_vx", 600.0],
                 ["dive_vy", 1250.0],
                 ["dive_y", 777.0]
-                // ["wall_perch_left_x", 2100.0],
-                // ["wall_perch_right_x", 3150.0],
-                // ["projectile_vx", 60.0],
-                // ["dash_vx", 600.0],
-                // ["dive_vy", 1250.0],
-                // ["dive_y", 777.0]
             ],
             "texture_configs": [
                 ["idle", {
@@ -155,7 +147,8 @@
                 ]
             },
             "props": [
-                ["death_recoil_v", 1200]
+                ["homing_v", 1000],
+                ["death_recoil_v", 1400]
             ],
             "texture_configs": [
                 ["idle", {

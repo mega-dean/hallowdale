@@ -221,10 +221,10 @@ module JsonRoom = struct
           (List.length platform_names)
       | Some name -> name
     in
-    match List.assoc_opt texture_name platform_textures_by_name with
+    match StringMap.find_opt texture_name platform_textures_by_name with
     | None ->
       failwithf "could not find platform %s, keys: %s" texture_name
-        (platform_textures_by_name |> List.map fst |> join)
+        (platform_textures_by_name |> StringMap.to_list |> List.map fst |> join)
     | Some t -> (texture_name, t, platform_kind)
 
   let look_up_tile (json_room : t) ?(animation_offset = 0) room_cache (gid' : int) : texture * int =
@@ -232,7 +232,7 @@ module JsonRoom = struct
     let gid = Tile.raw_gid gid' in
     let bits = Tile.transformation_bits gid' in
     let get_tileset (source : Json_t.tileset_source) =
-      match List.assoc_opt source.source room_cache.tilesets_by_path with
+      match StringMap.find_opt source.source room_cache.tilesets_by_path with
       | None -> failwithf "could not find cached tileset %s, gid: %d" source.source gid'
       | Some t -> t
     in
@@ -349,10 +349,10 @@ let create_camera_at v (shake : float) (center_x : float) (center_y : float) =
 let init_world (path : string) : (room_id * room_location) list =
   let full_path = File.make_assets_path [ "tiled"; "rooms"; fmt "%s.world" path ] in
   let json_world : Json_t.world = File.read full_path |> Json_j.world_of_string in
-  let filenames_in_world_file : str_set ref = ref StrSet.empty in
+  let filenames_in_world_file : StringSet.t ref = ref StringSet.empty in
   let get_room_location (global_map : Json_t.global_map) : room_id * room_location =
     let filename = Str.first_chars global_map.file_name (String.length global_map.file_name - 5) in
-    filenames_in_world_file := StrSet.add filename !filenames_in_world_file;
+    filenames_in_world_file := StringSet.add filename !filenames_in_world_file;
     let _area_id, room_id = parse_room_filename (fmt "%s.world file" path) filename in
     ( room_id,
       {
@@ -364,22 +364,23 @@ let init_world (path : string) : (room_id * room_location) list =
       } )
   in
   let rooms = List.map get_room_location json_world.global_maps in
-  let files_in_rooms_dir = ref StrSet.empty in
+  let files_in_rooms_dir = ref StringSet.empty in
   let add_to_set s =
     if Str.last_chars s 5 = ".json" then
-      files_in_rooms_dir := StrSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
+      files_in_rooms_dir :=
+        StringSet.add (Str.first_chars s (String.length s - 5)) !files_in_rooms_dir
   in
   File.ls (File.make_assets_path [ "tiled"; "rooms" ]) |> List.iter add_to_set;
-  let filenames_without_files : str_set =
-    StrSet.diff !filenames_in_world_file !files_in_rooms_dir
+  let filenames_without_files : StringSet.t =
+    StringSet.diff !filenames_in_world_file !files_in_rooms_dir
   in
-  let files_without_filenames : str_set =
-    StrSet.diff !files_in_rooms_dir !filenames_in_world_file
+  let files_without_filenames : StringSet.t =
+    StringSet.diff !files_in_rooms_dir !filenames_in_world_file
   in
-  if not (StrSet.is_empty filenames_without_files) then
+  if not (StringSet.is_empty filenames_without_files) then
     print "WARN: got filenames in .world that have no corresponding .json file:\n%s"
-      (StrSet.elements filenames_without_files |> join ~sep:"\n");
-  if not (StrSet.is_empty files_without_filenames) then
+      (StringSet.elements filenames_without_files |> join ~sep:"\n");
+  if not (StringSet.is_empty files_without_filenames) then
     print "WARN: got .json files that aren't part of .world:\n%s"
-      (StrSet.elements files_without_filenames |> join ~sep:"\n");
+      (StringSet.elements files_without_filenames |> join ~sep:"\n");
   rooms

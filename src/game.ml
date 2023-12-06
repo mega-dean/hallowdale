@@ -191,7 +191,7 @@ let create
     Room.init
       {
         file_name = save_file.room_name;
-        progress_by_room = save_file.progress.by_room;
+        progress_by_room = save_file.progress.by_room |> List.to_string_map;
         exits;
         enemy_configs = global.enemy_configs;
         npc_configs = global.npc_configs;

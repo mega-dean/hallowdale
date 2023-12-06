@@ -61,7 +61,7 @@ let init (params : room_params) : room =
     { finished_interactions = []; revealed_shadow_layers = []; removed_tile_idxs = [] }
   in
   let room_progress =
-    match List.assoc_opt room_key params.progress_by_room with
+    match StringMap.find_opt room_key params.progress_by_room with
     | None -> new_room_progress ()
     | Some rp -> clone_room_progress rp
   in
@@ -538,7 +538,11 @@ let init (params : room_params) : room =
   let cache =
     (* this isn't using make_path because tilesets_by_path keys come from Tiled exported files *)
     match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
-    | None -> { jug_fragments_by_gid = []; tilesets_by_path }
+    | None ->
+      {
+        jug_fragments_by_gid = IntMap.empty;
+        tilesets_by_path = tilesets_by_path |> List.to_string_map;
+      }
     | Some tileset ->
       let jug_tileset_img = Tiled.Tileset.image tileset in
       (* all of the `*. 2.` or `+ 2` in this function is here because jugs were originally
@@ -623,7 +627,10 @@ let init (params : room_params) : room =
         List.map build configs
       in
 
-      { jug_fragments_by_gid = List.map make_jug metadata; tilesets_by_path }
+      {
+        jug_fragments_by_gid = List.map make_jug metadata |> List.to_int_map;
+        tilesets_by_path = tilesets_by_path |> List.to_string_map;
+      }
   in
 
   let create_camera_bounds (room : Json_t.room) =
@@ -768,11 +775,11 @@ let reset_tile_groups (room : room) =
                   (!idxs |> List.uniq)
                 |> List.uniq
               in
-              let keys = List.map fst room.cache.jug_fragments_by_gid in
+              let keys = IntMap.to_list room.cache.jug_fragments_by_gid |> List.map fst in
               match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
               | None -> (None, [])
               | Some raw_gid -> (
-                match List.assoc_opt raw_gid room.cache.jug_fragments_by_gid with
+                match IntMap.find_opt raw_gid room.cache.jug_fragments_by_gid with
                 | None -> (None, [])
                 | Some destroy_resources ->
                   let sprite =
@@ -857,7 +864,7 @@ let change_current_room
     init
       {
         file_name = room_location.filename;
-        progress_by_room = game.progress.by_room;
+        progress_by_room = game.progress.by_room |> List.to_string_map;
         exits;
         enemy_configs = state.global.enemy_configs;
         npc_configs = state.global.npc_configs;
@@ -872,8 +879,8 @@ let change_current_room
     List.iter hide_party_ghost game.party
   in
   let unload_tilesets (room : room) : unit =
-    let unload_tileset (_path, tileset) = Raylib.unload_texture (Tiled.Tileset.image tileset) in
-    List.iter unload_tileset room.cache.tilesets_by_path
+    let unload_tileset _path tileset = Raylib.unload_texture (Tiled.Tileset.image tileset) in
+    StringMap.iter unload_tileset room.cache.tilesets_by_path
   in
   let get_music area_id =
     List.find (fun (area_music : area_music) -> List.mem area_id area_music.areas) state.area_musics

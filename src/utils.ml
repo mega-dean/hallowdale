@@ -5,6 +5,10 @@ let itmp fmtstr = Printf.ifprintf print_endline fmtstr
 let failwithf f = Printf.ksprintf failwith f
 let join ?(sep = ", ") strs = String.concat sep strs
 
+module StringSet = Set.Make (String)
+module StringMap = Map.Make (String)
+module IntMap = Map.Make (Int)
+
 module Float = struct
   include Float
 
@@ -54,6 +58,8 @@ module List = struct
     !res
 
   let to_array xs = Array.of_list xs
+  let to_string_map xs = StringMap.of_list xs
+  let to_int_map xs = IntMap.of_list xs
 end
 
 module String = struct

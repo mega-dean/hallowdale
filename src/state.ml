@@ -63,6 +63,7 @@ let init () : state =
             "nail"
           | _ -> name
         in
+        tmp "loading body texture %s" key;
         match List.assoc_opt key ghosts_file.body_textures with
         | Some c -> c
         | None ->
@@ -180,8 +181,8 @@ let init () : state =
 
   let global =
     {
-      lore = File.read_config "lore" Json_j.lore_file_of_string;
-      weapons = File.read_config "weapons" Json_j.weapons_file_of_string;
+      lore = File.read_config "lore" Json_j.lore_file_of_string |> List.to_string_map;
+      weapons = File.read_config "weapons" Json_j.weapons_file_of_string |> List.to_string_map;
       enemy_configs;
       npc_configs;
       textures =
@@ -192,13 +193,13 @@ let init () : state =
           main_menu;
           door_lever;
           door_lever_struck;
-          platforms;
+          platforms = platforms |> List.to_string_map;
           rotating_platform;
           ghost_bodies;
           skybox;
           world_map;
         };
-      sounds;
+      sounds = sounds |> List.to_string_map;
     }
   in
 
@@ -451,8 +452,8 @@ let update_enemies (game : game) (state : state) =
           (Some
              (if Enemy.is_dead enemy then
                 enemy.json.death_gravity_multiplier
-             else
-               enemy.entity.config.gravity_multiplier))
+              else
+                enemy.entity.config.gravity_multiplier))
         game.room enemy.entity state.frame.dt;
     let interacting () = List.length game.interaction.steps > 0 in
     if (not (interacting ())) && enemy.status.choose_behavior then
@@ -678,7 +679,9 @@ let tick (state : state) =
             (* TODO this is a pretty naive way to check for pen lore, maybe the json file should
                be an object instead of a list
             *)
-            List.filter (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0) state.global.lore
+            List.filter
+              (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0)
+              (state.global.lore |> StringMap.to_list)
           in
           let total_purple_pen_count = List.length pen_lore in
           game.interaction.corner_text <-

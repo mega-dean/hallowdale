@@ -114,8 +114,8 @@ let draw_sprite
             x =
               (if sprite.facing_right then
                  sprite.dest.pos.x +. offset.x
-              else
-                sprite.dest.pos.x -. offset.x);
+               else
+                 sprite.dest.pos.x -. offset.x);
             y = offset.y +. sprite.dest.pos.y;
           };
       }
@@ -547,7 +547,9 @@ let tick (state : state) =
         match save_slots with
         | None -> (List.map (Show.menu_choice game_opt) menu.choices, config')
         | Some save_slots' ->
-          ( List.map (Show.menu_choice ~save_slots:save_slots' game_opt) (Menu.get_save_file_choices save_slots'),
+          ( List.map
+              (Show.menu_choice ~save_slots:save_slots' game_opt)
+              (Menu.get_save_file_choices save_slots'),
             {
               config' with
               centered = false;

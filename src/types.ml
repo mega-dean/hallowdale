@@ -1,7 +1,4 @@
 open Utils
-module StrSet = Set.Make (String)
-
-type str_set = StrSet.t
 
 type direction =
   | UP
@@ -94,8 +91,7 @@ type animation_src =
   | LOOPED of animation
   | PARTICLE of animation
   | (* this is used for c-dash crystals, which animate once and then stay on-screen *)
-    ONCE of
-      animation
+    ONCE of animation
 
 let get_frame (a : animation) : animation_frame =
   List.nth a.frames (a.frame_idx mod List.length a.frames)
@@ -543,8 +539,7 @@ module Interaction = struct
     | (* this isn't using (PARTY (SET_POSE ...)) because it uses the real Ghost.set_pose
          instead of the simpler one for party_ghosts during interactions
       *)
-      SET_POSE of
-        ghost_pose
+      SET_POSE of ghost_pose
     | ADD_ITEM of item_kind
     | UNSET_FLOOR
     | ENTITY of entity_step
@@ -681,7 +676,9 @@ type enemy = {
   mutable floor_collision_this_frame : bool;
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
-  textures : (string * texture) list;
+  textures : texture StringMap.t;
+  (* CLEANUP consolidate these - maybe don't need .json anymore *)
+  json_props : float StringMap.t;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
 }
@@ -689,11 +686,11 @@ type enemy = {
 type npc = {
   id : npc_id;
   entity : entity;
-  textures : (string * texture) list;
+  textures : texture StringMap.t;
 }
 
 let get_npc_texture (npc : npc) (texture_name : string) : texture =
-  match List.assoc_opt texture_name npc.textures with
+  match StringMap.find_opt texture_name npc.textures with
   | None -> failwithf "could not find texture '%s' for npc %s" texture_name npc.entity.sprite.ident
   | Some v -> v
 
@@ -880,11 +877,10 @@ type invincibility_kind =
   | TOOK_DAMAGE
   | SHADE_CLOAK
 
-(* this is very similar to Json_t.ghosts_file, but it eg. parses ghost names into ghost_id for the key of .textures *)
 type ghosts_file = {
-  body_textures : (string * texture_config) list;
-  actions : (string * ghost_action_config) list;
-  shared_textures : (string * texture_config) list;
+  body_textures : texture_config StringMap.t;
+  actions : ghost_action_config StringMap.t;
+  shared_textures : texture_config StringMap.t;
 }
 
 type ghost_body_texture = {
@@ -1156,8 +1152,8 @@ type jug_config = {
 }
 
 type room_cache = {
-  jug_fragments_by_gid : (int * jug_fragments) list;
-  tilesets_by_path : (string * tileset) list;
+  jug_fragments_by_gid : jug_fragments IntMap.t;
+  tilesets_by_path : tileset StringMap.t;
 }
 
 type trigger = {
@@ -1216,14 +1212,18 @@ type idx_config =
 
 type room_params = {
   file_name : string;
-  progress_by_room : (string * Json_t.room_progress) list;
+  progress_by_room : Json_t.room_progress StringMap.t;
   exits : rect list;
+  (* FIXME try making modules for these
+     - not really sure how it would work/look
+     - but probably only need a comparator fn
+  *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;
   lever_texture : texture;
   respawn_pos : vector;
-  platforms : (string * texture) list;
+  platforms : texture StringMap.t;
 }
 
 (* TODO add current_interaction : string to handle dying during a boss-fight
@@ -1285,7 +1285,7 @@ type texture_cache = {
   main_menu : texture;
   door_lever : texture;
   door_lever_struck : texture;
-  platforms : (string * texture) list;
+  platforms : texture StringMap.t;
   (* this is the only animated platform for now, maybe want a separate animated_platforms if more are added *)
   rotating_platform : texture;
   skybox : texture;
@@ -1296,14 +1296,13 @@ type texture_cache = {
 (* these are all things that are eager-loaded from json config files *)
 type global_cache = {
   textures : texture_cache;
-  (* TODO maybe make lore.json a hash with keys, not just a string map *)
-  lore : (string * string) list;
-  weapons : (string * Json_t.weapon) list;
+  lore : string StringMap.t;
+  weapons : Json_t.weapon StringMap.t;
   (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
   (* TODO could add sound_id instead of using strings *)
-  sounds : (string * Raylib.Sound.t) list;
+  sounds : Raylib.Sound.t StringMap.t;
 }
 
 type debug = {

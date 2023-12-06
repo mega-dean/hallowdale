@@ -8,7 +8,7 @@ let get_spikes (platform : platform) game =
 
 let set_texture (platform : platform) texture_cache name =
   let texture =
-    match List.assoc_opt name texture_cache.platforms with
+    match StringMap.find_opt name texture_cache.platforms with
     | None -> failwithf "could not find texture with name %s" name
     | Some t -> t
   in

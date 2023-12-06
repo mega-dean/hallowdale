@@ -54,7 +54,11 @@ let read_config () : ghosts_file =
   let actions : (string * ghost_action_config) list =
     List.map parse_ghost_action ghost_file.actions
   in
-  { actions; body_textures; shared_textures }
+  {
+    actions = actions |> List.to_string_map;
+    body_textures = body_textures |> List.to_string_map;
+    shared_textures = shared_textures |> List.to_string_map;
+  }
 
 let ghost_ids_in_party ghosts : ghost_id list =
   ghosts |> List.filter_map (fun g -> if g.in_party then Some g.ghost.id else None)
@@ -781,8 +785,8 @@ let set_pose
       player.ghost.entity.sprite.dest.pos.x <-
         (if wall_to_the_left then
            wall.pos.x +. wall.w
-        else
-          wall.pos.x -. (Config.ghost.width *. Config.scale.ghost));
+         else
+           wall.pos.x -. (Config.ghost.width *. Config.scale.ghost));
       update_vx 0.;
       player.current.can_dash <- true;
       player.current.can_flap <- true;
@@ -1205,7 +1209,7 @@ let enable_ability ghost ability_name = change_ability ~only_enable:true ghost a
 let toggle_ability ghost ability_name = change_ability ~debug:true ghost ability_name
 
 let acquire_weapon (state : state) (game : game) weapon_name =
-  match List.assoc_opt weapon_name state.global.weapons with
+  match StringMap.find_opt weapon_name state.global.weapons with
   | Some weapon_config ->
     let current_weapon_names = List.map fst game.player.weapons in
     if not (List.mem weapon_name current_weapon_names) then
@@ -1593,7 +1597,7 @@ let tick (game : game) (state : state) =
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
           | WEAPON weapon_name ->
-            let weapon_config = List.assoc weapon_name state.global.weapons in
+            let weapon_config = StringMap.find weapon_name state.global.weapons in
             let text : Interaction.text =
               {
                 content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ];
@@ -1748,7 +1752,11 @@ let tick (game : game) (state : state) =
         in
 
         let set_npc_pose (npc : npc) pose =
-          let texture = List.assoc pose npc.textures in
+          let texture =
+            match StringMap.find_opt pose npc.textures with
+            | Some t -> t
+            | None -> failwithf "could not find pose %s for npc %s" pose (Show.npc_id npc.id)
+          in
           Entity.update_sprite_texture npc.entity texture
         in
 
@@ -2536,14 +2544,16 @@ let tick (game : game) (state : state) =
     Sprite.advance_animation state.frame.time game.player.ghost.entity.sprite);
   state
 
-let load_shared_textures (shared_texture_configs : (string * texture_config) list) =
+let load_shared_textures (shared_texture_configs : texture_config StringMap.t) =
   let build_shared_texture ?(particle = false) ?(once = false) ?(config_name = None) pose_name =
     let config =
       let config_name' =
         (* the "nail" shared config applies to "slash"/"upslash"/"downslash", but otherwise the pose_name *)
-        Option.value config_name ~default:pose_name
+        match config_name with
+        | None -> pose_name
+        | Some name -> name
       in
-      match List.assoc_opt config_name' shared_texture_configs with
+      match StringMap.find_opt config_name' shared_texture_configs with
       | Some config ->
         (* the `with pose_name` is also because of the "nail" config naming *)
         { config with path = { config.path with pose_name } }
@@ -2588,13 +2598,13 @@ let init
     (ghost_id : ghost_id)
     (idle_texture : texture)
     (head_textures : ghost_head_textures)
-    (action_config : (string * ghost_action_config) list)
+    (action_config : ghost_action_config StringMap.t)
     (start_pos : vector)
     (save_file : Json_t.save_file)
-    weapons_configs
+    (weapons_configs : Json_t.weapon StringMap.t)
     shared_textures : player =
   let use_json_action_config action_name : ghost_action_config =
-    match List.assoc_opt action_name action_config with
+    match StringMap.find_opt action_name action_config with
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
     | Some config -> config
   in
@@ -2608,7 +2618,7 @@ let init
     }
   in
 
-  let load_weapon name = (name, List.assoc name weapons_configs) in
+  let load_weapon name = (name, StringMap.find name weapons_configs) in
   let weapons = List.map load_weapon save_file.weapons in
 
   let max_health =

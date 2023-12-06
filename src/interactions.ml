@@ -42,7 +42,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     in
 
     let get_lore () : string =
-      match List.assoc_opt trigger.name_suffix state.global.lore with
+      match StringMap.find_opt trigger.name_suffix state.global.lore with
       | None -> failwithf "lore name '%s' not found in lore.json" trigger.name_suffix
       | Some lore -> lore
     in

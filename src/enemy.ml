@@ -52,7 +52,7 @@ let load_pose (texture_config : texture_config) : string * texture =
   (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
 
 let set_pose (enemy : enemy) (pose_name : string) : unit =
-  match List.assoc_opt pose_name enemy.textures with
+  match StringMap.find_opt pose_name enemy.textures with
   | None ->
     failwithf "could not find pose '%s' configured in enemies.json for enemy %s" pose_name
       (Show.enemy enemy)
@@ -68,12 +68,13 @@ let get_prop ?(default = None) key props : float =
   | Some v, _ -> v
 
 let get_bool_prop (enemy : enemy) prop : bool = get_prop ~default:(Some 0.) prop enemy.props = 1.
-let set_prop (e : enemy) key new_val = e.props <- List.replace_assoc key new_val e.props
+let set_prop (enemy : enemy) key new_val = enemy.props <- List.replace_assoc key new_val enemy.props
 
-let get_json_prop (e : enemy) key : float =
-  match List.assoc_opt key e.json.props with
+let get_json_prop (enemy : enemy) key : float =
+  match StringMap.find_opt key enemy.json_props with
   | None ->
-    failwithf "could not find json prop '%s' in enemies.json for enemy %s" key (Show.enemy_id e.id)
+    failwithf "could not find json prop '%s' in enemies.json for enemy %s" key
+      (Show.enemy_id enemy.id)
   | Some v -> v
 
 (* this only supports projectiles moving horizontally *)
@@ -89,7 +90,7 @@ let spawn_projectile
     (despawn : projectile_duration)
     spawn_time : projectile =
   let projectile_texture =
-    match List.assoc_opt projectile_texture_name enemy.textures with
+    match StringMap.find_opt projectile_texture_name enemy.textures with
     | Some t -> t
     | None ->
       failwithf "could not find projectile '%s' for %s" projectile_texture_name
@@ -310,7 +311,7 @@ let set_frog_action (enemy : enemy) action (room : room) current_time current_pr
     match action with
     | `HOMING ->
       let min_v, max_v =
-        let v' = 500. in
+        let v' = get_json_prop enemy "homing_v" in
         (-1. *. v', v')
       in
       let larger v = Float.bound min_v (v +. 5. +. Random.float 10.) max_v in
@@ -454,7 +455,7 @@ let choose_behavior (enemy : enemy) (state : state) (game : game) =
        config values, maybe some code too *)
     let vanished = action_started_at enemy "vanish" in
     let unvanished = action_started_at enemy "unvanish" in
-    let vanish_duration = animation_loop_duration (List.assoc "vanish" enemy.textures) in
+    let vanish_duration = animation_loop_duration (StringMap.find "vanish" enemy.textures) in
     let still_vanishing = still_doing "vanish" vanish_duration in
     let should_unvanish () = (not still_vanishing) && vanished > unvanished in
     let should_vanish () = get_bool_prop enemy "should_vanish" in
@@ -669,13 +670,14 @@ let create_from_rects
       entity;
       damage = json.damage;
       health = { current = enemy_config.health; max = enemy_config.health };
-      textures;
+      textures = textures |> List.to_string_map;
       history = [];
       props = [ ("initial_x", entity.dest.pos.x); ("initial_y", entity.dest.pos.y) ];
       floor_collision_this_frame = false;
       spawned_projectiles = [];
       damage_sprites = [];
       on_killed;
+      json_props = json.props |> List.to_string_map;
       json;
     }
   in
