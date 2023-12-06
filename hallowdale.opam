@@ -9,8 +9,6 @@ bug-reports: "https://github.com/mega-dean/hallowdale/issues"
 depends: [
   "atdgen"
   "dune" {>= "3.0"}
-  "ocamlformat"
-  "ppx_expect"
   "raylib"
   "yojson"
   "odoc" {with-doc}

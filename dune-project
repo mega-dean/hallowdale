@@ -13,8 +13,6 @@
  (depends
   atdgen
   dune
-  ocamlformat
-  ppx_expect
   raylib
   yojson
   )
