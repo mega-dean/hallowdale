@@ -7,8 +7,7 @@ let main_menu () : menu = make_menu [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]
 let select_game_mode_menu save_file save_file_idx : menu =
   make_menu
     [
-      (* TODO enable Classic mode *)
-      (* SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)); *)
+      SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx));
       SELECT_GAME_MODE (USE_MODE (DEMO, save_file, save_file_idx));
       SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
       SELECT_GAME_MODE BACK;

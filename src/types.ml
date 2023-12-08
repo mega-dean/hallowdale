@@ -1214,10 +1214,6 @@ type room_params = {
   file_name : string;
   progress_by_room : Json_t.room_progress StringMap.t;
   exits : rect list;
-  (* FIXME try making modules for these
-     - not really sure how it would work/look
-     - but probably only need a comparator fn
-  *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;

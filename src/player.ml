@@ -1165,6 +1165,10 @@ let as_party_ghost (player : player) : party_ghost = { ghost = player.ghost; in_
 let find_party_ghost (id : ghost_id) party : party_ghost option =
   List.find_opt (fun (party_ghost : party_ghost) -> party_ghost.ghost.id = id) party
 
+(* FIXME body offsets for party ghosts are wrong
+   - happens in cutscenes with party ghosts
+   - also happens when switching ghosts from pause menu
+*)
 let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) target_ghost_id =
   match find_party_ghost target_ghost_id game.party with
   | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
@@ -1358,6 +1362,7 @@ let tick (game : game) (state : state) =
     set_pose game pose state.global.textures.ghost_bodies state.frame.time
   in
 
+  (* CLEANUP try moving this to interactions.ml *)
   let handle_interactions () =
     (* the ghost can only collide with one trigger of each type per frame *)
     let all_finished_interactions =
@@ -1718,27 +1723,30 @@ let tick (game : game) (state : state) =
               fn (List.nth enemies 0)
           in
           match enemy_step with
-          | WALK_TO target_tile_x ->
-            apply_to_only "WALK_TO" (fun (e : enemy) ->
-                let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
-                let dist = (tile.x *. Config.scale.room) -. e.entity.dest.pos.x in
-                still_walking := abs_float dist > 10.;
-                if not !still_walking then (
-                  e.entity.v.x <- 0.;
-                  Enemy.set_pose e "idle")
-                else if dist > 0. then (
-                  e.entity.sprite.facing_right <- true;
-                  Enemy.start_action e "walking" state.frame.time [])
-                else (
-                  e.entity.sprite.facing_right <- false;
-                  Enemy.start_action e "walking" state.frame.time []))
+          | WALK_TO target_tile_x -> ()
+          (* FIXME *)
+            (* apply_to_only "WALK_TO" (fun (e : enemy) ->
+             *     let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
+             *     let dist = (tile.x *. Config.scale.room) -. e.entity.dest.pos.x in
+             *     still_walking := abs_float dist > 10.;
+             *     if not !still_walking then (
+             *       e.entity.v.x <- 0.;
+             *       Enemy.set_pose e "idle")
+             *     else if dist > 0. then (
+             *       e.entity.sprite.facing_right <- true;
+             *       Enemy.start_action e "walking" state.frame.time [])
+             *     else (
+             *       e.entity.sprite.facing_right <- false;
+             *       Enemy.start_action e "walking" state.frame.time [])) *)
           | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
           | SET_POSE pose_name ->
             apply_to_all (fun (e : enemy) ->
                 Enemy.log_action e pose_name state.frame.time;
                 Enemy.set_pose e pose_name)
           | SET_ACTION action_name ->
-            apply_to_all (fun (e : enemy) -> Enemy.start_action e action_name state.frame.time [])
+            (* FIXME this isn't making Duncan jump anymore (needs to use Duncan.set_action) *)
+            (* apply_to_all (fun (e : enemy) -> Enemy.start_action e action_name state.frame.time []) *)
+            ()
           | ENTITY entity_step ->
             let choose_behavior =
               match entity_step with

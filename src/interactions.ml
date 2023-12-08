@@ -135,7 +135,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP
               (TEXT
                  [
-                   "Bear witness to the last and only civilisation, the eternal Kingdom.";
+                   "Bear witness to the last and only civilisation, the eternal Campus.";
                    "";
                    "Hallowdale";
                  ]);
@@ -443,7 +443,6 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
           STEP (WAIT 0.6);
           ENEMY (DUNCAN, SET_VX 200.);
-          (* TODO a lot of these are wrong now, need to adjust for new physics *)
           ENEMY (DUNCAN, SET_ACTION "interaction-jumping");
           STEP (WAIT 1.);
           ENEMY (DUNCAN, SET_POSE "scavenging");
@@ -613,7 +612,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             STEP (SHAKE_SCREEN 1.);
             STEP (SET_FIXED_CAMERA (175, 42));
             STEP (WAIT 1.1);
-            (* CURRENT_GHOST (ENTITY (SET_FACING LEFT)); *)
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
                  ( "Abed",
