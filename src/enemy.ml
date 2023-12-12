@@ -16,13 +16,13 @@ let parse_name context name : enemy_id =
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
-  match List.assoc_opt (PERFORMED action_name) enemy.history with
+  match EnemyActionMap.find_opt (PERFORMED action_name) enemy.history with
   | None -> Zero.time ()
   | Some time -> time
 
 let last_damage (enemy : enemy) : time =
   let damage = ref 0. in
-  let check_history ((action, time) : enemy_action * time) =
+  let check_history (action : enemy_action) time =
     match action with
     | TOOK_DAMAGE damage_kind -> (
       match damage_kind with
@@ -34,7 +34,7 @@ let last_damage (enemy : enemy) : time =
           damage := time.at)
     | _ -> ()
   in
-  List.iter check_history enemy.history;
+  EnemyActionMap.iter check_history enemy.history;
   { at = !damage }
 
 let load_pose (texture_config : texture_config) : string * texture =
@@ -57,13 +57,15 @@ let set_pose (enemy : enemy) (pose_name' : string) : unit =
    for "single-frame"/"temporary" props
 *)
 let get_prop ?(default = None) key props : float =
-  match (List.assoc_opt key props, default) with
+  match (StringMap.find_opt key props, default) with
   | None, None -> failwithf "could not find enemy prop '%s' for enemy" key
   | None, Some d -> d
   | Some v, _ -> v
 
 let get_bool_prop (enemy : enemy) prop : bool = get_prop ~default:(Some 0.) prop enemy.props = 1.
-let set_prop (enemy : enemy) key new_val = enemy.props <- List.replace_assoc key new_val enemy.props
+
+let set_prop (enemy : enemy) key new_val =
+  enemy.props <- StringMap.update key (fun _ -> Some new_val) enemy.props
 
 let get_json_prop (enemy : enemy) key : float =
   match StringMap.find_opt key enemy.json_props with
@@ -116,10 +118,11 @@ let spawn_projectile
 
 (* this is for logging arbitrary actions that don't have to be a renderable pose *)
 let log_action (enemy : enemy) (action_name : string) (current : float) =
-  enemy.history <- List.replace_assoc (PERFORMED action_name) { at = current } enemy.history
+  enemy.history <-
+    EnemyActionMap.update (PERFORMED action_name) (fun _ -> Some { at = current }) enemy.history
 
 let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
-  match List.assoc_opt (TOOK_DAMAGE damage_kind : enemy_action) enemy.history with
+  match EnemyActionMap.find_opt (TOOK_DAMAGE damage_kind : enemy_action) enemy.history with
   | None -> Zero.time ()
   | Some time -> time
 
@@ -161,9 +164,9 @@ let maybe_take_damage
 
   if ghost_action_started > took_damage_at enemy damage_kind then (
     enemy.history <-
-      List.replace_assoc
-        (TOOK_DAMAGE damage_kind : enemy_action)
-        { at = state.frame.time } enemy.history;
+      EnemyActionMap.update (TOOK_DAMAGE damage_kind)
+        (fun _ -> Some { at = state.frame.time })
+        enemy.history;
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size Config.scale.room damage_texture in
@@ -188,9 +191,6 @@ module type Enemy = sig
   type action
   type args
 
-  (* FIXME this only uses state for state.frame.time, so maybe just pass in that float
-     - except for Frog, which updates state.camera.shake for explosions
-  *)
   val get_args : state -> game -> args
   val choose_behavior : enemy -> args -> unit
 end
@@ -276,7 +276,7 @@ module Duncan : Enemy = struct
       | WALK -> "walking"
     in
     log_action enemy action_name current_time;
-    set_action true enemy action current_time props
+    set_action true enemy action current_time (props |> List.to_string_map)
 
   let choose_behavior (enemy : enemy) args =
     match enemy.entity.current_floor with
@@ -370,12 +370,11 @@ module LockerBoy : Enemy = struct
         ]
 
   (* CLEANUP label args *)
-  let continue_action (enemy : enemy) (action : action) current_time current_props current_duration
-      =
+  let continue_action (enemy : enemy) (action : action) current_time current_duration =
     match action with
     | VANISH
     | UNVANISH ->
-      start_action enemy action current_time current_props
+      start_action enemy action current_time StringMap.empty
     | DASH ->
       let max_dx = Config.window.max_width -. 300. in
       let check_right () =
@@ -415,16 +414,16 @@ module LockerBoy : Enemy = struct
   (* CLEANUP duplicated *)
   let start_and_log_action' enemy action current_time props : unit =
     log_action enemy (action |> action_to_string) current_time;
-    start_action enemy action current_time props
+    start_action enemy action current_time (props |> List.to_string_map)
 
   let last_performed_action (enemy : enemy) : (action * float) option =
-    let action_performed ((action, _time) : enemy_action * time) : bool =
+    let action_performed action : bool =
       (* this assumes new actions are pushed to the front of the list *)
       match action with
       | PERFORMED _ -> true
       | _ -> false
     in
-    match List.find_opt action_performed enemy.history with
+    match EnemyActionMap.find_first_opt action_performed enemy.history with
     | Some (PERFORMED action_name, performed) -> Some (action_name |> string_to_action, performed.at)
     | _ -> None
 
@@ -482,7 +481,7 @@ module LockerBoy : Enemy = struct
           (* FIXME  *)
           | _ -> DASH
         in
-        continue_action enemy action args.frame_time [] (args.frame_time -. action_duration));
+        continue_action enemy action args.frame_time (args.frame_time -. action_duration));
     ()
 end
 
@@ -507,8 +506,9 @@ module Frog : Enemy = struct
       ghost_entity = game.player.ghost.entity;
     }
 
-  let set_action (enemy : enemy) (action : action) (room : room) current_time current_props =
+  let set_action (enemy : enemy) (action : action) (room : room) current_time current_props' =
     (* TODO move hardcoded numbers to json config *)
+    let current_props = current_props' |> List.to_string_map in
     let pose_name =
       match action with
       | HOMING ->
@@ -783,8 +783,9 @@ let create_from_rects
       damage = json.damage;
       health = { current = enemy_config.health; max = enemy_config.health };
       textures = textures |> List.to_string_map;
-      history = [];
-      props = [ ("initial_x", entity.dest.pos.x); ("initial_y", entity.dest.pos.y) ];
+      history = EnemyActionMap.empty;
+      props =
+        [ ("initial_x", entity.dest.pos.x); ("initial_y", entity.dest.pos.y) ] |> List.to_string_map;
       floor_collision_this_frame = false;
       spawned_projectiles = [];
       damage_sprites = [];

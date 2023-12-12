@@ -882,7 +882,7 @@ let tick (state : state) =
           | SHADE_CLOAK -> Color.create 0 100 200 255)
       in
 
-      let draw_child ((child_kind, child) : ghost_child_kind * ghost_child) =
+      let draw_child (child_kind : ghost_child_kind) (child : ghost_child) =
         let get_child_pos child_w child_h =
           Entity.get_child_pos player.ghost.entity child.relative_pos child_w child_h
         in
@@ -937,14 +937,14 @@ let tick (state : state) =
         }
       in
       let children_in_front, children_behind =
-        List.partition (fun (_, child) -> child.in_front) player.children
+        GhostChildKindMap.partition (fun _ child -> child.in_front) player.children
       in
       draw_sprite shine_sprite;
-      List.iter draw_child children_behind;
+      GhostChildKindMap.iter draw_child children_behind;
 
       draw_entity ~tint ~render_offset:(ghost_render_offset player.ghost) player.ghost.entity;
       draw_ghost_head ~tint player.ghost;
-      List.iter draw_child children_in_front
+      GhostChildKindMap.iter draw_child children_in_front
     in
 
     let draw_hud () =

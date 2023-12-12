@@ -254,6 +254,23 @@ let make_slash
   in
   { sprite; direction; collision }
 
+exception ShortCircuit
+
+let find_child fn (children : ghost_child GhostChildKindMap.t) : 'a option =
+  let r = ref None in
+  try
+    GhostChildKindMap.iter
+      (fun child_kind child ->
+        match fn (child_kind, child) with
+        | Some res ->
+          r := Some res;
+          raise ShortCircuit
+        | None -> ())
+      children;
+    None
+  with
+  | ShortCircuit -> !r
+
 let get_spell_sprite (player : player) : (sprite * time) option =
   let get_sprite ((child_kind, child) : ghost_child_kind * ghost_child) : (sprite * time) option =
     match child_kind with
@@ -262,7 +279,7 @@ let get_spell_sprite (player : player) : (sprite * time) option =
     | DIVE_COOLDOWN -> Some (child.sprite, player.history.dive_cooldown.started)
     | _ -> None
   in
-  List.find_map get_sprite player.children
+  find_child get_sprite player.children
 
 let get_current_slash (player : player) : slash option =
   let get_slash ((child_kind, child) : ghost_child_kind * ghost_child) =
@@ -270,7 +287,7 @@ let get_current_slash (player : player) : slash option =
     | NAIL slash -> Some slash
     | _ -> None
   in
-  List.find_map get_slash player.children
+  find_child get_slash player.children
 
 let get_dream_nail (player : player) : rect option =
   let get_rect ((child_kind, child) : ghost_child_kind * ghost_child) =
@@ -278,7 +295,7 @@ let get_dream_nail (player : player) : rect option =
     | DREAM_NAIL -> Some child.sprite.dest
     | _ -> None
   in
-  List.find_map get_rect player.children
+  find_child get_rect player.children
 
 let get_dive_sprite (player : player) : sprite option =
   let get_sprite ((child_kind, child) : ghost_child_kind * ghost_child) =
@@ -288,7 +305,7 @@ let get_dive_sprite (player : player) : sprite option =
       Some child.sprite
     | _ -> None
   in
-  List.find_map get_sprite player.children
+  find_child get_sprite player.children
 
 let get_focus_sparkles ghost : sprite option =
   let get_sprite ((child_kind, child) : ghost_child_kind * ghost_child) =
@@ -296,18 +313,14 @@ let get_focus_sparkles ghost : sprite option =
     | FOCUS -> Some child.sprite
     | _ -> None
   in
-  List.find_map get_sprite ghost.children
+  find_child get_sprite ghost.children
 
-(* TODO move into spawn_child - can't do this until make_ghost_child goes away *)
 let add_child (player : player) (kind : ghost_child_kind) (child : ghost_child) =
-  player.children <- List.replace_assoc kind child player.children
+  player.children <- GhostChildKindMap.update kind (fun _ -> Some child) player.children
 
 let remove_child (player : player) (kind : ghost_child_kind) =
-  player.children <- List.remove_assoc kind player.children
+  player.children <- GhostChildKindMap.remove kind player.children
 
-(* dive sprites are using this fn with the placeholder image, but it can eventually be
-   combined with make_ghost_child'
-*)
 let make_ghost_child ?(in_front = false) (player : player) kind relative_pos texture w h =
   let name = Show.ghost_child_kind kind in
   let sprite =
@@ -352,7 +365,7 @@ let make_c_dash_child ?(full = false) (player : player) : unit =
   spawn_child player child_kind alignment ~scale:Config.scale.ghost texture
 
 let animate_and_despawn_children frame_time ghost : unit =
-  let advance ((child_kind, child) : ghost_child_kind * ghost_child) =
+  let advance (child_kind : ghost_child_kind) (child : ghost_child) =
     match child.sprite.texture.animation_src with
     | ONCE _ -> (
       match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
@@ -368,7 +381,7 @@ let animate_and_despawn_children frame_time ghost : unit =
     | LOOPED _ ->
       Sprite.advance_animation frame_time child.sprite
   in
-  List.iter advance ghost.children
+  GhostChildKindMap.iter advance ghost.children
 
 let get_damage (player : player) (damage_kind : damage_kind) =
   (* TODO check ghost.abilities.descending_dark/shade_soul *)
@@ -376,6 +389,7 @@ let get_damage (player : player) (damage_kind : damage_kind) =
   | DREAM_NAIL -> 0
   | NAIL ->
     player.weapons
+    |> StringMap.to_list
     |> List.map snd
     |> List.map (fun (w : Json_t.weapon) -> w.damage)
     |> List.fold_left ( + ) 0
@@ -398,7 +412,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
             (* TODO add dream nail sound *)
             let text =
               if List.length enemy.json.dream_nail.dialogues = 0 then
-                "I have no dreams."
+                failwithf "enemy %s has no dream nail dialogues configured" (Show.enemy_id enemy.id)
               else
                 List.sample enemy.json.dream_nail.dialogues
             in
@@ -419,9 +433,9 @@ let check_dream_nail_collisions (state : state) (game : game) =
               enemy.entity.x_recoil <-
                 Some { speed = recoil_speed; time_left = { seconds = 0.1 }; reset_v = true };
               enemy.history <-
-                List.replace_assoc
-                  (TOOK_DAMAGE DREAM_NAIL : enemy_action)
-                  { at = state.frame.time } enemy.history))
+                EnemyActionMap.update (TOOK_DAMAGE DREAM_NAIL)
+                  (fun _ -> Some { at = state.frame.time })
+                  enemy.history))
     in
     let resolve_trigger (trigger : trigger) =
       match Collision.between_rects dream_nail_dest trigger.dest with
@@ -901,9 +915,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           state.frame.time
       in
       game.player.children <-
-        List.replace_assoc
-          (NAIL slash : ghost_child_kind)
-          { relative_pos; sprite = slash.sprite; in_front = true }
+        GhostChildKindMap.update (NAIL slash)
+          (fun _ -> Some { relative_pos; sprite = slash.sprite; in_front = true })
           game.player.children;
       cooldown_scale := game.player.current_weapon.cooldown_scale;
       game.player.history.nail
@@ -918,7 +931,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | C_DASH_COOLDOWN ->
       (* TODO stop playing c-dash sound *)
       game.player.current.is_c_dashing <- false;
-      game.player.children <- List.remove_assoc C_DASH_WHOOSH game.player.children;
+      game.player.children <- GhostChildKindMap.remove C_DASH_WHOOSH game.player.children;
       game.player.history.c_dash_cooldown
     | C_DASH ->
       (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
@@ -1029,7 +1042,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.current <-
         reset_current_status
           ~taking_hazard_damage:(Some game.player.current.is_taking_hazard_damage) ();
-      game.player.children <- [];
+      game.player.children <- GhostChildKindMap.empty;
       (match game.mode with
       | STEEL_SOLE -> ()
       | CLASSIC
@@ -1216,16 +1229,17 @@ let toggle_ability ghost ability_name = change_ability ~debug:true ghost ability
 let acquire_weapon (state : state) (game : game) weapon_name =
   match StringMap.find_opt weapon_name state.global.weapons with
   | Some weapon_config ->
-    let current_weapon_names = List.map fst game.player.weapons in
-    if not (List.mem weapon_name current_weapon_names) then
-      game.player.weapons <- (weapon_name, weapon_config) :: game.player.weapons
+    let current_weapon_names = game.player.weapons |> StringMap.to_list |> List.map fst in
+    (* if not (List.mem weapon_name current_weapon_names) then *)
+    game.player.weapons <-
+      StringMap.update weapon_name (fun _ -> Some weapon_config) game.player.weapons
   | None -> failwithf "acquire_weapon bad weapon name: %s" weapon_name
 
 let equip_weapon (player : player) weapon_name =
-  match List.assoc_opt weapon_name player.weapons with
+  match StringMap.find_opt weapon_name player.weapons with
   | None ->
-    print "can't equip %s, not in player.weapons: %s" weapon_name
-      (List.map (fun (name, w) -> name) player.weapons |> join)
+    failwithf "can't equip %s, not in player.weapons: %s" weapon_name
+      (player.weapons |> StringMap.to_list |> List.map fst |> join)
   | Some weapon_config ->
     player.current_weapon <-
       (let config = weapon_config.tint in
@@ -1471,7 +1485,7 @@ let tick (game : game) (state : state) =
             game.player.ghost.entity.v <- Zero.vector ();
             if remove_nail then (
               match get_current_slash game.player with
-              | Some slash -> game.player.children <- []
+              | Some slash -> game.player.children <- GhostChildKindMap.empty
               | None -> ())
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
@@ -2663,7 +2677,7 @@ let init
             };
       };
     current = reset_current_status ();
-    children = [];
+    children = GhostChildKindMap.empty;
     history =
       {
         cast_dive = make_action "cast-dive";
@@ -2698,7 +2712,7 @@ let init
       };
     spawned_vengeful_spirits = [];
     abilities = save_file.abilities;
-    weapons;
+    weapons = weapons |> List.to_string_map;
     current_weapon =
       (* TODO should read this from weapons.json *)
       {

@@ -18,6 +18,7 @@ type vector = {
   mutable y : float;
 }
 
+(* this is here so that values with .pos are inferred as rects *)
 type warp_target = {
   room_name : string;
   pos : vector;
@@ -635,10 +636,20 @@ type damage_kind =
   | DESOLATE_DIVE
   | DESOLATE_DIVE_SHOCKWAVE
   | HOWLING_WRAITHS
+[@@deriving ord]
 
 type enemy_action =
   | PERFORMED of string
   | TOOK_DAMAGE of damage_kind
+[@@deriving ord]
+
+module Enemy_action = struct
+  type t = enemy_action
+
+  let compare = compare_enemy_action
+end
+
+module EnemyActionMap = Map.Make (Enemy_action)
 
 type projectile_duration =
   | TIME_LEFT of duration
@@ -670,8 +681,8 @@ type enemy = {
   entity : entity;
   damage : int;
   mutable health : health;
-  mutable history : (enemy_action * time) list;
-  mutable props : (string * float) list;
+  mutable history : time EnemyActionMap.t;
+  mutable props : float StringMap.t;
   (* TODO maybe add bool_props : (string * bool) list; *)
   mutable floor_collision_this_frame : bool;
   mutable spawned_projectiles : projectile list;
@@ -845,9 +856,11 @@ type relative_position =
   | BEHIND
   | ALIGNED of x_alignment * y_alignment
 
+(* ghost will only have one NAIL child at a time, so slashes don't really need to be comparable *)
+let compare_slash a b = 0
+
 (* - used for things that are "attached" to the ghost, ie their position depends on ghost
    - so spawned_vengeful_spirits are not children, but dive and shreik are
-   - only one of these things should be rendered on the screen at a time
    - some things are purely visual (FOCUS)
    - some will have collisions, like NAIL, DIVE maybe, C_DASH_WHOOSH
 *)
@@ -863,6 +876,15 @@ type ghost_child_kind =
   | DIVE
   | DIVE_COOLDOWN
   | FOCUS
+[@@deriving ord]
+
+module Ghost_child_kind = struct
+  type t = ghost_child_kind
+
+  let compare a b = compare_ghost_child_kind a b
+end
+
+module GhostChildKindMap = Map.Make (Ghost_child_kind)
 
 type ghost_child = {
   relative_pos : relative_position;
@@ -960,11 +982,11 @@ type player = {
   history : ghost_action_history;
   mutable ghost : ghost;
   mutable current_weapon : weapon;
-  mutable weapons : (string * Json_t.weapon) list;
+  mutable weapons : Json_t.weapon StringMap.t;
   mutable abilities : Json_t.ghost_abilities;
   mutable health : health;
   mutable soul : soul;
-  mutable children : (ghost_child_kind * ghost_child) list;
+  mutable children : ghost_child GhostChildKindMap.t;
   mutable spawned_vengeful_spirits : projectile list;
 }
 

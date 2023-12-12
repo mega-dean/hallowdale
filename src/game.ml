@@ -92,7 +92,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       room_name = Room.get_filename game.room;
       abilities = game.player.abilities;
       progress = clone_game_progress game.progress;
-      weapons = List.map fst game.player.weapons;
+      weapons = game.player.weapons |> StringMap.to_list |> List.map fst;
       current_weapon = game.player.current_weapon.name;
     }
   in
