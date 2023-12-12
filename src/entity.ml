@@ -168,7 +168,8 @@ type damage_collisions = {
 let get_damage_collisions (room : room) (entity : entity) =
   {
     hazards = get_rect_collisions entity (room.hazards @ room.spikes);
-    platform_spikes = get_rect_collisions entity (List.map snd room.platform_spikes);
+    platform_spikes =
+      get_rect_collisions entity (room.platform_spikes |> IntMap.to_list |> List.map snd);
   }
 
 let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =

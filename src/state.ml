@@ -430,7 +430,7 @@ let update_interaction_text (game : game) (state : state) =
    (eg. frogs when reading lore)
 *)
 let update_enemies (game : game) (state : state) =
-  let update_enemy ((_, enemy) : enemy_id * enemy) =
+  let update_enemy (enemy : enemy) =
     let unremoved_projectiles = ref [] in
     let update_projectile' (projectile : projectile) =
       let keep_spawned = update_projectile projectile state in
@@ -495,7 +495,7 @@ let update_enemies (game : game) (state : state) =
           let all_bosses_dead =
             let living_bosses =
               List.filter
-                (fun (enemy_id, e) -> enemy_id = enemy.id && not (Enemy.is_dead e))
+                (fun (e : enemy) -> e.id = enemy.id && not (Enemy.is_dead e))
                 game.room.enemies
             in
             List.length living_bosses = 0
@@ -534,7 +534,7 @@ let update_npcs (game : game) (state : state) =
 
 let update_spawned_vengeful_spirits (game : game) (state : state) =
   let damage_enemies vs_start_time (f : sprite) =
-    let maybe_damage_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
+    let maybe_damage_enemy (enemy : enemy) =
       if enemy.status.check_damage_collisions then (
         match Collision.with_entity enemy.entity f.dest with
         | None -> ()
@@ -724,7 +724,9 @@ let tick (state : state) =
           add_debug_rects state
             (List.map
                (fun (r : rect) -> (Raylib.Color.red, r))
-               (game.room.spikes @ game.room.hazards @ List.map snd game.room.platform_spikes)));
+               (game.room.spikes
+               @ game.room.hazards
+               @ (game.room.platform_spikes |> IntMap.to_list |> List.map snd))));
 
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors

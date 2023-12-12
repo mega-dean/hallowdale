@@ -691,11 +691,11 @@ let init (params : room_params) : room =
         shadows = !shadow_triggers;
       };
     spikes = !spikes;
-    platform_spikes = !platform_spikes;
+    platform_spikes = !platform_spikes |> List.to_int_map;
     conveyor_belts = !conveyor_belts;
     hazards = !hazards;
     layers = tile_layers;
-    enemies = List.map (fun (e : enemy) -> (e.id, e)) enemies;
+    enemies;
     npcs;
     loose_projectiles = [];
     pickup_indicators =

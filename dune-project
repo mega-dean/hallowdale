@@ -15,6 +15,7 @@
   dune
   raylib
   yojson
+  ppx_deriving
   )
  )
 

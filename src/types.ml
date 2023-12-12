@@ -1234,7 +1234,7 @@ type room = {
   mutable idx_configs : (int * idx_config) list;
   camera_bounds : bounds;
   cache : room_cache;
-  enemies : (enemy_id * enemy) list;
+  enemies : enemy list;
   exits : rect list;
   mutable respawn_pos : vector;
   mutable npcs : npc list;
@@ -1250,7 +1250,7 @@ type room = {
   (* int is the platform.id (which is just an int idx into room.objects, not corresponding to the coll_rect.id field)
      - want to keep this in a separate list (rather than as a variant arg to ROTATABLE) so it doesn't have to be looked up every frame
   *)
-  platform_spikes : (int * rect) list;
+  platform_spikes : rect IntMap.t;
   spikes : rect list;
   conveyor_belts : (rect * float) list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)

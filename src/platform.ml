@@ -2,7 +2,7 @@ open Utils
 open Types
 
 let get_spikes (platform : platform) game =
-  match List.assoc_opt platform.id game.room.platform_spikes with
+  match IntMap.find_opt platform.id game.room.platform_spikes with
   | None -> failwith "rotatable platform needs spikes"
   | Some s -> s
 

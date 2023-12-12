@@ -115,7 +115,7 @@ Most of the controls match the default Hollow Knight controls, but there are a f
 1. install `opam`
 2. use `opam` to install `ocaml` version 5.1: `opam switch create 5.1.0`
 3. use `opam` to install dependencies: `opam install --deps-only .`
-4. use `opam` to install dev dependencies: `opam install ocamlformat merlin ocp-indent down omod landmarks landmarks-ppx`
+4. use `opam` to install dev dependencies: `opam install ocamlformat merlin ocp-indent ocp-index down omod landmarks landmarks-ppx`
 
 #### Scripts
 

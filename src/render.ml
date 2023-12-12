@@ -802,9 +802,9 @@ let tick (state : state) =
 
     let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
 
-    let draw_enemies (enemies : (enemy_id * enemy) list) =
+    let draw_enemies (enemies : enemy list) =
       List.iter
-        (fun ((_, e) : enemy_id * enemy) ->
+        (fun (e : enemy) ->
           if state.debug.enabled then (
             debug_rect_outline ~color:Color.purple e.entity.dest;
             debug_rect e.entity.sprite.dest);

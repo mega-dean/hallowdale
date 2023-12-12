@@ -389,7 +389,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
   match get_dream_nail game.player with
   | None -> ()
   | Some dream_nail_dest ->
-    let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
+    let resolve_enemy (enemy : enemy) =
       if Enemy.is_alive enemy then
         if enemy.json.dream_nail.vulnerable then (
           match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
@@ -448,7 +448,7 @@ let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.player with
   | None -> check_dream_nail_collisions state game
   | Some slash ->
-    let resolve_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
+    let resolve_enemy (enemy : enemy) =
       if enemy.json.can_take_damage && enemy.status.check_damage_collisions then (
         match Collision.with_slash slash enemy.entity.sprite with
         | None -> ()
@@ -490,7 +490,7 @@ let resolve_slash_collisions (state : state) (game : game) =
           tile_group.tile_idxs @ game.room.progress.removed_tile_idxs
     in
 
-    let maybe_pogo_platform_spikes (id, rect) =
+    let maybe_pogo_platform_spikes id rect =
       match Collision.with_slash' slash rect with
       | None -> ()
       | Some coll -> (
@@ -621,7 +621,7 @@ let resolve_slash_collisions (state : state) (game : game) =
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
     List.iter (maybe_pogo "nail-hit-metal") game.room.spikes;
-    List.iter maybe_pogo_platform_spikes game.room.platform_spikes;
+    IntMap.iter maybe_pogo_platform_spikes game.room.platform_spikes;
     List.iter resolve_enemy game.room.enemies
 
 let reset_current_status ?(taking_hazard_damage = None) () =
@@ -692,6 +692,7 @@ let set_pose
       let head =
         match direction with
         | UP -> player.ghost.head_textures.look_up
+        | DOWN -> player.ghost.head_textures.look_down
         | _ -> player.ghost.head_textures.idle
       in
       (head, bodies.nail)
@@ -1713,7 +1714,7 @@ let tick (game : game) (state : state) =
 
         let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
           let enemies : enemy list =
-            List.filter (fun (_, (e : enemy)) -> e.id = enemy_id) game.room.enemies |> List.map snd
+            List.filter (fun (e : enemy) -> e.id = enemy_id) game.room.enemies
           in
           let apply_to_all fn = List.iter fn enemies in
           let apply_to_only step_name fn =
@@ -1723,8 +1724,9 @@ let tick (game : game) (state : state) =
               fn (List.nth enemies 0)
           in
           match enemy_step with
-          | WALK_TO target_tile_x -> ()
-          (* FIXME *)
+          | WALK_TO target_tile_x ->
+            ()
+            (* FIXME *)
             (* apply_to_only "WALK_TO" (fun (e : enemy) ->
              *     let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
              *     let dist = (tile.x *. Config.scale.room) -. e.entity.dest.pos.x in
@@ -2224,7 +2226,7 @@ let tick (game : game) (state : state) =
   let handle_collisions () =
     (* returns the first enemy collision *)
     let get_enemy_collision (player : player) (room : room) : (int * direction) option =
-      let find_colliding_enemy ((_enemy_id, enemy) : enemy_id * enemy) =
+      let find_colliding_enemy (enemy : enemy) =
         if Enemy.is_dead enemy then
           None
         else if Collision.between_entities player.ghost.entity enemy.entity then (

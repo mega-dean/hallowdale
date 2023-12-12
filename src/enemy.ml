@@ -521,7 +521,7 @@ module Frog = struct
         (* this will only catch collisions on the first frame of the
            explosion, so a frog can move into an explosion without dying
         *)
-        let check_frog_collision ((_, target_enemy) : enemy_id * enemy) =
+        let check_frog_collision (target_enemy : enemy) =
           if target_enemy.id = FROG && target_enemy <> enemy then
             if Collision.between_entities projectile.entity target_enemy.entity then (
               let vx =
