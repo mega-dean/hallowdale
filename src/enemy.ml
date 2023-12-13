@@ -40,13 +40,7 @@ let last_damage (enemy : enemy) : time =
 let load_pose (texture_config : texture_config) : string * texture =
   (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
 
-let set_pose (enemy : enemy) (pose_name' : string) : unit =
-  let pose_name =
-    if String.starts_with ~prefix:"interaction-" pose_name' then
-      Str.string_after pose_name' (String.length "interaction-")
-    else
-      pose_name'
-  in
+let set_pose (enemy : enemy) (pose_name : string) : unit =
   match StringMap.find_opt pose_name enemy.textures with
   | None ->
     failwithf "could not find pose '%s' configured in enemies.json for enemy %s" pose_name
@@ -164,7 +158,7 @@ let maybe_take_damage
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size Config.scale.room damage_texture in
-    enemy.damage_sprites <-
+    let new_damage_sprite =
       Sprite.spawn_particle
         (fmt "damage %s" (Show.enemy_name enemy))
         damage_texture
@@ -174,7 +168,8 @@ let maybe_take_damage
           h = texture_h;
         }
         state.frame.time
-      :: enemy.damage_sprites;
+    in
+    enemy.damage_sprites <- new_damage_sprite :: enemy.damage_sprites;
     if is_dead enemy then
       kill_enemy ();
     true)
@@ -185,25 +180,18 @@ module type Enemy_action = sig
   type t
 
   val to_string : t -> string
-  (* val from_string : string -> t *)
+  val from_string : string -> t
 
-  type set_args
-
-  val set : enemy -> t -> set_args -> unit
+  val set : enemy -> ?current_props:float StringMap.t -> t -> current_time:float -> unit
   val log : enemy -> string -> float -> unit
-  val start : enemy -> string -> unit
 end
 
-module Make_action (E : Enemy_action) :
-  Enemy_action with type t = E.t and type set_args = E.set_args = struct
+module Make_action (E : Enemy_action) : Enemy_action with type t = E.t = struct
   include E
 
   let log (enemy : enemy) action_name value =
     enemy.history <-
-      EnemyActionMap.update
-        (PERFORMED (action_name))
-        (fun _ -> Some { at = value })
-        enemy.history
+      EnemyActionMap.update (PERFORMED action_name) (fun _ -> Some { at = value }) enemy.history
 end
 
 module type M = sig
@@ -227,9 +215,6 @@ module Duncan_actions = struct
   type t =
     | JUMP
     | LANDED
-    (* FIXME maybe add SCAVENGE ?
-       - currently don't need it because it is only used in cutscenes, as a string
-    *)
     | WALK
 
   let to_string (action : t) : string =
@@ -238,15 +223,17 @@ module Duncan_actions = struct
     | LANDED -> "landed"
     | WALK -> "walk"
 
+  let from_string (s : string) : t =
+    match s with
+    | "jumping" -> JUMP
+    | "landed" -> LANDED
+    | "walking" -> WALK
+    | _ -> failwithf "Duncan_action.from_string: %s" s
+
   let log _ _ _ = ()
 
-  type set_args = {
-    current_props : float StringMap.t;
-    current_time : float;
-  }
-
-  let set (enemy : enemy) (action : t) (args : set_args) =
-    let get_current_prop ?(default = None) prop_name = get_prop ~default prop_name args.current_props in
+  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
+    let get_current_prop ?(default = None) prop_name = get_prop ~default prop_name current_props in
     let pose_name =
       match action with
       | WALK ->
@@ -268,9 +255,9 @@ module Duncan_actions = struct
         enemy.spawned_projectiles <-
           [
             spawn_projectile enemy ~x_alignment:LEFT ~direction:RIGHT projectile_duration
-              args.current_time;
+              current_time;
             spawn_projectile enemy ~x_alignment:RIGHT ~direction:LEFT projectile_duration
-              args.current_time;
+              current_time;
           ]
           @ enemy.spawned_projectiles;
         "idle"
@@ -281,12 +268,6 @@ module Duncan_actions = struct
         "jumping"
     in
     set_pose enemy pose_name
-
-  let start enemy action_name =
-    match action_name with
-    | "walking" -> set enemy WALK { current_props = StringMap.empty; current_time = 0.}
-    | "jumping" -> set enemy JUMP { current_props = StringMap.empty; current_time = 0.}
-    | _ -> failwithf "unknown Duncan action %s" action_name
 end
 
 module Duncan : M = struct
@@ -307,7 +288,7 @@ module Duncan : M = struct
 
   let start_and_log_action enemy (action : Action.t) current_time props : unit =
     Action.log enemy (action |> Action.to_string) current_time;
-    Action.set enemy action { current_time; current_props = props |> List.to_string_map }
+    Action.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
 
   let choose_behavior (enemy : enemy) args =
     match enemy.entity.current_floor with

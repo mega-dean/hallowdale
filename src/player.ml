@@ -1739,7 +1739,6 @@ let tick (game : game) (state : state) =
           in
           match enemy_step with
           | WALK_TO target_tile_x ->
-            (* FIXME *)
             apply_to_only "WALK_TO" (fun (enemy : enemy) ->
                 let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
                 let dist = (tile.x *. Config.scale.room) -. enemy.entity.dest.pos.x in
@@ -1750,24 +1749,21 @@ let tick (game : game) (state : state) =
                   Enemy.set_pose enemy "idle")
                 else if dist > 0. then (
                   enemy.entity.sprite.facing_right <- true;
-                  M.Action.start enemy "walking")
+                  M.Action.set enemy (M.Action.from_string "walking") ~current_time:state.frame.time)
                 else (
                   enemy.entity.sprite.facing_right <- false;
-                  M.Action.start enemy "walking"))
+                  M.Action.set enemy (M.Action.from_string "walking") ~current_time:state.frame.time))
           | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
           | SET_POSE pose_name ->
             apply_to_all (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
-                (* FIXME this log is probably only here for LOCKER_BOYS vanish *)
                 M.Action.log enemy pose_name state.frame.time;
                 Enemy.set_pose enemy pose_name)
-          (* FIXME probably can consolidate these *)
           | START_ACTION action_name ->
             apply_to_all (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
                 M.Action.log enemy action_name state.frame.time;
-                M.Action.start enemy action_name
-              )
+                M.Action.set enemy (M.Action.from_string action_name) ~current_time:state.frame.time)
           | ENTITY entity_step ->
             let choose_behavior =
               match entity_step with
