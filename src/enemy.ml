@@ -134,7 +134,6 @@ let maybe_take_damage
     (damage : int)
     (collision : collision) : bool =
   let kill_enemy () =
-    (* TODO start_and_log_action "die"; *)
     enemy.entity.v.x <- 0.;
     enemy.spawned_projectiles <- [];
     enemy.status.choose_behavior <- false;
@@ -187,7 +186,40 @@ let maybe_take_damage
   else
     false
 
+module type Enemy_action = sig
+  type t
+
+  val to_string : t -> string
+  (* val from_string : string -> t *)
+
+  type set_args
+
+  val log : enemy -> t -> float -> unit
+  val set : enemy -> t -> set_args -> unit
+end
+
+module Make_action (E : Enemy_action) :
+  Enemy_action with type t = E.t and type set_args = E.set_args = struct
+  include E
+
+  let log (enemy : enemy) action value =
+    enemy.history <-
+      EnemyActionMap.update
+        (PERFORMED (action |> E.to_string))
+        (fun _ -> Some { at = value })
+        enemy.history
+end
+
 module type Enemy = sig
+  module Action : Enemy_action
+
+  type args
+
+  val get_args : state -> game -> args
+  val choose_behavior : enemy -> args -> unit
+end
+
+module type Enemy' = sig
   type action
   type args
 
@@ -195,40 +227,30 @@ module type Enemy = sig
   val choose_behavior : enemy -> args -> unit
 end
 
-module Duncan : Enemy = struct
-  type action =
+module Duncan_actions = struct
+  type t =
     | JUMP
     | LANDED
-    | (* this is only used during cutscenes *)
-      (* FIXME maybe add SCAVENGE ?
-         - currently don't need it because it is only used in cutscenes, as a string
-      *)
-      WALK
+    (* FIXME maybe add SCAVENGE ?
+       - currently don't need it because it is only used in cutscenes, as a string
+    *)
+    | WALK
 
-  type args = {
-    frame_time : float;
-    camera_bounds : bounds;
-    ghost_pos : vector;
+  let to_string (action : t) : string =
+    match action with
+    | JUMP -> "jumping"
+    | LANDED -> "landed"
+    | WALK -> "walk"
+
+  let log _ _ _ = ()
+
+  type set_args = {
+    current_props : float StringMap.t;
+    current_time : float;
   }
 
-  let get_args state game : args =
-    {
-      frame_time = state.frame.time;
-      camera_bounds = game.room.camera_bounds;
-      ghost_pos = game.player.ghost.entity.dest.pos;
-    }
-
-  (* FIXME see if this would work (instead of string keys) *)
-  (* type history = (action * float) list *)
-
-  let set_action
-      ?(interaction = false)
-      (starting_action : bool)
-      (enemy : enemy)
-      (action : action)
-      current_time
-      current_props =
-    let get_current_prop prop_name = get_prop prop_name current_props in
+  let set (enemy : enemy) (action : t) (args : set_args) =
+    let get_current_prop prop_name = get_prop prop_name args.current_props in
     let pose_name =
       match action with
       | WALK ->
@@ -250,59 +272,65 @@ module Duncan : Enemy = struct
         enemy.spawned_projectiles <-
           [
             spawn_projectile enemy ~x_alignment:LEFT ~direction:RIGHT projectile_duration
-              current_time;
+              args.current_time;
             spawn_projectile enemy ~x_alignment:RIGHT ~direction:LEFT projectile_duration
-              current_time;
+              args.current_time;
           ]
           @ enemy.spawned_projectiles;
         "idle"
       | JUMP ->
-        if interaction then
-          if starting_action then (
-            enemy.entity.v.y <- get_json_prop enemy "small_jump_vy";
-            enemy.entity.current_floor <- None);
+        (* if args.interaction then
+         *   enemy.entity.v.y <- get_json_prop enemy "small_jump_vy";
+         *   enemy.entity.current_floor <- None); *)
         enemy.entity.v.x <- get_current_prop "random_jump_vx";
         enemy.entity.v.y <- get_json_prop enemy "jump_vy";
         enemy.entity.current_floor <- None;
         "jumping"
     in
     set_pose enemy pose_name
+end
 
-  let start_and_log_action' enemy action current_time props : unit =
-    let action_name =
-      match action with
-      | JUMP -> "jumping"
-      | LANDED -> "landed"
-      | WALK -> "walking"
-    in
-    log_action enemy action_name current_time;
-    set_action true enemy action current_time (props |> List.to_string_map)
+module Duncan : Enemy = struct
+  module Action = Make_action (Duncan_actions)
+
+  type args = {
+    frame_time : float;
+    camera_bounds : bounds;
+    ghost_pos : vector;
+  }
+
+  let get_args state game : args =
+    {
+      frame_time = state.frame.time;
+      camera_bounds = game.room.camera_bounds;
+      ghost_pos = game.player.ghost.entity.dest.pos;
+    }
+
+  let start_and_log_action enemy (action : Action.t) current_time props : unit =
+    Action.log enemy action current_time;
+    Action.set enemy action { current_time; current_props = props |> List.to_string_map }
 
   let choose_behavior (enemy : enemy) args =
     match enemy.entity.current_floor with
     | None -> ()
     | Some _floor ->
-      if false then
-        start_and_log_action' enemy WALK args.frame_time
+      let jumped = action_started_at enemy "jumping" in
+      let landed = action_started_at enemy "landed" in
+      if jumped.at > landed.at then
+        start_and_log_action enemy LANDED args.frame_time
           [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
-      else (
-        let jumped = action_started_at enemy "jumping" in
-        let landed = action_started_at enemy "landed" in
-        if jumped.at > landed.at then
-          start_and_log_action' enemy LANDED args.frame_time
-            [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
-        else if args.frame_time -. landed.at > List.assoc "jump_wait_time" enemy.json.props then (
-          let room_center_x = (args.camera_bounds.min.x +. args.camera_bounds.max.x) /. 2. in
-          let jump_vx =
-            if room_center_x > enemy.entity.dest.pos.x then
-              Random.float 500.
-            else
-              -1. *. Random.float 500.
-          in
-          start_and_log_action' enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ]))
+      else if args.frame_time -. landed.at > List.assoc "jump_wait_time" enemy.json.props then (
+        let room_center_x = (args.camera_bounds.min.x +. args.camera_bounds.max.x) /. 2. in
+        let jump_vx =
+          if room_center_x > enemy.entity.dest.pos.x then
+            Random.float 500.
+          else
+            -1. *. Random.float 500.
+        in
+        start_and_log_action enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
 end
 
-module LockerBoy : Enemy = struct
+module LockerBoy : Enemy' = struct
   type action =
     | VANISH
     | UNVANISH
@@ -369,7 +397,6 @@ module LockerBoy : Enemy = struct
             projectile_duration current_time;
         ]
 
-  (* CLEANUP label args *)
   let continue_action (enemy : enemy) (action : action) current_time current_duration =
     match action with
     | VANISH
@@ -447,22 +474,21 @@ module LockerBoy : Enemy = struct
     let should_vanish () = get_bool_prop enemy "should_vanish" in
     let unvanish () =
       enemy.entity.v <- Zero.vector ();
-      match Random.int 3 with
-      | 0 ->
+      match List.sample [ `WALL_PERCH; `DIVE; `DASH ] with
+      | `WALL_PERCH ->
         start_and_log_action' enemy WALL_PERCH args.frame_time
           [
             ("random_direction_right", if Random.bool () then 1. else 0.);
             ("random_wall_perch_y", get_json_prop enemy "dive_y" +. 200. +. Random.float 500.);
           ]
-      | 1 ->
+      | `DIVE ->
         let left = get_json_prop enemy "wall_perch_left_x" in
         let right = get_json_prop enemy "wall_perch_right_x" in
         start_and_log_action' enemy DIVE args.frame_time
           [ ("random_dive_x", left +. Random.float (right -. left)) ]
-      | 2 ->
+      | `DASH ->
         start_and_log_action' enemy DASH args.frame_time
           [ ("random_direction_right", if Random.bool () then 1. else 0.) ]
-      | _ -> failwith "unreachable LOCKER_BOY behavior"
     in
     if still_vanishing then
       ()
@@ -475,17 +501,12 @@ module LockerBoy : Enemy = struct
     else ((* TODO probably will need this for a lot of enemies *)
       match last_performed_action enemy with
       | None -> ()
-      | Some (action_name, action_duration) ->
-        let action =
-          match action_name with
-          (* FIXME  *)
-          | _ -> DASH
-        in
+      | Some (action, action_duration) ->
         continue_action enemy action args.frame_time (args.frame_time -. action_duration));
     ()
 end
 
-module Frog : Enemy = struct
+module Frog : Enemy' = struct
   type action =
     | HOMING
     | ASCEND
@@ -657,7 +678,7 @@ module Frog : Enemy = struct
         set_pose enemy "idle")
 end
 
-module Electricity : Enemy = struct
+module Electricity : Enemy' = struct
   type action = SHOCK
   type args = { frame_time : float }
 
@@ -694,7 +715,7 @@ module Electricity : Enemy = struct
       set_action enemy SHOCK args.frame_time
 end
 
-module Fish : Enemy = struct
+module Fish : Enemy' = struct
   type action (* unused *)
   type args = { frame_time : float }
 
@@ -731,15 +752,18 @@ end
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let ghost_pos = game.player.ghost.entity.dest.pos in
+  (* CLEANUP probably will need this to be a top-level fn *)
   let (module M : Enemy) =
     match enemy.id with
     | DUNCAN -> (module Duncan)
-    | LOCKER_BOY -> (module LockerBoy)
-    | FISH -> (module Fish)
-    | FROG -> (module Frog)
-    | ELECTRICITY -> (module Electricity)
+    (* FIXME  *)
+    (* | LOCKER_BOY -> (module LockerBoy)
+     * | FISH -> (module Fish)
+     * | FROG -> (module Frog)
+     * | ELECTRICITY -> (module Electricity) *)
     | PENGUIN
-    | WIRED_ELECTRICITY ->
+    | WIRED_ELECTRICITY
+    | _ ->
       failwithf "enemy %s not implemented yet" (Show.enemy_id enemy.id)
   in
   M.choose_behavior enemy (M.get_args state game)
