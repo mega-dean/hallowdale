@@ -1739,30 +1739,35 @@ let tick (game : game) (state : state) =
           in
           match enemy_step with
           | WALK_TO target_tile_x ->
-            ()
             (* FIXME *)
-            (* apply_to_only "WALK_TO" (fun (e : enemy) ->
-             *     let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
-             *     let dist = (tile.x *. Config.scale.room) -. e.entity.dest.pos.x in
-             *     still_walking := abs_float dist > 10.;
-             *     if not !still_walking then (
-             *       e.entity.v.x <- 0.;
-             *       Enemy.set_pose e "idle")
-             *     else if dist > 0. then (
-             *       e.entity.sprite.facing_right <- true;
-             *       Enemy.start_action e "walking" state.frame.time [])
-             *     else (
-             *       e.entity.sprite.facing_right <- false;
-             *       Enemy.start_action e "walking" state.frame.time [])) *)
+            apply_to_only "WALK_TO" (fun (enemy : enemy) ->
+                let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
+                let dist = (tile.x *. Config.scale.room) -. enemy.entity.dest.pos.x in
+                let (module M : Enemy.M) = Enemy.get_module enemy.id in
+                still_walking := abs_float dist > 10.;
+                if not !still_walking then (
+                  enemy.entity.v.x <- 0.;
+                  Enemy.set_pose enemy "idle")
+                else if dist > 0. then (
+                  enemy.entity.sprite.facing_right <- true;
+                  M.Action.start enemy "walking")
+                else (
+                  enemy.entity.sprite.facing_right <- false;
+                  M.Action.start enemy "walking"))
           | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
           | SET_POSE pose_name ->
-            apply_to_all (fun (e : enemy) ->
-                Enemy.log_action e pose_name state.frame.time;
-                Enemy.set_pose e pose_name)
-          | SET_ACTION action_name ->
-            (* FIXME this isn't making Duncan jump anymore (needs to use Duncan.set_action) *)
-            (* apply_to_all (fun (e : enemy) -> Enemy.start_action e action_name state.frame.time []) *)
-            ()
+            apply_to_all (fun (enemy : enemy) ->
+                let (module M : Enemy.M) = Enemy.get_module enemy.id in
+                (* FIXME this log is probably only here for LOCKER_BOYS vanish *)
+                M.Action.log enemy pose_name state.frame.time;
+                Enemy.set_pose enemy pose_name)
+          (* FIXME probably can consolidate these *)
+          | START_ACTION action_name ->
+            apply_to_all (fun (enemy : enemy) ->
+                let (module M : Enemy.M) = Enemy.get_module enemy.id in
+                M.Action.log enemy action_name state.frame.time;
+                M.Action.start enemy action_name
+              )
           | ENTITY entity_step ->
             let choose_behavior =
               match entity_step with

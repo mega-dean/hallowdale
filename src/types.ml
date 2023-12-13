@@ -550,7 +550,7 @@ module Interaction = struct
     | WALK_TO of int
     | SET_VX of float
     | SET_POSE of string
-    | SET_ACTION of string
+    | START_ACTION of string
     | ENTITY of entity_step
 
   type npc_step =

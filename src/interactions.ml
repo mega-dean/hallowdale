@@ -287,7 +287,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           STEP
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
           STEP UNHIDE_BOSS_DOORS;
-          ENEMY (DUNCAN, SET_ACTION "interaction-jumping");
+          ENEMY (DUNCAN, START_ACTION "jumping");
           ENEMY (DUNCAN, ENTITY UNFREEZE);
           STEP (WAIT 0.7);
         ]
@@ -436,15 +436,15 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         [
           CURRENT_GHOST (PARTY (WALK_TO 52));
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          ENEMY (DUNCAN, WALK_TO 31);
+          ENEMY (DUNCAN, WALK_TO 30);
           ENEMY (DUNCAN, SET_POSE "idle");
           ENEMY (DUNCAN, ENTITY (SET_FACING RIGHT));
-          STEP (WAIT 0.3);
-          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
           STEP (WAIT 0.6);
-          ENEMY (DUNCAN, SET_VX 200.);
-          ENEMY (DUNCAN, SET_ACTION "interaction-jumping");
-          STEP (WAIT 1.);
+          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
+          STEP (WAIT 0.3);
+          ENEMY (DUNCAN, SET_VX 150.);
+          ENEMY (DUNCAN, START_ACTION "jumping");
+          STEP (WAIT 1.2);
           ENEMY (DUNCAN, SET_POSE "scavenging");
           ENEMY (DUNCAN, ENTITY FREEZE);
           STEP (HIDE_LAYER "bg-iso4");

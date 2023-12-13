@@ -116,11 +116,6 @@ let spawn_projectile
   in
   { entity; despawn; spawned = { at = spawn_time }; pogoable; damage }
 
-(* this is for logging arbitrary actions that don't have to be a renderable pose *)
-let log_action (enemy : enemy) (action_name : string) (current : float) =
-  enemy.history <-
-    EnemyActionMap.update (PERFORMED action_name) (fun _ -> Some { at = current }) enemy.history
-
 let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
   match EnemyActionMap.find_opt (TOOK_DAMAGE damage_kind : enemy_action) enemy.history with
   | None -> Zero.time ()
@@ -194,23 +189,24 @@ module type Enemy_action = sig
 
   type set_args
 
-  val log : enemy -> t -> float -> unit
   val set : enemy -> t -> set_args -> unit
+  val log : enemy -> string -> float -> unit
+  val start : enemy -> string -> unit
 end
 
 module Make_action (E : Enemy_action) :
   Enemy_action with type t = E.t and type set_args = E.set_args = struct
   include E
 
-  let log (enemy : enemy) action value =
+  let log (enemy : enemy) action_name value =
     enemy.history <-
       EnemyActionMap.update
-        (PERFORMED (action |> E.to_string))
+        (PERFORMED (action_name))
         (fun _ -> Some { at = value })
         enemy.history
 end
 
-module type Enemy = sig
+module type M = sig
   module Action : Enemy_action
 
   type args
@@ -250,7 +246,7 @@ module Duncan_actions = struct
   }
 
   let set (enemy : enemy) (action : t) (args : set_args) =
-    let get_current_prop prop_name = get_prop prop_name args.current_props in
+    let get_current_prop ?(default = None) prop_name = get_prop ~default prop_name args.current_props in
     let pose_name =
       match action with
       | WALK ->
@@ -279,18 +275,21 @@ module Duncan_actions = struct
           @ enemy.spawned_projectiles;
         "idle"
       | JUMP ->
-        (* if args.interaction then
-         *   enemy.entity.v.y <- get_json_prop enemy "small_jump_vy";
-         *   enemy.entity.current_floor <- None); *)
-        enemy.entity.v.x <- get_current_prop "random_jump_vx";
+        enemy.entity.v.x <- get_current_prop ~default:(Some enemy.entity.v.x) "random_jump_vx";
         enemy.entity.v.y <- get_json_prop enemy "jump_vy";
         enemy.entity.current_floor <- None;
         "jumping"
     in
     set_pose enemy pose_name
+
+  let start enemy action_name =
+    match action_name with
+    | "walking" -> set enemy WALK { current_props = StringMap.empty; current_time = 0.}
+    | "jumping" -> set enemy JUMP { current_props = StringMap.empty; current_time = 0.}
+    | _ -> failwithf "unknown Duncan action %s" action_name
 end
 
-module Duncan : Enemy = struct
+module Duncan : M = struct
   module Action = Make_action (Duncan_actions)
 
   type args = {
@@ -307,7 +306,7 @@ module Duncan : Enemy = struct
     }
 
   let start_and_log_action enemy (action : Action.t) current_time props : unit =
-    Action.log enemy action current_time;
+    Action.log enemy (action |> Action.to_string) current_time;
     Action.set enemy action { current_time; current_props = props |> List.to_string_map }
 
   let choose_behavior (enemy : enemy) args =
@@ -750,22 +749,22 @@ module Fish : Enemy' = struct
       log_action enemy "change_direction" args.frame_time)
 end
 
+let get_module (id : enemy_id) : (module M) =
+  match id with
+  | DUNCAN -> (module Duncan)
+  (* FIXME  *)
+  (* | LOCKER_BOY -> (module LockerBoy)
+   * | FISH -> (module Fish)
+   * | FROG -> (module Frog)
+   * | ELECTRICITY -> (module Electricity) *)
+  | PENGUIN
+  | WIRED_ELECTRICITY
+  | _ ->
+    failwithf "enemy %s not implemented yet" (Show.enemy_id id)
+
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let ghost_pos = game.player.ghost.entity.dest.pos in
-  (* CLEANUP probably will need this to be a top-level fn *)
-  let (module M : Enemy) =
-    match enemy.id with
-    | DUNCAN -> (module Duncan)
-    (* FIXME  *)
-    (* | LOCKER_BOY -> (module LockerBoy)
-     * | FISH -> (module Fish)
-     * | FROG -> (module Frog)
-     * | ELECTRICITY -> (module Electricity) *)
-    | PENGUIN
-    | WIRED_ELECTRICITY
-    | _ ->
-      failwithf "enemy %s not implemented yet" (Show.enemy_id enemy.id)
-  in
+  let (module M : M) = get_module enemy.id in
   M.choose_behavior enemy (M.get_args state game)
 
 (* object rects in Tiled define the position of the enemy, and enemies.json defines w/h *)
