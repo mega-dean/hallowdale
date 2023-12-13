@@ -691,7 +691,7 @@ let set_pose
     | VENGEFUL_SPIRIT ->
       player.ghost.entity.v.y <- 0.;
       (player.ghost.head_textures.walk, bodies.cast)
-    | DESOLATE_DIVE -> (player.ghost.head_textures.look_up, bodies.dive)
+    | DESOLATE_DIVE -> (player.ghost.head_textures.look_down, bodies.dive)
     | HOWLING_WRAITHS ->
       player.ghost.entity.v.x <- 0.;
       player.ghost.entity.v.y <- 0.;
@@ -738,7 +738,7 @@ let set_pose
     | CAST DESOLATE_DIVE ->
       update_vx 0.;
       player.ghost.entity.v.y <- Config.ghost.dive_vy;
-      (player.ghost.head_textures.look_up, bodies.dive)
+      (player.ghost.head_textures.look_down, bodies.dive)
     | CAST spell_kind -> handle_cast spell_kind
     | DIVE_COOLDOWN ->
       update_vx 0.;

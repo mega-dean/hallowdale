@@ -63,7 +63,6 @@ let init () : state =
             "nail"
           | _ -> name
         in
-        tmp "loading body texture %s" key;
         match List.assoc_opt key ghosts_file.body_textures with
         | Some c -> c
         | None ->

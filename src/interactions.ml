@@ -288,6 +288,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
           STEP UNHIDE_BOSS_DOORS;
           ENEMY (DUNCAN, START_ACTION "jumping");
+          ENEMY (DUNCAN, SET_VX (-350.));
           ENEMY (DUNCAN, ENTITY UNFREEZE);
           STEP (WAIT 0.7);
         ]

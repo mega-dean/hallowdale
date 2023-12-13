@@ -44,7 +44,7 @@
         }],
 
         [ "LOCKER_BOY", {
-            "health": 5,
+            "health": 120,
             "w": 22,
             "h": 40,
             "dream_nail": {},
@@ -53,7 +53,7 @@
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
                 ["projectile_vx", 600.0],
-                ["dash_vx", 600.0],
+                ["dash_vx", 1600.0],
                 ["dive_vy", 1250.0],
                 ["dive_y", 777.0]
             ],

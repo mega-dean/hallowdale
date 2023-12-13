@@ -682,6 +682,7 @@ type enemy = {
   damage : int;
   mutable health : health;
   mutable history : time EnemyActionMap.t;
+  mutable last_performed : (string * time) option;
   mutable props : float StringMap.t;
   (* TODO maybe add bool_props : (string * bool) list; *)
   mutable floor_collision_this_frame : bool;

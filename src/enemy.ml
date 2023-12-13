@@ -181,7 +181,6 @@ module type Enemy_action = sig
 
   val to_string : t -> string
   val from_string : string -> t
-
   val set : enemy -> ?current_props:float StringMap.t -> t -> current_time:float -> unit
   val log : enemy -> string -> float -> unit
 end
@@ -310,78 +309,108 @@ module Duncan : M = struct
         start_and_log_action enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
 end
 
-module LockerBoy : Enemy' = struct
-  type action =
+module Locker_boy_actions = struct
+  type t =
     | VANISH
-    | UNVANISH
     | WALL_PERCH
     | DASH
     | DIVE
+
+  let to_string (action : t) : string =
+    match action with
+    | VANISH -> "vanish"
+    | WALL_PERCH -> "wall-perch"
+    | DASH -> "dash"
+    | DIVE -> "dive"
+
+  let from_string (s : string) : t =
+    match s with
+    | "vanish" -> VANISH
+    | "wall-perch" -> WALL_PERCH
+    | "dash" -> DASH
+    | "dive" -> DIVE
+    | _ -> failwithf "Locker_boy_action.from_string: %s" s
+
+  let log _ _ _ = ()
+
+  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
+    let get_current_prop prop_name = get_prop prop_name current_props in
+    let pose_name : string =
+      match action with
+      | VANISH ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "vanish"
+      | DASH ->
+        let x =
+          if get_current_prop "random_direction_right" = 1. then (
+            enemy.entity.sprite.facing_right <- true;
+            enemy.entity.v.x <- get_json_prop enemy "dash_vx";
+            get_json_prop enemy "wall_perch_left_x" +. 120.)
+          else (
+            enemy.entity.sprite.facing_right <- false;
+            enemy.entity.v.x <- -1. *. get_json_prop enemy "dash_vx";
+            get_json_prop enemy "wall_perch_right_x" -. 120.)
+        in
+        Entity.unhide enemy.entity;
+        Entity.unfreeze enemy.entity;
+        (* enemy.entity.current_floor <- None; *)
+        enemy.entity.dest.pos.x <- x;
+        enemy.entity.dest.pos.y <- 1340.;
+        "dash"
+      | DIVE ->
+        let x = get_current_prop "random_dive_x" in
+        Entity.unhide enemy.entity;
+        Entity.unfreeze enemy.entity;
+        enemy.entity.v.y <- get_json_prop enemy "dive_vy";
+        enemy.entity.dest.pos.x <- x;
+        enemy.entity.dest.pos.y <- get_json_prop enemy "dive_y";
+        "dive"
+      | WALL_PERCH ->
+        let (x, direction, x_alignment) : float * direction * x_alignment =
+          if get_current_prop "random_direction_right" = 1. then (
+            enemy.entity.sprite.facing_right <- true;
+            (get_json_prop enemy "wall_perch_left_x", RIGHT, RIGHT))
+          else (
+            enemy.entity.sprite.facing_right <- false;
+            (get_json_prop enemy "wall_perch_right_x", LEFT, LEFT))
+        in
+        let y = get_current_prop "random_wall_perch_y" in
+        Entity.unhide enemy.entity;
+        Entity.unfreeze enemy.entity;
+        enemy.entity.dest.pos.x <- x;
+        enemy.entity.dest.pos.y <- y;
+        let projectile_duration =
+          X_BOUNDS
+            ( get_json_prop enemy "wall_perch_left_x" -. 200.,
+              get_json_prop enemy "wall_perch_right_x" +. 200. )
+        in
+        enemy.spawned_projectiles <-
+          [
+            spawn_projectile enemy ~scale:0.5 ~pogoable:true ~x_alignment ~direction
+              projectile_duration current_time;
+          ];
+        "wall-perch"
+    in
+    set_pose enemy pose_name
+end
+
+module Locker_boy : M = struct
+  module Action = Make_action (Locker_boy_actions)
 
   type args = { frame_time : float }
 
   let get_args state game : args = { frame_time = state.frame.time }
 
-  let start_action (enemy : enemy) (action : action) current_time current_props =
-    let get_current_prop prop_name = get_prop prop_name current_props in
-    match action with
-    | UNVANISH -> failwith "FIXME"
-    | VANISH ->
-      enemy.entity.v.x <- 0.;
-      enemy.entity.v.y <- 0.
-    | DASH ->
-      let x =
-        if get_current_prop "random_direction_right" = 1. then (
-          enemy.entity.sprite.facing_right <- true;
-          enemy.entity.v.x <- get_json_prop enemy "dash_vx";
-          get_json_prop enemy "wall_perch_left_x" +. 120.)
-        else (
-          enemy.entity.sprite.facing_right <- false;
-          enemy.entity.v.x <- -1. *. get_json_prop enemy "dash_vx";
-          get_json_prop enemy "wall_perch_right_x" -. 120.)
-      in
-      Entity.unhide enemy.entity;
-      Entity.unfreeze enemy.entity;
-      (* enemy.entity.current_floor <- None; *)
-      enemy.entity.dest.pos.x <- x;
-      enemy.entity.dest.pos.y <- 1340.
-    | DIVE ->
-      let x = get_current_prop "random_dive_x" in
-      Entity.unhide enemy.entity;
-      Entity.unfreeze enemy.entity;
-      enemy.entity.v.y <- get_json_prop enemy "dive_vy";
-      enemy.entity.dest.pos.x <- x;
-      enemy.entity.dest.pos.y <- get_json_prop enemy "dive_y"
-    | WALL_PERCH ->
-      let (x, direction, x_alignment) : float * direction * x_alignment =
-        if get_current_prop "random_direction_right" = 1. then (
-          enemy.entity.sprite.facing_right <- true;
-          (get_json_prop enemy "wall_perch_left_x", RIGHT, RIGHT))
-        else (
-          enemy.entity.sprite.facing_right <- false;
-          (get_json_prop enemy "wall_perch_right_x", LEFT, LEFT))
-      in
-      let y = get_current_prop "random_wall_perch_y" in
-      Entity.unhide enemy.entity;
-      Entity.unfreeze enemy.entity;
-      enemy.entity.dest.pos.x <- x;
-      enemy.entity.dest.pos.y <- y;
-      let projectile_duration =
-        X_BOUNDS
-          ( get_json_prop enemy "wall_perch_left_x" -. 200.,
-            get_json_prop enemy "wall_perch_right_x" +. 200. )
-      in
-      enemy.spawned_projectiles <-
-        [
-          spawn_projectile enemy ~scale:0.5 ~pogoable:true ~x_alignment ~direction
-            projectile_duration current_time;
-        ]
+  let start_and_log_action enemy (action : Action.t) current_time props : unit =
+    let action_name = action |> Action.to_string in
+    enemy.last_performed <- Some (action_name, { at = current_time });
+    Action.log enemy action_name current_time;
+    Action.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
 
-  let continue_action (enemy : enemy) (action : action) current_time current_duration =
+  let continue_action (enemy : enemy) (action : Action.t) current_time current_duration =
     match action with
-    | VANISH
-    | UNVANISH ->
-      start_action enemy action current_time StringMap.empty
+    | VANISH -> Action.set enemy action ~current_time
     | DASH ->
       let max_dx = Config.window.max_width -. 300. in
       let check_right () =
@@ -394,49 +423,14 @@ module LockerBoy : Enemy' = struct
       in
       if enemy.entity.sprite.facing_right then check_right () else check_left ()
     | WALL_PERCH ->
+      enemy.entity.v.y <- 0.;
       if current_duration > 2. then
         set_prop enemy "should_vanish" 1.
     | DIVE ->
-      (* CLEANUP this should check for floor collision instead of pos.y *)
-      if enemy.entity.dest.pos.y > 1300. then
+      (* TODO this vanishes immediately, probably should be a delay *)
+      if Option.is_some enemy.entity.current_floor then
         set_prop enemy "should_vanish" 1.
 
-  let action_to_string action =
-    match action with
-    | VANISH -> "vanish"
-    | UNVANISH -> "unvanish"
-    | WALL_PERCH -> "wall-perch"
-    | DASH -> "dash"
-    | DIVE -> "dive"
-
-  let string_to_action action_name =
-    match action_name with
-    | "vanish" -> VANISH
-    | "unvanish" -> UNVANISH
-    | "wall-perch" -> WALL_PERCH
-    | "dash" -> DASH
-    | "dive" -> DIVE
-    | _ -> failwithf "unknown action: %s" action_name
-
-  (* CLEANUP duplicated *)
-  let start_and_log_action' enemy action current_time props : unit =
-    log_action enemy (action |> action_to_string) current_time;
-    start_action enemy action current_time (props |> List.to_string_map)
-
-  let last_performed_action (enemy : enemy) : (action * float) option =
-    let action_performed action : bool =
-      (* this assumes new actions are pushed to the front of the list *)
-      match action with
-      | PERFORMED _ -> true
-      | _ -> false
-    in
-    match EnemyActionMap.find_first_opt action_performed enemy.history with
-    | Some (PERFORMED action_name, performed) -> Some (action_name |> string_to_action, performed.at)
-    | _ -> None
-
-  (* FIXME update locker boy configs for new room location
-     - instead of just using configs, pass room in with args and calculate from that
-  *)
   let choose_behavior (enemy : enemy) args =
     (* CLEANUP duplicated *)
     let still_doing (action_name : string) (duration : float) : bool =
@@ -450,13 +444,17 @@ module LockerBoy : Enemy' = struct
     let unvanished = action_started_at enemy "unvanish" in
     let vanish_duration = animation_loop_duration (StringMap.find "vanish" enemy.textures) in
     let still_vanishing = still_doing "vanish" vanish_duration in
-    let should_unvanish () = (not still_vanishing) && vanished > unvanished in
+    let should_unvanish () = (not still_vanishing) && vanished.at > unvanished.at in
     let should_vanish () = get_bool_prop enemy "should_vanish" in
     let unvanish () =
+      (* these state updates happen here because "unvanish" isn't its own action that can be
+         started (it just chooses the next action to start)
+      *)
       enemy.entity.v <- Zero.vector ();
+      enemy.entity.current_floor <- None;
       match List.sample [ `WALL_PERCH; `DIVE; `DASH ] with
       | `WALL_PERCH ->
-        start_and_log_action' enemy WALL_PERCH args.frame_time
+        start_and_log_action enemy WALL_PERCH args.frame_time
           [
             ("random_direction_right", if Random.bool () then 1. else 0.);
             ("random_wall_perch_y", get_json_prop enemy "dive_y" +. 200. +. Random.float 500.);
@@ -464,26 +462,26 @@ module LockerBoy : Enemy' = struct
       | `DIVE ->
         let left = get_json_prop enemy "wall_perch_left_x" in
         let right = get_json_prop enemy "wall_perch_right_x" in
-        start_and_log_action' enemy DIVE args.frame_time
+        start_and_log_action enemy DIVE args.frame_time
           [ ("random_dive_x", left +. Random.float (right -. left)) ]
       | `DASH ->
-        start_and_log_action' enemy DASH args.frame_time
+        start_and_log_action enemy DASH args.frame_time
           [ ("random_direction_right", if Random.bool () then 1. else 0.) ]
     in
     if still_vanishing then
       ()
     else if should_unvanish () then (
-      log_action enemy "unvanish" args.frame_time;
+      Action.log enemy "unvanish" args.frame_time;
       unvanish ())
     else if should_vanish () then (
       set_prop enemy "should_vanish" 0.;
-      start_and_log_action' enemy VANISH args.frame_time [])
+      start_and_log_action enemy VANISH args.frame_time [])
     else ((* TODO probably will need this for a lot of enemies *)
-      match last_performed_action enemy with
+      match enemy.last_performed with
       | None -> ()
-      | Some (action, action_duration) ->
-        continue_action enemy action args.frame_time (args.frame_time -. action_duration));
-    ()
+      | Some (action_name, action_time) ->
+        continue_action enemy (Action.from_string action_name) args.frame_time
+          (args.frame_time -. action_time.at))
 end
 
 module Frog : Enemy' = struct
@@ -733,15 +731,14 @@ end
 let get_module (id : enemy_id) : (module M) =
   match id with
   | DUNCAN -> (module Duncan)
+  | LOCKER_BOY -> (module Locker_boy)
   (* FIXME  *)
-  (* | LOCKER_BOY -> (module LockerBoy)
-   * | FISH -> (module Fish)
-   * | FROG -> (module Frog)
-   * | ELECTRICITY -> (module Electricity) *)
-  | PENGUIN
-  | WIRED_ELECTRICITY
-  | _ ->
-    failwithf "enemy %s not implemented yet" (Show.enemy_id id)
+  (* | FISH -> (module Fish) *)
+  (* | FROG -> (module Frog) *)
+  (* | ELECTRICITY -> (module Electricity) *)
+  (* | PENGUIN *)
+  (* | WIRED_ELECTRICITY *)
+  | _ -> failwithf "enemy %s not implemented yet" (Show.enemy_id id)
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let ghost_pos = game.player.ghost.entity.dest.pos in
@@ -788,6 +785,7 @@ let create_from_rects
       health = { current = enemy_config.health; max = enemy_config.health };
       textures = textures |> List.to_string_map;
       history = EnemyActionMap.empty;
+      last_performed = None;
       props =
         [ ("initial_x", entity.dest.pos.x); ("initial_y", entity.dest.pos.y) ] |> List.to_string_map;
       floor_collision_this_frame = false;
