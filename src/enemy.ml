@@ -176,17 +176,23 @@ let maybe_take_damage
   else
     false
 
-module type Enemy_action = sig
+module type Enemy_actions = sig
   type t
 
   val to_string : t -> string
   val from_string : string -> t
-  val set : enemy -> ?current_props:float StringMap.t -> t -> current_time:float -> unit
-  val log : enemy -> string -> float -> unit
-  val start_and_log : enemy -> t -> float -> (string * float) list -> unit
+  val set : enemy -> ?frame_props:float StringMap.t -> t -> current_time:float -> unit
 end
 
-module Make_action (Actions : Enemy_action) : Enemy_action with type t = Actions.t = struct
+module type Loggable = sig
+  include Enemy_actions
+
+  val log : enemy -> string -> float -> unit
+  val start_and_log : enemy -> t -> float -> (string * float) list -> unit
+  val still_doing : enemy -> string -> duration:float -> frame_time:float -> bool
+end
+
+module Make_loggable (Actions : Enemy_actions) : Loggable with type t = Actions.t = struct
   include Actions
 
   let log (enemy : enemy) action_name value =
@@ -197,20 +203,17 @@ module Make_action (Actions : Enemy_action) : Enemy_action with type t = Actions
     let action_name = action |> Actions.to_string in
     enemy.last_performed <- Some (action_name, { at = current_time });
     log enemy action_name current_time;
-    Actions.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
+    Actions.set enemy action ~current_time ~frame_props:(props |> List.to_string_map)
+
+  (* CLEANUP maybe look up duration by name by adding json props like `action-name_duration` *)
+  let still_doing (enemy : enemy) (action_name : string) ~duration ~frame_time : bool =
+    let started = action_started_at enemy action_name in
+    frame_time -. started.at < duration
 end
 
 module type M = sig
-  module Action : Enemy_action
+  module Action : Loggable
 
-  type args
-
-  val get_args : state -> game -> args
-  val choose_behavior : enemy -> args -> unit
-end
-
-module type Enemy' = sig
-  type action
   type args
 
   val get_args : state -> game -> args
@@ -236,11 +239,8 @@ module Duncan_actions = struct
     | "walking" -> WALK
     | _ -> failwithf "Duncan_actions.from_string: %s" s
 
-  let log _ _ _ = ()
-  let start_and_log _ _ _ _ = ()
-
-  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
-    let get_current_prop ?(default = None) prop_name = get_prop ~default prop_name current_props in
+  let set (enemy : enemy) ?(frame_props = StringMap.empty) (action : t) ~current_time =
+    let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
     let pose_name =
       match action with
       | WALK ->
@@ -258,7 +258,7 @@ module Duncan_actions = struct
         enemy.entity.v.x <- 0.;
         enemy.entity.sprite.facing_right <-
           (* TODO might help to use a prefix like is_ or bool_ for these props that are used as booleans *)
-          get_current_prop "facing_right" = 1.;
+          get_frame_prop "facing_right" = 1.;
         enemy.spawned_projectiles <-
           [
             spawn_projectile enemy ~x_alignment:LEFT ~direction:RIGHT projectile_duration
@@ -269,7 +269,7 @@ module Duncan_actions = struct
           @ enemy.spawned_projectiles;
         "idle"
       | JUMP ->
-        enemy.entity.v.x <- get_current_prop ~default:(Some enemy.entity.v.x) "random_jump_vx";
+        enemy.entity.v.x <- get_frame_prop ~default:(Some enemy.entity.v.x) "random_jump_vx";
         enemy.entity.v.y <- get_json_prop enemy "jump_vy";
         enemy.entity.current_floor <- None;
         "jumping"
@@ -278,7 +278,7 @@ module Duncan_actions = struct
 end
 
 module Duncan : M = struct
-  module Action = Make_action (Duncan_actions)
+  module Action = Make_loggable (Duncan_actions)
 
   type args = {
     frame_time : float;
@@ -335,11 +335,8 @@ module Locker_boy_actions = struct
     | "dive" -> DIVE
     | _ -> failwithf "Locker_boy_actions.from_string: %s" s
 
-  let log _ _ _ = ()
-  let start_and_log _ _ _ _ = ()
-
-  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
-    let get_current_prop prop_name = get_prop prop_name current_props in
+  let set (enemy : enemy) ?(frame_props = StringMap.empty) (action : t) ~current_time =
+    let get_frame_prop prop_name = get_prop prop_name frame_props in
     let pose_name : string =
       match action with
       | VANISH ->
@@ -348,7 +345,7 @@ module Locker_boy_actions = struct
         "vanish"
       | DASH ->
         let x =
-          if get_current_prop "random_direction_right" = 1. then (
+          if get_frame_prop "random_direction_right" = 1. then (
             enemy.entity.sprite.facing_right <- true;
             enemy.entity.v.x <- get_json_prop enemy "dash_vx";
             get_json_prop enemy "wall_perch_left_x" +. 120.)
@@ -364,7 +361,7 @@ module Locker_boy_actions = struct
         enemy.entity.dest.pos.y <- 1340.;
         "dash"
       | DIVE ->
-        let x = get_current_prop "random_dive_x" in
+        let x = get_frame_prop "random_dive_x" in
         Entity.unhide enemy.entity;
         Entity.unfreeze enemy.entity;
         enemy.entity.v.y <- get_json_prop enemy "dive_vy";
@@ -373,14 +370,14 @@ module Locker_boy_actions = struct
         "dive"
       | WALL_PERCH ->
         let (x, direction, x_alignment) : float * direction * x_alignment =
-          if get_current_prop "random_direction_right" = 1. then (
+          if get_frame_prop "random_direction_right" = 1. then (
             enemy.entity.sprite.facing_right <- true;
             (get_json_prop enemy "wall_perch_left_x", RIGHT, RIGHT))
           else (
             enemy.entity.sprite.facing_right <- false;
             (get_json_prop enemy "wall_perch_right_x", LEFT, LEFT))
         in
-        let y = get_current_prop "random_wall_perch_y" in
+        let y = get_frame_prop "random_wall_perch_y" in
         Entity.unhide enemy.entity;
         Entity.unfreeze enemy.entity;
         enemy.entity.dest.pos.x <- x;
@@ -401,7 +398,7 @@ module Locker_boy_actions = struct
 end
 
 module Locker_boy : M = struct
-  module Action = Make_action (Locker_boy_actions)
+  module Action = Make_loggable (Locker_boy_actions)
 
   type args = { frame_time : float }
 
@@ -431,18 +428,12 @@ module Locker_boy : M = struct
         set_prop enemy "should_vanish" 1.
 
   let choose_behavior (enemy : enemy) args =
-    (* CLEANUP duplicated *)
-    let still_doing (action_name : string) (duration : float) : bool =
-      (* TODO maybe look up duration by name by adding json props like `action-name_duration` *)
-      let started = action_started_at enemy action_name in
-      args.frame_time -. started.at < duration
-    in
-    (* TODO this isn't working after resizing the screen - definitely need to update
-       config values, maybe some code too *)
     let vanished = action_started_at enemy "vanish" in
     let unvanished = action_started_at enemy "unvanish" in
     let vanish_duration = animation_loop_duration (StringMap.find "vanish" enemy.textures) in
-    let still_vanishing = still_doing "vanish" vanish_duration in
+    let still_vanishing =
+      Action.still_doing enemy "vanish" ~duration:vanish_duration ~frame_time:args.frame_time
+    in
     let should_unvanish () = (not still_vanishing) && vanished.at > unvanished.at in
     let should_vanish () = get_bool_prop enemy "should_vanish" in
     let unvanish () =
@@ -502,10 +493,7 @@ module Frog_actions = struct
     | "dunked" -> DUNKED
     | _ -> failwithf "Frog_actions.from_string: %s" s
 
-  let log _ _ _ = ()
-  let start_and_log _ _ _ _ = ()
-
-  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = StringMap.empty) (action : t) ~current_time =
     (* TODO move hardcoded numbers to json config *)
     let pose_name =
       match action with
@@ -514,11 +502,11 @@ module Frog_actions = struct
           let v' = get_json_prop enemy "homing_v" in
           (-1. *. v', v')
         in
-        let dv = get_prop "random_homing_dv" current_props in
+        let dv = get_prop "random_homing_dv" frame_props in
         let larger v = Float.bound min_v (v +. dv) max_v in
         let smaller v = Float.bound min_v (v -. dv) max_v in
-        let ghost_x = get_prop "ghost_x" current_props in
-        let ghost_y = get_prop "ghost_y" current_props in
+        let ghost_x = get_prop "ghost_x" frame_props in
+        let ghost_y = get_prop "ghost_y" frame_props in
         let vx =
           if ghost_x > enemy.entity.dest.pos.x then
             larger enemy.entity.v.x
@@ -535,7 +523,7 @@ module Frog_actions = struct
         enemy.entity.v.y <- vy;
         "homing"
       | ASCEND ->
-        enemy.entity.v.y <- -500. +. get_prop "random_dvy" current_props;
+        enemy.entity.v.y <- -500. +. get_prop "random_dvy" frame_props;
         "idle"
       | DUNKED ->
         (* CLEANUP move to config *)
@@ -548,7 +536,7 @@ module Frog_actions = struct
 end
 
 module Frog : M = struct
-  module Action = Make_action (Frog_actions)
+  module Action = Make_loggable (Frog_actions)
 
   type args = {
     frame_time : float;
@@ -566,11 +554,6 @@ module Frog : M = struct
     }
 
   let choose_behavior (enemy : enemy) args =
-    (* CLEANUP duplicated *)
-    let still_doing (action_name : string) (duration : float) : bool =
-      let started = action_started_at enemy action_name in
-      args.frame_time -. started.at < duration
-    in
     (* CLEANUP move to enemies.json *)
     (* TODO this is breaking by the frog getting stuck in "ascending"
        - happens when starting a "Read" interaction in the same room
@@ -589,7 +572,8 @@ module Frog : M = struct
         List.length collisions > 0
       in
       if get_bool_prop enemy "dunked" then
-        if still_doing "dunked" dunk_duration then
+        if Action.still_doing enemy "dunked" ~duration:dunk_duration ~frame_time:args.frame_time
+        then
           set_pose enemy "struck"
         else
           Entity.hide enemy.entity
@@ -642,7 +626,11 @@ module Frog : M = struct
       else if get_bool_prop enemy "struck_cooldown" then (
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
-        if not (still_doing "struck_cooldown" cooldown_duration) then
+        if
+          not
+            (Action.still_doing enemy "struck_cooldown" ~duration:cooldown_duration
+               ~frame_time:args.frame_time)
+        then
           set_prop enemy "homing" 1.)
       else if get_bool_prop enemy "death_recoil" then
         if enemy.floor_collision_this_frame then (
@@ -685,10 +673,7 @@ module Electricity_actions = struct
     | "shock" -> SHOCK
     | _ -> failwithf "Electricity_actions.from_string: %s" s
 
-  let log _ _ _ = ()
-  let start_and_log _ _ _ _ = ()
-
-  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = StringMap.empty) (action : t) ~current_time =
     let pose_name =
       match action with
       | SHOCK ->
@@ -710,7 +695,7 @@ module Electricity_actions = struct
 end
 
 module Electricity : M = struct
-  module Action = Make_action (Electricity_actions)
+  module Action = Make_loggable (Electricity_actions)
 
   type args = { frame_time : float }
 
@@ -738,18 +723,15 @@ module Fish_actions = struct
     | "move" -> MOVE
     | _ -> failwithf "Electricity_actions.from_string: %s" s
 
-  let log _ _ _ = ()
-  let start_and_log _ _ _ _ = ()
-
-  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = StringMap.empty) (action : t) ~current_time =
     let pose_name =
       match action with
       | MOVE ->
-        set_prop enemy "direction_change_dt" (get_prop "random_direction_change_dt" current_props);
+        set_prop enemy "direction_change_dt" (get_prop "random_direction_change_dt" frame_props);
         let initial_x = get_prop "initial_x" enemy.props in
         let initial_y = get_prop "initial_y" enemy.props in
-        let rand_x = get_prop "random_x" current_props in
-        let rand_y = get_prop "random_y" current_props in
+        let rand_x = get_prop "random_x" frame_props in
+        let rand_y = get_prop "random_y" frame_props in
         let new_vx =
           if initial_x > enemy.entity.dest.pos.x then (
             enemy.entity.sprite.facing_right <- true;
@@ -772,7 +754,7 @@ module Fish_actions = struct
 end
 
 module Fish : M = struct
-  module Action = Make_action (Fish_actions)
+  module Action = Make_loggable (Fish_actions)
 
   type args = { frame_time : float }
 
@@ -835,6 +817,7 @@ let create_from_rects
 
     texture_cache := List.replace_assoc id textures !texture_cache;
 
+    (* CLEANUP probably need to scale these configs by window_scale *)
     let json =
       match List.assoc_opt id enemy_configs with
       | None -> failwithf "could not find enemy json config for %s" (Show.enemy_id id)
