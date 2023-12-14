@@ -183,14 +183,21 @@ module type Enemy_action = sig
   val from_string : string -> t
   val set : enemy -> ?current_props:float StringMap.t -> t -> current_time:float -> unit
   val log : enemy -> string -> float -> unit
+  val start_and_log : enemy -> t -> float -> (string * float) list -> unit
 end
 
-module Make_action (E : Enemy_action) : Enemy_action with type t = E.t = struct
-  include E
+module Make_action (Actions : Enemy_action) : Enemy_action with type t = Actions.t = struct
+  include Actions
 
   let log (enemy : enemy) action_name value =
     enemy.history <-
       EnemyActionMap.update (PERFORMED action_name) (fun _ -> Some { at = value }) enemy.history
+
+  let start_and_log enemy (action : Actions.t) current_time props : unit =
+    let action_name = action |> Actions.to_string in
+    enemy.last_performed <- Some (action_name, { at = current_time });
+    log enemy action_name current_time;
+    Actions.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
 end
 
 module type M = sig
@@ -227,9 +234,10 @@ module Duncan_actions = struct
     | "jumping" -> JUMP
     | "landed" -> LANDED
     | "walking" -> WALK
-    | _ -> failwithf "Duncan_action.from_string: %s" s
+    | _ -> failwithf "Duncan_actions.from_string: %s" s
 
   let log _ _ _ = ()
+  let start_and_log _ _ _ _ = ()
 
   let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
     let get_current_prop ?(default = None) prop_name = get_prop ~default prop_name current_props in
@@ -285,10 +293,6 @@ module Duncan : M = struct
       ghost_pos = game.player.ghost.entity.dest.pos;
     }
 
-  let start_and_log_action enemy (action : Action.t) current_time props : unit =
-    Action.log enemy (action |> Action.to_string) current_time;
-    Action.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
-
   let choose_behavior (enemy : enemy) args =
     match enemy.entity.current_floor with
     | None -> ()
@@ -296,9 +300,9 @@ module Duncan : M = struct
       let jumped = action_started_at enemy "jumping" in
       let landed = action_started_at enemy "landed" in
       if jumped.at > landed.at then
-        start_and_log_action enemy LANDED args.frame_time
+        Action.start_and_log enemy LANDED args.frame_time
           [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
-      else if args.frame_time -. landed.at > List.assoc "jump_wait_time" enemy.json.props then (
+      else if args.frame_time -. landed.at > get_json_prop enemy "jump_wait_time" then (
         let room_center_x = (args.camera_bounds.min.x +. args.camera_bounds.max.x) /. 2. in
         let jump_vx =
           if room_center_x > enemy.entity.dest.pos.x then
@@ -306,7 +310,7 @@ module Duncan : M = struct
           else
             -1. *. Random.float 500.
         in
-        start_and_log_action enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
+        Action.start_and_log enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
 end
 
 module Locker_boy_actions = struct
@@ -329,9 +333,10 @@ module Locker_boy_actions = struct
     | "wall-perch" -> WALL_PERCH
     | "dash" -> DASH
     | "dive" -> DIVE
-    | _ -> failwithf "Locker_boy_action.from_string: %s" s
+    | _ -> failwithf "Locker_boy_actions.from_string: %s" s
 
   let log _ _ _ = ()
+  let start_and_log _ _ _ _ = ()
 
   let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
     let get_current_prop prop_name = get_prop prop_name current_props in
@@ -402,12 +407,6 @@ module Locker_boy : M = struct
 
   let get_args state game : args = { frame_time = state.frame.time }
 
-  let start_and_log_action enemy (action : Action.t) current_time props : unit =
-    let action_name = action |> Action.to_string in
-    enemy.last_performed <- Some (action_name, { at = current_time });
-    Action.log enemy action_name current_time;
-    Action.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
-
   let continue_action (enemy : enemy) (action : Action.t) current_time current_duration =
     match action with
     | VANISH -> Action.set enemy action ~current_time
@@ -454,7 +453,7 @@ module Locker_boy : M = struct
       enemy.entity.current_floor <- None;
       match List.sample [ `WALL_PERCH; `DIVE; `DASH ] with
       | `WALL_PERCH ->
-        start_and_log_action enemy WALL_PERCH args.frame_time
+        Action.start_and_log enemy WALL_PERCH args.frame_time
           [
             ("random_direction_right", if Random.bool () then 1. else 0.);
             ("random_wall_perch_y", get_json_prop enemy "dive_y" +. 200. +. Random.float 500.);
@@ -462,10 +461,10 @@ module Locker_boy : M = struct
       | `DIVE ->
         let left = get_json_prop enemy "wall_perch_left_x" in
         let right = get_json_prop enemy "wall_perch_right_x" in
-        start_and_log_action enemy DIVE args.frame_time
+        Action.start_and_log enemy DIVE args.frame_time
           [ ("random_dive_x", left +. Random.float (right -. left)) ]
       | `DASH ->
-        start_and_log_action enemy DASH args.frame_time
+        Action.start_and_log enemy DASH args.frame_time
           [ ("random_direction_right", if Random.bool () then 1. else 0.) ]
     in
     if still_vanishing then
@@ -475,7 +474,7 @@ module Locker_boy : M = struct
       unvanish ())
     else if should_vanish () then (
       set_prop enemy "should_vanish" 0.;
-      start_and_log_action enemy VANISH args.frame_time [])
+      Action.start_and_log enemy VANISH args.frame_time [])
     else ((* TODO probably will need this for a lot of enemies *)
       match enemy.last_performed with
       | None -> ()
@@ -501,9 +500,10 @@ module Frog_actions = struct
     | "homing" -> HOMING
     | "ascend" -> ASCEND
     | "dunked" -> DUNKED
-    | _ -> failwithf "Duncan_action.from_string: %s" s
+    | _ -> failwithf "Frog_actions.from_string: %s" s
 
   let log _ _ _ = ()
+  let start_and_log _ _ _ _ = ()
 
   let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
     (* TODO move hardcoded numbers to json config *)
@@ -565,10 +565,6 @@ module Frog : M = struct
       ghost_entity = game.player.ghost.entity;
     }
 
-  let start_and_log_action enemy (action : Action.t) current_time props : unit =
-    Action.log enemy (action |> Action.to_string) current_time;
-    Action.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
-
   let choose_behavior (enemy : enemy) args =
     (* CLEANUP duplicated *)
     let still_doing (action_name : string) (duration : float) : bool =
@@ -598,7 +594,7 @@ module Frog : M = struct
         else
           Entity.hide enemy.entity
       else if get_bool_prop enemy "homing" then (
-        start_and_log_action enemy HOMING args.frame_time
+        Action.start_and_log enemy HOMING args.frame_time
           [
             ("ghost_x", args.ghost_entity.dest.pos.x);
             ("ghost_y", args.ghost_entity.dest.pos.y);
@@ -642,7 +638,7 @@ module Frog : M = struct
           args.room.loose_projectiles <- projectile :: args.room.loose_projectiles;
           Entity.hide enemy.entity)
         else if any_liquid_collisions () then
-          start_and_log_action enemy DUNKED args.frame_time [])
+          Action.start_and_log enemy DUNKED args.frame_time [])
       else if get_bool_prop enemy "struck_cooldown" then (
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
@@ -653,7 +649,7 @@ module Frog : M = struct
           Action.log enemy "struck_cooldown" args.frame_time;
           set_prop enemy "struck_cooldown" 1.)
         else if any_liquid_collisions () then (* TODO maybe have a different texture for "dunked" *)
-          start_and_log_action enemy DUNKED args.frame_time []
+          Action.start_and_log enemy DUNKED args.frame_time []
         else
           set_pose enemy "struck")
     else (
@@ -669,7 +665,7 @@ module Frog : M = struct
             -1. *. rand_x)
         in
         enemy.entity.v.x <- new_vx;
-        start_and_log_action enemy ASCEND args.frame_time [ ("random_dvy", Random.float 150.) ]);
+        Action.start_and_log enemy ASCEND args.frame_time [ ("random_dvy", Random.float 150.) ]);
       if enemy.entity.v.y > 0. then (
         enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y 120.;
         set_pose enemy "idle-descending")
@@ -677,17 +673,26 @@ module Frog : M = struct
         set_pose enemy "idle")
 end
 
-module Electricity : Enemy' = struct
-  type action = SHOCK
-  type args = { frame_time : float }
+module Electricity_actions = struct
+  type t = SHOCK
 
-  let get_args state game : args = { frame_time = state.frame.time }
+  let to_string (action : t) : string =
+    match action with
+    | SHOCK -> "shock"
 
-  let set_action (enemy : enemy) (action : action) current_time =
+  let from_string (s : string) : t =
+    match s with
+    | "shock" -> SHOCK
+    | _ -> failwithf "Electricity_actions.from_string: %s" s
+
+  let log _ _ _ = ()
+  let start_and_log _ _ _ _ = ()
+
+  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
     let pose_name =
       match action with
       | SHOCK ->
-        let action_name = "shock" in
+        let action_name = action |> to_string in
         (* ELECTRICITY should always have the "idle" pose - starting this action just adds the shock child sprite *)
         let shock_config = List.assoc action_name enemy.json.texture_configs in
         let projectile_duration =
@@ -696,13 +701,20 @@ module Electricity : Enemy' = struct
         enemy.spawned_projectiles <-
           [
             spawn_projectile enemy ~projectile_texture_name:action_name ~projectile_vx_opt:(Some 0.)
-              ~scale:1.1 ~pogoable:true ~x_alignment:CENTER ~direction:RIGHT projectile_duration
+              ~scale:1.1 ~pogoable:false ~x_alignment:CENTER ~direction:RIGHT projectile_duration
               current_time;
           ];
-        log_action enemy action_name current_time;
         "idle"
     in
     set_pose enemy pose_name
+end
+
+module Electricity : M = struct
+  module Action = Make_action (Electricity_actions)
+
+  type args = { frame_time : float }
+
+  let get_args state game : args = { frame_time = state.frame.time }
 
   let choose_behavior enemy args =
     let last_shock = action_started_at enemy "shock" in
@@ -711,52 +723,87 @@ module Electricity : Enemy' = struct
       get_json_prop enemy "shock_duration"
     in
     if last_shock.at < args.frame_time -. shock_duration then
-      set_action enemy SHOCK args.frame_time
+      Action.start_and_log enemy SHOCK args.frame_time []
 end
 
-module Fish : Enemy' = struct
-  type action (* unused *)
+module Fish_actions = struct
+  type t = MOVE
+
+  let to_string (action : t) : string =
+    match action with
+    | MOVE -> "move"
+
+  let from_string (s : string) : t =
+    match s with
+    | "move" -> MOVE
+    | _ -> failwithf "Electricity_actions.from_string: %s" s
+
+  let log _ _ _ = ()
+  let start_and_log _ _ _ _ = ()
+
+  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
+    let pose_name =
+      match action with
+      | MOVE ->
+        set_prop enemy "direction_change_dt" (get_prop "random_direction_change_dt" current_props);
+        let initial_x = get_prop "initial_x" enemy.props in
+        let initial_y = get_prop "initial_y" enemy.props in
+        let rand_x = get_prop "random_x" current_props in
+        let rand_y = get_prop "random_y" current_props in
+        let new_vx =
+          if initial_x > enemy.entity.dest.pos.x then (
+            enemy.entity.sprite.facing_right <- true;
+            rand_x)
+          else (
+            enemy.entity.sprite.facing_right <- false;
+            -1. *. rand_x)
+        in
+        let new_vy =
+          if initial_y > enemy.entity.dest.pos.y then
+            rand_y
+          else
+            -1. *. rand_y
+        in
+        enemy.entity.v.x <- new_vx;
+        enemy.entity.v.y <- new_vy;
+        "idle"
+    in
+    set_pose enemy pose_name
+end
+
+module Fish : M = struct
+  module Action = Make_action (Fish_actions)
+
   type args = { frame_time : float }
 
   let get_args state game : args = { frame_time = state.frame.time }
 
   let choose_behavior enemy args =
-    let last_direction_change = action_started_at enemy "change_direction" in
+    let last_direction_change = action_started_at enemy "move" in
+    let direction_change_max_dt = get_json_prop enemy "direction_change_max_dt" in
     let direction_change_dt = get_prop ~default:(Some 1.) "direction_change_dt" enemy.props in
     if last_direction_change.at < args.frame_time -. direction_change_dt then (
-      let direction_change_max_dt = get_json_prop enemy "direction_change_max_dt" in
-      set_prop enemy "direction_change_dt" (Random.float direction_change_max_dt);
-      let initial_x = get_prop "initial_x" enemy.props in
-      let initial_y = get_prop "initial_y" enemy.props in
       let max_v = get_json_prop enemy "max_v" in
-      let rand_x, rand_y = (Random.float max_v, Random.float max_v) in
-      let new_vx =
-        if initial_x > enemy.entity.dest.pos.x then (
-          enemy.entity.sprite.facing_right <- true;
-          rand_x)
-        else (
-          enemy.entity.sprite.facing_right <- false;
-          -1. *. rand_x)
-      in
-      let new_vy =
-        if initial_y > enemy.entity.dest.pos.y then
-          rand_y
-        else
-          -1. *. rand_y
-      in
-      enemy.entity.v.x <- new_vx;
-      enemy.entity.v.y <- new_vy;
-      log_action enemy "change_direction" args.frame_time)
+      Action.start_and_log enemy MOVE args.frame_time
+        [
+          ("random_direction_change_dt", Random.float direction_change_max_dt);
+          ("random_x", Random.float max_v);
+          ("random_y", Random.float max_v);
+        ])
 end
+
+(* module Make_enemy (E : M) : M with type args = E.args = struct
+ *   include E
+ * end *)
 
 let get_module (id : enemy_id) : (module M) =
   match id with
   | DUNCAN -> (module Duncan)
   | LOCKER_BOY -> (module Locker_boy)
   | FROG -> (module Frog)
-  (* FIXME  *)
-  (* | FISH -> (module Fish) *)
-  (* | ELECTRICITY -> (module Electricity) *)
+  | ELECTRICITY -> (module Electricity)
+  | FISH -> (module Fish)
+  (* TODO *)
   (* | PENGUIN *)
   (* | WIRED_ELECTRICITY *)
   | _ -> failwithf "enemy %s not implemented yet" (Show.enemy_id id)
