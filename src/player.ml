@@ -1179,10 +1179,6 @@ let as_party_ghost (player : player) : party_ghost = { ghost = player.ghost; in_
 let find_party_ghost (id : ghost_id) party : party_ghost option =
   List.find_opt (fun (party_ghost : party_ghost) -> party_ghost.ghost.id = id) party
 
-(* FIXME body offsets for party ghosts are wrong
-   - happens in cutscenes with party ghosts
-   - also happens when switching ghosts from pause menu
-*)
 let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) target_ghost_id =
   match find_party_ghost target_ghost_id game.party with
   | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
@@ -1305,12 +1301,16 @@ let handle_debug_keys (game : game) (state : state) =
     let show_ghost_positions () =
       let positions : string =
         let show_pos (pg : party_ghost) =
-          fmt "%s: %s" (Show.ghost_id pg.ghost.id) (Show.vector pg.ghost.entity.dest.pos)
+          fmt "%s: %s (body offset: %s)" (Show.ghost_id pg.ghost.id)
+            (Show.vector pg.ghost.entity.dest.pos)
+            (Show.vector pg.ghost.body_render_offset)
         in
         List.map show_pos game.party |> join ~sep:"\n"
       in
       print "party ghost positions:\n%s" positions;
-      print "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos)
+      print "ghost pos: %s (body offset: %s)"
+        (Show.vector game.player.ghost.entity.dest.pos)
+        (Show.vector game.player.ghost.body_render_offset)
     in
     let toggle_safe_ss () =
       state.debug.safe_ss <- not state.debug.safe_ss;
@@ -1331,6 +1331,7 @@ let handle_debug_keys (game : game) (state : state) =
         (* show_camera_location () *)
         (* show_ghost_location (); *)
         toggle_safe_ss ();
+        show_ghost_positions ();
         (* game.player.health.current <- 1; *)
         ())
       else if key_pressed DEBUG_2 then (
@@ -2725,16 +2726,19 @@ let init
       };
   }
 
-let init_party ghost_id (head_textures : ghost_head_textures) idle_texture start_pos in_party :
-    party_ghost =
+let init_party
+    (id : ghost_id)
+    (head_textures : ghost_head_textures)
+    (idle_texture : texture)
+    ~(start_pos : vector)
+    ~(body_render_offset : vector)
+    (in_party : bool) : party_ghost =
   let w, h = get_scaled_texture_size Config.scale.ghost idle_texture in
   let dest = { pos = start_pos; w; h } in
   let entity =
     let entity' =
       Entity.create_for_sprite
-        (Sprite.create
-           (fmt "ghost-%s" (Show.ghost_id ghost_id))
-           ~collision:(Some DEST) idle_texture dest)
+        (Sprite.create (fmt "ghost-%s" (Show.ghost_id id)) ~collision:(Some DEST) idle_texture dest)
         {
           pos = clone_vector start_pos;
           w = Config.ghost.width *. Config.scale.ghost;
@@ -2744,14 +2748,4 @@ let init_party ghost_id (head_textures : ghost_head_textures) idle_texture start
     Entity.hide entity';
     entity'
   in
-  {
-    ghost =
-      {
-        id = ghost_id;
-        head = head_textures.idle;
-        body_render_offset = Zero.vector ();
-        head_textures;
-        entity;
-      };
-    in_party;
-  }
+  { ghost = { id; head = head_textures.idle; body_render_offset; head_textures; entity }; in_party }

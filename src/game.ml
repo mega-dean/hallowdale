@@ -151,7 +151,6 @@ let create
   in
   let ghosts_file : ghosts_file = Player.read_config () in
   let use_json_config ghost_id pose_name =
-    (* PERF try using build_texture_from_image *)
     Sprite.build_texture_from_path
       { asset_dir = GHOSTS; character_name = Show.ghost_id ghost_id; pose_name }
   in
@@ -179,7 +178,8 @@ let create
     let make_party_ghost id : party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
       let config = make_head_textures id in
-      Player.init_party id config idle_texture { x = 1000.; y = 1000. } in_party
+      Player.init_party id config idle_texture ~start_pos:{ x = 1000.; y = 1000. }
+        ~body_render_offset:global.textures.ghost_bodies.idle.render_offset in_party
     in
     List.map make_party_ghost [ BRITTA; ABED; TROY; ANNIE; JEFF ]
   in

@@ -8,6 +8,7 @@
 - cancel wall-sliding when casting
 - add sound effect for striking levers
 - add menu option for deleting save files
+- fix body render offset for party ghosts
 
 ## [0.0.8] - 2023-11-19
 

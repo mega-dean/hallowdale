@@ -294,8 +294,8 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
         ]
       | "mama-mahogany" ->
         [
-          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (29, 34, 0., 0.)));
-          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (32, 34, 0., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (29, 36, 0., 0.)));
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (32, 36, 0., 0.)));
           PARTY_GHOST (ANNIE, SET_POSE IDLE);
           PARTY_GHOST (JEFF, SET_POSE IDLE);
           PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
