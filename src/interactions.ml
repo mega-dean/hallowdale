@@ -117,6 +117,18 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
                    ] ));
             STEP FADE_SCREEN_IN;
           ]
+      | "true-form" ->
+        read_sign
+        @ [
+            STEP
+              (TEXT
+                 [
+                   "Human Beings, these words are for you alone.";
+                   "";
+                   "Within our lands do not hide your true form. For only this campus could \
+                    produce ones such as you.";
+                 ]);
+          ]
       | "dean-and-creator" ->
         read_sign
         @ [
@@ -432,6 +444,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
           ]
       | _ -> fail ())
     | "boss-killed" -> (
+      remove_nail := false;
       match trigger.name_suffix with
       | "DUNCAN" ->
         [

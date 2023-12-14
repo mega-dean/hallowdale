@@ -1449,12 +1449,8 @@ let tick (game : game) (state : state) =
     in
     match game.interaction.text with
     | Some _text ->
-      if state.frame_inputs.interact.pressed then (
-        (* press interact key to advance dialogue by one, with a short pause to
-           prevent double-pressing and skipping a message *)
-        game.interaction.text <- None;
-        game.interaction.steps <- STEP (WAIT 0.4) :: game.interaction.steps)
-      else if speed_through_interaction then
+      (* press interact key to advance dialogue by one *)
+      if state.frame_inputs.interact.pressed || speed_through_interaction then
         game.interaction.text <- None;
       true
     | None -> (

@@ -1,7 +1,7 @@
 {
     "enemies": [
         [ "DUNCAN", {
-            "health": 5,
+            "health": 65,
             "damage": 3,
             "w": 19,
             "h": 45,
