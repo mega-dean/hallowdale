@@ -294,15 +294,6 @@ let room_id_filename id =
   | TRAMP_H -> "h"
   | VENT_HUB -> "hub"
 
-let damage_kind (d : damage_kind) : string =
-  match d with
-  | NAIL -> "NAIL"
-  | DREAM_NAIL -> "DREAM_NAIL"
-  | VENGEFUL_SPIRIT -> "VENGEFUL_SPIRIT"
-  | DESOLATE_DIVE -> "DESOLATE_DIVE"
-  | DESOLATE_DIVE_SHOCKWAVE -> "DESOLATE_DIVE_SHOCKWAVE"
-  | HOWLING_WRAITHS -> "HOWLING_WRAITHS"
-
 let ghost_child_kind (d : ghost_child_kind) : string =
   match d with
   | DIVE -> "DIVE"
@@ -329,7 +320,15 @@ let jug_config (config : jug_config) : string =
 
 let json_collision (collision : Json_t.collision) = fmt "id %d" collision.id
 let debug_change_ability name b = print "%s: %b -> %b" name b (not b)
-let npc_name (npc : npc) = fmt "npc(%s)" (entity npc.entity)
+
+let damage_kind (d : damage_kind) : string =
+  match d with
+  | NAIL -> "NAIL"
+  | DREAM_NAIL -> "DREAM_NAIL"
+  | VENGEFUL_SPIRIT -> "VENGEFUL_SPIRIT"
+  | DESOLATE_DIVE -> "DESOLATE_DIVE"
+  | DESOLATE_DIVE_SHOCKWAVE -> "DESOLATE_DIVE_SHOCKWAVE"
+  | HOWLING_WRAITHS -> "HOWLING_WRAITHS"
 
 let enemy_id (e : enemy_id) : string =
   match e with
@@ -340,6 +339,16 @@ let enemy_id (e : enemy_id) : string =
   | FROG -> "FROG"
   | ELECTRICITY -> "ELECTRICITY"
   | WIRED_ELECTRICITY -> "WIRED_ELECTRICITY"
+
+let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
+let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
+
+let enemy_action (action : enemy_action) : string =
+  match action with
+  | PERFORMED action_name -> fmt "PERFORMED %s" action_name
+  | TOOK_DAMAGE kind -> fmt "TOOK_DAMAGE %s" (damage_kind kind)
+
+let npc_name (npc : npc) = fmt "npc(%s)" (entity npc.entity)
 
 let npc_id (n : npc_id) : string =
   match n with
@@ -357,9 +366,6 @@ let npc_id (n : npc_id) : string =
   | FRANKIE -> "FRANKIE"
   | HUMAN_BEING -> "HUMAN_BEING"
   | POTTERY_TEACHER -> "POTTERY_TEACHER"
-
-let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
-let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
 
 let game_mode (game_mode : game_mode) : string =
   match game_mode with

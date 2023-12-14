@@ -484,30 +484,29 @@ module Locker_boy : M = struct
           (args.frame_time -. action_time.at))
 end
 
-module Frog : Enemy' = struct
-  type action =
+module Frog_actions = struct
+  type t =
     | HOMING
     | ASCEND
-    | EXPLODE
+    | DUNKED
 
-  type args = {
-    frame_time : float;
-    state : state;
-    room : room;
-    ghost_entity : entity;
-  }
+  let to_string (action : t) : string =
+    match action with
+    | HOMING -> "homing"
+    | ASCEND -> "ascend"
+    | DUNKED -> "dunked"
 
-  let get_args state (game : game) : args =
-    {
-      frame_time = state.frame.time;
-      state;
-      room = game.room;
-      ghost_entity = game.player.ghost.entity;
-    }
+  let from_string (s : string) : t =
+    match s with
+    | "homing" -> HOMING
+    | "ascend" -> ASCEND
+    | "dunked" -> DUNKED
+    | _ -> failwithf "Duncan_action.from_string: %s" s
 
-  let set_action (enemy : enemy) (action : action) (room : room) current_time current_props' =
+  let log _ _ _ = ()
+
+  let set (enemy : enemy) ?(current_props = StringMap.empty) (action : t) ~current_time =
     (* TODO move hardcoded numbers to json config *)
-    let current_props = current_props' |> List.to_string_map in
     let pose_name =
       match action with
       | HOMING ->
@@ -515,8 +514,9 @@ module Frog : Enemy' = struct
           let v' = get_json_prop enemy "homing_v" in
           (-1. *. v', v')
         in
-        let larger v = Float.bound min_v (v +. 5. +. Random.float 10.) max_v in
-        let smaller v = Float.bound min_v (v -. (5. +. Random.float 10.)) max_v in
+        let dv = get_prop "random_homing_dv" current_props in
+        let larger v = Float.bound min_v (v +. dv) max_v in
+        let smaller v = Float.bound min_v (v -. dv) max_v in
         let ghost_x = get_prop "ghost_x" current_props in
         let ghost_y = get_prop "ghost_y" current_props in
         let vx =
@@ -535,55 +535,50 @@ module Frog : Enemy' = struct
         enemy.entity.v.y <- vy;
         "homing"
       | ASCEND ->
-        enemy.entity.v.y <- -500. +. Random.float 150.;
+        enemy.entity.v.y <- -500. +. get_prop "random_dvy" current_props;
         "idle"
-      | EXPLODE ->
-        let projectile =
-          let explosion_scale = 4. in
-          let projectile_duration = TIME_LEFT { seconds = 1. } in
-          spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
-            ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT
-            ~damage:2 projectile_duration current_time
-        in
-        (* this will only catch collisions on the first frame of the
-           explosion, so a frog can move into an explosion without dying
-        *)
-        let check_frog_collision (target_enemy : enemy) =
-          if target_enemy.id = FROG && target_enemy <> enemy then
-            if Collision.between_entities projectile.entity target_enemy.entity then (
-              let vx =
-                let v' = get_json_prop enemy "death_recoil_v" in
-                let explosion_center = (Entity.get_center projectile.entity).x in
-                let target_center = (Entity.get_center target_enemy.entity).x in
-                if explosion_center > target_center then
-                  -1. *. v'
-                else
-                  v'
-              in
-              (* this only recoils the frog horizontally *)
-              target_enemy.entity.v.x <- vx;
-              target_enemy.health.current <- 0;
-              set_prop target_enemy "death_recoil" 1.)
-        in
-        List.iter check_frog_collision room.enemies;
-        room.loose_projectiles <- projectile :: room.loose_projectiles;
-        Entity.hide enemy.entity;
-        "idle"
+      | DUNKED ->
+        (* CLEANUP move to config *)
+        let dunk_vy = 40. in
+        enemy.entity.v <- { x = 0.; y = dunk_vy };
+        set_prop enemy "dunked" 1.;
+        "struck"
     in
     set_pose enemy pose_name
+end
 
-  let choose_behavior enemy args =
+module Frog : M = struct
+  module Action = Make_action (Frog_actions)
+
+  type args = {
+    frame_time : float;
+    state : state;
+    room : room;
+    ghost_entity : entity;
+  }
+
+  let get_args state (game : game) : args =
+    {
+      frame_time = state.frame.time;
+      state;
+      room = game.room;
+      ghost_entity = game.player.ghost.entity;
+    }
+
+  let start_and_log_action enemy (action : Action.t) current_time props : unit =
+    Action.log enemy (action |> Action.to_string) current_time;
+    Action.set enemy action ~current_time ~current_props:(props |> List.to_string_map)
+
+  let choose_behavior (enemy : enemy) args =
     (* CLEANUP duplicated *)
     let still_doing (action_name : string) (duration : float) : bool =
-      (* TODO maybe look up duration by name by adding json props like `action-name_duration` *)
       let started = action_started_at enemy action_name in
       args.frame_time -. started.at < duration
     in
-    (* TODO these could be moved to enemies.json *)
+    (* CLEANUP move to enemies.json *)
     (* TODO this is breaking by the frog getting stuck in "ascending"
        - happens when starting a "Read" interaction in the same room
     *)
-    let dunk_vy = 40. in
     let dunk_duration = 2. in
     let cooldown_duration = 0.5 in
     let initial_x = get_prop "initial_x" enemy.props in
@@ -597,20 +592,18 @@ module Frog : Enemy' = struct
         in
         List.length collisions > 0
       in
-      let dunk () =
-        enemy.entity.v <- { x = 0.; y = dunk_vy };
-        log_action enemy "dunked" args.frame_time;
-        set_prop enemy "dunked" 1.;
-        set_pose enemy "struck"
-      in
       if get_bool_prop enemy "dunked" then
         if still_doing "dunked" dunk_duration then
           set_pose enemy "struck"
         else
           Entity.hide enemy.entity
       else if get_bool_prop enemy "homing" then (
-        set_action enemy HOMING args.room args.frame_time
-          [ ("ghost_x", args.ghost_entity.dest.pos.x); ("ghost_y", args.ghost_entity.dest.pos.y) ];
+        start_and_log_action enemy HOMING args.frame_time
+          [
+            ("ghost_x", args.ghost_entity.dest.pos.x);
+            ("ghost_y", args.ghost_entity.dest.pos.y);
+            ("random_homing_dv", 5. +. Random.float 10.);
+          ];
         let should_explode =
           enemy.floor_collision_this_frame
           || Collision.between_entities enemy.entity args.ghost_entity
@@ -618,21 +611,49 @@ module Frog : Enemy' = struct
         in
         if should_explode then (
           args.state.camera.shake <- 1.;
-          set_action enemy EXPLODE args.room args.frame_time [])
+          let projectile =
+            let explosion_scale = 4. in
+            let projectile_duration = TIME_LEFT { seconds = 1. } in
+            spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
+              ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT
+              ~damage:2 projectile_duration args.frame_time
+          in
+          (* this will only catch collisions on the first frame of the
+             explosion, so a frog can move into an explosion without dying
+          *)
+          let check_frog_collision (target_enemy : enemy) =
+            if target_enemy.id = FROG && target_enemy <> enemy then
+              if Collision.between_entities projectile.entity target_enemy.entity then (
+                let vx =
+                  let v' = get_json_prop enemy "death_recoil_v" in
+                  let explosion_center = (Entity.get_center projectile.entity).x in
+                  let target_center = (Entity.get_center target_enemy.entity).x in
+                  if explosion_center > target_center then
+                    -.v'
+                  else
+                    v'
+                in
+                (* this only recoils the frog horizontally *)
+                target_enemy.entity.v.x <- vx;
+                target_enemy.health.current <- 0;
+                set_prop target_enemy "death_recoil" 1.)
+          in
+          List.iter check_frog_collision args.room.enemies;
+          args.room.loose_projectiles <- projectile :: args.room.loose_projectiles;
+          Entity.hide enemy.entity)
         else if any_liquid_collisions () then
-          dunk ())
+          start_and_log_action enemy DUNKED args.frame_time [])
       else if get_bool_prop enemy "struck_cooldown" then (
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
-        let cooldown_started = action_started_at enemy "struck_cooldown" in
         if not (still_doing "struck_cooldown" cooldown_duration) then
           set_prop enemy "homing" 1.)
       else if get_bool_prop enemy "death_recoil" then
         if enemy.floor_collision_this_frame then (
-          log_action enemy "struck_cooldown" args.frame_time;
+          Action.log enemy "struck_cooldown" args.frame_time;
           set_prop enemy "struck_cooldown" 1.)
         else if any_liquid_collisions () then (* TODO maybe have a different texture for "dunked" *)
-          dunk ()
+          start_and_log_action enemy DUNKED args.frame_time []
         else
           set_pose enemy "struck")
     else (
@@ -648,7 +669,7 @@ module Frog : Enemy' = struct
             -1. *. rand_x)
         in
         enemy.entity.v.x <- new_vx;
-        set_action enemy ASCEND args.room args.frame_time []);
+        start_and_log_action enemy ASCEND args.frame_time [ ("random_dvy", Random.float 150.) ]);
       if enemy.entity.v.y > 0. then (
         enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y 120.;
         set_pose enemy "idle-descending")
@@ -732,9 +753,9 @@ let get_module (id : enemy_id) : (module M) =
   match id with
   | DUNCAN -> (module Duncan)
   | LOCKER_BOY -> (module Locker_boy)
+  | FROG -> (module Frog)
   (* FIXME  *)
   (* | FISH -> (module Fish) *)
-  (* | FROG -> (module Frog) *)
   (* | ELECTRICITY -> (module Electricity) *)
   (* | PENGUIN *)
   (* | WIRED_ELECTRICITY *)
