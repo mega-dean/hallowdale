@@ -467,8 +467,10 @@ type save_slot = {
 type trigger_kind =
   | CAMERA of string * string
   | LEVER
+  (* CLEANUP probably can remove this *)
   | HEALTH
   | INFO
+  (* CLEANUP maybe can remove this *)
   | ITEM
   | SHADOW
   | WARP of warp_target
@@ -1212,6 +1214,7 @@ type triggers = {
   camera : trigger list;
   cutscene : trigger list;
   d_nail : trigger list;
+  (* FIXME these are going to be attached to purple-pens, can probably remove all of these *)
   item_pickups : trigger list;
   levers : lever list;
   (* this is used for any infinitely-repeatable interactions, like reading lore or warping
@@ -1230,7 +1233,8 @@ type camera_state = {
 }
 
 type idx_config =
-  | PURPLE_PEN of string
+  (* CLEANUP doesn't really make sense to call these item pickups "triggers" anymore *)
+  | PURPLE_PEN of string * trigger option
   | DOOR_HITS of int
 
 type room_params = {

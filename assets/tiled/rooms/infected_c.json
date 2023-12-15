@@ -682,28 +682,17 @@
                 {
                  "height":16,
                  "id":49,
-                 "name":"purple-pen:2.08.1",
+                 "name":"purple-pen:2.08.1\/ability:scootenanny",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":14,
                  "x":545,
                  "y":893
-                }, 
-                {
-                 "height":43,
-                 "id":52,
-                 "name":"ability:scootenanny",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":35,
-                 "x":576,
-                 "y":869
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 

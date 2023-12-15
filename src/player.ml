@@ -63,34 +63,46 @@ let read_config () : ghosts_file =
 let ghost_ids_in_party ghosts : ghost_id list =
   ghosts |> List.filter_map (fun g -> if g.in_party then Some g.ghost.id else None)
 
-let maybe_begin_interaction (state : state) (game : game) trigger =
-  let begin_interaction ?(increase_health = false) trigger =
-    game.interaction.steps <- Interactions.get_steps ~increase_health state game trigger
+let maybe_begin_interactions (state : state) (game : game) (triggers : trigger list) =
+  let begin_interactions ?(increase_health = false) () =
+    game.interaction.steps <- Interactions.get_steps ~increase_health state game triggers
   in
-  let begin_health_interaction name trigger =
-    (* these can be repeated, but health should only be increased once *)
-    let increase_health = not (List.mem name game.room.progress.finished_interactions) in
-    if increase_health then
-      game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
-    begin_interaction ~increase_health trigger
-  in
-  let begin_cutscene_interaction name trigger =
+  (* CLEANUP should be able to remove this, since it will be tied to the purple pen
+     (which can only happen once) *)
+  (* let begin_health_interaction name trigger =
+   *   (\* these can be repeated, but health should only be increased once *\)
+   *   let increase_health = not (List.mem name game.room.progress.finished_interactions) in
+   *   if increase_health then
+   *     game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
+   *   begin_interaction ~increase_health trigger
+   * in *)
+  let begin_cutscene_interaction name =
     (* these are only viewable once *)
     if not (List.mem name game.room.progress.finished_interactions) then (
       game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
-      begin_interaction trigger)
+      begin_interactions ())
   in
+  (* CLEANUP not using this currently *)
   let strip_blocking_interaction (full_name : string) : string =
     String.maybe_trim_before '|' full_name
   in
-  let name = strip_blocking_interaction trigger.full_name in
-  match trigger.kind with
+  let first_trigger =
+    match List.nth_opt triggers 0 with
+    | None -> failwith ""
+    | Some t -> t
+  in
+  let name = strip_blocking_interaction first_trigger.full_name in
+  match first_trigger.kind with
   | WARP _
   | PURPLE_PEN
   | INFO ->
-    (* these have no side effects and can be repeated *)
-    begin_interaction trigger
-  | HEALTH -> begin_health_interaction name trigger
+    (* these have no side effects and can be repeated
+        CLEANUP purple pens do have side-effects
+       - probably move them down to begin_cutscene_interaction
+       - make sure they can still be re-interacted after game over
+    *)
+    begin_interactions ()
+  | HEALTH -> failwith "FIXME remove this" (* begin_health_interaction name first_trigger *)
   | D_NAIL
   | BOSS_KILLED
   | ITEM
@@ -99,12 +111,15 @@ let maybe_begin_interaction (state : state) (game : game) trigger =
     | DEMO
     | STEEL_SOLE ->
       ()
-    | CLASSIC -> begin_cutscene_interaction name trigger)
+    | CLASSIC -> begin_cutscene_interaction name)
   | CAMERA _
   | LEVER
   | SHADOW
   | RESPAWN ->
-    failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind)
+    failwithf "cannot begin interaction with kind %s" (Show.trigger_kind first_trigger.kind)
+
+let maybe_begin_interaction (state : state) (game : game) trigger =
+  maybe_begin_interactions (state : state) (game : game) [ trigger ]
 
 let find_trigger_collision' ghost (xs : 'a list) get_trigger_dest : 'a option =
   let colliding x =
@@ -553,10 +568,12 @@ let resolve_slash_collisions (state : state) (game : game) =
             List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
-          | Some (PURPLE_PEN name) ->
+          | Some (PURPLE_PEN (name, followup_trigger)) ->
             game.progress.steel_sole.purple_pens_found <-
               (state.frame.idx, name) :: game.progress.steel_sole.purple_pens_found;
-            maybe_begin_interaction state game (make_stub_trigger PURPLE_PEN "purple-pen" name)
+            maybe_begin_interactions state game
+              ([ Some (make_stub_trigger PURPLE_PEN "purple-pen" name); followup_trigger ]
+              |> List.filter_somes)
           | _ -> ());
           destroy_tile_group layer tile_group;
           (match game.mode with
@@ -1393,6 +1410,7 @@ let tick (game : game) (state : state) =
     in
 
     let check_for_new_interactions () : bool =
+      (* FIXME remove item_pickups *)
       let interactable_triggers = game.room.triggers.lore @ game.room.triggers.item_pickups in
       (match find_trigger_collision game.player interactable_triggers with
       | None -> game.room.interaction_label <- None

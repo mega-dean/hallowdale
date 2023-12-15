@@ -156,6 +156,22 @@ let init (params : room_params) : room =
         String.split_at_first_opt '|' name_prefix'
       in
 
+      (* CLEANUP consolidate *)
+      let get_object_trigger' trigger_name kind : trigger =
+        let name_prefix, name_suffix = String.split_at_first ':' trigger_name in
+        let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+        let dest : rect = rect in
+        {
+          full_name = trigger_name;
+          name_prefix;
+          name_suffix;
+          kind;
+          dest;
+          label = None;
+          blocking_interaction;
+        }
+      in
+
       let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
         let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
         let dest : rect =
@@ -263,7 +279,13 @@ let init (params : room_params) : room =
           coll_rect.h |> Float.to_int
         in
         add_idx_config (DOOR_HITS door_health)
-      | "purple-pen" -> add_idx_config (PURPLE_PEN name_suffix)
+      | "purple-pen" ->
+        let suffix', followup_trigger =
+          match String.split_at_first_opt '/' name_suffix with
+          | None, _ -> (name_suffix, None)
+          | Some suffix', new_trigger -> (suffix', Some (get_object_trigger' new_trigger ITEM))
+        in
+        add_idx_config (PURPLE_PEN (suffix', followup_trigger))
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
         let target = parse_warp_target name_suffix in
@@ -275,6 +297,7 @@ let init (params : room_params) : room =
       | "ability"
       | "weapon"
       | "dreamer" ->
+        (* FIXME these should not be necessary anymore after moving all pickups to purple pens *)
         item_pickup_triggers :=
           get_object_trigger ~label:(Some "Pick up") ITEM :: !item_pickup_triggers
       | "npc" ->

@@ -2,7 +2,7 @@ open Utils
 open Types
 open Types.Interaction
 
-let get_steps ?(increase_health = false) state game (trigger : trigger) : step list =
+let get_steps ?(increase_health = false) state game (triggers : trigger list) : step list =
   let ability_text_outline x y =
     (* TODO move these to config *)
     let w, h = (150., 60.) in
@@ -10,7 +10,7 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
   in
   let remove_nail = ref true in
 
-  let interaction_steps : step list =
+  let get_interaction_steps (trigger : trigger) : step list =
     let fade_screen_with_dramatic_pause steps =
       [
         STEP (WAIT 0.5);
@@ -707,9 +707,11 @@ let get_steps ?(increase_health = false) state game (trigger : trigger) : step l
     | _ -> failwithf "unknown interaction prefix: %s" trigger.name_prefix
   in
 
+  let steps = List.concat_map get_interaction_steps triggers in
+
   (* SET_GHOST_CAMERA to reset the camera if it changed *)
   [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ]
-  @ interaction_steps
+  @ steps
   @ [
       STEP
         (SET_CAMERA_MOTION (SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y)));
