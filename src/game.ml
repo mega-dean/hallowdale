@@ -47,6 +47,8 @@ let empty_save_file () : Json_t.save_file =
         (* "Limpken Wrench"; *)
         (* "Orange Paintball Gun"; *)
         (* "Pickle Magnet"; *)
+        (* "Sword of Duquesne"; *)
+        (* "Switch"; *)
         (* "Quantum Spanner"; *)
       ];
     current_weapon = "Old Nail";

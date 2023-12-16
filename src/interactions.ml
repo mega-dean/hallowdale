@@ -77,10 +77,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "door-warp" -> [ STEP (DOOR_WARP trigger.kind) ]
     | "weapon" ->
       (* TODO center this text *)
-      [
-        CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-        CURRENT_GHOST (ADD_ITEM (WEAPON trigger.name_suffix));
-      ]
+      fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_ITEM (WEAPON trigger.name_suffix)) ]
     | "purple-pen" ->
       remove_nail := false;
       [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]

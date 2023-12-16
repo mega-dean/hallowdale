@@ -77,6 +77,32 @@
             "a": 255
         }
     }],
+    ["Sword of Duquesne", {
+        "pickup_text": "",
+        "damage": 4,
+        "scale_x": 1.3,
+        "scale_y": 1.3,
+        "swing_speed": 1.4,
+        "tint": {
+            "r": 200,
+            "g": 200,
+            "b": 17,
+            "a": 255
+        }
+    }],
+    ["Switch", {
+        "pickup_text": "A stick she can use to whoop you with.",
+        "damage": 2,
+        "scale_x": 1.2,
+        "scale_y": 1.2,
+        "swing_speed": 1.5,
+        "tint": {
+            "r": 100,
+            "g": 80,
+            "b": 60,
+            "a": 255
+        }
+    }],
     ["Quantum Spanner", {
         "pickup_text": "Oi Govna!",
         "damage": 3,
@@ -90,10 +116,4 @@
             "a": 255
         }
     }]
-
-    // other weapons:
-    // sword of duquesne - reward from Neil
-    // sword of diehard - after both hilt/blade are found
-    // hockey stick, lacrosse stick, meterstick, broom, plunger - weapons from the episode (maybe these can be bought from the shopkeeper)
-    // switch - a stick she can use to whoop you with
 ]

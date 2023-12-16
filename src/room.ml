@@ -298,8 +298,6 @@ let init (params : room_params) : room =
       | "health" ->
         lore_triggers := get_object_trigger ~label:(Some "Read") HEALTH :: !lore_triggers
       | "d-nail-item" -> d_nail_triggers := get_object_trigger D_NAIL :: !item_pickup_triggers
-      | "ability"
-      | "weapon"
       | "dreamer" ->
         (* FIXME these should not be necessary anymore after moving all pickups to purple pens *)
         item_pickup_triggers :=

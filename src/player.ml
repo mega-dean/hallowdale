@@ -572,7 +572,14 @@ let resolve_slash_collisions (state : state) (game : game) =
             game.progress.steel_sole.purple_pens_found <-
               (state.frame.idx, name) :: game.progress.steel_sole.purple_pens_found;
             maybe_begin_interactions state game
-              ([ Some (make_stub_trigger PURPLE_PEN "purple-pen" name); followup_trigger ]
+              ([
+                 Some (make_stub_trigger PURPLE_PEN "purple-pen" name);
+                 (match game.mode with
+                 | STEEL_SOLE -> None
+                 | CLASSIC
+                 | DEMO ->
+                   followup_trigger);
+               ]
               |> List.filter_somes)
           | _ -> ());
           destroy_tile_group layer tile_group;
