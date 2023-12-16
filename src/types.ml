@@ -1447,3 +1447,18 @@ let clone_game_progress (game_progress : Json_t.game_progress) : Json_t.game_pro
         c_dashes = game_progress.steel_sole.c_dashes;
       };
   }
+
+let clone_abilities (abilities : Json_t.ghost_abilities) : Json_t.ghost_abilities =
+  {
+    (* movement *)
+    mothwing_cloak = abilities.mothwing_cloak;
+    mantis_claw = abilities.mantis_claw;
+    crystal_heart = abilities.crystal_heart;
+    monarch_wings = abilities.monarch_wings;
+    shade_cloak = abilities.shade_cloak;
+    ismas_tear = abilities.ismas_tear;
+    (* spells *)
+    vengeful_spirit = abilities.vengeful_spirit;
+    desolate_dive = abilities.desolate_dive;
+    howling_wraiths = abilities.howling_wraiths;
+  }

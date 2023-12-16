@@ -2727,7 +2727,7 @@ let init
         last_decremented = { at = 0. };
       };
     spawned_vengeful_spirits = [];
-    abilities = save_file.abilities;
+    abilities = clone_abilities save_file.abilities;
     weapons = weapons |> List.to_string_map;
     current_weapon =
       (* TODO should read this from weapons.json *)

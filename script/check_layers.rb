@@ -57,7 +57,9 @@ end
 #   end
 # end
 
-pen_names = all_purple_pens.map{|pen| pen['name'].gsub('purple-pen:', '')}.sort
+pen_names = all_purple_pens.map do |pen|
+  pen['name'].gsub('purple-pen:', '').gsub(/\/.*/, '')
+end.sort
 
 dupe_count = 0
 
@@ -109,10 +111,15 @@ with_shadow, without_shadow = jsons.partition do |json|
   json['layers'].any? { |layer| layer['name'] == 'shadow' }
 end
 
+with_visible_camera, without_visible_camera = jsons.partition do |json|
+  json['layers'].any? { |layer| layer['name'] == 'ref:camera' && layer['visible'] }
+end
+
 with_empty_shadow, with_complete_shadow = with_shadow.partition do |json|
   shadow_layer = json['layers'].find{ |l| l['name'] == 'shadow' }
   shadow_layer['data'].all?{|cell| cell == 0} &&
-    !json['filename'].start_with?('ac-repair')
+    !json['filename'].start_with?('ac-repair') &&
+    !json['filename'] == 'forgotten-test.json'
 end
 
 def show_layers(jsons, label)
@@ -125,6 +132,7 @@ def show_layers(jsons, label)
   end
 end
 
+show_layers(with_visible_camera, "with visible camera")
 show_layers(without_shadow, "without shadows")
 # show_layers(with_complete_shadow, "with complete shadows")
 show_layers(with_empty_shadow, "with empty shadows")
