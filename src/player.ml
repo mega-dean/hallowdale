@@ -67,15 +67,6 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
   let begin_interactions ?(increase_health = false) () =
     game.interaction.steps <- Interactions.get_steps ~increase_health state game triggers
   in
-  (* CLEANUP should be able to remove this, since it will be tied to the purple pen
-     (which can only happen once) *)
-  (* let begin_health_interaction name trigger =
-   *   (\* these can be repeated, but health should only be increased once *\)
-   *   let increase_health = not (List.mem name game.room.progress.finished_interactions) in
-   *   if increase_health then
-   *     game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
-   *   begin_interaction ~increase_health trigger
-   * in *)
   let begin_cutscene_interaction name =
     (* these are only viewable once *)
     if not (List.mem name game.room.progress.finished_interactions) then (
@@ -102,7 +93,6 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
        - make sure they can still be re-interacted after game over
     *)
     begin_interactions ()
-  | HEALTH -> failwith "FIXME remove this" (* begin_health_interaction name first_trigger *)
   | D_NAIL
   | BOSS_KILLED
   | ITEM
@@ -1417,8 +1407,7 @@ let tick (game : game) (state : state) =
     in
 
     let check_for_new_interactions () : bool =
-      (* FIXME remove item_pickups *)
-      let interactable_triggers = game.room.triggers.lore @ game.room.triggers.item_pickups in
+      let interactable_triggers = game.room.triggers.lore in
       (match find_trigger_collision game.player interactable_triggers with
       | None -> game.room.interaction_label <- None
       | Some trigger -> (
@@ -1621,7 +1610,6 @@ let tick (game : game) (state : state) =
         in
 
         let add_item (item_kind : Interaction.item_kind) =
-          Room.update_pickup_indicators state game;
           match item_kind with
           | ABILITY ability_name -> enable_ability game.player ability_name
           | DREAMER (item_name, dreamer_item_text) ->

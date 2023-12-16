@@ -5,40 +5,6 @@ let scale_room_rect x y w h = scale_rect Config.scale.room { pos = { x; y }; w; 
 let in_teachers_archives (room : room) = room.id = LIB_A || room.id = LIB_B
 let show_ghost_on_map (room : room) = not (in_teachers_archives room || room.id = VENT_HUB)
 
-let get_pickup_indicators
-    (room_progress : Json_t.room_progress)
-    (texture : texture)
-    (triggers : trigger list) : sprite list =
-  let show_obj (trigger : trigger) : sprite option =
-    if List.mem trigger.full_name room_progress.finished_interactions then
-      None
-    else (
-      let dest =
-        let child_w, child_h =
-          let src = get_src texture in
-          (src.w *. Config.scale.room, src.h *. Config.scale.room)
-        in
-        let parent_w, parent_h = (trigger.dest.w, trigger.dest.h) in
-        let parent_x, parent_y = (trigger.dest.pos.x, trigger.dest.pos.y) in
-        {
-          pos =
-            {
-              x = parent_x +. ((parent_w -. child_w) /. 2.);
-              y = parent_y +. ((parent_h -. child_h) /. 2.);
-            };
-          w = child_w;
-          h = child_h;
-        }
-      in
-      Some (Sprite.create "indicator" texture dest))
-  in
-  List.filter_map show_obj triggers
-
-let update_pickup_indicators (state : state) (game : game) =
-  game.room.pickup_indicators <-
-    get_pickup_indicators game.room.progress state.global.textures.pickup_indicator
-      game.room.triggers.item_pickups
-
 let get_filename_from_ids area_id room_id : string =
   fmt "%s_%s" (Show.area_id area_id) (Show.room_id_filename room_id)
 
@@ -84,7 +50,6 @@ let init (params : room_params) : room =
   let shadow_triggers : trigger list ref = ref [] in
   let lore_triggers : trigger list ref = ref [] in
   let d_nail_triggers : trigger list ref = ref [] in
-  let item_pickup_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
   let respawn_triggers : (vector * trigger) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
@@ -283,7 +248,6 @@ let init (params : room_params) : room =
         let suffix', followup_trigger =
           match String.split_at_first_opt '+' name_suffix with
           | None, _ -> (name_suffix, None)
-          | Some suffix', "increase-health" -> (suffix', Some (get_followup_trigger "health:" HEALTH))
           | Some suffix', new_trigger_name -> (suffix', Some (get_followup_trigger new_trigger_name ITEM))
         in
         add_idx_config (PURPLE_PEN (suffix', followup_trigger))
@@ -295,13 +259,7 @@ let init (params : room_params) : room =
         *)
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
       | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
-      | "health" ->
-        lore_triggers := get_object_trigger ~label:(Some "Read") HEALTH :: !lore_triggers
-      | "d-nail-item" -> d_nail_triggers := get_object_trigger D_NAIL :: !item_pickup_triggers
-      | "dreamer" ->
-        (* FIXME these should not be necessary anymore after moving all pickups to purple pens *)
-        item_pickup_triggers :=
-          get_object_trigger ~label:(Some "Pick up") ITEM :: !item_pickup_triggers
+      (* | "d-nail-item" -> d_nail_triggers := get_object_trigger D_NAIL :: !item_pickup_triggers *)
       | "npc" ->
         (* TODO this should have "Talk" interaction_label *)
         let npc_id, dest =
@@ -709,7 +667,6 @@ let init (params : room_params) : room =
         camera = !camera_triggers;
         cutscene = !cutscene_triggers;
         d_nail = !d_nail_triggers;
-        item_pickups = !item_pickup_triggers;
         levers = !lever_triggers;
         lore = !lore_triggers;
         respawn = !respawn_triggers;
@@ -723,8 +680,6 @@ let init (params : room_params) : room =
     enemies;
     npcs;
     loose_projectiles = [];
-    pickup_indicators =
-      get_pickup_indicators room_progress params.pickup_indicator_texture !item_pickup_triggers;
     interaction_label = None;
     cache;
   }

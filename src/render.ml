@@ -618,12 +618,6 @@ let tick (state : state) =
     in
 
     let draw_object_trigger_indicators () =
-      List.iter
-        (fun (sprite : sprite) ->
-          if state.debug.enabled then
-            debug_rect_outline sprite.dest;
-          draw_sprite sprite)
-        game.room.pickup_indicators;
       match game.room.interaction_label with
       | None -> ()
       | Some (label, dest) ->

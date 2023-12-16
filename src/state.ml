@@ -513,10 +513,6 @@ let update_npcs (game : game) (state : state) =
     Sprite.advance_animation state.frame.time npc.entity.sprite
   in
 
-  let update_pickup_indicators (sprite : sprite) =
-    Sprite.advance_animation state.frame.time sprite
-  in
-
   let update_ghost (party_ghost : party_ghost) =
     let ghost = party_ghost.ghost in
     Sprite.advance_animation state.frame.time ghost.entity.sprite;
@@ -527,8 +523,6 @@ let update_npcs (game : game) (state : state) =
 
   List.iter update_ghost game.party;
   List.iter update_npc game.room.npcs;
-  (* pickup indicators aren't really "npcs" *)
-  List.iter update_pickup_indicators game.room.pickup_indicators;
   state
 
 let update_spawned_vengeful_spirits (game : game) (state : state) =
@@ -706,7 +700,6 @@ let tick (state : state) =
           show_triggers game.room.triggers.lore;
           show_triggers game.room.triggers.cutscene;
           show_triggers game.room.triggers.d_nail;
-          show_triggers ~color:Raylib.Color.red game.room.triggers.item_pickups;
 
           (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
           add_debug_rects state
