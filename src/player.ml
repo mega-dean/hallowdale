@@ -1539,9 +1539,8 @@ let tick (game : game) (state : state) =
             game.interaction.floating_text <-
               Some { content = text; visible = TIME { at = state.frame.time +. duration } }
           | TEXT paragraphs ->
-            let text : Interaction.text = { content = paragraphs; increases_health = false } in
             game.interaction.speaker_name <- None;
-            game.interaction.text <- Some (PLAIN text)
+            game.interaction.text <- Some (PLAIN paragraphs)
           | FOCUS_ABILITY_TEXT (top_paragraphs, outline_src, bottom_paragraphs) ->
             game.interaction.speaker_name <- None;
             game.interaction.text <-
@@ -1576,27 +1575,23 @@ let tick (game : game) (state : state) =
             let v = { x = start_x; y = end_y } in
             spawn_vengeful_spirit ~start:(Some v) ~direction:(Some direction) state game
           | DIALOGUE (speaker, str) ->
-            let text : Interaction.text = { content = [ str ]; increases_health = false } in
             game.interaction.speaker_name <- Some speaker;
-            game.interaction.text <- Some (DIALOGUE (speaker, text))
+            game.interaction.text <- Some (DIALOGUE (speaker, str))
           | PURPLE_PEN_TEXT line ->
             Entity.freeze game.player.ghost.entity;
-            let text : Interaction.text =
+            let text : string list =
               let content_with_prefix =
                 [ "Found a purple pen with a note:"; fmt "{{purple}} %s" line ]
               in
               let content_without_prefix = [ line ] in
-              let content =
-                match game.mode with
-                | CLASSIC -> content_with_prefix
-                | STEEL_SOLE -> content_without_prefix
-                | DEMO ->
-                  if Room.in_teachers_archives game.room then
-                    content_without_prefix
-                  else
-                    content_with_prefix
-              in
-              { content; increases_health = false }
+              match game.mode with
+              | CLASSIC -> content_with_prefix
+              | STEEL_SOLE -> content_without_prefix
+              | DEMO ->
+                if Room.in_teachers_archives game.room then
+                  content_without_prefix
+                else
+                  content_with_prefix
             in
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
@@ -1623,21 +1618,15 @@ let tick (game : game) (state : state) =
           match item_kind with
           | ABILITY ability_name -> enable_ability game.player ability_name
           | DREAMER (item_name, dreamer_item_text) ->
-            let text : Interaction.text =
-              {
-                content = [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ];
-                increases_health = false;
-              }
+            let text : string list =
+              [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]
             in
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
           | WEAPON weapon_name ->
             let weapon_config = StringMap.find weapon_name state.global.weapons in
-            let text : Interaction.text =
-              {
-                content = [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ];
-                increases_health = false;
-              }
+            let text : string list =
+              [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]
             in
             acquire_weapon state game weapon_name;
             game.interaction.speaker_name <- None;
@@ -1727,13 +1716,11 @@ let tick (game : game) (state : state) =
           match step with
           | SET_POSE pose -> set_pose game pose state.global.textures.ghost_bodies state.frame.time
           | FILL_LIFE_VAPOR -> player.soul.current <- player.soul.max
-          | INCREASE_HEALTH_TEXT (increases_health, str) ->
-            if increases_health then (
-              player.health.max <- player.health.max + 1;
-              player.health.current <- player.health.max);
-            let text : Interaction.text = { content = [ str ]; increases_health } in
+          | INCREASE_HEALTH_TEXT str ->
+            player.health.max <- player.health.max + 1;
+            player.health.current <- player.health.max;
             game.interaction.speaker_name <- None;
-            game.interaction.text <- Some (PLAIN text)
+            game.interaction.text <- Some (PLAIN [ str ])
           | ADD_ITEM item_kind -> add_item item_kind
           | UNSET_FLOOR -> game.player.ghost.entity.current_floor <- None
           | ENTITY entity_step -> handle_entity_step player.ghost.entity entity_step

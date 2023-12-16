@@ -487,36 +487,33 @@ let tick (state : state) =
         (display_paragraph ability_config Config.text.focus_outline_bottom_offset_y)
         ability_text.bottom_paragraphs
     | Some (DIALOGUE (speaker_name, text')) ->
+      (* TODO when one character says several lines in a row, it would be nice
+         to not "close" the text box in between each one *)
       let config : text_config = Config.text.dialogue_config in
       draw_text_bg_box config;
-      let content = List.hd text'.content in
-      if List.length (List.tl text'.content) > 0 then
-        (* TODO when one character says several lines in a row, it would be nice
-           to not "close" the text box in between each one *)
-        failwith "unsupported: DIALOGUE can only have one line"
-      else (
-        let color_str =
-          match speaker_name with
-          | "Britta" -> "{{gold}}"
-          | "Annie" -> "{{orange}}"
-          | "Jeff" -> "{{darkblue}}"
-          | "Shirley" -> "{{darkpink}}"
-          | "Troy" -> "{{darkgreen}}"
-          | "Abed" -> "{{darkpurple}}"
-          | "Neil" -> "{{purple}}"
-          | "Garrett" -> "{{green}}"
-          | "Chang"
-          | "Hickey"
-          | "Duncan" ->
-            "{{maroon}}"
-          | _ -> failwithf "unknown speaker: %s" speaker_name
-        in
-        display_paragraph config 0. 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name content))
-    | Some (PLAIN text') ->
+      let color_str =
+        match speaker_name with
+        | "Britta" -> "{{gold}}"
+        | "Annie" -> "{{orange}}"
+        | "Jeff" -> "{{darkblue}}"
+        | "Shirley" -> "{{darkpink}}"
+        | "Troy" -> "{{darkgreen}}"
+        | "Abed" -> "{{darkpurple}}"
+        | "Neil" -> "{{purple}}"
+        | "Garrett" -> "{{green}}"
+        | "Chang"
+        | "Hickey"
+        | "Duncan" ->
+          "{{maroon}}"
+        | _ -> failwithf "unknown speaker: %s" speaker_name
+      in
+      display_paragraph config 0. 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name text')
+    | Some (PLAIN lines) ->
       let margin_y_bottom =
         let tall_text =
           (* TODO it's worth cleaning this up if there are any long dialogs needed besides the ACB note *)
-          String.length (List.nth text'.content (List.length text'.content - 1)) > 700
+          (* CLEANUP add List.last *)
+          String.length (List.nth lines (List.length lines - 1)) > 700
         in
         if tall_text then
           Config.text.tall_margin_y_bottom
@@ -525,18 +522,7 @@ let tick (state : state) =
       in
       let config : text_config = Config.get_plain_text_config margin_y_bottom in
       draw_text_bg_box config;
-      if text'.increases_health then (
-        (* TODO may need to adjust this for scaled windows *)
-        let increase_health_text_margin_y =
-          (* print the line at the bottom of the text box *)
-          Config.window.h -. config.margin_y_bottom -. (2. *. config.padding.y)
-        in
-        List.iteri (display_paragraph config 0.) text'.content;
-        display_paragraph
-          { config with margin_y_top = increase_health_text_margin_y }
-          0. 0 "{{green}} max health increased by one")
-      else
-        List.iteri (display_paragraph config 0.) text'.content
+      List.iteri (display_paragraph config 0.) lines
     | Some (MENU (menu, save_slots)) ->
       let margin_x, margin_y_top = Config.get_text_margins (List.nth menu.choices 0) in
       let margin_y_bottom = margin_y_top in
@@ -988,6 +974,7 @@ let tick (state : state) =
         Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0
           Color.raywhite
       in
+      (* CLEANUP draw heads in two rows when > 10 *)
       let draw_head i idx =
         let image = game.player.shared_textures.health.image in
         let w, h =

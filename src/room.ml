@@ -157,7 +157,7 @@ let init (params : room_params) : room =
       in
 
       (* CLEANUP consolidate *)
-      let get_object_trigger' trigger_name kind : trigger =
+      let get_followup_trigger trigger_name kind : trigger =
         let name_prefix, name_suffix = String.split_at_first ':' trigger_name in
         let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
         let dest : rect = rect in
@@ -281,14 +281,18 @@ let init (params : room_params) : room =
         add_idx_config (DOOR_HITS door_health)
       | "purple-pen" ->
         let suffix', followup_trigger =
-          match String.split_at_first_opt '/' name_suffix with
+          match String.split_at_first_opt '+' name_suffix with
           | None, _ -> (name_suffix, None)
-          | Some suffix', new_trigger -> (suffix', Some (get_object_trigger' new_trigger ITEM))
+          | Some suffix', "increase-health" -> (suffix', Some (get_followup_trigger "health:" HEALTH))
+          | Some suffix', new_trigger_name -> (suffix', Some (get_followup_trigger new_trigger_name ITEM))
         in
         add_idx_config (PURPLE_PEN (suffix', followup_trigger))
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
         let target = parse_warp_target name_suffix in
+        (* CLEANUP "lore_triggers" probably isn't a good name for this since warping isn't lore
+           - maybe "interactable_triggers" (since now some triggers aren't interactable)
+        *)
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
       | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
       | "health" ->

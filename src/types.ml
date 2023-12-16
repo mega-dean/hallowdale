@@ -538,7 +538,7 @@ module Interaction = struct
 
   type ghost_step =
     | FILL_LIFE_VAPOR
-    | INCREASE_HEALTH_TEXT of bool * string
+    | INCREASE_HEALTH_TEXT of string
     | (* this isn't using (PARTY (SET_POSE ...)) because it uses the real Ghost.set_pose
          instead of the simpler one for party_ghosts during interactions
       *)
@@ -582,19 +582,12 @@ module Interaction = struct
     bottom_paragraphs : string list;
   }
 
-  type text = {
-    content : string list;
-    increases_health : bool;
-  }
-
   type text_kind =
-    | PLAIN of text
-    (* kinda weird for this to be a separate variant but use the same underlying type
-       - the alternative is to just use ABILITY_TEXT everywhere, and have top_paragraphs almost always be empty
-    *)
-    | FOCUS_ABILITY of ability_text
+    | PLAIN of string list
     | ABILITY of ability_text
-    | DIALOGUE of string * text
+    | (* this is a separate variant because the focus dialogue is the only one with top_paragraphs *)
+      FOCUS_ABILITY of ability_text
+    | DIALOGUE of string * string
     | MENU of menu * save_slot list option
 
   type transient_text_visible =

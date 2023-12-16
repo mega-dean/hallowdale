@@ -391,7 +391,7 @@
                 {
                  "height":17,
                  "id":76,
-                 "name":"purple-pen:2.10.1",
+                 "name":"purple-pen:2.10.1+increase-health",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -402,7 +402,7 @@
                 {
                  "height":17,
                  "id":77,
-                 "name":"purple-pen:2.09.2\/ability:reverse-danny-thomas",
+                 "name":"purple-pen:2.09.2+ability:reverse-danny-thomas",
                  "rotation":0,
                  "type":"",
                  "visible":true,

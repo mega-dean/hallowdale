@@ -85,7 +85,12 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       remove_nail := false;
       [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]
     | "health" ->
-      read_sign @ [ CURRENT_GHOST (INCREASE_HEALTH_TEXT (increase_health, get_lore ())) ]
+      [
+        STEP (WAIT 0.5);
+        CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
+        STEP (WAIT 1.);
+        CURRENT_GHOST (INCREASE_HEALTH_TEXT "Max health increased.");
+      ]
     | "d-nail-item" -> (
       match trigger.name_suffix with
       | "dreamnailitem" -> [ STEP (TEXT [ "Give me some rope, tie me to dream." ]) ]
