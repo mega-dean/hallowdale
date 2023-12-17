@@ -81,7 +81,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "purple-pen" ->
       remove_nail := false;
       [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]
-    | "health" ->
+    | "increase-health" ->
       [
         STEP (WAIT 0.5);
         CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
