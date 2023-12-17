@@ -199,8 +199,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           ~quote:(Some "Without an emotional component, computers will strip us of all humanity.")
         @ [ STEP (HIDE_LAYER "temporary-floors") ]
       | "vaughns-tear" ->
-        (* TODO add ability outline *)
-        get_ability_steps "ismas_tear" 0. 8.
+        get_ability_steps "ismas_tear" 0. 10.
           [ "Consumed the"; "Vaughn's Tear." ]
           [ "Acid shall be repelled."; "Swim in acidic waters without coming to any harm." ]
           ~quote:(Some "Everything is connected. Rocks. Eagles. Hats.")
@@ -222,7 +221,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           [ "Tap (A) while holding UP"; "to unleash the Knockout Gas." ]
           ~quote:(Some "Some kind of {{red}} gas {{white}} that knocks out monkeys.")
       | "honda-nail" ->
-        get_ability_steps "dream_nail" 0. 6. [ "Taken the"; "Honda Nail." ]
+        get_ability_steps "dream_nail" 0. 9. [ "Taken the"; "Honda Nail." ]
           [
             "Hold (X) to charge and slash with the nail.";
             "Cut through the veil between dreams and waking.";

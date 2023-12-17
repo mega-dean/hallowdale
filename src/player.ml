@@ -1231,6 +1231,7 @@ let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
   | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
   | "ismas_tear" -> ghost.abilities.ismas_tear <- new_val ghost.abilities.ismas_tear
+  | "dream_nail" -> ghost.abilities.dream_nail <- new_val ghost.abilities.dream_nail
   | _ -> failwithf "change_ability bad ability name: %s" ability_name
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
@@ -2170,7 +2171,8 @@ let tick (game : game) (state : state) =
 
   let handle_dream_nail () : handled_action =
     let starting_dream_nail () =
-      state.frame_inputs.dream_nail.pressed
+      game.player.abilities.dream_nail
+      && state.frame_inputs.dream_nail.pressed
       && Entity.on_ground game.player.ghost.entity
       && not_doing_any game.player state.frame.time [ ATTACK RIGHT; DASH ]
     in

@@ -86,6 +86,7 @@ type room_progress = Json_t.room_progress = {
 
 type ghost_abilities = Json_t.ghost_abilities = {
   mutable crystal_heart: bool;
+  mutable dream_nail: bool;
   mutable ismas_tear: bool;
   mutable mantis_claw: bool;
   mutable monarch_wings: bool;

@@ -86,6 +86,7 @@ type room_progress = Json_t.room_progress = {
 
 type ghost_abilities = Json_t.ghost_abilities = {
   mutable crystal_heart: bool;
+  mutable dream_nail: bool;
   mutable ismas_tear: bool;
   mutable mantis_claw: bool;
   mutable monarch_wings: bool;
@@ -471,22 +472,22 @@ let read_global_map = (
 )
 let global_map_of_string s =
   read_global_map (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__6 = (
+let write__global_map_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_global_map
   )
 )
-let string_of__6 ?(len = 1024) x =
+let string_of__global_map_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__6 ob x;
+  write__global_map_list ob x;
   Buffer.contents ob
-let read__6 = (
+let read__global_map_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_global_map
   )
 )
-let _6_of_string s =
-  read__6 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _global_map_list_of_string s =
+  read__global_map_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_world : _ -> world -> _ = (
   fun ob (x : world) ->
     Buffer.add_char ob '{';
@@ -497,7 +498,7 @@ let write_world : _ -> world -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"maps\":";
     (
-      write__6
+      write__global_map_list
     )
       ob x.global_maps;
     Buffer.add_char ob '}';
@@ -534,7 +535,7 @@ let read_world = (
             field_global_maps := (
               Some (
                 (
-                  read__6
+                  read__global_map_list
                 ) p lb
               )
             );
@@ -565,7 +566,7 @@ let read_world = (
               field_global_maps := (
                 Some (
                   (
-                    read__6
+                    read__global_map_list
                   ) p lb
                 )
               );
@@ -1133,7 +1134,7 @@ let read_weapon = (
 )
 let weapon_of_string s =
   read_weapon (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__9 = (
+let write__string_weapon_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -1151,11 +1152,11 @@ let write__9 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__9 ?(len = 1024) x =
+let string_of__string_weapon_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__9 ob x;
+  write__string_weapon_list ob x;
   Buffer.contents ob
-let read__9 = (
+let read__string_weapon_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -1201,17 +1202,17 @@ let read__9 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _9_of_string s =
-  read__9 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_weapon_list_of_string s =
+  read__string_weapon_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_weapons_file = (
-  write__9
+  write__string_weapon_list
 )
 let string_of_weapons_file ?(len = 1024) x =
   let ob = Buffer.create len in
   write_weapons_file ob x;
   Buffer.contents ob
 let read_weapons_file = (
-  read__9
+  read__string_weapon_list
 )
 let weapons_file_of_string s =
   read_weapons_file (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
@@ -1687,22 +1688,22 @@ let read_coll_rect = (
 )
 let coll_rect_of_string s =
   read_coll_rect (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__2 = (
+let write__coll_rect_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_coll_rect
   )
 )
-let string_of__2 ?(len = 1024) x =
+let string_of__coll_rect_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__2 ob x;
+  write__coll_rect_list ob x;
   Buffer.contents ob
-let read__2 = (
+let read__coll_rect_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_coll_rect
   )
 )
-let _2_of_string s =
-  read__2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _coll_rect_list_of_string s =
+  read__coll_rect_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_object_group : _ -> object_group -> _ = (
   fun ob (x : object_group) ->
     Buffer.add_char ob '{';
@@ -1713,7 +1714,7 @@ let write_object_group : _ -> object_group -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"objects\":";
     (
-      write__2
+      write__coll_rect_list
     )
       ob x.objects;
     Buffer.add_char ob '}';
@@ -1750,7 +1751,7 @@ let read_object_group = (
             field_objects := (
               Some (
                 (
-                  read__2
+                  read__coll_rect_list
                 ) p lb
               )
             );
@@ -1781,7 +1782,7 @@ let read_object_group = (
               field_objects := (
                 Some (
                   (
-                    read__2
+                    read__coll_rect_list
                   ) p lb
                 )
               );
@@ -1954,22 +1955,22 @@ let read_collision = (
 )
 let collision_of_string s =
   read_collision (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__3 = (
+let write__collision_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_collision
   )
 )
-let string_of__3 ?(len = 1024) x =
+let string_of__collision_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__3 ob x;
+  write__collision_list ob x;
   Buffer.contents ob
-let read__3 = (
+let read__collision_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_collision
   )
 )
-let _3_of_string s =
-  read__3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _collision_list_of_string s =
+  read__collision_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tileset : _ -> tileset -> _ = (
   fun ob (x : tileset) ->
     Buffer.add_char ob '{';
@@ -2026,7 +2027,7 @@ let write_tileset : _ -> tileset -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"tiles\":";
       (
-        write__3
+        write__collision_list
       )
         ob x.collisions;
     );
@@ -2190,7 +2191,7 @@ let read_tileset = (
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_collisions := (
                 (
-                  read__3
+                  read__collision_list
                 ) p lb
               );
             )
@@ -2340,7 +2341,7 @@ let read_tileset = (
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_collisions := (
                   (
-                    read__3
+                    read__collision_list
                   ) p lb
                 );
               )
@@ -2374,22 +2375,22 @@ let read_tileset = (
 )
 let tileset_of_string s =
   read_tileset (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__1 = (
+let write__int_list = (
   Atdgen_runtime.Oj_run.write_list (
     Yojson.Safe.write_int
   )
 )
-let string_of__1 ?(len = 1024) x =
+let string_of__int_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__1 ob x;
+  write__int_list ob x;
   Buffer.contents ob
-let read__1 = (
+let read__int_list = (
   Atdgen_runtime.Oj_run.read_list (
     Atdgen_runtime.Oj_run.read_int
   )
 )
-let _1_of_string s =
-  read__1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _int_list_of_string s =
+  read__int_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tile_layer : _ -> tile_layer -> _ = (
   fun ob (x : tile_layer) ->
     Buffer.add_char ob '{';
@@ -2409,7 +2410,7 @@ let write_tile_layer : _ -> tile_layer -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"data\":";
     (
-      write__1
+      write__int_list
     )
       ob x.data;
     if !is_first then
@@ -2593,7 +2594,7 @@ let read_tile_layer = (
             field_data := (
               Some (
                 (
-                  read__1
+                  read__int_list
                 ) p lb
               )
             );
@@ -2750,7 +2751,7 @@ let read_tile_layer = (
               field_data := (
                 Some (
                   (
-                    read__1
+                    read__int_list
                   ) p lb
                 )
               );
@@ -3084,7 +3085,7 @@ let read_texture_config = (
 )
 let texture_config_of_string s =
   read_texture_config (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__11 = (
+let write__string_texture_config_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -3102,11 +3103,11 @@ let write__11 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__11 ?(len = 1024) x =
+let string_of__string_texture_config_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__11 ob x;
+  write__string_texture_config_list ob x;
   Buffer.contents ob
-let read__11 = (
+let read__string_texture_config_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -3152,21 +3153,21 @@ let read__11 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _11_of_string s =
-  read__11 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_texture_config_list_of_string s =
+  read__string_texture_config_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_texture_configs = (
-  write__11
+  write__string_texture_config_list
 )
 let string_of_texture_configs ?(len = 1024) x =
   let ob = Buffer.create len in
   write_texture_configs ob x;
   Buffer.contents ob
 let read_texture_configs = (
-  read__11
+  read__string_texture_config_list
 )
 let texture_configs_of_string s =
   read_texture_configs (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__17 = (
+let write__int_string_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -3184,11 +3185,11 @@ let write__17 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__17 ?(len = 1024) x =
+let string_of__int_string_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__17 ob x;
+  write__int_string_list ob x;
   Buffer.contents ob
-let read__17 = (
+let read__int_string_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -3234,8 +3235,8 @@ let read__17 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _17_of_string s =
-  read__17 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _int_string_list_of_string s =
+  read__int_string_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
   fun ob (x : steel_sole_progress) ->
     Buffer.add_char ob '{';
@@ -3246,7 +3247,7 @@ let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"purple_pens_found\":";
     (
-      write__17
+      write__int_string_list
     )
       ob x.purple_pens_found;
     if !is_first then
@@ -3325,7 +3326,7 @@ let read_steel_sole_progress = (
             field_purple_pens_found := (
               Some (
                 (
-                  read__17
+                  read__int_string_list
                 ) p lb
               )
             );
@@ -3394,7 +3395,7 @@ let read_steel_sole_progress = (
               field_purple_pens_found := (
                 Some (
                   (
-                    read__17
+                    read__int_string_list
                   ) p lb
                 )
               );
@@ -3432,22 +3433,22 @@ let read_steel_sole_progress = (
 )
 let steel_sole_progress_of_string s =
   read_steel_sole_progress (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__10 = (
+let write__string_list = (
   Atdgen_runtime.Oj_run.write_list (
     Yojson.Safe.write_string
   )
 )
-let string_of__10 ?(len = 1024) x =
+let string_of__string_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__10 ob x;
+  write__string_list ob x;
   Buffer.contents ob
-let read__10 = (
+let read__string_list = (
   Atdgen_runtime.Oj_run.read_list (
     Atdgen_runtime.Oj_run.read_string
   )
 )
-let _10_of_string s =
-  read__10 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_list_of_string s =
+  read__string_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_room_progress : _ -> room_progress -> _ = (
   fun ob (x : room_progress) ->
     Buffer.add_char ob '{';
@@ -3458,7 +3459,7 @@ let write_room_progress : _ -> room_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"removed_tile_idxs\":";
     (
-      write__1
+      write__int_list
     )
       ob x.removed_tile_idxs;
     if !is_first then
@@ -3467,7 +3468,7 @@ let write_room_progress : _ -> room_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"finished_interactions\":";
     (
-      write__10
+      write__string_list
     )
       ob x.finished_interactions;
     if !is_first then
@@ -3476,7 +3477,7 @@ let write_room_progress : _ -> room_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"revealed_shadow_layers\":";
     (
-      write__10
+      write__string_list
     )
       ob x.revealed_shadow_layers;
     Buffer.add_char ob '}';
@@ -3537,7 +3538,7 @@ let read_room_progress = (
             field_removed_tile_idxs := (
               Some (
                 (
-                  read__1
+                  read__int_list
                 ) p lb
               )
             );
@@ -3545,7 +3546,7 @@ let read_room_progress = (
             field_finished_interactions := (
               Some (
                 (
-                  read__10
+                  read__string_list
                 ) p lb
               )
             );
@@ -3553,7 +3554,7 @@ let read_room_progress = (
             field_revealed_shadow_layers := (
               Some (
                 (
-                  read__10
+                  read__string_list
                 ) p lb
               )
             );
@@ -3606,7 +3607,7 @@ let read_room_progress = (
               field_removed_tile_idxs := (
                 Some (
                   (
-                    read__1
+                    read__int_list
                   ) p lb
                 )
               );
@@ -3614,7 +3615,7 @@ let read_room_progress = (
               field_finished_interactions := (
                 Some (
                   (
-                    read__10
+                    read__string_list
                   ) p lb
                 )
               );
@@ -3622,7 +3623,7 @@ let read_room_progress = (
               field_revealed_shadow_layers := (
                 Some (
                   (
-                    read__10
+                    read__string_list
                   ) p lb
                 )
               );
@@ -3657,6 +3658,15 @@ let write_ghost_abilities : _ -> ghost_abilities -> _ = (
       Yojson.Safe.write_bool
     )
       ob x.crystal_heart;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"dream_nail\":";
+    (
+      Yojson.Safe.write_bool
+    )
+      ob x.dream_nail;
     if !is_first then
       is_first := false
     else
@@ -3740,6 +3750,7 @@ let read_ghost_abilities = (
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
     let field_crystal_heart = ref (None) in
+    let field_dream_nail = ref (None) in
     let field_ismas_tear = ref (None) in
     let field_mantis_claw = ref (None) in
     let field_monarch_wings = ref (None) in
@@ -3758,18 +3769,32 @@ let read_ghost_abilities = (
             invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           match len with
             | 10 -> (
-                if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
-                  1
-                )
-                else (
-                  -1
-                )
+                match String.unsafe_get s pos with
+                  | 'd' -> (
+                      if String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'm' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'a' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 'l' then (
+                        1
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | 'i' -> (
+                      if String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
+                        2
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | _ -> (
+                      -1
+                    )
               )
             | 11 -> (
                 match String.unsafe_get s pos with
                   | 'm' -> (
                       if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'c' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'w' then (
-                        2
+                        3
                       )
                       else (
                         -1
@@ -3777,7 +3802,7 @@ let read_ghost_abilities = (
                     )
                   | 's' -> (
                       if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'd' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'c' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = 'o' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'k' then (
-                        5
+                        6
                       )
                       else (
                         -1
@@ -3799,7 +3824,7 @@ let read_ghost_abilities = (
                     )
                   | 'd' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'i' && String.unsafe_get s (pos+11) = 'v' && String.unsafe_get s (pos+12) = 'e' then (
-                        7
+                        8
                       )
                       else (
                         -1
@@ -3807,7 +3832,7 @@ let read_ghost_abilities = (
                     )
                   | 'm' -> (
                       if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 'c' && String.unsafe_get s (pos+6) = 'h' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'g' && String.unsafe_get s (pos+12) = 's' then (
-                        3
+                        4
                       )
                       else (
                         -1
@@ -3819,7 +3844,7 @@ let read_ghost_abilities = (
               )
             | 14 -> (
                 if String.unsafe_get s pos = 'm' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'h' && String.unsafe_get s (pos+4) = 'w' && String.unsafe_get s (pos+5) = 'i' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'c' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 'o' && String.unsafe_get s (pos+12) = 'a' && String.unsafe_get s (pos+13) = 'k' then (
-                  4
+                  5
                 )
                 else (
                   -1
@@ -3829,7 +3854,7 @@ let read_ghost_abilities = (
                 match String.unsafe_get s pos with
                   | 'h' -> (
                       if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'w' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'g' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'r' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 't' && String.unsafe_get s (pos+13) = 'h' && String.unsafe_get s (pos+14) = 's' then (
-                        8
+                        9
                       )
                       else (
                         -1
@@ -3837,7 +3862,7 @@ let read_ghost_abilities = (
                     )
                   | 'v' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'u' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'i' && String.unsafe_get s (pos+14) = 't' then (
-                        6
+                        7
                       )
                       else (
                         -1
@@ -3864,7 +3889,7 @@ let read_ghost_abilities = (
               )
             );
           | 1 ->
-            field_ismas_tear := (
+            field_dream_nail := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3872,7 +3897,7 @@ let read_ghost_abilities = (
               )
             );
           | 2 ->
-            field_mantis_claw := (
+            field_ismas_tear := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3880,7 +3905,7 @@ let read_ghost_abilities = (
               )
             );
           | 3 ->
-            field_monarch_wings := (
+            field_mantis_claw := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3888,7 +3913,7 @@ let read_ghost_abilities = (
               )
             );
           | 4 ->
-            field_mothwing_cloak := (
+            field_monarch_wings := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3896,7 +3921,7 @@ let read_ghost_abilities = (
               )
             );
           | 5 ->
-            field_shade_cloak := (
+            field_mothwing_cloak := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3904,7 +3929,7 @@ let read_ghost_abilities = (
               )
             );
           | 6 ->
-            field_vengeful_spirit := (
+            field_shade_cloak := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3912,7 +3937,7 @@ let read_ghost_abilities = (
               )
             );
           | 7 ->
-            field_desolate_dive := (
+            field_vengeful_spirit := (
               Some (
                 (
                   Atdgen_runtime.Oj_run.read_bool
@@ -3920,6 +3945,14 @@ let read_ghost_abilities = (
               )
             );
           | 8 ->
+            field_desolate_dive := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_bool
+                ) p lb
+              )
+            );
+          | 9 ->
             field_howling_wraiths := (
               Some (
                 (
@@ -3941,18 +3974,32 @@ let read_ghost_abilities = (
               invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             match len with
               | 10 -> (
-                  if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
-                    1
-                  )
-                  else (
-                    -1
-                  )
+                  match String.unsafe_get s pos with
+                    | 'd' -> (
+                        if String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'm' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'a' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 'l' then (
+                          1
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | 'i' -> (
+                        if String.unsafe_get s (pos+1) = 's' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'r' then (
+                          2
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | _ -> (
+                        -1
+                      )
                 )
               | 11 -> (
                   match String.unsafe_get s pos with
                     | 'm' -> (
                         if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'c' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'w' then (
-                          2
+                          3
                         )
                         else (
                           -1
@@ -3960,7 +4007,7 @@ let read_ghost_abilities = (
                       )
                     | 's' -> (
                         if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'd' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'c' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = 'o' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'k' then (
-                          5
+                          6
                         )
                         else (
                           -1
@@ -3982,7 +4029,7 @@ let read_ghost_abilities = (
                       )
                     | 'd' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'i' && String.unsafe_get s (pos+11) = 'v' && String.unsafe_get s (pos+12) = 'e' then (
-                          7
+                          8
                         )
                         else (
                           -1
@@ -3990,7 +4037,7 @@ let read_ghost_abilities = (
                       )
                     | 'm' -> (
                         if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'r' && String.unsafe_get s (pos+5) = 'c' && String.unsafe_get s (pos+6) = 'h' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'g' && String.unsafe_get s (pos+12) = 's' then (
-                          3
+                          4
                         )
                         else (
                           -1
@@ -4002,7 +4049,7 @@ let read_ghost_abilities = (
                 )
               | 14 -> (
                   if String.unsafe_get s pos = 'm' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'h' && String.unsafe_get s (pos+4) = 'w' && String.unsafe_get s (pos+5) = 'i' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'c' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 'o' && String.unsafe_get s (pos+12) = 'a' && String.unsafe_get s (pos+13) = 'k' then (
-                    4
+                    5
                   )
                   else (
                     -1
@@ -4012,7 +4059,7 @@ let read_ghost_abilities = (
                   match String.unsafe_get s pos with
                     | 'h' -> (
                         if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'w' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'g' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'w' && String.unsafe_get s (pos+9) = 'r' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 't' && String.unsafe_get s (pos+13) = 'h' && String.unsafe_get s (pos+14) = 's' then (
-                          8
+                          9
                         )
                         else (
                           -1
@@ -4020,7 +4067,7 @@ let read_ghost_abilities = (
                       )
                     | 'v' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'u' && String.unsafe_get s (pos+7) = 'l' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'i' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 'i' && String.unsafe_get s (pos+14) = 't' then (
-                          6
+                          7
                         )
                         else (
                           -1
@@ -4047,7 +4094,7 @@ let read_ghost_abilities = (
                 )
               );
             | 1 ->
-              field_ismas_tear := (
+              field_dream_nail := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4055,7 +4102,7 @@ let read_ghost_abilities = (
                 )
               );
             | 2 ->
-              field_mantis_claw := (
+              field_ismas_tear := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4063,7 +4110,7 @@ let read_ghost_abilities = (
                 )
               );
             | 3 ->
-              field_monarch_wings := (
+              field_mantis_claw := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4071,7 +4118,7 @@ let read_ghost_abilities = (
                 )
               );
             | 4 ->
-              field_mothwing_cloak := (
+              field_monarch_wings := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4079,7 +4126,7 @@ let read_ghost_abilities = (
                 )
               );
             | 5 ->
-              field_shade_cloak := (
+              field_mothwing_cloak := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4087,7 +4134,7 @@ let read_ghost_abilities = (
                 )
               );
             | 6 ->
-              field_vengeful_spirit := (
+              field_shade_cloak := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4095,7 +4142,7 @@ let read_ghost_abilities = (
                 )
               );
             | 7 ->
-              field_desolate_dive := (
+              field_vengeful_spirit := (
                 Some (
                   (
                     Atdgen_runtime.Oj_run.read_bool
@@ -4103,6 +4150,14 @@ let read_ghost_abilities = (
                 )
               );
             | 8 ->
+              field_desolate_dive := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_bool
+                  ) p lb
+                )
+              );
+            | 9 ->
               field_howling_wraiths := (
                 Some (
                   (
@@ -4120,6 +4175,7 @@ let read_ghost_abilities = (
         (
           {
             crystal_heart = (match !field_crystal_heart with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "crystal_heart");
+            dream_nail = (match !field_dream_nail with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "dream_nail");
             ismas_tear = (match !field_ismas_tear with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ismas_tear");
             mantis_claw = (match !field_mantis_claw with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "mantis_claw");
             monarch_wings = (match !field_monarch_wings with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "monarch_wings");
@@ -4134,7 +4190,7 @@ let read_ghost_abilities = (
 )
 let ghost_abilities_of_string s =
   read_ghost_abilities (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__18 = (
+let write__string_room_progress_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -4152,11 +4208,11 @@ let write__18 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__18 ?(len = 1024) x =
+let string_of__string_room_progress_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__18 ob x;
+  write__string_room_progress_list ob x;
   Buffer.contents ob
-let read__18 = (
+let read__string_room_progress_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -4202,8 +4258,8 @@ let read__18 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _18_of_string s =
-  read__18 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_room_progress_list_of_string s =
+  read__string_room_progress_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_game_progress : _ -> game_progress -> _ = (
   fun ob (x : game_progress) ->
     Buffer.add_char ob '{';
@@ -4232,7 +4288,7 @@ let write_game_progress : _ -> game_progress -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"by_room\":";
     (
-      write__18
+      write__string_room_progress_list
     )
       ob x.by_room;
     Buffer.add_char ob '}';
@@ -4309,7 +4365,7 @@ let read_game_progress = (
             field_by_room := (
               Some (
                 (
-                  read__18
+                  read__string_room_progress_list
                 ) p lb
               )
             );
@@ -4378,7 +4434,7 @@ let read_game_progress = (
               field_by_room := (
                 Some (
                   (
-                    read__18
+                    read__string_room_progress_list
                   ) p lb
                 )
               );
@@ -4464,7 +4520,7 @@ let write_save_file : _ -> save_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"ghosts_in_party\":";
     (
-      write__10
+      write__string_list
     )
       ob x.ghosts_in_party;
     if !is_first then
@@ -4491,7 +4547,7 @@ let write_save_file : _ -> save_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"weapons\":";
     (
-      write__10
+      write__string_list
     )
       ob x.weapons;
     if !is_first then
@@ -4725,7 +4781,7 @@ let read_save_file = (
             field_ghosts_in_party := (
               Some (
                 (
-                  read__10
+                  read__string_list
                 ) p lb
               )
             );
@@ -4749,7 +4805,7 @@ let read_save_file = (
             field_weapons := (
               Some (
                 (
-                  read__10
+                  read__string_list
                 ) p lb
               )
             );
@@ -4964,7 +5020,7 @@ let read_save_file = (
               field_ghosts_in_party := (
                 Some (
                   (
-                    read__10
+                    read__string_list
                   ) p lb
                 )
               );
@@ -4988,7 +5044,7 @@ let read_save_file = (
               field_weapons := (
                 Some (
                   (
-                    read__10
+                    read__string_list
                   ) p lb
                 )
               );
@@ -5054,7 +5110,7 @@ let write_object_layer : _ -> object_layer -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"objects\":";
     (
-      write__2
+      write__coll_rect_list
     )
       ob x.objects;
     Buffer.add_char ob '}';
@@ -5114,7 +5170,7 @@ let read_object_layer = (
             field_objects := (
               Some (
                 (
-                  read__2
+                  read__coll_rect_list
                 ) p lb
               )
             );
@@ -5167,7 +5223,7 @@ let read_object_layer = (
               field_objects := (
                 Some (
                   (
-                    read__2
+                    read__coll_rect_list
                   ) p lb
                 )
               );
@@ -5453,38 +5509,38 @@ let read_layer = (
 )
 let layer_of_string s =
   read_layer (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__5 = (
+let write__tileset_source_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_tileset_source
   )
 )
-let string_of__5 ?(len = 1024) x =
+let string_of__tileset_source_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__5 ob x;
+  write__tileset_source_list ob x;
   Buffer.contents ob
-let read__5 = (
+let read__tileset_source_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_tileset_source
   )
 )
-let _5_of_string s =
-  read__5 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__4 = (
+let _tileset_source_list_of_string s =
+  read__tileset_source_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__layer_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_layer
   )
 )
-let string_of__4 ?(len = 1024) x =
+let string_of__layer_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__4 ob x;
+  write__layer_list ob x;
   Buffer.contents ob
-let read__4 = (
+let read__layer_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_layer
   )
 )
-let _4_of_string s =
-  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _layer_list_of_string s =
+  read__layer_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_room : _ -> room -> _ = (
   fun ob (x : room) ->
     Buffer.add_char ob '{';
@@ -5531,7 +5587,7 @@ let write_room : _ -> room -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"layers\":";
     (
-      write__4
+      write__layer_list
     )
       ob x.layers;
     if !is_first then
@@ -5540,7 +5596,7 @@ let write_room : _ -> room -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"tilesets\":";
     (
-      write__5
+      write__tileset_source_list
     )
       ob x.tileset_sources;
     Buffer.add_char ob '}';
@@ -5666,7 +5722,7 @@ let read_room = (
             field_layers := (
               Some (
                 (
-                  read__4
+                  read__layer_list
                 ) p lb
               )
             );
@@ -5674,7 +5730,7 @@ let read_room = (
             field_tileset_sources := (
               Some (
                 (
-                  read__5
+                  read__tileset_source_list
                 ) p lb
               )
             );
@@ -5789,7 +5845,7 @@ let read_room = (
               field_layers := (
                 Some (
                   (
-                    read__4
+                    read__layer_list
                   ) p lb
                 )
               );
@@ -5797,7 +5853,7 @@ let read_room = (
               field_tileset_sources := (
                 Some (
                   (
-                    read__5
+                    read__tileset_source_list
                   ) p lb
                 )
               );
@@ -5850,7 +5906,7 @@ let write_npc_config : _ -> npc_config -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"texture_configs\":";
     (
-      write__11
+      write__string_texture_config_list
     )
       ob x.texture_configs;
     Buffer.add_char ob '}';
@@ -5923,7 +5979,7 @@ let read_npc_config = (
             field_texture_configs := (
               Some (
                 (
-                  read__11
+                  read__string_texture_config_list
                 ) p lb
               )
             );
@@ -5988,7 +6044,7 @@ let read_npc_config = (
               field_texture_configs := (
                 Some (
                   (
-                    read__11
+                    read__string_texture_config_list
                   ) p lb
                 )
               );
@@ -6010,7 +6066,7 @@ let read_npc_config = (
 )
 let npc_config_of_string s =
   read_npc_config (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__16 = (
+let write__string_npc_config_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -6028,11 +6084,11 @@ let write__16 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__16 ?(len = 1024) x =
+let string_of__string_npc_config_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__16 ob x;
+  write__string_npc_config_list ob x;
   Buffer.contents ob
-let read__16 = (
+let read__string_npc_config_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -6078,8 +6134,8 @@ let read__16 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _16_of_string s =
-  read__16 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_npc_config_list_of_string s =
+  read__string_npc_config_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_npcs_file : _ -> npcs_file -> _ = (
   fun ob (x : npcs_file) ->
     Buffer.add_char ob '{';
@@ -6090,7 +6146,7 @@ let write_npcs_file : _ -> npcs_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"npcs\":";
     (
-      write__16
+      write__string_npc_config_list
     )
       ob x.npcs;
     if !is_first then
@@ -6099,7 +6155,7 @@ let write_npcs_file : _ -> npcs_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"shared_textures\":";
     (
-      write__11
+      write__string_texture_config_list
     )
       ob x.shared_textures;
     Buffer.add_char ob '}';
@@ -6151,7 +6207,7 @@ let read_npcs_file = (
             field_npcs := (
               Some (
                 (
-                  read__16
+                  read__string_npc_config_list
                 ) p lb
               )
             );
@@ -6159,7 +6215,7 @@ let read_npcs_file = (
             field_shared_textures := (
               Some (
                 (
-                  read__11
+                  read__string_texture_config_list
                 ) p lb
               )
             );
@@ -6204,7 +6260,7 @@ let read_npcs_file = (
               field_npcs := (
                 Some (
                   (
-                    read__16
+                    read__string_npc_config_list
                   ) p lb
                 )
               );
@@ -6212,7 +6268,7 @@ let read_npcs_file = (
               field_shared_textures := (
                 Some (
                   (
-                    read__11
+                    read__string_texture_config_list
                   ) p lb
                 )
               );
@@ -6233,7 +6289,7 @@ let read_npcs_file = (
 )
 let npcs_file_of_string s =
   read_npcs_file (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__8 = (
+let write__string_string_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -6251,11 +6307,11 @@ let write__8 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__8 ?(len = 1024) x =
+let string_of__string_string_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__8 ob x;
+  write__string_string_list ob x;
   Buffer.contents ob
-let read__8 = (
+let read__string_string_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -6301,29 +6357,29 @@ let read__8 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _8_of_string s =
-  read__8 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_string_list_of_string s =
+  read__string_string_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_lore_file = (
-  write__8
+  write__string_string_list
 )
 let string_of_lore_file ?(len = 1024) x =
   let ob = Buffer.create len in
   write_lore_file ob x;
   Buffer.contents ob
 let read_lore_file = (
-  read__8
+  read__string_string_list
 )
 let lore_file_of_string s =
   read_lore_file (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_keybinds_file = (
-  write__8
+  write__string_string_list
 )
 let string_of_keybinds_file ?(len = 1024) x =
   let ob = Buffer.create len in
   write_keybinds_file ob x;
   Buffer.contents ob
 let read_keybinds_file = (
-  read__8
+  read__string_string_list
 )
 let keybinds_file_of_string s =
   read_keybinds_file (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
@@ -6550,35 +6606,35 @@ let read_jug_metadata = (
 )
 let jug_metadata_of_string s =
   read_jug_metadata (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__7 = (
+let write__jug_metadata_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_jug_metadata
   )
 )
-let string_of__7 ?(len = 1024) x =
+let string_of__jug_metadata_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__7 ob x;
+  write__jug_metadata_list ob x;
   Buffer.contents ob
-let read__7 = (
+let read__jug_metadata_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_jug_metadata
   )
 )
-let _7_of_string s =
-  read__7 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _jug_metadata_list_of_string s =
+  read__jug_metadata_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_jug_metadata_file = (
-  write__7
+  write__jug_metadata_list
 )
 let string_of_jug_metadata_file ?(len = 1024) x =
   let ob = Buffer.create len in
   write_jug_metadata_file ob x;
   Buffer.contents ob
 let read_jug_metadata_file = (
-  read__7
+  read__jug_metadata_list
 )
 let jug_metadata_file_of_string s =
   read_jug_metadata_file (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__14 = (
+let write__float_float_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -6596,11 +6652,11 @@ let write__14 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__14 ?(len = 1024) x =
+let string_of__float_float_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__14 ob x;
+  write__float_float_list ob x;
   Buffer.contents ob
-let read__14 = (
+let read__float_float_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -6646,8 +6702,8 @@ let read__14 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _14_of_string s =
-  read__14 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _float_float_list_of_string s =
+  read__float_float_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_ghost_action : _ -> ghost_action -> _ = (
   fun ob (x : ghost_action) ->
     Buffer.add_char ob '{';
@@ -6692,7 +6748,7 @@ let write_ghost_action : _ -> ghost_action -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"collision_shape\":";
       (
-        write__14
+        write__float_float_list
       )
         ob x.collision_shape;
     );
@@ -6793,7 +6849,7 @@ let read_ghost_action = (
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_collision_shape := (
                 (
-                  read__14
+                  read__float_float_list
                 ) p lb
               );
             )
@@ -6884,7 +6940,7 @@ let read_ghost_action = (
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_collision_shape := (
                   (
-                    read__14
+                    read__float_float_list
                   ) p lb
                 );
               )
@@ -6907,7 +6963,7 @@ let read_ghost_action = (
 )
 let ghost_action_of_string s =
   read_ghost_action (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__15 = (
+let write__string_ghost_action_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -6925,11 +6981,11 @@ let write__15 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__15 ?(len = 1024) x =
+let string_of__string_ghost_action_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__15 ob x;
+  write__string_ghost_action_list ob x;
   Buffer.contents ob
-let read__15 = (
+let read__string_ghost_action_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -6975,8 +7031,8 @@ let read__15 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _15_of_string s =
-  read__15 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_ghost_action_list_of_string s =
+  read__string_ghost_action_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_ghosts_file : _ -> ghosts_file -> _ = (
   fun ob (x : ghosts_file) ->
     Buffer.add_char ob '{';
@@ -7005,7 +7061,7 @@ let write_ghosts_file : _ -> ghosts_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"actions\":";
     (
-      write__15
+      write__string_ghost_action_list
     )
       ob x.actions;
     Buffer.add_char ob '}';
@@ -7082,7 +7138,7 @@ let read_ghosts_file = (
             field_actions := (
               Some (
                 (
-                  read__15
+                  read__string_ghost_action_list
                 ) p lb
               )
             );
@@ -7151,7 +7207,7 @@ let read_ghosts_file = (
               field_actions := (
                 Some (
                   (
-                    read__15
+                    read__string_ghost_action_list
                   ) p lb
                 )
               );
@@ -7184,7 +7240,7 @@ let write_enemy_dream_nail_config : _ -> enemy_dream_nail_config -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"dialogues\":";
       (
-        write__10
+        write__string_list
       )
         ob x.dialogues;
     );
@@ -7274,7 +7330,7 @@ let read_enemy_dream_nail_config = (
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_dialogues := (
                 (
-                  read__10
+                  read__string_list
                 ) p lb
               );
             )
@@ -7349,7 +7405,7 @@ let read_enemy_dream_nail_config = (
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_dialogues := (
                   (
-                    read__10
+                    read__string_list
                   ) p lb
                 );
               )
@@ -7387,7 +7443,7 @@ let read_enemy_dream_nail_config = (
 )
 let enemy_dream_nail_config_of_string s =
   read_enemy_dream_nail_config (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__12 = (
+let write__string_float_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -7405,11 +7461,11 @@ let write__12 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__12 ?(len = 1024) x =
+let string_of__string_float_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__12 ob x;
+  write__string_float_list ob x;
   Buffer.contents ob
-let read__12 = (
+let read__string_float_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -7455,8 +7511,8 @@ let read__12 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _12_of_string s =
-  read__12 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_float_list_of_string s =
+  read__string_float_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_enemy_config : _ -> enemy_config -> _ = (
   fun ob (x : enemy_config) ->
     Buffer.add_char ob '{';
@@ -7557,7 +7613,7 @@ let write_enemy_config : _ -> enemy_config -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"props\":";
       (
-        write__12
+        write__string_float_list
       )
         ob x.props;
     );
@@ -7780,7 +7836,7 @@ let read_enemy_config = (
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_props := (
                 (
-                  read__12
+                  read__string_float_list
                 ) p lb
               );
             )
@@ -7985,7 +8041,7 @@ let read_enemy_config = (
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_props := (
                   (
-                    read__12
+                    read__string_float_list
                   ) p lb
                 );
               )
@@ -8023,7 +8079,7 @@ let read_enemy_config = (
 )
 let enemy_config_of_string s =
   read_enemy_config (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__13 = (
+let write__string_enemy_config_list = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
       Buffer.add_char ob '(';
@@ -8041,11 +8097,11 @@ let write__13 = (
       Buffer.add_char ob ')';
   )
 )
-let string_of__13 ?(len = 1024) x =
+let string_of__string_enemy_config_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__13 ob x;
+  write__string_enemy_config_list ob x;
   Buffer.contents ob
-let read__13 = (
+let read__string_enemy_config_list = (
   Atdgen_runtime.Oj_run.read_list (
     fun p lb ->
       Yojson.Safe.read_space p lb;
@@ -8091,8 +8147,8 @@ let read__13 = (
         Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
   )
 )
-let _13_of_string s =
-  read__13 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _string_enemy_config_list_of_string s =
+  read__string_enemy_config_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_enemies_file : _ -> enemies_file -> _ = (
   fun ob (x : enemies_file) ->
     Buffer.add_char ob '{';
@@ -8103,7 +8159,7 @@ let write_enemies_file : _ -> enemies_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"enemies\":";
     (
-      write__13
+      write__string_enemy_config_list
     )
       ob x.enemies;
     if !is_first then
@@ -8112,7 +8168,7 @@ let write_enemies_file : _ -> enemies_file -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"shared_textures\":";
     (
-      write__11
+      write__string_texture_config_list
     )
       ob x.shared_textures;
     Buffer.add_char ob '}';
@@ -8164,7 +8220,7 @@ let read_enemies_file = (
             field_enemies := (
               Some (
                 (
-                  read__13
+                  read__string_enemy_config_list
                 ) p lb
               )
             );
@@ -8172,7 +8228,7 @@ let read_enemies_file = (
             field_shared_textures := (
               Some (
                 (
-                  read__11
+                  read__string_texture_config_list
                 ) p lb
               )
             );
@@ -8217,7 +8273,7 @@ let read_enemies_file = (
               field_enemies := (
                 Some (
                   (
-                    read__13
+                    read__string_enemy_config_list
                   ) p lb
                 )
               );
@@ -8225,7 +8281,7 @@ let read_enemies_file = (
               field_shared_textures := (
                 Some (
                   (
-                    read__11
+                    read__string_texture_config_list
                   ) p lb
                 )
               );

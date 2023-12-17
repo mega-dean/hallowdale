@@ -22,12 +22,13 @@ let empty_save_file () : Json_t.save_file =
     abilities =
       {
         (* movement *)
-        mothwing_cloak = b;
-        mantis_claw = b;
         crystal_heart = b;
-        monarch_wings = b;
-        shade_cloak = b;
+        dream_nail = b;
         ismas_tear = b;
+        mantis_claw = b;
+        monarch_wings = b;
+        mothwing_cloak = b;
+        shade_cloak = b;
         (* spells *)
         vengeful_spirit = b;
         desolate_dive = b;
@@ -114,6 +115,7 @@ let initialize_steel_sole (save_file : Json_t.save_file) =
     abilities =
       {
         crystal_heart = true;
+        dream_nail = true;
         ismas_tear = true;
         mantis_claw = true;
         monarch_wings = true;

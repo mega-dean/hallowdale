@@ -205,6 +205,7 @@ type room_progress = {
 type ghost_abilities = {
   (* movement *)
   crystal_heart <ocaml mutable> : bool;
+  dream_nail <ocaml mutable> : bool;
   ismas_tear <ocaml mutable> : bool;
   mantis_claw <ocaml mutable> : bool;
   monarch_wings <ocaml mutable> : bool;
