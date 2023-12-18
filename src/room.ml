@@ -116,29 +116,27 @@ let init (params : room_params) : room =
     in
 
     let categorize_trigger (coll_rect : Json_t.coll_rect) =
-      let name_prefix', name_suffix = String.split_at_first ':' coll_rect.name in
+      let split s = String.split_at_first ':' s in
+      let name_prefix', name_suffix = split coll_rect.name in
       let (blocking_interaction, name_prefix) : string option * string =
         String.split_at_first_opt '|' name_prefix'
       in
+      let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
 
-      (* CLEANUP consolidate *)
       let get_followup_trigger trigger_name kind : trigger =
-        let name_prefix, name_suffix = String.split_at_first ':' trigger_name in
-        let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-        let dest : rect = rect in
+        let name_prefix, name_suffix = split trigger_name in
         {
           full_name = trigger_name;
           name_prefix;
           name_suffix;
           kind;
-          dest;
+          dest = rect;
           label = None;
           blocking_interaction;
         }
       in
 
       let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
-        let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
         let dest : rect =
           if floor then
             (* these were preventing the pixels in the background from being distorted
@@ -248,13 +246,13 @@ let init (params : room_params) : room =
         let suffix', followup_trigger =
           match String.split_at_first_opt '+' name_suffix with
           | None, _ -> (name_suffix, None)
-          | Some suffix', new_trigger_name -> (suffix', Some (get_followup_trigger new_trigger_name ITEM))
+          | Some suffix', new_trigger_name -> (suffix', Some (get_followup_trigger new_trigger_name FOLLOWUP))
         in
         add_idx_config (PURPLE_PEN (suffix', followup_trigger))
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
       | "warp" ->
         let target = parse_warp_target name_suffix in
-        (* CLEANUP "lore_triggers" probably isn't a good name for this since warping isn't lore
+        (* TODO "lore_triggers" probably isn't a good name for this since warping isn't lore
            - maybe "interactable_triggers" (since now some triggers aren't interactable)
         *)
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers

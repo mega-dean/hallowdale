@@ -57,6 +57,12 @@ module List = struct
     List.iter add_x xs;
     !res
 
+  let last xs =
+    if List.length xs = 0 then
+      failwith "List.last on empty list"
+    else
+      List.nth xs (List.length xs - 1)
+
   let to_array xs = Array.of_list xs
   let to_string_map xs = StringMap.of_list xs
   let to_int_map xs = IntMap.of_list xs

@@ -278,7 +278,7 @@ let get_lines ?(_debug = false) (w : float) (words : string list) : line list =
   let empty_line () = { segments = []; w = 0. } in
 
   let add_segment_to_last_line lines (segment : line_segment) : line list =
-    let current_line = List.nth lines (List.length lines - 1) in
+    let current_line = List.last lines in
     current_line.w <- current_line.w +. measure segment.content;
     (* segments are appended in the correct order, so they never need to be reversed *)
     current_line.segments <- current_line.segments @ [ segment ];
@@ -309,7 +309,7 @@ let get_lines ?(_debug = false) (w : float) (words : string list) : line list =
   let add_word lines segment word : line list * line_segment =
     let word_w = measure (fmt "%s " word) in
     let segment_w = measure segment.content in
-    let current_line = List.nth lines (List.length lines - 1) in
+    let current_line = List.last lines in
     let change_color color =
       ( add_segment_to_last_line lines segment,
         new_segment ~color "" 0. (segment_w +. current_line.w) )
@@ -512,8 +512,7 @@ let tick (state : state) =
       let margin_y_bottom =
         let tall_text =
           (* TODO it's worth cleaning this up if there are any long dialogs needed besides the ACB note *)
-          (* CLEANUP add List.last *)
-          String.length (List.nth lines (List.length lines - 1)) > 700
+          String.length (List.last lines) > 700
         in
         if tall_text then
           Config.text.tall_margin_y_bottom

@@ -468,8 +468,7 @@ type trigger_kind =
   | CAMERA of string * string
   | LEVER
   | INFO
-  (* CLEANUP maybe can remove this *)
-  | ITEM
+  | FOLLOWUP
   | SHADOW
   | WARP of warp_target
   | CUTSCENE
@@ -684,7 +683,6 @@ type enemy = {
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
   textures : texture StringMap.t;
-  (* CLEANUP consolidate these - maybe don't need .json anymore *)
   json_props : float StringMap.t;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
@@ -1224,7 +1222,6 @@ type camera_state = {
 }
 
 type idx_config =
-  (* CLEANUP doesn't really make sense to call these item pickups "triggers" anymore *)
   | PURPLE_PEN of string * trigger option
   | DOOR_HITS of int
 

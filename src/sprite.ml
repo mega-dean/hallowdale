@@ -204,7 +204,6 @@ let create
     match collision with
     | Some (SHAPE shape) ->
       let first xs = List.nth xs 0 in
-      let last xs = List.nth xs (List.length xs - 1) in
       let aligned_shape = align_shape_with_parent dest facing_right shape in
       let points = get_points aligned_shape in
       let get_points' fn = List.map fn points |> List.sort Float.compare in
@@ -214,15 +213,15 @@ let create
       if first xs < sprite_min_x then
         failwithf "collision shape min x %f is too small, needs to be bigger than sprite dest %f"
           (first xs) sprite_min_x;
-      if last xs > sprite_max_x then
+      if List.last xs > sprite_max_x then
         failwithf "collision shape max x %f is too big, needs to be smaller than sprite dest %f"
-          (last xs) sprite_max_x;
+          (List.last xs) sprite_max_x;
       if first ys < sprite_min_y then
         failwithf "collision shape min y %f is too small, needs to be bigger than sprite dest %f"
           (first ys) sprite_min_y;
-      if last ys > sprite_max_y then
+      if List.last ys > sprite_max_y then
         failwithf "collision shape max y %f is too big, needs to be smaller than sprite dest %f"
-          (last ys) sprite_max_y
+          (List.last ys) sprite_max_y
     | None
     | Some _ ->
       ()

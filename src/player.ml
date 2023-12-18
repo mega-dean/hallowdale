@@ -73,7 +73,6 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
       game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
       begin_interactions ())
   in
-  (* CLEANUP not using this currently *)
   let strip_blocking_interaction (full_name : string) : string =
     String.maybe_trim_before '|' full_name
   in
@@ -88,14 +87,11 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
   | PURPLE_PEN
   | INFO ->
     (* these have no side effects and can be repeated
-        CLEANUP purple pens do have side-effects
-       - probably move them down to begin_cutscene_interaction
-       - make sure they can still be re-interacted after game over
+       - purple pens aren't repeatable because destroying them removes the trigger
     *)
     begin_interactions ()
   | D_NAIL
   | BOSS_KILLED
-  | ITEM
   | CUTSCENE -> (
     match game.mode with
     | DEMO
@@ -103,6 +99,7 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
       ()
     | CLASSIC -> begin_cutscene_interaction name)
   | CAMERA _
+  | FOLLOWUP
   | LEVER
   | SHADOW
   | RESPAWN ->
@@ -1419,20 +1416,14 @@ let tick (game : game) (state : state) =
     set_pose game pose state.global.textures.ghost_bodies state.frame.time
   in
 
-  (* CLEANUP try moving this to interactions.ml *)
+  (* TODO try moving this to interactions.ml *)
   let handle_interactions () =
     (* the ghost can only collide with one trigger of each type per frame *)
     let all_finished_interactions =
-      (* PERFORMANCE maybe add the room name to the blocking_interaction, so it can check that room only
-         - this would make mapmaking less convenient
-         - could also improve interaction checks to only run the first frame that the ghost collides with the trigger, not every one
-         -- although that would not work for triggers that wait for the interact key, so probably not worth it
-      *)
       List.map snd game.progress.by_room
       |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
       |> List.flatten
     in
-
     let check_for_new_interactions () : bool =
       let interactable_triggers = game.room.triggers.lore in
       (match find_trigger_collision game.player interactable_triggers with
@@ -1449,21 +1440,9 @@ let tick (game : game) (state : state) =
             maybe_begin_interaction state game trigger
         in
         match trigger.blocking_interaction with
-        | None -> (
-          match trigger.kind with
-          | ITEM ->
-            (* TODO seems like this should be coordinated with the pickup_indicators updating
-               - looks a little weird because the pickup indicator goes away sooner than the label
-            *)
-            if List.mem trigger.full_name all_finished_interactions then
-              game.room.interaction_label <- None
-            else (
-              check_interact_key ();
-              game.room.interaction_label <- Some (label, trigger.dest))
-          | _ ->
-            game.room.interaction_label <-
-              (check_interact_key ();
-               Some (label, trigger.dest)))
+        | None ->
+          game.room.interaction_label <- Some (label, trigger.dest);
+          check_interact_key ()
         | Some blocking_interaction_name ->
           if List.mem blocking_interaction_name all_finished_interactions then (
             game.room.interaction_label <- Some (label, trigger.dest);

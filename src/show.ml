@@ -64,7 +64,7 @@ let trigger_kind (kind : trigger_kind) =
   | CAMERA (x, y) -> fmt "CAMERA_%s-%s" x y
   | LEVER -> "LEVER"
   | INFO -> "INFO"
-  | ITEM -> "ITEM"
+  | FOLLOWUP -> "FOLLOWUP"
   | SHADOW -> "SHADOW"
   | WARP target -> fmt "WARP to %s at (%0.2f, %0.2f)" target.room_name target.pos.x target.pos.y
   | CUTSCENE -> "CUTSCENE"

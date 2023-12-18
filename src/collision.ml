@@ -54,7 +54,6 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
   let edge_has_separating_axis ((point, line) : vector * line) : line option =
     let normal = get_normal line in
     let first xs = List.nth xs 0 in
-    let last xs = List.nth xs (List.length xs - 1) in
     let get_projected sort_fn =
       ( List.map (project_point_onto_line normal) (get_points s1) |> sort_fn,
         List.map (project_point_onto_line normal) (get_points s2) |> sort_fn )
@@ -70,9 +69,9 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
       in
       let has_separating_axis () =
         if get_coord (first projected_from_s1) > get_coord (first projected_from_s2) then
-          get_coord (first projected_from_s1) > get_coord (last projected_from_s2)
+          get_coord (first projected_from_s1) > get_coord (List.last projected_from_s2)
         else if get_coord (first projected_from_s1) < get_coord (first projected_from_s2) then
-          get_coord (last projected_from_s1) < get_coord (first projected_from_s2)
+          get_coord (List.last projected_from_s1) < get_coord (first projected_from_s2)
         else
           false
       in

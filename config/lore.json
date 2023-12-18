@@ -132,7 +132,7 @@
     // ac repair
     ["Heart of a Hero", "It's up to you not to waste it like I did."],
     // computer wing
-    ["", ""],
+    ["Borchert's Gold", "Since when do Human Beings decide which dreams are worthwhile?"],
     // forgotten classrooms (Dean's office)
     ["Priority Registration", "Talk him through the hunger, {{orange}} Abed."],
     // trampolinepath
@@ -140,5 +140,15 @@
     // mmb
     ["Pierce's Tiara", "It is the same tiara I used to wear when my mother would verbally assault me for not being a little girl."],
     // white palace
-    ["Mr. Whitney Original", "You want it when?"]
+    ["Mr. Whitney Original", "You want it when?"],
+
+    // abilities
+    ["scootenanny", "While I normally don't condone climbing on furniture, Troy and Abed's friendship has been such a special and magical part of Greendale, we owe it to ourselves to honor it."],
+    ["double-bouncies", "At the apex of each bounce, there is a moment outside of time, outside of words, outside of everything - a perfect moment. A silent moment. I call it the {{blue}} World's Whisper."],
+    ["reverse-danny-thomas", "Do you think this game's gotten a little out of hand?"],
+    ["computer-heart", "Without an emotional component, computers will strip us of all humanity."],
+    ["vaughns-tear", "Everything is connected. Rocks. Eagles. Hats."],
+    ["pierce-hologram", "Take it from a man with no legal right to be there: you're in a {{blue}} special {{white}} place."],
+    ["monkey-gas", "Some kind of {{red}} gas {{white}} that knocks out monkeys."],
+    ["honda-nail", "The power of dreams."]
 ]

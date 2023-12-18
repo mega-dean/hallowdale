@@ -156,77 +156,59 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           ]
       | lore -> read_sign @ [ STEP (TEXT [ get_lore () ]) ])
     | "ability" -> (
+      let quote = Some (get_lore ()) in
       match trigger.name_suffix with
       | "scootenanny" ->
-        get_ability_steps "mothwing_cloak" 0. 2.
+        get_ability_steps "mothwing_cloak" 0. 2. ~quote
           [ "Taken the"; "Scootenanny Chair." ]
           [
             "Press [ZR] to scootenanny forwards.";
             "Use the chair to scootenanny quickly along the ground or through the air.";
           ]
-          ~quote:
-            (Some
-               "While I normally don't condone climbing on furniture, Troy and Abed's friendship \
-                has been such a special and magical part of Greendale, we owe it to ourselves to \
-                honor it.")
       | "double-bouncies" ->
-        get_ability_steps "monarch_wings" 0. 4.
+        get_ability_steps "monarch_wings" 0. 4. ~quote
           [ "Consumed the"; "Double Bouncies." ]
           [
             "Press (B) while in the air to double bounce.";
             "Use the ethereal bounce to sail above enemies and discover new paths.";
           ]
-          ~quote:
-            (Some
-               "At the apex of each bounce, there is a moment outside of time, outside of words, \
-                outside of everything - a perfect moment. A silent moment. I call it the {{blue}} \
-                World's Whisper.")
       | "reverse-danny-thomas" ->
-        get_ability_steps "mantis_claw" 0. 8.
+        get_ability_steps "mantis_claw" 0. 8. ~quote
           [ "Learned the"; "Reverse Danny Thomas." ]
           [
             "Press (B) while sliding against a wall to jump again.";
             "Jump from wall to wall to reach new areas.";
           ]
-          ~quote:(Some "Do you think this game's gotten a little out of hand?")
       | "computer-heart" ->
-        get_ability_steps "crystal_heart" 0. 5.
+        get_ability_steps "crystal_heart" 0. 5. ~quote
           [ "Consumed the"; "Computer Heart." ]
           [
             "Hold [ZL] while on the ground or clinging to a wall to concentrate the force.";
             "Release the button to blast forwards and fly through the air.";
           ]
-          ~quote:(Some "Without an emotional component, computers will strip us of all humanity.")
         @ [ STEP (HIDE_LAYER "temporary-floors") ]
       | "vaughns-tear" ->
-        get_ability_steps "ismas_tear" 0. 10.
+        get_ability_steps "ismas_tear" 0. 10. ~quote
           [ "Consumed the"; "Vaughn's Tear." ]
           [ "Acid shall be repelled."; "Swim in acidic waters without coming to any harm." ]
-          ~quote:(Some "Everything is connected. Rocks. Eagles. Hats.")
       | "pierce-hologram" ->
-        get_ability_steps "shade_cloak" 0. 7.
+        get_ability_steps "shade_cloak" 0. 7. ~quote
           [ "Consumed the"; "Pierce Hologram." ]
           [
             "Press [ZR] to scootenanny forwards, cloaked in hologram.";
             "Use the hologram to scootenanny through enemies and their attacks without taking \
              damage.";
           ]
-          ~quote:
-            (Some
-               "Take it from a man with no legal right to be there: you're in a {{blue}} special \
-                {{white}} place.")
       | "monkey-gas" ->
-        get_ability_steps "howling_wraiths" 0. 6.
+        get_ability_steps "howling_wraiths" 0. 6. ~quote
           [ "Consumed the"; "Monkey Knockout Gas." ]
           [ "Tap (A) while holding UP"; "to unleash the Knockout Gas." ]
-          ~quote:(Some "Some kind of {{red}} gas {{white}} that knocks out monkeys.")
       | "honda-nail" ->
-        get_ability_steps "dream_nail" 0. 9. [ "Taken the"; "Honda Nail." ]
+        get_ability_steps "dream_nail" 0. 9. [ "Taken the"; "Honda Nail." ] ~quote
           [
             "Hold (X) to charge and slash with the nail.";
             "Cut through the veil between dreams and waking.";
           ]
-          ~quote:(Some "The power of dreams.")
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
