@@ -9,6 +9,9 @@
 - add sound effect for striking levers
 - add menu option for deleting save files
 - fix body render offset for party ghosts
+- re-enable Classic game mode
+- collect abilities/weapons/health upgrades from purple pen jars
+- add Dream Nail as an ability
 
 ## [0.0.8] - 2023-11-19
 

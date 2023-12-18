@@ -403,6 +403,32 @@ let get_damage (player : player) (damage_kind : damage_kind) =
   | DESOLATE_DIVE_SHOCKWAVE -> 20
   | HOWLING_WRAITHS -> (* TODO this should be 13 with multihits *) 26
 
+let honda_quotes =
+  [
+    "Someone just told me that Honda has released some kind of super vehicle called the Honda Fit.";
+    "It's a small car with a big personality that can handle anything life throws at you.";
+    "I have to find a Honda dealer. School is cancelled.";
+    "The Honda Fit - it's happening! It's finally happening!";
+    "The hub of a quality camping experience is a safe a reliable generator";
+    "The Fit combines the efficiency of a subcompact with the versatility to take what life throws \
+     at it.";
+    "Can the CR-V not take what life throws at it?";
+    "The CR-V adds durability and storage.";
+    "Can I at least show you the CR-V's easy fold-down 60/40 split-rear seat?";
+    "There's 35.2 cubic feet of cargo space back here.";
+    "I can't shake this fear of losing even one small part of what Honda has to offer.";
+    "What Rick does is surgical. He finds that part of each life that Honda can improve, and \
+     gently bathes it in the most helpful information possible.";
+    "I hated finding these treasures and not being able to fit them in the car. Now I got a CR-V.";
+    "Honda's amazing.";
+    "I love this carpet. It reminds me of the quality floormats in my CR-V.";
+    "Do you not think Honda makes good products?";
+    "People don't want to drive what a monster drives.";
+    "Use a light press of your foot to engage the highly responsive anti-lock breaks of this \
+     incredible vehicle.";
+    "When I influence people to buy Honda products, I feel God's pleasure.";
+  ]
+
 (* TODO use collision shape for dream nail *)
 let check_dream_nail_collisions (state : state) (game : game) =
   match get_dream_nail game.player with
@@ -411,18 +437,17 @@ let check_dream_nail_collisions (state : state) (game : game) =
     let resolve_enemy (enemy : enemy) =
       if Enemy.is_alive enemy then
         if enemy.json.dream_nail.vulnerable then (
-          match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
-          | None -> ()
-          | Some c ->
+          match
+            ( Collision.between_rects dream_nail_dest enemy.entity.sprite.dest,
+              game.interaction.floating_text )
+          with
+          | Some c, None ->
             (* TODO add dream nail sound *)
-            let text =
-              if List.length enemy.json.dream_nail.dialogues = 0 then
-                failwithf "enemy %s has no dream nail dialogues configured" (Show.enemy_id enemy.id)
-              else
-                List.sample enemy.json.dream_nail.dialogues
-            in
+            let text = List.sample honda_quotes in
+            let dream_nail_duration = 2. in
+            let end_time = state.frame.time +. dream_nail_duration in
             game.interaction.floating_text <-
-              Some { content = text; visible = TIME { at = state.frame.time +. 1. } };
+              Some { content = text; visible = TIME { at = end_time } };
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
               game.player.soul.current <-
@@ -440,7 +465,8 @@ let check_dream_nail_collisions (state : state) (game : game) =
               enemy.history <-
                 EnemyActionMap.update (TOOK_DAMAGE DREAM_NAIL)
                   (fun _ -> Some { at = state.frame.time })
-                  enemy.history))
+                  enemy.history)
+          | _, _ -> ())
     in
     let resolve_trigger (trigger : trigger) =
       match Collision.between_rects dream_nail_dest trigger.dest with

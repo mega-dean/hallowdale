@@ -134,7 +134,6 @@ type texture_config = {
 }
 
 type enemy_dream_nail_config = {
-  ~dialogues <ocaml default="[]"> : string list;
   ~recoil_vx <ocaml default="1800.0"> : float;
   ~vulnerable <ocaml default="true"> : bool;
 }

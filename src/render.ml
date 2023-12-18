@@ -585,7 +585,7 @@ let tick (state : state) =
       let config : text_config = Config.text.floating_config in
 
       draw_text_bg_box ~color:(Color.create 0 0 0 100) config;
-      display_paragraph config 0. 0 tt.content
+      display_paragraph ~force_spaces:true config 0. 0 tt.content
   in
 
   let show_main_menu menu save_slots =

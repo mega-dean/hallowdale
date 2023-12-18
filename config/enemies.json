@@ -112,13 +112,7 @@
             "kind": "enemy",
             "gravity_multiplier": 0.0,
             "death_gravity_multiplier": 1.0,
-            "dream_nail": {
-                "dialogues": [
-                    "I followed that band Phish (spelled with a P-H).",
-                    "I just lived in parking lots wherever they played.",
-                    "I don't even like their music."
-                ]
-            },
+            "dream_nail": {},
             "props": [
                 ["direction_change_max_dt", 3.0],
                 ["max_v", 30.0]
@@ -139,10 +133,7 @@
             "gravity_multiplier": 0.2,
             "death_gravity_multiplier": 0.2,
             "dream_nail": {
-                "recoil_vx": 0.0,
-                "dialogues": [
-                    "Did you read the hat?"
-                ]
+                "recoil_vx": 0.0
             },
             "props": [
                 ["homing_v", 1000],
