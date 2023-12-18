@@ -498,6 +498,7 @@ module Interaction = struct
     | FLOATING_TEXT of string * float
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
+    | RESET_TEXT
     (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
     | DIALOGUE of string * string
     | PURPLE_PEN_TEXT of string
@@ -604,6 +605,7 @@ module Interaction = struct
     mutable steps : step list;
     mutable text : text_kind option;
     mutable speaker_name : string option;
+    mutable use_dashes_in_archives : bool option;
     (* this is used for "Game Saved" when sitting on benches *)
     mutable corner_text : transient_text option;
     (* this is for text boxes that should show up on the screen without blocking gameplay,

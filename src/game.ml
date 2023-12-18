@@ -229,7 +229,14 @@ let create
     room_changed_last_frame = false;
     music;
     interaction =
-      { steps = []; text = None; speaker_name = None; corner_text = None; floating_text = None };
+      {
+        steps = [];
+        text = None;
+        speaker_name = None;
+        corner_text = None;
+        floating_text = None;
+        use_dashes_in_archives = None;
+      };
     progress = clone_game_progress save_file.progress;
     save_file;
     save_file_slot;

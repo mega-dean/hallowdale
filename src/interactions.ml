@@ -717,4 +717,5 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       STEP
         (SET_CAMERA_MOTION (SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y)));
       STEP SET_GHOST_CAMERA;
+      STEP RESET_TEXT;
     ]

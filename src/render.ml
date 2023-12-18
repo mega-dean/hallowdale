@@ -381,7 +381,7 @@ let tick (state : state) =
   in
 
   let display_paragraph
-      ?(in_menu = false)
+      ?(force_spaces = false)
       ?(is_cursor = false)
       (config : text_config)
       (y_offset : float)
@@ -391,7 +391,7 @@ let tick (state : state) =
       match state.game_context with
       | IN_PROGRESS game -> (
         let sep =
-          if Room.in_teachers_archives game.room && not in_menu then
+          if Room.in_teachers_archives game.room && not force_spaces then
             '-'
           else
             ' '
@@ -522,7 +522,16 @@ let tick (state : state) =
       in
       let config : text_config = Config.get_plain_text_config margin_y_bottom in
       draw_text_bg_box config;
-      List.iteri (display_paragraph config 0.) lines
+      let force_spaces =
+        match game_opt with
+        | Some game -> (
+          match game.interaction.use_dashes_in_archives with
+          | Some false -> true
+          | _ -> false)
+        | _ -> false
+      in
+      (* tmp "force_spaces: %b" force_spaces; *)
+      List.iteri (display_paragraph ~force_spaces config 0.) lines
     | Some (MENU (menu, save_slots)) ->
       let margin_x, margin_y_top = Config.get_text_margins (List.nth menu.choices 0) in
       let margin_y_bottom = margin_y_top in
@@ -545,8 +554,8 @@ let tick (state : state) =
             } )
       in
       draw_text_bg_box config;
-      List.iteri (display_paragraph ~in_menu:true config 0.) menu_choices;
-      display_paragraph ~in_menu:true ~is_cursor:true config 0. menu.current_choice_idx
+      List.iteri (display_paragraph ~force_spaces:true config 0.) menu_choices;
+      display_paragraph ~force_spaces:true ~is_cursor:true config 0. menu.current_choice_idx
         "*                                               *"
   in
 

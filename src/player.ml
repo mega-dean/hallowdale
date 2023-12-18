@@ -1546,6 +1546,7 @@ let tick (game : game) (state : state) =
             game.interaction.speaker_name <- None;
             game.interaction.text <-
               Some (ABILITY { top_paragraphs = []; outline_src; bottom_paragraphs })
+          | RESET_TEXT -> game.interaction.use_dashes_in_archives <- None
           | SET_FIXED_CAMERA (tile_x, tile_y) ->
             let tile = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
             let x, y = (tile.x *. Config.scale.room, tile.y *. Config.scale.room) in
@@ -1618,6 +1619,7 @@ let tick (game : game) (state : state) =
               [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]
             in
             game.interaction.speaker_name <- None;
+            game.interaction.use_dashes_in_archives <- Some false;
             game.interaction.text <- Some (PLAIN text)
           | WEAPON weapon_name ->
             let weapon_config = StringMap.find weapon_name state.global.weapons in
@@ -1716,6 +1718,7 @@ let tick (game : game) (state : state) =
             player.health.max <- player.health.max + 1;
             player.health.current <- player.health.max;
             game.interaction.speaker_name <- None;
+            game.interaction.use_dashes_in_archives <- Some false;
             game.interaction.text <- Some (PLAIN [ str ])
           | ADD_ITEM item_kind -> add_item item_kind
           | UNSET_FLOOR -> game.player.ghost.entity.current_floor <- None
