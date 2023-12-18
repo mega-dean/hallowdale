@@ -377,15 +377,26 @@ let tick (state : state) =
     let dest =
       { pos = { x = camera_x +. config.margin_x; y = camera_y +. config.margin_y_top }; w; h }
     in
+    if state.debug.enabled then
+      debug_rect_outline dest;
     Draw.rect dest color
+  in
+
+  let draw_cursor (config : text_config) (choice_idx : int) =
+    let choice_offset = choice_idx * Config.scale.paragraph_spacing |> Int.to_float in
+    let line_spacing = line_height *. (choice_idx |> Int.to_float) in
+    let left_x = camera_x +. config.margin_x +. config.cursor_padding in
+    let right_x = camera_x +. Config.window.w -. config.margin_x -. config.cursor_padding in
+    let y = camera_y +. config.margin_y_top +. config.padding.y +. choice_offset in
+    Draw.text "*" { x = left_x; y };
+    Draw.text "*" { x = right_x; y }
   in
 
   let display_paragraph
       ?(force_spaces = false)
-      ?(is_cursor = false)
+      ?(y_offset = 0.)
       (config : text_config)
-      (y_offset : float)
-      paragraph_idx
+      (paragraph_idx : int)
       (paragraph : string) =
     let is_steel_sole, word_separator =
       match state.game_context with
@@ -409,11 +420,10 @@ let tick (state : state) =
     let display_line (config : text_config) y_offset line_idx (line : line) =
       let display_segment (segment : line_segment) =
         let padding_x =
-          match (config.centered, is_cursor) with
-          | true, _ -> (text_box_width config -. line.w) /. 2.
-          | false, true ->
-            ((text_box_width config -. line.w) /. 2.) -. (measure_text "*  " |> Int.to_float)
-          | false, false -> config.padding.x
+          if config.centered then
+            (text_box_width config -. line.w) /. 2.
+          else
+            config.padding.x
         in
         let line_spacing = line_height *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
@@ -475,16 +485,18 @@ let tick (state : state) =
       draw_outline ~offset_y:Config.text.outline_offset_y ability_text;
 
       List.iteri
-        (display_paragraph ability_config (Config.text.outline_offset_y +. Config.text.outline_h))
+        (display_paragraph
+           ~y_offset:(Config.text.outline_offset_y +. Config.text.outline_h)
+           ability_config)
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
       draw_screen_fade 160;
       draw_text_bg_box ability_config;
       draw_outline ~offset_y:Config.text.focus_outline_offset_y ability_text;
 
-      List.iteri (display_paragraph ability_config 0.) ability_text.top_paragraphs;
+      List.iteri (display_paragraph ability_config) ability_text.top_paragraphs;
       List.iteri
-        (display_paragraph ability_config Config.text.focus_outline_bottom_offset_y)
+        (display_paragraph ability_config ~y_offset:Config.text.focus_outline_bottom_offset_y)
         ability_text.bottom_paragraphs
     | Some (DIALOGUE (speaker_name, text')) ->
       (* TODO when one character says several lines in a row, it would be nice
@@ -507,7 +519,7 @@ let tick (state : state) =
           "{{maroon}}"
         | _ -> failwithf "unknown speaker: %s" speaker_name
       in
-      display_paragraph config 0. 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name text')
+      display_paragraph config 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name text')
     | Some (PLAIN lines) ->
       let margin_y_bottom =
         let tall_text =
@@ -529,14 +541,9 @@ let tick (state : state) =
           | _ -> false)
         | _ -> false
       in
-      (* tmp "force_spaces: %b" force_spaces; *)
-      List.iteri (display_paragraph ~force_spaces config 0.) lines
+      List.iteri (display_paragraph ~force_spaces config) lines
     | Some (MENU (menu, save_slots)) ->
-      let margin_x, margin_y_top = Config.get_text_margins (List.nth menu.choices 0) in
-      let margin_y_bottom = margin_y_top in
-      let config' : text_config =
-        Config.get_menu_text_config margin_x margin_y_top margin_y_bottom
-      in
+      let config' : text_config = Config.get_menu_text_config (List.nth menu.choices 0) in
       let menu_choices, config =
         match save_slots with
         | None -> (List.map (Show.menu_choice game_opt) menu.choices, config')
@@ -544,18 +551,11 @@ let tick (state : state) =
           ( List.map
               (Show.menu_choice ~save_slots:save_slots' game_opt)
               (Menu.get_save_file_choices save_slots'),
-            {
-              config' with
-              centered = false;
-              (* update margin here because text should still be in the center of the screen
-                 (just not center-aligned) *)
-              margin_x = config'.margin_x *. 10.;
-            } )
+            { config' with centered = false } )
       in
       draw_text_bg_box config;
-      List.iteri (display_paragraph ~force_spaces:true config 0.) menu_choices;
-      display_paragraph ~force_spaces:true ~is_cursor:true config 0. menu.current_choice_idx
-        "*                                               *"
+      List.iteri (display_paragraph ~force_spaces:true config) menu_choices;
+      draw_cursor config menu.current_choice_idx
   in
 
   let draw_other_text game =
@@ -584,7 +584,7 @@ let tick (state : state) =
       let config : text_config = Config.text.floating_config in
 
       draw_text_bg_box ~color:(Color.create 0 0 0 100) config;
-      display_paragraph ~force_spaces:true config 0. 0 tt.content
+      display_paragraph ~force_spaces:true config ~y_offset:0. 0 tt.content
   in
 
   let show_main_menu menu save_slots =
@@ -976,21 +976,27 @@ let tick (state : state) =
         Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0
           Color.raywhite
       in
-      (* CLEANUP draw heads in two rows when > 10 *)
-      let draw_head i idx =
+      let draw_head idx =
         let image = game.player.shared_textures.health.image in
         let w, h =
           ( Raylib.Texture.width image / 2 |> Int.to_float,
             Raylib.Texture.height image |> Int.to_float )
         in
         let dest_w, dest_h = (w *. Config.scale.health, h *. Config.scale.health) in
-        let dest =
-          Rectangle.create
-            (camera_x +. pod_dest_h +. padding +. (idx *. (dest_w +. padding)))
-            (camera_y +. 10.) dest_w dest_h
+        let dest_x, dest_y =
+          if idx < 10 then
+            ( camera_x +. pod_dest_h +. padding +. ((idx |> Int.to_float) *. (dest_w +. padding)),
+              camera_y +. padding )
+          else
+            ( camera_x
+              +. pod_dest_h
+              +. padding
+              +. ((idx - 10 |> Int.to_float) *. (dest_w +. padding)),
+              camera_y +. (2. *. padding) +. dest_h )
         in
+        let dest = Rectangle.create dest_x dest_y dest_w dest_h in
         let src =
-          if (idx |> Float.to_int) + 1 > game.player.health.current then
+          if idx + 1 > game.player.health.current then
             Rectangle.create w 0. w h
           else
             Rectangle.create 0. 0. w h
@@ -1001,7 +1007,7 @@ let tick (state : state) =
       match game.mode with
       | CLASSIC
       | DEMO ->
-        List.iteri draw_head (Float.range game.player.health.max)
+        List.iter draw_head (Int.range game.player.health.max)
       | STEEL_SOLE -> ()
     in
 

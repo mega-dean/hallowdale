@@ -115,7 +115,8 @@ type save_file = Json_t.save_file = {
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;
-  progress: game_progress
+  progress: game_progress;
+  max_health: int
 }
 
 type object_layer = Json_t.object_layer = {
@@ -174,7 +175,6 @@ type ghosts_file = Json_t.ghosts_file = {
 }
 
 type enemy_dream_nail_config = Json_t.enemy_dream_nail_config = {
-  dialogues: string list;
   recoil_vx: float;
   vulnerable: bool
 }
@@ -190,6 +190,7 @@ type enemy_config = Json_t.enemy_config = {
   can_take_damage: bool;
   dream_nail: enemy_dream_nail_config;
   props: (string * float) list;
+  unscaled_props: (string * float) list;
   texture_configs: texture_configs
 }
 

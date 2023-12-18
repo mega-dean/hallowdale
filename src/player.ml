@@ -402,28 +402,28 @@ let get_damage (player : player) (damage_kind : damage_kind) =
 
 let honda_quotes =
   [
-    "Someone just told me that Honda has released some kind of super vehicle called the Honda Fit.";
-    "It's a small car with a big personality that can handle anything life throws at you.";
-    "I have to find a Honda dealer. School is cancelled.";
-    "The Honda Fit - it's happening! It's finally happening!";
-    "The hub of a quality camping experience is a safe a reliable generator";
-    "The Fit combines the efficiency of a subcompact with the versatility to take what life throws \
-     at it.";
-    "Can the CR-V not take what life throws at it?";
-    "The CR-V adds durability and storage.";
-    "Can I at least show you the CR-V's easy fold-down 60/40 split-rear seat?";
-    "There's 35.2 cubic feet of cargo space back here.";
-    "I can't shake this fear of losing even one small part of what Honda has to offer.";
-    "What Rick does is surgical. He finds that part of each life that Honda can improve, and \
-     gently bathes it in the most helpful information possible.";
-    "I hated finding these treasures and not being able to fit them in the car. Now I got a CR-V.";
-    "Honda's amazing.";
-    "I love this carpet. It reminds me of the quality floormats in my CR-V.";
-    "Do you not think Honda makes good products?";
-    "People don't want to drive what a monster drives.";
-    "Use a light press of your foot to engage the highly responsive anti-lock breaks of this \
-     incredible vehicle.";
-    "When I influence people to buy Honda products, I feel God's pleasure.";
+    "... someone just told me that Honda has released some kind of super vehicle called the Honda Fit...";
+    "... it's a small car with a big personality that can handle anything life throws at you.....";
+    "... I have to find a Honda dealer... School is cancelled.....";
+    "... the Honda Fit - it's happening! It's finally happening!";
+    "... the hub of a quality camping experience is a safe a reliable generator...";
+    "... the Fit combines the efficiency of a subcompact with the versatility to take what life throws \
+     at it...";
+    "... can the CR-V not take what life throws at it?";
+    "... the CR-V adds durability and storage...";
+    "... can I at least show you the CR-V's easy fold-down 60/40 split-rear seat?";
+    "... there's 35.2 cubic feet of cargo space back here...";
+    "... I can't shake this fear of losing even one small part of what Honda has to offer...";
+    "... what Rick does is surgical... He finds that part of each life that Honda can improve, and \
+     gently bathes it in the most helpful information possible...";
+    "... I hated finding these treasures and not being able to fit them in the car... Now I got a CR-V...";
+    "... Honda's amazing...";
+    "... I love this carpet... It reminds me of the quality floormats in my CR-V...";
+    "... do you not think Honda makes good products?";
+    "... people don't want to drive what a monster drives...";
+    "... use a light press of your foot to engage the highly responsive anti-lock breaks of this \
+     incredible vehicle...";
+    "... when I influence people to buy Honda products, I feel God's pleasure...";
   ]
 
 (* TODO use collision shape for dream nail *)
@@ -434,6 +434,9 @@ let check_dream_nail_collisions (state : state) (game : game) =
     let resolve_enemy (enemy : enemy) =
       if Enemy.is_alive enemy then
         if enemy.json.dream_nail.vulnerable then (
+          (* CLEANUP maybe don't check floating_text = None, since that prevents legit dreamnails
+             - need to do something like damage and keep track of the frame that floating_text was started
+          *)
           match
             ( Collision.between_rects dream_nail_dest enemy.entity.sprite.dest,
               game.interaction.floating_text )
@@ -441,7 +444,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
           | Some c, None ->
             (* TODO add dream nail sound *)
             let text = List.sample honda_quotes in
-            let dream_nail_duration = 2. in
+            let dream_nail_duration = 3. in
             let end_time = state.frame.time +. dream_nail_duration in
             game.interaction.floating_text <-
               Some { content = text; visible = TIME { at = end_time } };
@@ -566,7 +569,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         let spawn_fragment (collision : collision) (e : entity) =
           let new_fragment = Entity.clone e in
           new_fragment.dest.pos <- { x = collision.rect.pos.x; y = collision.rect.pos.y };
-          new_fragment.v <- { x = Random.float 501. -. 200.; y = Random.float 1000. -. 1000. };
+          new_fragment.v <- { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () };
           new_fragment.update_pos <- true;
           new_fragment.sprite.facing_right <- Random.bool ();
           new_fragment
@@ -1141,7 +1144,8 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
         else
           ALIGNED (RIGHT, CENTER)
       in
-      spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash)
+      spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash
+        ~scale:Config.scale.dream_nail)
   | DIE ->
     state.screen_fade <-
       (match state.screen_fade with
@@ -1236,6 +1240,8 @@ let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) targ
       target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
       target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v);
     game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
+    (* CLEANUP if the target_ghost is already on screen, this should swap positions instead of
+       hiding old_ghost *)
     Entity.hide target_ghost.ghost.entity
 
 let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
@@ -1332,7 +1338,7 @@ let handle_debug_keys (game : game) (state : state) =
     in
     let dv =
       if state.debug.enabled then
-        Config.ghost.small_debug_v /. 3.
+        Config.ghost.small_debug_v
       else
         Config.ghost.debug_v
     in
@@ -1688,7 +1694,6 @@ let tick (game : game) (state : state) =
           | ADD_TO_PARTY -> party_ghost.in_party <- true
           | REMOVE_FROM_PARTY -> party_ghost.in_party <- false
           | JUMP (_direction, vx) ->
-            (* TODO fix the jump cutscene *)
             set_interaction_pose (PERFORMING JUMP);
             party_ghost.ghost.entity.v.x <- vx;
             party_ghost.ghost.entity.current_floor <- None
@@ -2653,19 +2658,6 @@ let init
   let load_weapon name = (name, StringMap.find name weapons_configs) in
   let weapons = List.map load_weapon save_file.weapons in
 
-  let max_health =
-    let finished_interaction_names =
-      match List.assoc_opt save_file.room_name save_file.progress.by_room with
-      | None -> []
-      | Some progress -> progress.finished_interactions
-    in
-    let health_increases =
-      List.filter (String.starts_with ~prefix:"health_") finished_interaction_names |> List.length
-    in
-    let base_health = 5 in
-    base_health + health_increases
-  in
-
   {
     ghost =
       {
@@ -2709,7 +2701,7 @@ let init
         wall_kick = make_action "wall-kick";
       };
     shared_textures;
-    health = { current = max_health; max = max_health };
+    health = { current = save_file.max_health; max = save_file.max_health };
     soul =
       {
         current = Config.action.max_soul;

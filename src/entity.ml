@@ -433,7 +433,6 @@ let create_from_textures
     (texture_configs : texture_config list)
     (textures : (string * texture) list)
     (entity_dest : rect) : entity * (string * texture) list =
-  (* let textures = List.map load_pose texture_configs in *)
   let config =
     (* texture_configs can't be empty *)
     List.nth texture_configs 0

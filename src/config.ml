@@ -6,6 +6,7 @@ type scale_config = {
   ghost : float;
   health : float;
   soul : float;
+  dream_nail : float;
   slash : float;
   room : float;
   font_size : int;
@@ -20,6 +21,7 @@ let scale =
     ghost = ghost *. window_scale;
     health = health *. window_scale;
     soul = soul *. window_scale;
+    dream_nail = window_scale;
     slash = 0.8 *. window_scale;
     room = (room_scale |> Int.to_float) *. window_scale;
     font_size = Env.font_size;
@@ -149,8 +151,8 @@ let ghost : ghost_config =
     wall_jump_vy;
     wall_slide_vy = 400. *. window_scale;
     dash_duration = 20;
-    debug_v = 20.;
-    small_debug_v = 2.;
+    debug_v = 20. *. window_scale;
+    small_debug_v = 2. *. window_scale;
     (* this is currently used for both damage recoils and pogos *)
     recoil_speed = 800. *. window_scale;
     (* every ghost head image is 40px by 40px *)
@@ -208,29 +210,28 @@ type text = {
   focus_outline_offset_y : float;
   focus_outline_bottom_offset_y : float;
   base_config : Interaction.text_config;
-  menu_config : Interaction.text_config;
   dialogue_config : Interaction.text_config;
   floating_config : Interaction.text_config;
 }
 
 let get_text_margins menu_choice =
-  let main_menu_margins = (50., 360.) in
-  let pause_menu_margins = (250., 220.) in
-  let margin_x, margin_y_top =
+  let main_menu_values = (500., 360., 0.) in
+  let pause_menu_values = (250., 220., 600.) in
+  let margin_x, margin_y_top, cursor_padding =
     match menu_choice with
     | PAUSE_MENU _
     | CHANGE_WEAPON_MENU _
     | CHANGE_GHOST_MENU _
     | SETTINGS_MENU _
     | CHANGE_AUDIO_SETTING _ ->
-      pause_menu_margins
+      pause_menu_values
     | SELECT_GAME_MODE _
     | MAIN_MENU _
     | CONFIRM_DELETE_MENU _
     | SAVE_FILES_MENU _ ->
-      main_menu_margins
+      main_menu_values
   in
-  (margin_x *. window_scale, margin_y_top *. window_scale)
+  (margin_x *. window_scale, margin_y_top *. window_scale, cursor_padding *. window_scale)
 
 let text =
   let base_config : Interaction.text_config =
@@ -239,6 +240,7 @@ let text =
       margin_y_top = 20. *. window_scale;
       margin_y_bottom = 20. *. window_scale;
       padding = { x = 50. *. window_scale; y = 50. *. window_scale };
+      cursor_padding = 0.;
       centered = false;
     }
   in
@@ -253,21 +255,22 @@ let text =
     focus_outline_offset_y = 50. *. window_scale;
     focus_outline_bottom_offset_y = outline_offset_y +. (200. *. window.scale);
     base_config;
-    menu_config = base_config;
     dialogue_config =
       {
         margin_x = 250. *. window_scale;
         margin_y_top = 50. *. window_scale;
         margin_y_bottom = 450. *. window_scale;
         padding = { x = 30. *. window_scale; y = 30. *. window_scale };
+        cursor_padding = 0.;
         centered = false;
       };
     floating_config =
       {
-        margin_x = 150.;
-        margin_y_top = 50.;
+        margin_x = 150. *. window_scale;
+        margin_y_top = 50. *. window_scale;
         margin_y_bottom = window.h *. 0.75;
-        padding = { x = 50.; y = 50. };
+        padding = { x = 50. *. window_scale; y = 50. *. window_scale };
+        cursor_padding = 0.;
         centered = true;
       };
   }
@@ -280,8 +283,34 @@ let get_plain_text_config margin_y_bottom =
     margin_y_bottom;
   }
 
-let get_menu_text_config margin_x margin_y_top margin_y_bottom =
-  { text.base_config with margin_x; margin_y_top; margin_y_bottom; centered = true }
+let get_menu_text_config menu_choice =
+  let margin_x, margin_y_top, cursor_padding = get_text_margins menu_choice in
+  let margin_y_bottom = margin_y_top in
+  {
+    text.base_config with
+    margin_x;
+    margin_y_top;
+    margin_y_bottom;
+    cursor_padding = cursor_padding *. window_scale;
+    centered = true;
+  }
+
+type interactions = {
+  duncan_initial_jump_vx : float;
+  duncan_chair_jump_vx : float;
+  troy_dive_jump_vx : float;
+  britta_trash_can_jump_vx : float;
+  shirley_island_camera_motion : float;
+}
+
+let interactions =
+  {
+    duncan_initial_jump_vx = -350. *. window_scale;
+    duncan_chair_jump_vx = 150. *. window_scale;
+    troy_dive_jump_vx = 900. *. window_scale;
+    britta_trash_can_jump_vx = 300. *. window_scale;
+    shirley_island_camera_motion = 3. *. window_scale;
+  }
 
 type other = {
   kp_start_x : float;
@@ -304,6 +333,18 @@ let other =
     hud_padding = 8. *. window_scale;
     save_slots = 4;
   }
+
+let lever_shape =
+  make_shape
+    [
+      { x = 10. *. window_scale; y = 0. };
+      { x = 28. *. window_scale; y = 0. };
+      { x = 28. *. window_scale; y = 83. *. window_scale };
+      { x = 10. *. window_scale; y = 83. *. window_scale };
+    ]
+
+let random_fragment_vx () = (Random.float 501. -. 200.) *. window_scale
+let random_fragment_vy () = (Random.float 1000. -. 1000.) *. window_scale
 
 type debug_keys = {
   mutable n : bool;

@@ -447,10 +447,10 @@ type menu_choice =
   | PAUSE_MENU of pause_menu_choice
   | CHANGE_WEAPON_MENU of change_weapon_menu_choice
   | CHANGE_GHOST_MENU of change_ghost_menu_choice
-  | MAIN_MENU of main_menu_choice
-  | SELECT_GAME_MODE of select_game_mode_choice
   | SETTINGS_MENU of settings_menu_choice
   | CHANGE_AUDIO_SETTING of (settings_menu_choice * change_setting_choice)
+  | MAIN_MENU of main_menu_choice
+  | SELECT_GAME_MODE of select_game_mode_choice
   | SAVE_FILES_MENU of save_files_choice
   | CONFIRM_DELETE_MENU of confirm_delete_choice
 
@@ -570,6 +570,7 @@ module Interaction = struct
     margin_x : float;
     margin_y_top : float;
     margin_y_bottom : float;
+    cursor_padding : float;
     mutable centered : bool;
   }
 

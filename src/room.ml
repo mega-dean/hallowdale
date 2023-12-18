@@ -197,16 +197,6 @@ let init (params : room_params) : room =
           |> Tiled.Tile.coords_to_idx ~width:json_room.w_in_tiles
         in
         let lever_sprite : sprite =
-          let shape =
-            make_shape
-              [
-                (* TODO move to config *)
-                { x = 10.; y = 0. };
-                { x = 28.; y = 0. };
-                { x = 28.; y = 83. };
-                { x = 10.; y = 83. };
-              ]
-          in
           {
             ident = fmt "Sprite %s" name_suffix;
             dest =
@@ -215,7 +205,7 @@ let init (params : room_params) : room =
                 (coll_rect.y *. Config.scale.room)
                 params.lever_texture;
             texture = params.lever_texture;
-            collision = Some (SHAPE shape);
+            collision = Some (SHAPE Config.lever_shape);
             facing_right = true;
           }
         in
@@ -246,7 +236,8 @@ let init (params : room_params) : room =
         let suffix', followup_trigger =
           match String.split_at_first_opt '+' name_suffix with
           | None, _ -> (name_suffix, None)
-          | Some suffix', new_trigger_name -> (suffix', Some (get_followup_trigger new_trigger_name FOLLOWUP))
+          | Some suffix', new_trigger_name ->
+            (suffix', Some (get_followup_trigger new_trigger_name FOLLOWUP))
         in
         add_idx_config (PURPLE_PEN (suffix', followup_trigger))
       | "hide" -> shadow_triggers := get_object_trigger SHADOW :: !shadow_triggers
@@ -375,12 +366,8 @@ let init (params : room_params) : room =
               | '!' -> (layer_name, not (finished (Str.string_after interaction_name 1)))
               | _ -> (layer_name, finished interaction_name))
             | _ ->
-              let str_starts_with s prefix =
-                (* TODO move to Utils *)
-                Str.string_match (Str.regexp prefix) s 0
-              in
               let prefix = "hidden-" in
-              if str_starts_with json.name prefix then
+              if String.starts_with ~prefix json.name then
                 (Str.string_after json.name (String.length prefix), true)
               else
                 (json.name, List.mem json.name room_progress.revealed_shadow_layers)

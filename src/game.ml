@@ -40,6 +40,7 @@ let empty_save_file () : Json_t.save_file =
         by_room = [];
         steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0 };
       };
+    max_health = 5;
     weapons =
       [
         "Old Nail";
@@ -77,7 +78,6 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
         y = game.player.ghost.entity.dest.pos.y -. Config.other.ss_respawn_y_offset;
       });
   let save_file : Json_t.save_file =
-    let ghosts' = game.party in
     {
       game_mode = Show.game_mode game.mode;
       ghost_id = Show.ghost_id game.player.ghost.id;
@@ -85,7 +85,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
         (* game.players only has the uncontrolled ghosts, but save_file.ghosts_in_party
            should include the current ghosts id
         *)
-        [ game.player.ghost.id ] @ Player.ghost_ids_in_party ghosts'
+        [ game.player.ghost.id ] @ Player.ghost_ids_in_party game.party
         |> List.map Show.ghost_id
         |> List.uniq;
       ghost_x = game.player.ghost.entity.dest.pos.x /. Config.window.scale;
@@ -97,6 +97,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       progress = clone_game_progress game.progress;
       weapons = game.player.weapons |> StringMap.to_list |> List.map fst;
       current_weapon = game.player.current_weapon.name;
+      max_health = game.player.health.max;
     }
   in
   save_file.progress.frame_idx <- state.frame.idx;

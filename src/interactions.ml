@@ -63,7 +63,6 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       [
         PARTY_GHOST (ghost_id, ENTITY (UNHIDE_AT (x, 67, 0., 0.)));
         PARTY_GHOST (ghost_id, ENTITY (SET_FACING direction));
-        (* PARTY_GHOST (ghost_id, ENTITY UNFREEZE); *)
         PARTY_GHOST (ghost_id, SET_POSE IDLE);
       ]
     in
@@ -283,7 +282,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
           STEP UNHIDE_BOSS_DOORS;
           ENEMY (DUNCAN, START_ACTION "jumping");
-          ENEMY (DUNCAN, SET_VX (-350.));
+          ENEMY (DUNCAN, SET_VX Config.interactions.duncan_initial_jump_vx);
           ENEMY (DUNCAN, ENTITY UNFREEZE);
           STEP (WAIT 0.7);
         ]
@@ -337,20 +336,17 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.);
           STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
           NPC (NEIL, ENTITY (SET_FACING RIGHT));
-          STEP (SET_CAMERA_MOTION (LINEAR 3.));
+          STEP (SET_CAMERA_MOTION (LINEAR Config.interactions.shirley_island_camera_motion));
           (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
              - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
              - that's probably more work than it's worth though
           *)
-          (* STEP (SET_FIXED_CAMERA (75, 75)); *)
           STEP (SET_FIXED_CAMERA (125, 48));
-          (* STEP (WAIT 1.); *)
           STEP
             (DIALOGUE
                ( "Neil",
                  "No furniture beyond this point. Leave your weapons at the door, and any spare \
                   doors at the entrance." ));
-          (* STEP (WAIT 3.); *)
           STEP (WAIT 3.);
           STEP
             (DIALOGUE
@@ -363,7 +359,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         ]
         @ unhide_and_unfreeze TROY ~direction:RIGHT 174
         @ unhide_and_unfreeze JEFF 202
-        @ unhide_and_unfreeze ANNIE 198
+        @ unhide_and_unfreeze ANNIE 193
         @ [
             STEP (SET_FIXED_CAMERA (192, 62));
             STEP (WAIT 4.);
@@ -407,14 +403,14 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
               (DIALOGUE
                  ( "Abed",
                    "You're not really playing, Shirley. You're a merchant, and more power to you. \
-                    But don't withhold power from others just to make money." ));
+                    But don't withhold power from others just to make {{green}} money." ));
             PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
             PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             CURRENT_GHOST (PARTY (WALK_TO 201));
             STEP (DIALOGUE ("Abed", "We want {{blue}} the orb."));
             STEP (DIALOGUE ("Troy", "Abed..."));
-            PARTY_GHOST (TROY, WALK_TO 203);
-            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (TROY, WALK_TO 199);
+            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
                  ( "Troy",
@@ -439,7 +435,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 0.6);
           STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
           STEP (WAIT 0.3);
-          ENEMY (DUNCAN, SET_VX 150.);
+          ENEMY (DUNCAN, SET_VX Config.interactions.duncan_chair_jump_vx);
           ENEMY (DUNCAN, START_ACTION "jumping");
           STEP (WAIT 1.2);
           ENEMY (DUNCAN, SET_POSE "scavenging");
@@ -573,8 +569,8 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (DIALOGUE ("Troy", "Troy and Abed Intimidation Stance!"));
           NPC (CHANG, SET_POSE "take-damage");
         ]
-        @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT 900.
-        @ [ NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
+        @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT Config.interactions.troy_dive_jump_vx
+        @ [ STEP (WAIT 0.3); NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
         @ get_ability_steps "desolate_dive" 0. 3.
             [ "Consumed the"; "Troy and Abed Intimidation Stance." ]
             [
@@ -587,7 +583,6 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             STEP (WAIT 0.3);
             PARTY_GHOST (TROY, SET_POSE IDLE);
             STEP (WAIT 0.9);
-            (* TODO maybe add SHAKE_SCREEN step *)
             STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
             STEP (SHAKE_SCREEN 1.);
@@ -615,8 +610,6 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                  ( "Abed",
                    "Jeff, Annie, get to {{purple}} Shirley Island! {{white}} We'll meet you there!"
                  ));
-            (* PARTY_GHOST (TROY, MAKE_CURRENT_GHOST); *)
-            (* STEP SET_GHOST_CAMERA; *)
             PARTY_GHOST (ANNIE, WALK_TO 166);
             PARTY_GHOST (ANNIE, SET_POSE (AIRBORNE (-1.)));
             PARTY_GHOST (JEFF, WALK_TO 166);
@@ -647,7 +640,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             PARTY_GHOST (BRITTA, WALK_TO 163);
           ]
-        @ jump_party_ghost BRITTA RIGHT 300.
+        @ jump_party_ghost BRITTA RIGHT Config.interactions.britta_trash_can_jump_vx
         @ [
             STEP (WAIT 0.3);
             PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));

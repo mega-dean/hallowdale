@@ -1,16 +1,19 @@
 {
     "enemies": [
         [ "DUNCAN", {
-            "health": 65,
+            "health": 5,
             "w": 19,
             "h": 45,
             "dream_nail": {},
             "kind": "boss",
             "props": [
+                ["max_random_jump_vx", 500.0],
                 ["jump_vy", -1200.0],
                 ["walk_vx", 400.0],
                 ["projectile_vx", 600.0],
-                ["projectile_range", 1000.0],
+                ["projectile_range", 1500.0]
+            ],
+            "unscaled_props": [
                 ["jump_wait_time", 1.0]
             ],
             "texture_configs": [
@@ -114,8 +117,10 @@
             "death_gravity_multiplier": 1.0,
             "dream_nail": {},
             "props": [
-                ["direction_change_max_dt", 3.0],
                 ["max_v", 30.0]
+            ],
+            "unscaled_props": [
+                ["direction_change_max_dt", 3.0]
             ],
             "texture_configs": [
                 ["idle", {
@@ -179,7 +184,7 @@
             "w": 0,
             "h": 0,
             "kind": "enemy",
-            "props": [
+            "unscaled_props": [
                 ["shock_duration", 2.5]
             ],
             "gravity_multiplier": 0.0,

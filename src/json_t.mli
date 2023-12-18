@@ -112,7 +112,8 @@ type save_file = {
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;
-  progress: game_progress
+  progress: game_progress;
+  max_health: int
 }
 
 type object_layer = { name: string; objects: coll_rect list }
@@ -166,11 +167,7 @@ type ghosts_file = {
   actions: (string * ghost_action) list
 }
 
-type enemy_dream_nail_config = {
-  dialogues: string list;
-  recoil_vx: float;
-  vulnerable: bool
-}
+type enemy_dream_nail_config = { recoil_vx: float; vulnerable: bool }
 
 type enemy_config = {
   w: int;
@@ -183,6 +180,7 @@ type enemy_config = {
   can_take_damage: bool;
   dream_nail: enemy_dream_nail_config;
   props: (string * float) list;
+  unscaled_props: (string * float) list;
   texture_configs: texture_configs
 }
 

@@ -305,10 +305,13 @@ module Duncan : M = struct
       else if args.frame_time -. landed.at > get_json_prop enemy "jump_wait_time" then (
         let room_center_x = (args.camera_bounds.min.x +. args.camera_bounds.max.x) /. 2. in
         let jump_vx =
+          *)
+        let jump_vx =
+          let max_vx = get_json_prop enemy "max_random_jump_vx" in
           if room_center_x > enemy.entity.dest.pos.x then
-            Random.float 500.
+            Random.float max_vx
           else
-            -1. *. Random.float 500.
+            -1. *. Random.float max_vx
         in
         Action.start_and_log enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
 end
@@ -774,10 +777,6 @@ module Fish : M = struct
         ])
 end
 
-(* module Make_enemy (E : M) : M with type args = E.args = struct
- *   include E
- * end *)
-
 let get_module (id : enemy_id) : (module M) =
   match id with
   | DUNCAN -> (module Duncan)
@@ -817,15 +816,20 @@ let create_from_rects
 
     texture_cache := List.replace_assoc id textures !texture_cache;
 
-    (* CLEANUP probably need to scale these configs by window_scale *)
+    let status =
+      let b = Entity.is_on_screen entity in
+      { choose_behavior = b; check_damage_collisions = b }
+    in
     let json =
       match List.assoc_opt id enemy_configs with
       | None -> failwithf "could not find enemy json config for %s" (Show.enemy_id id)
       | Some j -> j
     in
-    let status =
-      let b = Entity.is_on_screen entity in
-      { choose_behavior = b; check_damage_collisions = b }
+    let json_props =
+      let scaled =
+        json.props |> List.map (fun (key, value) -> (key, value *. Config.window.scale))
+      in
+      scaled @ json.unscaled_props |> List.to_string_map
     in
     {
       id;
@@ -843,7 +847,7 @@ let create_from_rects
       spawned_projectiles = [];
       damage_sprites = [];
       on_killed;
-      json_props = json.props |> List.to_string_map;
+      json_props;
       json;
     }
   in
