@@ -402,13 +402,14 @@ let get_damage (player : player) (damage_kind : damage_kind) =
 
 let honda_quotes =
   [
-    "... someone just told me that Honda has released some kind of super vehicle called the Honda Fit...";
+    "... someone just told me that Honda has released some kind of super vehicle called the Honda \
+     Fit...";
     "... it's a small car with a big personality that can handle anything life throws at you.....";
     "... I have to find a Honda dealer... School is cancelled.....";
     "... the Honda Fit - it's happening! It's finally happening!";
     "... the hub of a quality camping experience is a safe a reliable generator...";
-    "... the Fit combines the efficiency of a subcompact with the versatility to take what life throws \
-     at it...";
+    "... the Fit combines the efficiency of a subcompact with the versatility to take what life \
+     throws at it...";
     "... can the CR-V not take what life throws at it?";
     "... the CR-V adds durability and storage...";
     "... can I at least show you the CR-V's easy fold-down 60/40 split-rear seat?";
@@ -416,7 +417,8 @@ let honda_quotes =
     "... I can't shake this fear of losing even one small part of what Honda has to offer...";
     "... what Rick does is surgical... He finds that part of each life that Honda can improve, and \
      gently bathes it in the most helpful information possible...";
-    "... I hated finding these treasures and not being able to fit them in the car... Now I got a CR-V...";
+    "... I hated finding these treasures and not being able to fit them in the car... Now I got a \
+     CR-V...";
     "... Honda's amazing...";
     "... I love this carpet... It reminds me of the quality floormats in my CR-V...";
     "... do you not think Honda makes good products?";
@@ -434,21 +436,15 @@ let check_dream_nail_collisions (state : state) (game : game) =
     let resolve_enemy (enemy : enemy) =
       if Enemy.is_alive enemy then
         if enemy.json.dream_nail.vulnerable then (
-          (* CLEANUP maybe don't check floating_text = None, since that prevents legit dreamnails
-             - need to do something like damage and keep track of the frame that floating_text was started
-          *)
-          match
-            ( Collision.between_rects dream_nail_dest enemy.entity.sprite.dest,
-              game.interaction.floating_text )
-          with
-          | Some c, None ->
+          match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
+          | Some c ->
             (* TODO add dream nail sound *)
-            let text = List.sample honda_quotes in
-            let dream_nail_duration = 3. in
-            let end_time = state.frame.time +. dream_nail_duration in
-            game.interaction.floating_text <-
-              Some { content = text; visible = TIME { at = end_time } };
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
+              let text = List.sample honda_quotes in
+              let dream_nail_duration = 3. in
+              let end_time = state.frame.time +. dream_nail_duration in
+              game.interaction.floating_text <-
+                Some { content = text; visible = TIME { at = end_time } };
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
               game.player.soul.current <-
                 Int.bound 0
@@ -466,7 +462,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
                 EnemyActionMap.update (TOOK_DAMAGE DREAM_NAIL)
                   (fun _ -> Some { at = state.frame.time })
                   enemy.history)
-          | _, _ -> ())
+          | None -> ())
     in
     let resolve_trigger (trigger : trigger) =
       match Collision.between_rects dream_nail_dest trigger.dest with
