@@ -1251,6 +1251,7 @@ type room = {
   camera_bounds : bounds;
   cache : room_cache;
   enemies : enemy list;
+  boss_area : rect option;
   exits : rect list;
   mutable respawn_pos : vector;
   mutable npcs : npc list;

@@ -277,12 +277,18 @@ module Duncan_actions = struct
     set_pose enemy pose_name
 end
 
+let get_boss_area boss_name game =
+  match game.room.boss_area with
+  | None -> failwithf "missing boss-area for %s" boss_name
+  | Some rect -> rect
+
 module Duncan : M = struct
   module Action = Make_loggable (Duncan_actions)
 
   type args = {
     frame_time : float;
     camera_bounds : bounds;
+    boss_area : rect;
     ghost_pos : vector;
   }
 
@@ -290,6 +296,7 @@ module Duncan : M = struct
     {
       frame_time = state.frame.time;
       camera_bounds = game.room.camera_bounds;
+      boss_area = get_boss_area "DUNCAN" game;
       ghost_pos = game.player.ghost.entity.dest.pos;
     }
 
@@ -299,19 +306,18 @@ module Duncan : M = struct
     | Some _floor ->
       let jumped = action_started_at enemy "jumping" in
       let landed = action_started_at enemy "landed" in
+      let airtime =
+        (* this is incorrect for the first jump (off the vending machine), but it's close enough *)
+        landed.at -. jumped.at
+      in
       if jumped.at > landed.at then
         Action.start_and_log enemy LANDED args.frame_time
           [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
       else if args.frame_time -. landed.at > get_json_prop enemy "jump_wait_time" then (
-        let room_center_x = (args.camera_bounds.min.x +. args.camera_bounds.max.x) /. 2. in
+        let target_x = Random.float args.boss_area.w +. args.boss_area.pos.x in
         let jump_vx =
-          *)
-        let jump_vx =
-          let max_vx = get_json_prop enemy "max_random_jump_vx" in
-          if room_center_x > enemy.entity.dest.pos.x then
-            Random.float max_vx
-          else
-            -1. *. Random.float max_vx
+          let dx = target_x -. enemy.entity.dest.pos.x in
+          dx /. airtime
         in
         Action.start_and_log enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
 end
@@ -403,9 +409,13 @@ end
 module Locker_boy : M = struct
   module Action = Make_loggable (Locker_boy_actions)
 
-  type args = { frame_time : float }
+  type args = {
+    frame_time : float;
+    boss_area : rect;
+  }
 
-  let get_args state game : args = { frame_time = state.frame.time }
+  let get_args state game : args =
+    { frame_time = state.frame.time; boss_area = get_boss_area "LOCKER_BOYS" game }
 
   let continue_action (enemy : enemy) (action : Action.t) current_time current_duration =
     match action with

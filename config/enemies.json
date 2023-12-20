@@ -1,13 +1,12 @@
 {
     "enemies": [
         [ "DUNCAN", {
-            "health": 5,
+            "health": 65,
             "w": 19,
             "h": 45,
             "dream_nail": {},
             "kind": "boss",
             "props": [
-                ["max_random_jump_vx", 500.0],
                 ["jump_vy", -1200.0],
                 ["walk_vx", 400.0],
                 ["projectile_vx", 600.0],

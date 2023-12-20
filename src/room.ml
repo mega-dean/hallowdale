@@ -53,6 +53,7 @@ let init (params : room_params) : room =
   let cutscene_triggers : trigger list ref = ref [] in
   let respawn_triggers : (vector * trigger) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
+  let boss_area : rect option ref = ref None in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
   let floored_rect rect =
     {
@@ -65,14 +66,14 @@ let init (params : room_params) : room =
   let tilesets_by_path = Tiled.load_tilesets json_room in
 
   let get_object_rects (jl : Json_t.layer) =
-    let get_object_rect ?(floor = false) ?(hidden = false) name (coll_rect : Json_t.coll_rect) =
+    let get_object_rect ?(floor = false) ?(hidden = false) (coll_rect : Json_t.coll_rect) =
       let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       if floor then
-        (name, floored_rect rect)
+        floored_rect rect
       else if hidden then
-        (name, { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } })
+        { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } }
       else
-        (name, rect)
+        rect
     in
 
     let add_object_rect (rects : 'a list ref) (coll_rect : Json_t.coll_rect) =
@@ -251,38 +252,34 @@ let init (params : room_params) : room =
       (* | "d-nail-item" -> d_nail_triggers := get_object_trigger D_NAIL :: !item_pickup_triggers *)
       | "npc" ->
         (* TODO this should have "Talk" interaction_label *)
-        let npc_id, dest =
-          get_object_rect
-            (Npc.parse_name (fmt "Tiled rect npc_%s" name_suffix) name_suffix)
-            coll_rect
-        in
-        npc_rects := (npc_id, dest, true) :: !npc_rects
+        npc_rects :=
+          ( Npc.parse_name (fmt "Tiled rect npc_%s" name_suffix) name_suffix,
+            get_object_rect coll_rect,
+            true )
+          :: !npc_rects
       | "mirrored-npc" ->
-        let npc_id, dest =
-          get_object_rect
-            (Npc.parse_name (fmt "Tiled rect mirrored-npc_%s" name_suffix) name_suffix)
-            coll_rect
-        in
-        npc_rects := (npc_id, dest, false) :: !npc_rects
+        npc_rects :=
+          ( Npc.parse_name (fmt "Tiled rect mirrored-npc_%s" name_suffix) name_suffix,
+            get_object_rect coll_rect,
+            false )
+          :: !npc_rects
       | "hidden-npc" ->
-        let npc_id, dest =
-          get_object_rect ~hidden:true
-            (Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name_suffix) name_suffix)
-            coll_rect
-        in
-        npc_rects := (npc_id, dest, true) :: !npc_rects
+        npc_rects :=
+          ( Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name_suffix) name_suffix,
+            get_object_rect ~hidden:true coll_rect,
+            true )
+          :: !npc_rects
       | "enemy" ->
         enemy_rects :=
-          get_object_rect
-            (Enemy.parse_name (fmt "Tiled rect enemy_%s" name_suffix) name_suffix)
-            coll_rect
+          ( Enemy.parse_name (fmt "Tiled rect enemy_%s" name_suffix) name_suffix,
+            get_object_rect coll_rect )
           :: !enemy_rects
       | "hidden-enemy" ->
         enemy_rects :=
-          get_object_rect ~hidden:true
-            (Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name_suffix) name_suffix)
-            coll_rect
+          ( Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name_suffix) name_suffix,
+            get_object_rect ~hidden:true coll_rect )
           :: !enemy_rects
+      | "boss-area" -> boss_area := Some (get_object_rect coll_rect)
       | "respawn" ->
         (* TODO try using connected objects instead of parsing coordinates from the name
            - get only object in .properties, which should be the respawn:target object
@@ -663,6 +660,7 @@ let init (params : room_params) : room =
     hazards = !hazards;
     layers = tile_layers;
     enemies;
+    boss_area = !boss_area;
     npcs;
     loose_projectiles = [];
     interaction_label = None;

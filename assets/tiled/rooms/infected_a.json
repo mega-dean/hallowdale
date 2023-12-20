@@ -241,6 +241,17 @@
                  "width":14,
                  "x":1002,
                  "y":173
+                }, 
+                {
+                 "height":324,
+                 "id":17,
+                 "name":"boss-area:DUNCAN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":720,
+                 "x":84,
+                 "y":60
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -972,7 +983,7 @@
          "y":0
         }],
  "nextlayerid":36,
- "nextobjectid":17,
+ "nextobjectid":18,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
