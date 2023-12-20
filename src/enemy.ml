@@ -314,7 +314,7 @@ module Duncan : M = struct
         Action.start_and_log enemy LANDED args.frame_time
           [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
       else if args.frame_time -. landed.at > get_json_prop enemy "jump_wait_time" then (
-        let target_x = Random.float args.boss_area.w +. args.boss_area.pos.x in
+        let target_x = Random.in_rect_x args.boss_area in
         let jump_vx =
           let dx = target_x -. enemy.entity.dest.pos.x in
           dx /. airtime
@@ -354,20 +354,19 @@ module Locker_boy_actions = struct
         "vanish"
       | DASH ->
         let x =
-          if get_frame_prop "random_direction_right" = 1. then (
+          if get_frame_prop "random_facing_right" = 1. then (
             enemy.entity.sprite.facing_right <- true;
             enemy.entity.v.x <- get_json_prop enemy "dash_vx";
-            get_json_prop enemy "wall_perch_left_x" +. 120.)
+            get_frame_prop "boss_area_left")
           else (
             enemy.entity.sprite.facing_right <- false;
             enemy.entity.v.x <- -1. *. get_json_prop enemy "dash_vx";
-            get_json_prop enemy "wall_perch_right_x" -. 120.)
+            get_frame_prop "boss_area_right")
         in
         Entity.unhide enemy.entity;
         Entity.unfreeze enemy.entity;
-        (* enemy.entity.current_floor <- None; *)
         enemy.entity.dest.pos.x <- x;
-        enemy.entity.dest.pos.y <- 1340.;
+        enemy.entity.dest.pos.y <- get_frame_prop "boss_area_bottom";
         "dash"
       | DIVE ->
         let x = get_frame_prop "random_dive_x" in
@@ -379,12 +378,12 @@ module Locker_boy_actions = struct
         "dive"
       | WALL_PERCH ->
         let (x, direction, x_alignment) : float * direction * x_alignment =
-          if get_frame_prop "random_direction_right" = 1. then (
+          if get_frame_prop "random_facing_right" = 1. then (
             enemy.entity.sprite.facing_right <- true;
-            (get_json_prop enemy "wall_perch_left_x", RIGHT, RIGHT))
+            (get_frame_prop "boss_area_left", RIGHT, RIGHT))
           else (
             enemy.entity.sprite.facing_right <- false;
-            (get_json_prop enemy "wall_perch_right_x", LEFT, LEFT))
+            (get_frame_prop "boss_area_right", LEFT, LEFT))
         in
         let y = get_frame_prop "random_wall_perch_y" in
         Entity.unhide enemy.entity;
@@ -393,8 +392,7 @@ module Locker_boy_actions = struct
         enemy.entity.dest.pos.y <- y;
         let projectile_duration =
           X_BOUNDS
-            ( get_json_prop enemy "wall_perch_left_x" -. 200.,
-              get_json_prop enemy "wall_perch_right_x" +. 200. )
+            (get_frame_prop "boss_area_left" -. 100., get_frame_prop "boss_area_right" +. 100.)
         in
         enemy.spawned_projectiles <-
           [
@@ -415,19 +413,24 @@ module Locker_boy : M = struct
   }
 
   let get_args state game : args =
-    { frame_time = state.frame.time; boss_area = get_boss_area "LOCKER_BOYS" game }
+    { frame_time = state.frame.time; boss_area = get_boss_area "LOCKER_BOY" game }
 
-  let continue_action (enemy : enemy) (action : Action.t) current_time current_duration =
+  let continue_action
+      (enemy : enemy)
+      (action : Action.t)
+      current_time
+      current_duration
+      left_boundary
+      right_boundary =
     match action with
     | VANISH -> Action.set enemy action ~current_time
     | DASH ->
-      let max_dx = Config.window.max_width -. 300. in
       let check_right () =
-        if enemy.entity.dest.pos.x > get_json_prop enemy "wall_perch_left_x" +. max_dx then
+        if enemy.entity.dest.pos.x > right_boundary then
           set_prop enemy "should_vanish" 1.
       in
       let check_left () =
-        if enemy.entity.dest.pos.x < get_json_prop enemy "wall_perch_right_x" -. max_dx then
+        if enemy.entity.dest.pos.x < left_boundary then
           set_prop enemy "should_vanish" 1.
       in
       if enemy.entity.sprite.facing_right then check_right () else check_left ()
@@ -459,17 +462,22 @@ module Locker_boy : M = struct
       | `WALL_PERCH ->
         Action.start_and_log enemy WALL_PERCH args.frame_time
           [
-            ("random_direction_right", if Random.bool () then 1. else 0.);
-            ("random_wall_perch_y", get_json_prop enemy "dive_y" +. 200. +. Random.float 500.);
+            ("random_facing_right", if Random.bool () then 1. else 0.);
+            ("random_wall_perch_y", Random.in_rect_y args.boss_area);
+            ("boss_area_left", args.boss_area.pos.x);
+            ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
           ]
       | `DIVE ->
-        let left = get_json_prop enemy "wall_perch_left_x" in
-        let right = get_json_prop enemy "wall_perch_right_x" in
         Action.start_and_log enemy DIVE args.frame_time
-          [ ("random_dive_x", left +. Random.float (right -. left)) ]
+          [ ("random_dive_x", Random.in_rect_x args.boss_area) ]
       | `DASH ->
         Action.start_and_log enemy DASH args.frame_time
-          [ ("random_direction_right", if Random.bool () then 1. else 0.) ]
+          [
+            ("random_facing_right", if Random.bool () then 1. else 0.);
+            ("boss_area_left", args.boss_area.pos.x);
+            ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
+            ("boss_area_bottom", args.boss_area.pos.y +. args.boss_area.h);
+          ]
     in
     if still_vanishing then
       ()
@@ -484,7 +492,9 @@ module Locker_boy : M = struct
       | None -> ()
       | Some (action_name, action_time) ->
         continue_action enemy (Action.from_string action_name) args.frame_time
-          (args.frame_time -. action_time.at))
+          (args.frame_time -. action_time.at)
+          args.boss_area.pos.x
+          (args.boss_area.pos.x +. args.boss_area.w))
 end
 
 module Frog_actions = struct
@@ -508,6 +518,7 @@ module Frog_actions = struct
 
   let set (enemy : enemy) ?(frame_props = StringMap.empty) (action : t) ~current_time =
     (* TODO move hardcoded numbers to json config *)
+    let get_frame_prop s = get_prop s frame_props in
     let pose_name =
       match action with
       | HOMING ->
@@ -515,11 +526,11 @@ module Frog_actions = struct
           let v' = get_json_prop enemy "homing_v" in
           (-1. *. v', v')
         in
-        let dv = get_prop "random_homing_dv" frame_props in
+        let dv = get_frame_prop "random_homing_dv" in
         let larger v = Float.bound min_v (v +. dv) max_v in
         let smaller v = Float.bound min_v (v -. dv) max_v in
-        let ghost_x = get_prop "ghost_x" frame_props in
-        let ghost_y = get_prop "ghost_y" frame_props in
+        let ghost_x = get_frame_prop "ghost_x" in
+        let ghost_y = get_frame_prop "ghost_y" in
         let vx =
           if ghost_x > enemy.entity.dest.pos.x then
             larger enemy.entity.v.x
@@ -536,7 +547,7 @@ module Frog_actions = struct
         enemy.entity.v.y <- vy;
         "homing"
       | ASCEND ->
-        enemy.entity.v.y <- -500. +. get_prop "random_dvy" frame_props;
+        enemy.entity.v.y <- get_frame_prop "random_dvy";
         "idle"
       | DUNKED ->
         (* CLEANUP move to config *)
@@ -654,21 +665,27 @@ module Frog : M = struct
         else
           set_pose enemy "struck")
     else (
-      if enemy.entity.dest.pos.y > initial_y +. 100. then (
+      if enemy.entity.dest.pos.y > initial_y then (
         (* TODO duplicated - maybe add turn_towards_origin fn if this is shared often enough *)
-        let rand_x = Random.float 25. in
+        let rand_vx = Random.float (get_json_prop enemy "max_rand_vx") in
         let new_vx =
           if initial_x > enemy.entity.dest.pos.x then (
             enemy.entity.sprite.facing_right <- true;
-            rand_x)
+            rand_vx)
           else (
             enemy.entity.sprite.facing_right <- false;
-            -1. *. rand_x)
+            -.rand_vx)
         in
         enemy.entity.v.x <- new_vx;
-        Action.start_and_log enemy ASCEND args.frame_time [ ("random_dvy", Random.float 150.) ]);
+        Action.start_and_log enemy ASCEND args.frame_time
+          [
+            ( "random_dvy",
+              Random.float_between
+                (-.get_json_prop enemy "max_ascend_vy")
+                (-.get_json_prop enemy "min_ascend_vy") );
+          ]);
       if enemy.entity.v.y > 0. then (
-        enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y 120.;
+        enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y (get_json_prop enemy "float_vy");
         set_pose enemy "idle-descending")
       else
         set_pose enemy "idle")

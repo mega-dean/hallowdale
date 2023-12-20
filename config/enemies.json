@@ -54,7 +54,7 @@
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
                 ["projectile_vx", 600.0],
-                ["dash_vx", 1600.0],
+                ["dash_vx", 2200.0],
                 ["dive_vy", 1250.0],
                 ["dive_y", 777.0]
             ],
@@ -140,6 +140,10 @@
                 "recoil_vx": 0.0
             },
             "props": [
+                ["float_vy", 120],
+                ["min_ascend_vy", 350],
+                ["max_ascend_vy", 500],
+                ["max_rand_vx", 25],
                 ["homing_v", 1000],
                 ["death_recoil_v", 1400]
             ],

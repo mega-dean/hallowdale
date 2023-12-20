@@ -9,6 +9,34 @@ module StringSet = Set.Make (String)
 module StringMap = Map.Make (String)
 module IntMap = Map.Make (Int)
 
+type vector = {
+  mutable x : float;
+  mutable y : float;
+}
+
+(* this is here so that values with .pos are inferred as rects *)
+type warp_target = {
+  room_name : string;
+  pos : vector;
+}
+
+type rect = {
+  mutable pos : vector;
+  mutable w : float;
+  mutable h : float;
+}
+
+let rect_center_x (rect : rect) = rect.pos.x +. (rect.w /. 2.)
+let rect_center_y (rect : rect) = rect.pos.y +. (rect.h /. 2.)
+let get_rect_center (rect : rect) = { x = rect_center_x rect; y = rect_center_y rect }
+
+let scale_rect scale rect =
+  {
+    pos = { x = rect.pos.x *. scale; y = rect.pos.y *. scale };
+    w = rect.w *. scale;
+    h = rect.h *. scale;
+  }
+
 module Float = struct
   include Float
 
@@ -95,6 +123,25 @@ module Array = struct
   include Array
 
   let sub = ArrayLabels.sub
+end
+
+module Random = struct
+  include Random
+
+  let float_between lower upper =
+    if upper < lower then
+      raise (Invalid_argument "float_between lower upper")
+    else
+      float (upper -. lower) +. lower
+
+  let int_between lower upper =
+    if upper < lower then
+      raise (Invalid_argument "int_between lower upper")
+    else
+      int (upper - lower) + lower
+
+  let in_rect_x (rect : rect) = float_between rect.pos.x (rect.pos.x +. rect.w)
+  let in_rect_y (rect : rect) = float_between rect.pos.y (rect.pos.y +. rect.h)
 end
 
 (* 2-d array *)

@@ -13,34 +13,6 @@ let opposite_of direction =
   | LEFT -> RIGHT
   | RIGHT -> LEFT
 
-type vector = {
-  mutable x : float;
-  mutable y : float;
-}
-
-(* this is here so that values with .pos are inferred as rects *)
-type warp_target = {
-  room_name : string;
-  pos : vector;
-}
-
-type rect = {
-  mutable pos : vector;
-  mutable w : float;
-  mutable h : float;
-}
-
-let rect_center_x (rect : rect) = rect.pos.x +. (rect.w /. 2.)
-let rect_center_y (rect : rect) = rect.pos.y +. (rect.h /. 2.)
-let get_rect_center (rect : rect) = { x = rect_center_x rect; y = rect_center_y rect }
-
-let scale_rect scale rect =
-  {
-    pos = { x = rect.pos.x *. scale; y = rect.pos.y *. scale };
-    w = rect.w *. scale;
-    h = rect.h *. scale;
-  }
-
 type bounds = {
   min : vector;
   max : vector;
@@ -661,6 +633,7 @@ type projectile = {
 (* TODO probably don't need a separate type for this anymore *)
 type enemy_status = {
   mutable check_damage_collisions : bool;
+  (* CLEANUP rename this *)
   mutable choose_behavior : bool;
 }
 

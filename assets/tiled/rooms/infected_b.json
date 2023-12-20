@@ -447,10 +447,21 @@
                  "width":20,
                  "x":2738,
                  "y":508
+                }, 
+                {
+                 "height":156,
+                 "id":77,
+                 "name":"boss-area:LOCKER_BOY",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":468,
+                 "x":1344,
+                 "y":276
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -938,7 +949,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1874,7 +1885,7 @@
          "parallaxx":0,
          "parallaxy":0,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":240,
          "x":0,
          "y":0
@@ -1951,7 +1962,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":77,
+ "nextobjectid":78,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

@@ -407,7 +407,7 @@ let honda_quotes =
     "... it's a small car with a big personality that can handle anything life throws at you.....";
     "... I have to find a Honda dealer... School is cancelled.....";
     "... the Honda Fit - it's happening! It's finally happening!";
-    "... the hub of a quality camping experience is a safe a reliable generator...";
+    "... the hub of a quality camping experience is a safe and reliable generator...";
     "... the Fit combines the efficiency of a subcompact with the versatility to take what life \
      throws at it...";
     "... can the CR-V not take what life throws at it?";
@@ -2509,7 +2509,6 @@ let tick (game : game) (state : state) =
       continue_action state game DIE
     else
       start_action state game DIE
-    (* set_pose game (PERFORMING DIE) state.global.textures.ghost_bodies state.frame.time *)
   else (
     game.player.ghost.entity.current_platforms <- [];
     Entity.apply_v
