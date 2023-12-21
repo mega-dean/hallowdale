@@ -155,11 +155,11 @@ type enemy_config = {
   ~death_gravity_multiplier <ocaml default="1.0"> : float;
   ~can_take_damage <ocaml default="true"> : bool;
   dream_nail : enemy_dream_nail_config;
-  (* props are scaled by Config.window.scale, so this should be used for props that are
-     based on position (including velocity props) *)
-  ~props <ocaml default="[]"> : (string * float) list;
-  (* unscaled_props ignore Config.window.scale, so this should be used for time/duration props *)
-  ~unscaled_props <ocaml default="[]"> : (string * float) list;
+  (* attrs are scaled by Config.window.scale, so this should be used for attrs that are
+     based on position (including velocity attrs) *)
+  ~attrs <ocaml default="[]"> : (string * float) list;
+  (* unscaled_attrs ignore Config.window.scale, so this should be used for time/duration attrs *)
+  ~unscaled_attrs <ocaml default="[]"> : (string * float) list;
   texture_configs : texture_configs;
 }
 

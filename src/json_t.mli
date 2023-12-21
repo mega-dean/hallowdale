@@ -179,8 +179,8 @@ type enemy_config = {
   death_gravity_multiplier: float;
   can_take_damage: bool;
   dream_nail: enemy_dream_nail_config;
-  props: (string * float) list;
-  unscaled_props: (string * float) list;
+  attrs: (string * float) list;
+  unscaled_attrs: (string * float) list;
   texture_configs: texture_configs
 }
 

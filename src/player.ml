@@ -1236,7 +1236,7 @@ let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) targ
       target_ghost.ghost.entity.sprite.facing_right <- old_ghost.ghost.entity.sprite.facing_right;
       target_ghost.ghost.entity.v <- clone_vector old_ghost.ghost.entity.v);
     game.player.ghost <- { target_ghost.ghost with entity = clone_entity target_ghost.ghost.entity };
-    (* CLEANUP if the target_ghost is already on screen, this should swap positions instead of
+    (* TODO if the target_ghost is already on screen, this should swap positions instead of
        hiding old_ghost *)
     Entity.hide target_ghost.ghost.entity
 
@@ -1772,14 +1772,14 @@ let tick (game : game) (state : state) =
                 M.Action.log enemy action_name state.frame.time;
                 M.Action.set enemy (M.Action.from_string action_name) ~current_time:state.frame.time)
           | ENTITY entity_step ->
-            let choose_behavior =
+            let active =
               match entity_step with
               | UNFREEZE -> true
               | _ -> false
             in
             apply_to_all (fun (e : enemy) ->
-                e.status.choose_behavior <- choose_behavior;
-                e.status.check_damage_collisions <- choose_behavior;
+                e.status.active <- active;
+                e.status.check_damage_collisions <- active;
                 handle_entity_step e.entity entity_step)
         in
 

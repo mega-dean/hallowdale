@@ -425,9 +425,6 @@ let update_interaction_text (game : game) (state : state) =
   maybe_unset game.interaction.corner_text (fun () -> game.interaction.corner_text <- None);
   state
 
-(* TODO some enemy behavior gets really messed up when an interaction is started
-   (eg. frogs when reading lore)
-*)
 let update_enemies (game : game) (state : state) =
   let update_enemy (enemy : enemy) =
     let unremoved_projectiles = ref [] in
@@ -454,8 +451,7 @@ let update_enemies (game : game) (state : state) =
               else
                 enemy.entity.config.gravity_multiplier))
         game.room enemy.entity state.frame.dt;
-    let interacting () = List.length game.interaction.steps > 0 in
-    if (not (interacting ())) && enemy.status.choose_behavior then
+    if enemy.status.active then
       Enemy.choose_behavior enemy state game;
     Sprite.advance_animation state.frame.time enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) =
@@ -504,7 +500,9 @@ let update_enemies (game : game) (state : state) =
         else
           maybe_begin_interaction' ())
   in
-  List.iter update_enemy game.room.enemies;
+  let interacting = List.length game.interaction.steps > 0 in
+  if not interacting then
+    List.iter update_enemy game.room.enemies;
   state
 
 let update_npcs (game : game) (state : state) =

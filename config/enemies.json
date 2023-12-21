@@ -6,13 +6,13 @@
             "h": 45,
             "dream_nail": {},
             "kind": "boss",
-            "props": [
+            "attrs": [
                 ["jump_vy", -1200.0],
                 ["walk_vx", 400.0],
                 ["projectile_vx", 600.0],
                 ["projectile_range", 1500.0]
             ],
-            "unscaled_props": [
+            "unscaled_attrs": [
                 ["jump_wait_time", 1.0]
             ],
             "texture_configs": [
@@ -50,7 +50,7 @@
             "h": 40,
             "dream_nail": {},
             "kind": "multi-boss",
-            "props": [
+            "attrs": [
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
                 ["projectile_vx", 600.0],
@@ -115,10 +115,10 @@
             "gravity_multiplier": 0.0,
             "death_gravity_multiplier": 1.0,
             "dream_nail": {},
-            "props": [
+            "attrs": [
                 ["max_v", 30.0]
             ],
-            "unscaled_props": [
+            "unscaled_attrs": [
                 ["direction_change_max_dt", 3.0]
             ],
             "texture_configs": [
@@ -139,13 +139,18 @@
             "dream_nail": {
                 "recoil_vx": 0.0
             },
-            "props": [
+            "attrs": [
+                ["dunk_vy", 40],
                 ["float_vy", 120],
                 ["min_ascend_vy", 350],
                 ["max_ascend_vy", 500],
                 ["max_rand_vx", 25],
                 ["homing_v", 1000],
                 ["death_recoil_v", 1400]
+            ],
+            "unscaled_attrs": [
+                ["dunk_duration", 2],
+                ["cooldown_duration", 0.5]
             ],
             "texture_configs": [
                 ["idle", {
@@ -187,7 +192,7 @@
             "w": 0,
             "h": 0,
             "kind": "enemy",
-            "unscaled_props": [
+            "unscaled_attrs": [
                 ["shock_duration", 2.5]
             ],
             "gravity_multiplier": 0.0,

@@ -630,11 +630,11 @@ type projectile = {
   damage : int;
 }
 
-(* TODO probably don't need a separate type for this anymore *)
 type enemy_status = {
   mutable check_damage_collisions : bool;
-  (* CLEANUP rename this *)
-  mutable choose_behavior : bool;
+  mutable active : bool;
+  (* status.props are values representing the current state of the enemy *)
+  mutable props : float StringMap.t;
 }
 
 type enemy_kind =
@@ -648,16 +648,18 @@ type enemy = {
   status : enemy_status;
   entity : entity;
   damage : int;
+  initial_pos : vector;
   mutable health : health;
   mutable history : time EnemyActionMap.t;
   mutable last_performed : (string * time) option;
-  mutable props : float StringMap.t;
-  (* TODO maybe add bool_props : (string * bool) list; *)
   mutable floor_collision_this_frame : bool;
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
   textures : texture StringMap.t;
-  json_props : float StringMap.t;
+  (* TODO maybe move these into global_cache since they will be the same for every enemy of
+     the same type *)
+  (* attrs are immutable properties of the enemy, defined in enemies.json *)
+  attrs : float StringMap.t;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
 }
