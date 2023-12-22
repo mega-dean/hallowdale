@@ -12,6 +12,7 @@
 - re-enable Classic game mode
 - collect abilities/weapons/health upgrades from purple pen jars
 - add Dream Nail as an ability
+- fix softlock when diving into water/acid
 
 ## [0.0.8] - 2023-11-19
 

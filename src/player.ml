@@ -2229,7 +2229,9 @@ let tick (game : game) (state : state) =
     { this_frame }
   in
 
-  let start_swimming (player : player) (rect : rect) =
+  let start_swimming (rect : rect) =
+    game.player.current.is_diving <- false;
+    game.player.children <- GhostChildKindMap.empty;
     if not (in_water game.player) then
       game.player.ghost.entity.dest.pos.y <-
         game.player.ghost.entity.dest.pos.y +. (game.player.ghost.entity.dest.h /. 2.);
@@ -2466,7 +2468,7 @@ let tick (game : game) (state : state) =
     in
     (match List.nth_opt liquid_collisions 0 with
     | None -> game.player.current.water <- None
-    | Some (_coll, rect) -> start_swimming game.player rect);
+    | Some (_coll, rect) -> start_swimming rect);
     check_enemy_collisions ();
     state.debug.rects <-
       List.map (fun c -> (Raylib.Color.green, snd c)) floor_collisions @ state.debug.rects;
