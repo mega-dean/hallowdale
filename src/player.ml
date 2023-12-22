@@ -1090,7 +1090,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.soul.at_focus_start <- game.player.soul.current;
       game.player.soul.health_at_focus_start <- game.player.health.current;
       game.player.soul.last_decremented <- { at = state.frame.time };
-      spawn_child game.player FOCUS ~in_front:true ~scale:3.
+      spawn_child game.player FOCUS ~in_front:true ~scale:Config.scale.focus
         (ALIGNED (CENTER, CENTER))
         game.player.shared_textures.focus_sparkles;
       game.player.history.focus
@@ -1113,12 +1113,12 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       game.player.history.focus.config.duration.seconds
       /. (Config.action.soul_per_cast + 0 |> Int.to_float)
     in
-    if
-      game.player.soul.at_focus_start - game.player.soul.current >= Config.action.soul_per_cast
-      && game.player.soul.health_at_focus_start = game.player.health.current
-    then
+    if game.player.soul.at_focus_start - game.player.soul.current >= Config.action.soul_per_cast
+    then (
       game.player.health.current <-
-        Int.bound 0 game.player.health.max (game.player.health.current + 1)
+        Int.bound 0 (game.player.health.current + 1) game.player.health.max;
+      if game.player.health.current < game.player.health.max then
+        start_action state game FOCUS)
     else if state.frame.time -. game.player.soul.last_decremented.at > decr_dt then (
       game.player.soul.current <- game.player.soul.current - 1;
       game.player.soul.last_decremented <- { at = state.frame.time })
@@ -2207,6 +2207,7 @@ let tick (game : game) (state : state) =
       state.frame_inputs.focus.pressed
       && Entity.on_ground game.player.ghost.entity
       && game.player.soul.current >= Config.action.soul_per_cast
+      && game.player.health.current < game.player.health.max
       && not_doing_any game.player state.frame.time [ ATTACK RIGHT; DASH ]
       && not (is_casting state game)
     in

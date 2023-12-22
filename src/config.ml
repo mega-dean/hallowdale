@@ -9,6 +9,7 @@ type scale_config = {
   soul : float;
   dream_nail : float;
   slash : float;
+  focus : float;
   room : float;
   font_size : int;
   paragraph_spacing : int;
@@ -24,6 +25,7 @@ let scale =
     soul = soul *. window_scale;
     dream_nail = window_scale;
     slash = 0.8 *. window_scale;
+    focus = 3. *. window_scale;
     room = (room_scale |> Int.to_float) *. window_scale;
     font_size = Env.font_size;
     paragraph_spacing = Env.font_size * 2;
