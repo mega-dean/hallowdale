@@ -102,7 +102,7 @@ type platform_config = {
 
 let platform =
   {
-    disappearable_touched_time = 0.9;
+    disappearable_touched_time = 0.8;
     disappearable_invisible_time = 1.4;
     rotatable_touched_time = 0.9;
     rotatable_upside_down_time = 2.;
@@ -129,6 +129,9 @@ type ghost_config = {
   debug_v : float;
   small_debug_v : float;
   recoil_speed : float;
+  pogo_recoil_time : float;
+  nail_recoil_time : float;
+  damage_recoil_time : float;
   head_w : float;
   head_h : float;
   neck_x : float;
@@ -156,6 +159,9 @@ let ghost : ghost_config =
     dash_duration = 20;
     debug_v = 20. *. window_scale;
     small_debug_v = 2. *. window_scale;
+    pogo_recoil_time = 0.2;
+    nail_recoil_time = 0.1;
+    damage_recoil_time = 0.066666;
     (* this is currently used for both damage recoils and pogos *)
     recoil_speed = 800. *. window_scale;
     (* every ghost head image is 40px by 40px *)
@@ -191,7 +197,7 @@ let action : action_config =
   }
 
 type physics_config = {
-  mutable gravity : float;
+  gravity : float;
   jump_damping : float;
   jump_fall_threshold : float;
 }
@@ -201,6 +207,19 @@ let physics =
     gravity = 1800. *. window_scale;
     jump_damping = 0.8;
     jump_fall_threshold = -80. *. window_scale;
+  }
+
+type enemy = {
+  death_recoil_vx : float;
+  death_recoil_time : float;
+  death_vy : float;
+}
+
+let enemy =
+  {
+    death_recoil_vx = -100. *. window_scale;
+    death_recoil_time = 0.2;
+    death_vy = -500. *. window_scale;
   }
 
 type text = {
@@ -219,7 +238,7 @@ type text = {
 
 let get_text_margins menu_choice =
   let main_menu_values = (500., 360., 0.) in
-  let pause_menu_values = (250., 220., 600.) in
+  let pause_menu_values = (250., 220., 300.) in
   let margin_x, margin_y_top, cursor_padding =
     match menu_choice with
     | PAUSE_MENU _
@@ -289,14 +308,7 @@ let get_plain_text_config margin_y_bottom =
 let get_menu_text_config menu_choice =
   let margin_x, margin_y_top, cursor_padding = get_text_margins menu_choice in
   let margin_y_bottom = margin_y_top in
-  {
-    text.base_config with
-    margin_x;
-    margin_y_top;
-    margin_y_bottom;
-    cursor_padding = cursor_padding *. window_scale;
-    centered = true;
-  }
+  { text.base_config with margin_x; margin_y_top; margin_y_bottom; cursor_padding; centered = true }
 
 type interactions = {
   duncan_initial_jump_vx : float;

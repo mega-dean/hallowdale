@@ -442,7 +442,7 @@ let update_enemies (game : game) (state : state) =
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
-    enemy.floor_collision_this_frame <-
+    enemy.floor_collisions_this_frame <-
       Entity.update_enemy_pos
         ~gravity_multiplier':
           (Some
@@ -451,6 +451,7 @@ let update_enemies (game : game) (state : state) =
               else
                 enemy.entity.config.gravity_multiplier))
         game.room enemy.entity state.frame.dt;
+    Entity.maybe_unset_current_floor enemy.entity game.room;
     if enemy.status.active then
       Enemy.choose_behavior enemy state game;
     Sprite.advance_animation state.frame.time enemy.entity.sprite;

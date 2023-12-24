@@ -352,13 +352,17 @@ type npc_id =
   | POTTERY_TEACHER
 
 type enemy_id =
-  | PENGUIN
-  | DUNCAN
-  | LOCKER_BOY
+  (* enemies *)
   | FISH
   | FROG
   | ELECTRICITY
+  | PENGUIN
   | WIRED_ELECTRICITY
+  (* | HIPPIE *)
+  | FLYING_HIPPIE
+  (* bosses *)
+  | DUNCAN
+  | LOCKER_BOY
 
 type weapon = {
   name : string;
@@ -652,7 +656,9 @@ type enemy = {
   mutable health : health;
   mutable history : time EnemyActionMap.t;
   mutable last_performed : (string * time) option;
-  mutable floor_collision_this_frame : bool;
+  (* keep track of this so they only have to be checked once per frame
+     (during State.update_enemies, and reused in Enemy.choose_behavior) *)
+  mutable floor_collisions_this_frame : (collision * rect) list;
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
   textures : texture StringMap.t;

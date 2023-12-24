@@ -28,6 +28,22 @@ let recoil_backwards (e : entity) (r : recoil) =
   else
     e.x_recoil <- Some positive_r
 
+let recoil (entity : entity) (direction : direction) =
+  let recoil' scale =
+    {
+      speed = Config.ghost.recoil_speed *. scale;
+      time_left = { seconds = Config.ghost.nail_recoil_time };
+      reset_v = true;
+    }
+  in
+  match direction with
+  | RIGHT -> entity.x_recoil <- Some (recoil' 1.)
+  | LEFT -> entity.x_recoil <- Some (recoil' (-1.))
+  | DOWN -> entity.y_recoil <- Some (recoil' 1.)
+  | UP ->
+    entity.current_floor <- None;
+    entity.y_recoil <- Some (recoil' (-1.))
+
 let freeze (e : entity) =
   e.v <- Zero.vector ();
   e.update_pos <- false
@@ -199,7 +215,8 @@ let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * r
         if e.config.inanimate then
           e.update_pos <- false)
       else (
-        e.v.x <- e.v.x *. 0.3;
+        if e.config.inanimate then
+          e.v.x <- e.v.x *. 0.3;
         e.v.y <- e.v.y *. -1. *. e.config.bounce)
     | DOWN ->
       if below_floor e floor && e.v.y < 0. then (
@@ -229,13 +246,13 @@ let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) : un
     get_floor_collisions room entity |> apply_collisions entity)
 
 (* TODO maybe move this to enemy.ml *)
-(* returns true when there was a floor collision (to set floor_collision_this_frame) *)
+(* returns list of collisions this frame *)
 let update_enemy_pos
     ?(debug = None)
     ?(gravity_multiplier' = None)
     (room : room)
     (entity : entity)
-    dt : bool =
+    (dt : float) : (collision * rect) list =
   if entity.update_pos then (
     let gravity_multiplier =
       match gravity_multiplier' with
@@ -251,9 +268,9 @@ let update_enemy_pos
     entity.v.y <- entity.v.y +. dvy;
     let collisions = get_floor_collisions room entity in
     apply_collisions entity collisions;
-    List.length collisions > 0)
+    collisions)
   else
-    false
+    []
 
 let maybe_unset_current_floor (entity : entity) (room : room) =
   match entity.current_floor with

@@ -125,7 +125,12 @@ let pogo (player : player) =
   player.current.can_dash <- true;
   player.current.can_flap <- true;
   player.ghost.entity.y_recoil <-
-    Some { speed = -.Config.ghost.recoil_speed; time_left = { seconds = 0.2 }; reset_v = true }
+    Some
+      {
+        speed = -.Config.ghost.recoil_speed;
+        time_left = { seconds = Config.ghost.pogo_recoil_time };
+        reset_v = true;
+      }
 
 (* - adjusts x position for side collisions to place sprite next to colliding rect
    - then adjusts y position for top/bottom collisions
@@ -457,7 +462,12 @@ let check_dream_nail_collisions (state : state) (game : game) =
                   -.enemy.json.dream_nail.recoil_vx
               in
               enemy.entity.x_recoil <-
-                Some { speed = recoil_speed; time_left = { seconds = 0.1 }; reset_v = true };
+                Some
+                  {
+                    speed = recoil_speed;
+                    time_left = { seconds = Config.ghost.nail_recoil_time };
+                    reset_v = true;
+                  };
               enemy.history <-
                 EnemyActionMap.update (TOOK_DAMAGE DREAM_NAIL)
                   (fun _ -> Some { at = state.frame.time })
@@ -503,12 +513,17 @@ let resolve_slash_collisions (state : state) (game : game) =
             | DOWN -> pogo game.player
             | LEFT
             | RIGHT ->
-              (* TODO recoil enemy *)
               Entity.recoil_backwards game.player.ghost.entity
-                { speed = Config.ghost.recoil_speed; time_left = { seconds = 0.1 }; reset_v = true }
+                {
+                  speed = Config.ghost.recoil_speed;
+                  time_left = { seconds = Config.ghost.nail_recoil_time };
+                  reset_v = true;
+                }
             | UP ->
               if game.player.ghost.entity.v.y < 0. then
                 game.player.ghost.entity.v.y <- 300.);
+            if enemy.health.current > 0 then
+              Entity.recoil enemy.entity collision.direction;
             game.player.soul.current <-
               Int.bound 0
                 (game.player.soul.current + Config.action.soul_gained_per_nail)
@@ -1069,10 +1084,19 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
             -.Config.ghost.recoil_speed
       in
       game.player.ghost.entity.x_recoil <-
-        Some { speed = x_recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
+        Some
+          {
+            speed = x_recoil_speed;
+            time_left = { seconds = Config.ghost.damage_recoil_time };
+            reset_v = true;
+          };
       game.player.ghost.entity.y_recoil <-
         Some
-          { speed = -.Config.ghost.recoil_speed; time_left = { seconds = 0.06666 }; reset_v = true };
+          {
+            speed = -.Config.ghost.recoil_speed;
+            time_left = { seconds = Config.ghost.damage_recoil_time };
+            reset_v = true;
+          };
       (* preserve the original value of is_taking_hazard_damage to prevent soft-locks when
          recoiling away from hazard while hazard respawning *)
       game.player.current <-

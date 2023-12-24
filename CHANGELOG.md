@@ -14,6 +14,9 @@
 - add Dream Nail as an ability
 - fix softlock when diving into water/acid
 - fix consecutive focusing
+- add new enemies:
+  - PENGIUN
+  - FLYING_HIPPIE
 
 ## [0.0.8] - 2023-11-19
 

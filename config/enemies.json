@@ -1,11 +1,11 @@
 {
     "enemies": [
         [ "DUNCAN", {
+            "kind": "boss",
             "health": 65,
             "w": 19,
             "h": 45,
             "dream_nail": {},
-            "kind": "boss",
             "attrs": [
                 ["jump_vy", -1200.0],
                 ["walk_vx", 400.0],
@@ -45,11 +45,11 @@
         }],
 
         [ "LOCKER_BOY", {
+            "kind": "multi-boss",
             "health": 120,
             "w": 22,
             "h": 40,
             "dream_nail": {},
-            "kind": "multi-boss",
             "attrs": [
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
@@ -93,27 +93,70 @@
         }],
 
         [ "PENGUIN", {
-            "health": 100,
-            "w": 15,
-            "h": 20,
-            "dream_nail": {},
             "kind": "enemy",
+            "health": 15,
+            "w": 11,
+            "h": 19,
+            "dream_nail": {},
+            "attrs": [
+                ["walk_vx", 200.0]
+            ],
             "texture_configs": [
                 ["idle", {
-                    "count": 1,
-                    "duration": 0.0
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 2,
+                    "y_offset": 1
+                }],
+                ["dead", {
+                    "x_offset": 5,
+                    "y_offset": -7
                 }]
             ]
         }],
 
+        [ "FLYING_HIPPIE", {
+            "kind": "enemy",
+            "health": 15,
+            "w": 30,
+            "h": 32,
+            "gravity_multiplier": 0.0,
+            "dream_nail": {},
+            "attrs": [
+                ["chase_distance", 600.0],
+                ["max_chase_v", 300.0],
+                ["chase_dv", 3.0],
+                ["max_v", 30.0]
+            ],
+            "unscaled_attrs": [
+                ["direction_change_max_dt", 3.0]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 4,
+                    "duration": 0.4,
+                    "x_offset": 3,
+                    "y_offset": 3
+                }],
+                ["chasing", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 3,
+                    "y_offset": 3
+                }],
+                ["dead", {
+                    "x_offset": 2,
+                    "y_offset": -22
+                }]
+            ]
+        }],
 
         [ "FISH", {
-            "health": 5,
-            "w": 21,
-            "h": 12,
             "kind": "enemy",
+            "health": 5,
+            "w": 23,
+            "h": 18,
             "gravity_multiplier": 0.0,
-            "death_gravity_multiplier": 1.0,
             "dream_nail": {},
             "attrs": [
                 ["max_v", 30.0]
@@ -125,15 +168,18 @@
                 ["idle", {
                     "count": 7,
                     "duration": 0.3
+                }],
+                ["dead", {
+                    "y_offset": -4
                 }]
             ]
         }],
 
         [ "FROG", {
+            "kind": "enemy",
             "health": 5,
             "w": 30,
             "h": 37,
-            "kind": "enemy",
             "gravity_multiplier": 0.2,
             "death_gravity_multiplier": 0.2,
             "dream_nail": {
@@ -188,10 +234,10 @@
         }],
 
         [ "ELECTRICITY", {
+            "kind": "enemy",
             "health": 1,
             "w": 0,
             "h": 0,
-            "kind": "enemy",
             "unscaled_attrs": [
                 ["shock_duration", 2.5]
             ],
@@ -215,10 +261,10 @@
         }],
 
         [ "WIRED_ELECTRICITY", {
+            "kind": "enemy",
             "health": 1,
             "w": 0,
             "h": 0,
-            "kind": "enemy",
             "gravity_multiplier": 0.0,
             "can_take_damage": false,
             "dream_nail": {

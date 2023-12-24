@@ -332,11 +332,12 @@ let damage_kind (d : damage_kind) : string =
 let enemy_id (e : enemy_id) : string =
   match e with
   | DUNCAN -> "DUNCAN"
+  | ELECTRICITY -> "ELECTRICITY"
+  | FISH -> "FISH"
+  | FLYING_HIPPIE -> "FLYING_HIPPIE"
+  | FROG -> "FROG"
   | LOCKER_BOY -> "LOCKER_BOY"
   | PENGUIN -> "PENGUIN"
-  | FISH -> "FISH"
-  | FROG -> "FROG"
-  | ELECTRICITY -> "ELECTRICITY"
   | WIRED_ELECTRICITY -> "WIRED_ELECTRICITY"
 
 let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
