@@ -159,7 +159,7 @@ let update_pause_menu (game : game) (state : state) : state =
       | PAUSE_MENU CHANGE_WEAPON ->
         state.pause_menu <-
           Some
-            (MENU (change_weapon_menu (game.player.weapons |> StringMap.to_list |> List.map fst)))
+            (MENU (change_weapon_menu (game.player.weapons |> String.Map.to_list |> List.map fst)))
       | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
       | PAUSE_MENU QUIT_TO_MAIN_MENU ->
         Audio.reset_music game.music.music;

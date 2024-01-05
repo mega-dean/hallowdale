@@ -1,32 +1,23 @@
 open Utils
 open Types
 
-let above_floor (e : entity) floor =
-  floor.pos.x < e.dest.pos.x +. e.dest.w && floor.pos.x +. floor.w > e.dest.pos.x
+let above_floor (entity : entity) (floor : rect) =
+  floor.pos.x < entity.dest.pos.x +. entity.dest.w && floor.pos.x +. floor.w > entity.dest.pos.x
 
 (* same thing because it only considers p.x *)
-let below_floor s floor = above_floor s floor
+let below_floor entity floor = above_floor entity floor
 
-let positive_and_negative r =
-  if r.speed > 0. then
-    (r, { r with speed = r.speed *. -1. })
+let recoil_backwards (entity : entity) (recoil : recoil) =
+  let positive_r, negative_r =
+    if recoil.speed > 0. then
+      (recoil, { recoil with speed = recoil.speed *. -1. })
+    else
+      ({ recoil with speed = recoil.speed *. -1. }, recoil)
+  in
+  if entity.sprite.facing_right then
+    entity.x_recoil <- Some negative_r
   else
-    ({ r with speed = r.speed *. -1. }, r)
-
-(* these functions adjust the sign of r.amount based on sprite.facing_right *)
-let recoil_forwards (e : entity) (r : recoil) =
-  let positive_r, negative_r = positive_and_negative r in
-  if e.sprite.facing_right then
-    e.x_recoil <- Some positive_r
-  else
-    e.x_recoil <- Some negative_r
-
-let recoil_backwards (e : entity) (r : recoil) =
-  let positive_r, negative_r = positive_and_negative r in
-  if e.sprite.facing_right then
-    e.x_recoil <- Some negative_r
-  else
-    e.x_recoil <- Some positive_r
+    entity.x_recoil <- Some positive_r
 
 let recoil (entity : entity) (direction : direction) =
   let recoil' scale =
@@ -44,84 +35,83 @@ let recoil (entity : entity) (direction : direction) =
     entity.current_floor <- None;
     entity.y_recoil <- Some (recoil' (-1.))
 
-let freeze (e : entity) =
-  e.v <- Zero.vector ();
-  e.update_pos <- false
+let freeze (entity : entity) =
+  entity.v <- Zero.vector ();
+  entity.update_pos <- false
 
-let unfreeze (e : entity) = e.update_pos <- true
+let unfreeze (entity : entity) = entity.update_pos <- true
 
-let move_offscreen (e : entity) =
-  e.dest.pos.x <- -1. *. abs_float e.dest.pos.x;
-  e.dest.pos.y <- -1. *. abs_float e.dest.pos.y
+let move_offscreen (entity : entity) =
+  entity.dest.pos.x <- -1. *. abs_float entity.dest.pos.x;
+  entity.dest.pos.y <- -1. *. abs_float entity.dest.pos.y
 
-let move_onscreen (e : entity) =
-  e.dest.pos.x <- abs_float e.dest.pos.x;
-  e.dest.pos.y <- abs_float e.dest.pos.y
+let move_onscreen (entity : entity) =
+  entity.dest.pos.x <- abs_float entity.dest.pos.x;
+  entity.dest.pos.y <- abs_float entity.dest.pos.y
 
-let hide entity =
+let hide (entity : entity) =
   freeze entity;
   entity.current_floor <- None;
   move_offscreen entity
 
-let unhide (e : entity) = move_onscreen e
+let unhide (entity : entity) = move_onscreen entity
 
-let unhide_at (e : entity) (p : vector) =
-  unfreeze e;
-  e.dest.pos <- clone_vector p
+let unhide_at (entity : entity) (pos : vector) =
+  unfreeze entity;
+  entity.dest.pos <- clone_vector pos
 
 let hidden (entity : entity) : bool = entity.dest.pos.x < 0. && entity.dest.pos.y < 0.
 
-let set_facing (d : direction) (e : entity) =
-  match d with
-  | RIGHT -> e.sprite.facing_right <- true
-  | LEFT -> e.sprite.facing_right <- false
-  | _ -> failwithf "Entity.set_facing bad direction %s" (Show.direction d)
+let set_facing (direction : direction) (entity : entity) =
+  match direction with
+  | RIGHT -> entity.sprite.facing_right <- true
+  | LEFT -> entity.sprite.facing_right <- false
+  | _ -> failwithf "Entity.set_facing bad direction %s" (Show.direction direction)
 
-let apply_v ?(debug = None) dt (e : entity) =
-  (match e.y_recoil with
-  | None -> e.dest.pos.y <- e.dest.pos.y +. (e.v.y *. dt)
+let apply_v ?(debug = None) dt (entity : entity) =
+  (match entity.y_recoil with
+  | None -> entity.dest.pos.y <- entity.dest.pos.y +. (entity.v.y *. dt)
   | Some recoil ->
     if recoil.reset_v then
-      e.v.y <- 0.;
-    e.dest.pos.y <- e.dest.pos.y +. (recoil.speed *. dt);
+      entity.v.y <- 0.;
+    entity.dest.pos.y <- entity.dest.pos.y +. (recoil.speed *. dt);
     if recoil.time_left.seconds > 0. then
       recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
     else
-      e.y_recoil <- None);
-  match e.x_recoil with
-  | None -> e.dest.pos.x <- e.dest.pos.x +. (e.v.x *. dt)
+      entity.y_recoil <- None);
+  match entity.x_recoil with
+  | None -> entity.dest.pos.x <- entity.dest.pos.x +. (entity.v.x *. dt)
   | Some recoil ->
     if recoil.reset_v then
-      e.v.x <- 0.;
-    e.dest.pos.x <- e.dest.pos.x +. (recoil.speed *. dt);
+      entity.v.x <- 0.;
+    entity.dest.pos.x <- entity.dest.pos.x +. (recoil.speed *. dt);
     if recoil.time_left.seconds > 0. then
       recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
     else
-      e.x_recoil <- None
+      entity.x_recoil <- None
 
-let get_rect_collisions (entity : entity) (rects : rect list) : (collision * rect) list =
-  let collisions : (collision * rect) list ref = ref [] in
+let get_rect_collisions (entity : entity) (rects : rect list) : collision list =
+  let collisions : collision list ref = ref [] in
   let check_collision (rect : rect) =
     match Collision.with_entity entity rect with
     | None -> ()
-    | Some coll -> collisions := (coll, rect) :: !collisions
+    | Some coll -> collisions := coll :: !collisions
   in
   List.iter check_collision rects;
   !collisions
 
-let get_platform_collisions (entity : entity) (platforms : platform list) : (collision * rect) list
-    =
-  let collisions : (collision * rect) list ref = ref [] in
+let get_platform_collisions (entity : entity) (platforms : platform list) : collision list =
+  let collisions : collision list ref = ref [] in
   let check_collision (platform : platform) =
     match Collision.with_entity entity platform.sprite.dest with
     | None -> ()
     | Some coll -> (
-      collisions := (coll, platform.sprite.dest) :: !collisions;
+      collisions := coll :: !collisions;
       match platform.kind with
       | None -> ()
       | Some (TEMPORARY _)
       | Some (DISAPPEARABLE _) ->
-        if coll.direction = UP then
+        if coll.collided_from = UP then
           entity.current_platforms <- platform :: entity.current_platforms
       | Some (ROTATABLE _) -> entity.current_platforms <- platform :: entity.current_platforms)
   in
@@ -129,37 +119,36 @@ let get_platform_collisions (entity : entity) (platforms : platform list) : (col
   !collisions
 
 (* TODO could consolidate these *)
-let get_tile_collisions (layers : layer list) (entity : entity) : (collision * rect) list =
-  let collisions : (collision * rect) list ref = ref [] in
+let get_tile_collisions (layers : layer list) (entity : entity) : collision list =
+  let collisions : collision list ref = ref [] in
   let check_collision (layer : layer) =
     let check_tile_group (tile_group : tile_group) =
       match Collision.with_entity entity tile_group.dest with
       | None -> ()
-      | Some coll -> collisions := (coll, tile_group.dest) :: !collisions
+      | Some coll -> collisions := coll :: !collisions
     in
     List.iter check_tile_group layer.tile_groups
   in
   List.iter check_collision layers;
   !collisions
 
-let get_bench_collisions (room : room) (entity : entity) : (collision * rect) list =
+let get_bench_collisions (room : room) (entity : entity) : collision list =
   let layers = List.filter (fun (l : layer) -> l.name = "benches") room.layers in
   get_tile_collisions layers entity
 
-let get_conveyor_belt_collision (room : room) (entity : entity) : (collision * rect * vector) option
-    =
-  let collisions : (collision * rect * vector) list ref = ref [] in
+let get_conveyor_belt_collision (room : room) (entity : entity) : (collision * vector) option =
+  let collisions : (collision * vector) list ref = ref [] in
   let check_collision ((rect, speed) : rect * float) =
     match Collision.with_entity entity rect with
     | None -> ()
     | Some coll ->
       let v = { x = speed; y = 0. } in
-      collisions := (coll, rect, v) :: !collisions
+      collisions := (coll, v) :: !collisions
   in
   List.iter check_collision room.conveyor_belts;
   List.nth_opt !collisions 0
 
-let get_floor_collisions (room : room) (entity : entity) : (collision * rect) list =
+let get_floor_collisions (room : room) (entity : entity) : collision list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
   get_tile_collisions layers entity
   @ get_platform_collisions entity room.platforms
@@ -169,15 +158,15 @@ let get_collisions name room entity =
   let layers = List.filter (fun (l : layer) -> l.name = name) room.layers in
   get_tile_collisions layers entity
 
-let get_water_collisions (room : room) (entity : entity) : (collision * rect) list =
+let get_water_collisions (room : room) (entity : entity) : collision list =
   get_collisions "water" room entity
 
-let get_acid_collisions (room : room) (entity : entity) : (collision * rect) list =
+let get_acid_collisions (room : room) (entity : entity) : collision list =
   get_collisions "acid" room entity
 
 type damage_collisions = {
-  hazards : (collision * rect) list;
-  platform_spikes : (collision * rect) list;
+  hazards : collision list;
+  platform_spikes : collision list;
 }
 
 (* this excludes acid collisions because they are handled separately (based on Isma's Tear) *)
@@ -185,7 +174,7 @@ let get_damage_collisions (room : room) (entity : entity) =
   {
     hazards = get_rect_collisions entity (room.hazards @ room.spikes);
     platform_spikes =
-      get_rect_collisions entity (room.platform_spikes |> IntMap.to_list |> List.map snd);
+      get_rect_collisions entity (room.platform_spikes |> Int.Map.to_list |> List.map snd);
   }
 
 let get_loose_projectile_collisions (room : room) entity : (collision * projectile) list =
@@ -196,81 +185,83 @@ let get_loose_projectile_collisions (room : room) entity : (collision * projecti
   in
   List.filter_map get_projectile_collision room.loose_projectiles
 
-let apply_collisions (e : entity) ?(_debug = false) (collisions : (collision * rect) list) : unit =
-  let adjust_position ((coll, floor) : collision * rect) =
+let apply_collisions
+    ?(floor_v = Zero.vector ())
+    ?(_debug = false)
+    (entity : entity)
+    (collisions : collision list) : unit =
+  let adjust_position (coll : collision) =
+    let floor = coll.other_rect in
     let top_of r = r.pos.y in
     let bottom_of r = r.pos.y +. r.h in
     let left_of r = r.pos.x in
     let right_of r = r.pos.x +. r.w in
-    match coll.direction with
+    match coll.collided_from with
     | UP ->
-      if above_floor e floor then (
-        if e.config.bounce < 0.01 then
-          (* this is a little weird, but the floor shouldn't be set for fragments
-             (because it forces the new_vy to be 0.) *)
-          e.current_floor <- Some (floor, Zero.vector ());
-        e.dest.pos.y <- top_of floor -. e.dest.h);
-      if abs_float e.v.x < 10. then (
-        e.v.y <- 0.;
-        if e.config.inanimate then
-          e.update_pos <- false)
-      else (
-        if e.config.inanimate then
-          e.v.x <- e.v.x *. 0.3;
-        e.v.y <- e.v.y *. -1. *. e.config.bounce)
+      if Option.is_none entity.y_recoil && above_floor entity floor then (
+        entity.dest.pos.y <- top_of floor -. entity.dest.h;
+        (* the floor shouldn't be set for fragments (because it forces the new_vy to be 0.) *)
+        if entity.config.bounce < 0.01 then
+          entity.current_floor <- Some (floor, floor_v));
+      if entity.config.inanimate then
+        if abs_float entity.v.x < 10. then (
+          entity.v.y <- 0.;
+          entity.update_pos <- false)
+        else (
+          entity.v.x <- entity.v.x *. 0.3;
+          entity.v.y <- entity.v.y *. -1. *. entity.config.bounce)
     | DOWN ->
-      if below_floor e floor && e.v.y < 0. then (
-        e.v.y <- 0.;
-        e.dest.pos.y <- bottom_of floor)
-    | LEFT -> e.dest.pos.x <- left_of floor -. e.dest.w
-    | RIGHT -> e.dest.pos.x <- right_of floor
+      if entity.v.y < 0. || Option.is_some entity.y_recoil then (
+        entity.v.y <- 0.;
+        entity.dest.pos.y <- bottom_of floor)
+    | LEFT -> entity.dest.pos.x <- left_of floor -. entity.dest.w
+    | RIGHT -> entity.dest.pos.x <- right_of floor
   in
   let left_right_collisions, up_down_collisions =
-    let is_left_right ((c, _) : collision * rect) = c.direction = LEFT || c.direction = RIGHT in
+    let is_left_right (c : collision) = c.collided_from = LEFT || c.collided_from = RIGHT in
     List.partition is_left_right collisions
   in
   (* move sideways first to fix collisions with tiles stacked directly on top of each other *)
   List.iter adjust_position left_right_collisions;
   List.iter adjust_position up_down_collisions
 
-(* TODO maybe consolidate these *)
-let update_pos ?(debug = None) (room : room) (entity : entity) (dt : float) : unit =
-  if entity.update_pos then (
-    let dvy =
-      match entity.current_floor with
-      | Some _ -> 0.
-      | None -> Config.physics.gravity *. dt *. entity.config.gravity_multiplier
-    in
-    apply_v ~debug dt entity;
-    entity.v.y <- entity.v.y +. dvy;
-    get_floor_collisions room entity |> apply_collisions entity)
-
-(* TODO maybe move this to enemy.ml *)
-(* returns list of collisions this frame *)
-let update_enemy_pos
-    ?(debug = None)
-    ?(gravity_multiplier' = None)
+let update_pos
+    ?(gravity_multiplier_override = None)
+    ?(apply_floor_collisions = true)
     (room : room)
-    (entity : entity)
-    (dt : float) : (collision * rect) list =
+    (dt : float)
+    (entity : entity) : collision list =
   if entity.update_pos then (
-    let gravity_multiplier =
-      match gravity_multiplier' with
-      | None -> entity.config.gravity_multiplier
-      | Some mult -> mult
-    in
     let dvy =
       match entity.current_floor with
       | Some _ -> 0.
-      | None -> Config.physics.gravity *. dt *. gravity_multiplier
+      | None ->
+        let gravity_multiplier =
+          match gravity_multiplier_override with
+          | None -> entity.config.gravity_multiplier
+          | Some v -> v
+        in
+        Config.physics.gravity *. dt *. gravity_multiplier
     in
-    apply_v ~debug dt entity;
+    apply_v dt entity;
     entity.v.y <- entity.v.y +. dvy;
     let collisions = get_floor_collisions room entity in
-    apply_collisions entity collisions;
-    collisions)
+    if apply_floor_collisions then (
+      apply_collisions entity collisions;
+      collisions)
+    else
+      [])
   else
     []
+
+(* this is the same as update_pos, but doesn't return the collision list *)
+let update_pos_
+    ?(gravity_multiplier_override = None)
+    ?(apply_floor_collisions = true)
+    (room : room)
+    (dt : float)
+    (entity : entity) : unit =
+  update_pos ~gravity_multiplier_override ~apply_floor_collisions room dt entity |> ignore
 
 let maybe_unset_current_floor (entity : entity) (room : room) =
   match entity.current_floor with
@@ -286,8 +277,8 @@ let maybe_unset_current_floor (entity : entity) (room : room) =
         | None ->
           entity.dest.pos.y <- entity.dest.pos.y -. 1.;
           true
-        | Some (collision, new_floor) ->
-          entity.current_floor <- Some (new_floor, Zero.vector ());
+        | Some collision ->
+          entity.current_floor <- Some (collision.other_rect, Zero.vector ());
           false)
       else
         false
@@ -317,20 +308,7 @@ let get_child_pos'
       to_the_left ()
     else
       to_the_right ()
-  | ALIGNED (x_alignment, y_alignment) ->
-    let x =
-      match x_alignment with
-      | LEFT -> parent_dest.pos.x
-      | RIGHT -> parent_dest.pos.x +. parent_dest.w -. child_w
-      | CENTER -> parent_dest.pos.x +. ((parent_dest.w -. child_w) /. 2.)
-    in
-    let y =
-      match y_alignment with
-      | TOP -> parent_dest.pos.y
-      | BOTTOM -> parent_dest.pos.y +. parent_dest.h -. child_h
-      | CENTER -> parent_dest.pos.y +. ((parent_dest.h -. child_h) /. 2.)
-    in
-    { x; y }
+  | ALIGNED (x_alignment, y_alignment) -> align x_alignment y_alignment parent_dest child_w child_h
 
 let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
   get_child_pos' parent.dest parent.sprite.facing_right relative_pos child_w child_h

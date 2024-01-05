@@ -270,25 +270,29 @@ let init () : state =
   }
 
 (* return value is "keep spawned" *)
-let update_projectile projectile (state : state) : bool =
+let update_projectile (projectile : projectile) (room : room) (state : state) : bool =
+  let collisions =
+    Entity.update_pos ~apply_floor_collisions:projectile.collide_with_floors room state.frame.dt
+      projectile.entity
+  in
   let despawn_projectile =
     match projectile.despawn with
     | X_BOUNDS (min_x, max_x) ->
       projectile.entity.dest.pos.x < min_x -. Config.window.center.x
       || projectile.entity.dest.pos.x > max_x +. Config.window.center.x
     | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
+    | UNTIL_FLOOR_COLLISION -> List.length collisions > 0
   in
   if despawn_projectile then
     false
   else (
-    Entity.apply_v state.frame.dt projectile.entity;
     Sprite.advance_animation state.frame.time projectile.entity.sprite;
     true)
 
 (* this is for inanimate objects like jug fragments or door levers *)
 let update_environment (game : game) (state : state) =
   let loose_projectiles = ref [] in
-  let update_fragment (f : entity) = Entity.update_pos game.room f state.frame.dt in
+  let update_fragment (entity : entity) = Entity.update_pos_ game.room state.frame.dt entity in
   let all_spawned_fragments =
     List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
   in
@@ -298,7 +302,7 @@ let update_environment (game : game) (state : state) =
     | Some lever_sprite -> ()
   in
   let update_projectile' projectile =
-    let keep_spawned = update_projectile projectile state in
+    let keep_spawned = update_projectile projectile game.room state in
     if keep_spawned then
       loose_projectiles := projectile :: !loose_projectiles
   in
@@ -426,10 +430,11 @@ let update_interaction_text (game : game) (state : state) =
   state
 
 let update_enemies (game : game) (state : state) =
+  let interacting = List.length game.interaction.steps > 0 in
   let update_enemy (enemy : enemy) =
     let unremoved_projectiles = ref [] in
     let update_projectile' (projectile : projectile) =
-      let keep_spawned = update_projectile projectile state in
+      let keep_spawned = update_projectile projectile game.room state in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
         if Player.is_vulnerable state game then (
@@ -438,21 +443,20 @@ let update_enemies (game : game) (state : state) =
           | Some c ->
             (* TODO add collision shape to enemy projectiles *)
             if Collision.between_entities game.player.ghost.entity projectile.entity then
-              Player.start_action state game (TAKE_DAMAGE (projectile.damage, c.direction))))
+              Player.start_action state game (TAKE_DAMAGE (projectile.damage, c.collided_from))))
     in
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
     enemy.floor_collisions_this_frame <-
-      Entity.update_enemy_pos
-        ~gravity_multiplier':
-          (Some
-             (if Enemy.is_dead enemy then
-                enemy.json.death_gravity_multiplier
-              else
-                enemy.entity.config.gravity_multiplier))
-        game.room enemy.entity state.frame.dt;
+      Entity.update_pos
+        ~gravity_multiplier_override:
+          (if Enemy.is_dead enemy then
+             Some enemy.json.death_gravity_multiplier
+           else
+             None)
+        game.room state.frame.dt enemy.entity;
     Entity.maybe_unset_current_floor enemy.entity game.room;
-    if enemy.status.active then
+    if enemy.status.active && not interacting then
       Enemy.choose_behavior enemy state game;
     Sprite.advance_animation state.frame.time enemy.entity.sprite;
     let advance_or_despawn (sprite : sprite) =
@@ -479,7 +483,7 @@ let update_enemies (game : game) (state : state) =
              (Player.get_damage game.player damage_kind)
              collision)));
 
-    let maybe_begin_interaction' () =
+    let begin_boss_interaction () =
       let trigger = make_stub_trigger BOSS_KILLED "boss-killed" (Show.enemy_id enemy.id) in
       Player.maybe_begin_interaction state game trigger
     in
@@ -497,18 +501,27 @@ let update_enemies (game : game) (state : state) =
             List.length living_bosses = 0
           in
           if all_bosses_dead then
-            maybe_begin_interaction' ())
+            begin_boss_interaction ())
         else
-          maybe_begin_interaction' ())
+          begin_boss_interaction ())
   in
-  let interacting = List.length game.interaction.steps > 0 in
-  if not interacting then
-    List.iter update_enemy game.room.enemies;
+  List.iter
+    (fun (enemy : enemy) ->
+      match enemy.kind with
+      | ENEMY ->
+        (* prevent enemies from moving during interactions *)
+        if not interacting then
+          update_enemy enemy
+      | BOSS
+      | MULTI_BOSS ->
+        (* bosses can move during interactions, but they don't call choose_behavior *)
+        update_enemy enemy)
+    game.room.enemies;
   state
 
 let update_npcs (game : game) (state : state) =
   let update_npc (npc : npc) =
-    Entity.update_pos game.room npc.entity state.frame.dt;
+    Entity.update_pos_ game.room state.frame.dt npc.entity;
     Sprite.advance_animation state.frame.time npc.entity.sprite
   in
 
@@ -516,7 +529,7 @@ let update_npcs (game : game) (state : state) =
     let ghost = party_ghost.ghost in
     Sprite.advance_animation state.frame.time ghost.entity.sprite;
     if ghost.entity.update_pos then (
-      Entity.update_pos game.room ghost.entity state.frame.dt;
+      Entity.update_pos_ game.room state.frame.dt ghost.entity;
       Entity.maybe_unset_current_floor ghost.entity game.room)
   in
 
@@ -539,7 +552,7 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
     List.iter maybe_damage_enemy game.room.enemies
   in
   let update_vengeful_spirit (projectile : projectile) =
-    let keep_spawned = update_projectile projectile state in
+    let keep_spawned = update_projectile projectile game.room state in
     if keep_spawned then
       damage_enemies projectile.spawned projectile.entity.sprite
     else
@@ -673,7 +686,7 @@ let tick (state : state) =
             *)
             List.filter
               (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0)
-              (state.global.lore |> StringMap.to_list)
+              (state.global.lore |> String.Map.to_list)
           in
           let total_purple_pen_count = List.length pen_lore in
           game.interaction.corner_text <-
@@ -717,7 +730,7 @@ let tick (state : state) =
                (fun (r : rect) -> (Raylib.Color.red, r))
                (game.room.spikes
                @ game.room.hazards
-               @ (game.room.platform_spikes |> IntMap.to_list |> List.map snd))));
+               @ (game.room.platform_spikes |> Int.Map.to_list |> List.map snd))));
 
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors

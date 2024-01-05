@@ -17,7 +17,7 @@ module Draw = struct
   let rect_lines = draw_rectangle_lines_ex
 
   let rect (r : rect) (color : color) =
-    draw_rectangle_pro (r |> to_Rect) Zero.raylib_vector 0. color
+    draw_rectangle_pro (r |> rect_to_Rect) Zero.raylib_vector 0. color
 
   (* TODO rename this *)
   let image = draw_texture_pro
@@ -46,7 +46,7 @@ let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite)
   List.iteri draw_edge points
 
 let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
-  Draw.rect_lines (rect |> to_Rect) size color
+  Draw.rect_lines (rect |> rect_to_Rect) size color
 
 let debug_rect' color (rect : rect) =
   let transparent_color =
@@ -82,18 +82,18 @@ let draw_texture
   in
   let dest' =
     match rotation with
-    | 0. -> dest |> to_Rect
+    | 0. -> dest |> rect_to_Rect
     | 90. ->
       { dest with pos = { dest.pos with x = dest.pos.x +. Config.window.dest_tile_size } }
-      |> to_Rect
+      |> rect_to_Rect
     | 270. ->
       { dest with pos = { dest.pos with y = dest.pos.y +. Config.window.dest_tile_size } }
-      |> to_Rect
-    | _ -> dest |> to_Rect
+      |> rect_to_Rect
+    | _ -> dest |> rect_to_Rect
   in
   if debug then
     debug_rect_outline dest;
-  Draw.image t.image (src |> to_Rect) dest' (Raylib.Vector2.create 0. 0.) rotation tint
+  Draw.image t.image (src |> rect_to_Rect) dest' (Raylib.Vector2.create 0. 0.) rotation tint
 
 (* this function should only be used by sprites that don't have an entity
    - when an entity is present, use draw_entity because it corrects the sprite position before rendering
@@ -629,9 +629,9 @@ let tick (state : state) =
       match game.room.interaction_label with
       | None -> ()
       | Some (label, dest) ->
+        let w = measure_text label in
         let pos =
-          let w = measure_text label in
-          Entity.get_child_pos' dest true (ALIGNED (CENTER, TOP)) (w |> Int.to_float) 10.
+          Entity.get_child_pos' dest true (ALIGNED (CENTER, TOP_INSIDE)) (w |> Int.to_float) line_height
         in
         Raylib.draw_text label (pos.x |> Float.to_int) (pos.y |> Float.to_int) font_size
           Color.raywhite
@@ -804,7 +804,7 @@ let tick (state : state) =
                 let gb = get_flashing_tint d in
                 Color.create 200 gb gb 255)
               else
-                Color.create 255 255 255 255
+                Color.white
             in
             draw_entity ~tint e.entity;
             List.iter draw_projectile e.spawned_projectiles;
@@ -925,14 +925,14 @@ let tick (state : state) =
         }
       in
       let children_in_front, children_behind =
-        GhostChildKindMap.partition (fun _ child -> child.in_front) player.children
+        Ghost_child_kind.Map.partition (fun _ child -> child.in_front) player.children
       in
       draw_sprite shine_sprite;
-      GhostChildKindMap.iter draw_child children_behind;
+      Ghost_child_kind.Map.iter draw_child children_behind;
 
       draw_entity ~tint ~render_offset:(ghost_render_offset player.ghost) player.ghost.entity;
       draw_ghost_head ~tint player.ghost;
-      GhostChildKindMap.iter draw_child children_in_front
+      Ghost_child_kind.Map.iter draw_child children_in_front
     in
 
     let draw_hud () =
@@ -971,10 +971,10 @@ let tick (state : state) =
             w = pod_dest_w;
           }
         in
-        Draw.image energon_pod_image empty_src (empty_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0
-          Color.raywhite;
-        Draw.image energon_pod_image full_src (full_dest |> to_Rect) (Raylib.Vector2.zero ()) 0.0
-          Color.raywhite
+        Draw.image energon_pod_image empty_src (empty_dest |> rect_to_Rect) (Raylib.Vector2.zero ())
+          0.0 Color.raywhite;
+        Draw.image energon_pod_image full_src (full_dest |> rect_to_Rect) (Raylib.Vector2.zero ())
+          0.0 Color.raywhite
       in
       let draw_head idx =
         let image = game.player.shared_textures.health.image in

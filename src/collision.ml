@@ -92,27 +92,29 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
   in
   Option.is_none (List.find_map edge_with_separating_axis [ s1; s2 ])
 
-(* direction here means "the direction that the entity is (probably) colliding from" *)
 let between_rects (r1 : rect) (r2 : rect) : collision option =
-  let cr = Raylib.get_collision_rec (to_Rect r1) (to_Rect r2) |> of_Rect in
-  let no_collision = cr.w < 0.1 || cr.h < 0.1 in
+  let overlap =
+    Raylib.get_collision_rec (rect_to_Rect r1) (rect_to_Rect r2) |> raylib_Rect_to_rect
+  in
+  let no_collision = overlap.w < 0.1 || overlap.h < 0.1 in
   if no_collision then
     None
   else
     Some
       {
-        rect = cr;
-        direction =
+        center = get_rect_center overlap;
+        other_rect = r2;
+        collided_from =
           (let feq a b =
              (* Float.equal is too precise
                 - was previously comparing to 0.001, but that broke for small window_scale
              *)
              abs_float (a -. b) < 0.1
            in
-           let up = feq r2.pos.y cr.pos.y in
-           let down = feq (r2.pos.y +. r2.h) (cr.pos.y +. cr.h) in
-           let left = feq r2.pos.x cr.pos.x in
-           let right = feq (r2.pos.x +. r2.w) (cr.pos.x +. cr.w) in
+           let up = feq r2.pos.y overlap.pos.y in
+           let down = feq (r2.pos.y +. r2.h) (overlap.pos.y +. overlap.h) in
+           let left = feq r2.pos.x overlap.pos.x in
+           let right = feq (r2.pos.x +. r2.w) (overlap.pos.x +. overlap.w) in
 
            match (up, down, left, right) with
            (* one side *)
@@ -131,15 +133,15 @@ let between_rects (r1 : rect) (r2 : rect) : collision option =
               - can probably fix this by considering position of entity at start of frame (before applying v)
               - this is much more noticeable at 60fps
            *)
-           | false, true, true, false -> if cr.h < cr.w then DOWN else LEFT
+           | false, true, true, false -> if overlap.h < overlap.w then DOWN else LEFT
            | true, false, true, false ->
-             if cr.h < cr.w then
+             if overlap.h < overlap.w then
                UP
              else
                LEFT
-           | false, true, false, true -> if cr.h < cr.w then DOWN else RIGHT
+           | false, true, false, true -> if overlap.h < overlap.w then DOWN else RIGHT
            | true, false, false, true ->
-             if cr.h < cr.w then
+             if overlap.h < overlap.w then
                UP
              else
                RIGHT
@@ -174,29 +176,20 @@ let between_entities (entity1 : entity) (entity2 : entity) : bool =
     let shape2 = get_aligned_shape entity2 in
     between_shapes shape1 shape2
 
-(* this is only used for tile_group collisions
-   - should consolidate these at some point, but tile_groups will eventually have collision_shapes of their own
-*)
-let with_slash' (slash : slash) (rect : rect) : collision option =
-  let target_collision_shape = shape_of_rect rect in
+let between_slash_and_shape (slash : slash) (shape : shape) (other_rect : rect) : collision option =
   let slash_shape = get_slash_shape slash in
-  let min_slash_y =
-    let points' = List.map fst slash_shape.edges |> List.map (fun v -> v.y) in
-    List.sort Float.compare points' |> List.rev |> List.hd
-  in
-  if between_shapes slash_shape target_collision_shape then
-    Some { rect; direction = slash.direction }
-  else
-    None
-
-let with_slash (slash : slash) (target_sprite : sprite) : collision option =
-  let target_collision_shape = get_collision_shape target_sprite in
-  let slash_shape = get_slash_shape slash in
-  if between_shapes slash_shape target_collision_shape then
+  if between_shapes slash_shape shape then
     Some
       {
-        rect = (* TODO should this be target_sprite.dest instead? *) slash.sprite.dest;
-        direction = slash.direction;
+        center = get_midpoint slash.sprite.dest other_rect;
+        other_rect;
+        collided_from = slash.direction;
       }
   else
     None
+
+let between_slash_and_rect (slash : slash) (rect : rect) : collision option =
+  between_slash_and_shape slash (shape_of_rect rect) rect
+
+let between_slash_and_sprite (slash : slash) (sprite : sprite) : collision option =
+  between_slash_and_shape slash (get_collision_shape sprite) sprite.dest

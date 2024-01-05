@@ -121,6 +121,7 @@ type ghost_config = {
   flap_vy : float;
   jump_vy : float;
   wall_jump_vy : float;
+  upslash_vy : float;
   dash_duration : int;
   dive_vy : float;
   c_dash_whoosh_scale : float;
@@ -156,6 +157,7 @@ let ghost : ghost_config =
     flap_vy = jump_vy *. 0.8;
     wall_jump_vy;
     wall_slide_vy = 400. *. window_scale;
+    upslash_vy = 300. *. window_scale;
     dash_duration = 20;
     debug_v = 20. *. window_scale;
     small_debug_v = 2. *. window_scale;
@@ -358,8 +360,27 @@ let lever_shape =
       { x = 10. *. window_scale; y = 83. *. window_scale };
     ]
 
-let random_fragment_vx () = (Random.float 501. -. 200.) *. window_scale
-let random_fragment_vy () = (Random.float 1000. -. 1000.) *. window_scale
+let random_fragment_vx ?(direction : direction option = None) () =
+  let min, max =
+    match direction with
+    | None -> (-250., 250.)
+    | Some LEFT -> (-500., 0.)
+    | Some RIGHT -> (0., 500.)
+    | Some d -> failwithf "random_fragment_vx invalid direction %s" (Show.direction d)
+  in
+  Random.float_between min max *. window_scale
+
+let random_fragment_vy ?(direction : direction option = None) () =
+  let min, max =
+    match direction with
+    | None ->
+      (* most fragments should fly upward *)
+      (-800., 200.)
+    | Some UP -> (-500., 0.)
+    | Some DOWN -> (0., 500.)
+    | Some d -> failwithf "random_fragment_vy invalid direction %s" (Show.direction d)
+  in
+  Random.float_between min max *. window_scale
 
 type debug_keys = {
   mutable n : bool;

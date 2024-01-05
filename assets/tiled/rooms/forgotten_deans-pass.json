@@ -716,15 +716,15 @@
                  "y":1112
                 }, 
                 {
-                 "height":356,
+                 "height":288,
                  "id":179,
                  "name":"camera:gx,y",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":986,
+                 "width":992,
                  "x":2728,
-                 "y":20
+                 "y":96
                 }, 
                 {
                  "height":73,
@@ -747,17 +747,6 @@
                  "width":396,
                  "x":876,
                  "y":216
-                }, 
-                {
-                 "height":7,
-                 "id":184,
-                 "name":"cutscene:kp-landing",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":287,
-                 "x":455,
-                 "y":1331
                 }, 
                 {
                  "height":73,
@@ -888,13 +877,13 @@
                  "type":"",
                  "visible":true,
                  "width":25,
-                 "x":1530,
-                 "y":604
+                 "x":1548,
+                 "y":600
                 }, 
                 {
                  "height":22,
                  "id":207,
-                 "name":"enemy:FLYING_HIPPIE",
+                 "name":"enemy:BIRD",
                  "rotation":0,
                  "type":"",
                  "visible":true,

@@ -2,7 +2,7 @@
     "enemies": [
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 65,
+            "health": 5,
             "w": 19,
             "h": 45,
             "dream_nail": {},
@@ -46,15 +46,15 @@
 
         [ "LOCKER_BOY", {
             "kind": "multi-boss",
-            "health": 120,
+            "health": 1,
             "w": 22,
             "h": 40,
             "dream_nail": {},
             "attrs": [
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
-                ["projectile_vx", 600.0],
-                ["dash_vx", 2200.0],
+                ["projectile_vx", 700.0],
+                ["dash_vx", 600.0],
                 ["dive_vy", 1250.0],
                 ["dive_y", 777.0]
             ],
@@ -115,7 +115,7 @@
             ]
         }],
 
-        [ "FLYING_HIPPIE", {
+        [ "BIRD", {
             "kind": "enemy",
             "health": 15,
             "w": 30,
@@ -143,6 +143,47 @@
                     "duration": 0.1,
                     "x_offset": 3,
                     "y_offset": 3
+                }],
+                ["dead", {
+                    "x_offset": 2,
+                    "y_offset": -22
+                }]
+            ]
+        }],
+
+        [ "FLYING_HIPPIE", {
+            "kind": "enemy",
+            "health": 15,
+            "w": 30,
+            "h": 32,
+            "gravity_multiplier": 0.0,
+            "dream_nail": {},
+            "attrs": [
+                ["target_offset", 200.0],
+                ["chase_distance", 600.0],
+                ["max_chase_v", 300.0],
+                ["chase_dv", 3.0],
+                ["max_v", 30.0],
+                ["projectile_vx", 300.0]
+            ],
+            "unscaled_attrs": [
+                ["projectile_cooldown", 2.0],
+                ["direction_change_max_dt", 3.0]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 4,
+                    "duration": 0.4,
+                    "x_offset": 3,
+                    "y_offset": 3
+                }],
+                ["chasing", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 3,
+                    "y_offset": 3
+                }],
+                ["projectile", {
                 }],
                 ["dead", {
                     "x_offset": 2,

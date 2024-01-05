@@ -132,43 +132,6 @@ let pogo (player : player) =
         reset_v = true;
       }
 
-(* - adjusts x position for side collisions to place sprite next to colliding rect
-   - then adjusts y position for top/bottom collisions
-   - updates y velocity for bonking head, but other velocity updates happen elsewhere (set_pose)
-*)
-(* TODO this is pretty similar to Entity.apply_collisions now, so it might make sense to combine them *)
-let apply_collisions
-    ?(floor_v = Zero.vector ())
-    (entity : entity)
-    (collisions : (collision * rect) list) : unit =
-  let adjust_position ((coll, floor) : collision * rect) =
-    let top_of r = r.pos.y in
-    let bottom_of r = r.pos.y +. r.h in
-    let left_of r = r.pos.x in
-    let right_of r = r.pos.x +. r.w in
-    match coll.direction with
-    | UP ->
-      (* checks here prevent floor from being set for a single frame when jumping/pogoing over corners *)
-      if Option.is_none entity.y_recoil then (
-        entity.current_floor <- Some (floor, floor_v);
-        entity.dest.pos.y <- top_of floor -. entity.dest.h)
-    | DOWN ->
-      if entity.v.y < 0. || Option.is_some entity.y_recoil then (
-        entity.v.y <- 0.;
-        entity.dest.pos.y <- bottom_of floor)
-    | LEFT -> entity.dest.pos.x <- left_of floor -. entity.dest.w
-    | RIGHT -> entity.dest.pos.x <- right_of floor
-  in
-  let left_right_collisions, up_down_collisions =
-    let is_left_right ((c, _) : collision * rect) = c.direction = LEFT || c.direction = RIGHT in
-    List.partition is_left_right collisions
-  in
-  (* move sideways first to fix collisions with tiles stacked directly on top of each other
-     - TODO this isn't working anymore
-  *)
-  List.iter adjust_position left_right_collisions;
-  List.iter adjust_position up_down_collisions
-
 let make_slash
     (player : player)
     (direction : direction)
@@ -263,10 +226,10 @@ let make_slash
 
 exception ShortCircuit
 
-let find_child fn (children : ghost_child GhostChildKindMap.t) : 'a option =
+let find_child fn (children : ghost_child Ghost_child_kind.Map.t) : 'a option =
   let r = ref None in
   try
-    GhostChildKindMap.iter
+    Ghost_child_kind.Map.iter
       (fun child_kind child ->
         match fn (child_kind, child) with
         | Some res ->
@@ -323,10 +286,10 @@ let get_focus_sparkles ghost : sprite option =
   find_child get_sprite ghost.children
 
 let add_child (player : player) (kind : ghost_child_kind) (child : ghost_child) =
-  player.children <- GhostChildKindMap.update kind (fun _ -> Some child) player.children
+  player.children <- Ghost_child_kind.Map.update kind (fun _ -> Some child) player.children
 
 let remove_child (player : player) (kind : ghost_child_kind) =
-  player.children <- GhostChildKindMap.remove kind player.children
+  player.children <- Ghost_child_kind.Map.remove kind player.children
 
 let make_ghost_child ?(in_front = false) (player : player) kind relative_pos texture w h =
   let name = Show.ghost_child_kind kind in
@@ -359,9 +322,9 @@ let make_c_dash_child ?(full = false) (player : player) : unit =
   in
   let alignment =
     match (player.current.wall, player.ghost.entity.sprite.facing_right) with
-    | None, _ -> ALIGNED (CENTER, BOTTOM)
-    | Some _, true -> ALIGNED (LEFT, CENTER)
-    | Some _, false -> ALIGNED (RIGHT, CENTER)
+    | None, _ -> ALIGNED (CENTER, BOTTOM_INSIDE)
+    | Some _, true -> ALIGNED (LEFT_INSIDE, CENTER)
+    | Some _, false -> ALIGNED (RIGHT_INSIDE, CENTER)
   in
   let child_kind =
     match player.current.wall with
@@ -388,7 +351,7 @@ let animate_and_despawn_children frame_time ghost : unit =
     | LOOPED _ ->
       Sprite.advance_animation frame_time child.sprite
   in
-  GhostChildKindMap.iter advance ghost.children
+  Ghost_child_kind.Map.iter advance ghost.children
 
 let get_damage (player : player) (damage_kind : damage_kind) =
   (* TODO check ghost.abilities.descending_dark/shade_soul *)
@@ -396,7 +359,7 @@ let get_damage (player : player) (damage_kind : damage_kind) =
   | DREAM_NAIL -> 0
   | NAIL ->
     player.weapons
-    |> StringMap.to_list
+    |> String.Map.to_list
     |> List.map snd
     |> List.map (fun (w : Json_t.weapon) -> w.damage)
     |> List.fold_left ( + ) 0
@@ -469,7 +432,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
                     reset_v = true;
                   };
               enemy.history <-
-                EnemyActionMap.update (TOOK_DAMAGE DREAM_NAIL)
+                Enemy_action.Map.update (TOOK_DAMAGE DREAM_NAIL)
                   (fun _ -> Some { at = state.frame.time })
                   enemy.history)
           | None -> ())
@@ -501,7 +464,7 @@ let resolve_slash_collisions (state : state) (game : game) =
   | Some slash ->
     let resolve_enemy (enemy : enemy) =
       if enemy.json.can_take_damage && enemy.status.check_damage_collisions then (
-        match Collision.with_slash slash enemy.entity.sprite with
+        match Collision.between_slash_and_sprite slash enemy.entity.sprite with
         | None -> ()
         | Some collision ->
           Audio.play_sound state "punch";
@@ -509,7 +472,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             Enemy.maybe_take_damage state enemy game.player.history.nail.started NAIL
               (get_damage game.player NAIL) collision
           then (
-            (match collision.direction with
+            (match collision.collided_from with
             | DOWN -> pogo game.player
             | LEFT
             | RIGHT ->
@@ -521,9 +484,14 @@ let resolve_slash_collisions (state : state) (game : game) =
                 }
             | UP ->
               if game.player.ghost.entity.v.y < 0. then
-                game.player.ghost.entity.v.y <- 300.);
-            if enemy.health.current > 0 then
-              Entity.recoil enemy.entity collision.direction;
+                game.player.ghost.entity.v.y <- Config.ghost.upslash_vy);
+            (match enemy.kind with
+            | ENEMY ->
+              if enemy.health.current > 0 then
+                Entity.recoil enemy.entity collision.collided_from
+            | BOSS
+            | MULTI_BOSS ->
+              ());
             game.player.soul.current <-
               Int.bound 0
                 (game.player.soul.current + Config.action.soul_gained_per_nail)
@@ -532,7 +500,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             (* TODO this isn't working (can't pogo LB projectiles) *)
             let check_projectile_pogo (projectile : projectile) =
               if projectile.pogoable then (
-                match Collision.with_slash slash projectile.entity.sprite with
+                match Collision.between_slash_and_sprite slash projectile.entity.sprite with
                 | None -> ()
                 | Some _ -> pogo game.player)
             in
@@ -547,11 +515,11 @@ let resolve_slash_collisions (state : state) (game : game) =
     in
 
     let maybe_pogo_platform_spikes id rect =
-      match Collision.with_slash' slash rect with
+      match Collision.between_slash_and_rect slash rect with
       | None -> ()
       | Some coll -> (
         Audio.play_sound state "nail-hit-metal";
-        match coll.direction with
+        match coll.collided_from with
         | DOWN -> (
           (* always pogo, but only un-rotate the platform if it is upright *)
           pogo game.player;
@@ -564,11 +532,11 @@ let resolve_slash_collisions (state : state) (game : game) =
     in
 
     let maybe_pogo sound_name rect =
-      match Collision.with_slash' slash rect with
+      match Collision.between_slash_and_rect slash rect with
       | None -> ()
       | Some coll -> (
         Audio.play_sound state sound_name;
-        match coll.direction with
+        match coll.collided_from with
         | DOWN -> pogo game.player
         | _direction -> ())
     in
@@ -577,10 +545,56 @@ let resolve_slash_collisions (state : state) (game : game) =
     let resolve_colliding_layers (layer : layer) =
       if layer.config.destroyable then (
         let new_tile_groups : tile_group list ref = ref [] in
-        let spawn_fragment (collision : collision) (e : entity) =
-          let new_fragment = Entity.clone e in
-          new_fragment.dest.pos <- { x = collision.rect.pos.x; y = collision.rect.pos.y };
-          new_fragment.v <- { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () };
+        let spawn_fragment
+            (tile_group : tile_group)
+            (collision : collision)
+            ~(broken : bool)
+            (entity : entity) =
+          let new_fragment = Entity.clone entity in
+          let new_pos, new_v =
+            if broken then
+              ( align CENTER TOP_INSIDE tile_group.dest entity.dest.w entity.dest.h,
+                { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () } )
+            else (
+              let door_is_vertical = tile_group.dest.h > tile_group.dest.w in
+              let randomize pos half = pos +. Random.float_between (-.half) half in
+              let adjust_y () =
+                let y_alignment, vy_direction =
+                  if collision.center.y < rect_center_y game.player.ghost.entity.dest then
+                    (BOTTOM_OUTSIDE, DOWN)
+                  else
+                    (TOP_OUTSIDE, UP)
+                in
+                let pos = align CENTER y_alignment tile_group.dest entity.dest.w entity.dest.h in
+                ( { pos with x = randomize pos.x (tile_group.dest.w /. 2.) },
+                  {
+                    x = Config.random_fragment_vx ();
+                    y = Config.random_fragment_vy ~direction:(Some vy_direction) ();
+                  } )
+              in
+
+              let adjust_x () =
+                let x_alignment, vx_direction =
+                  if collision.center.x < rect_center_x game.player.ghost.entity.dest then
+                    (RIGHT_OUTSIDE, RIGHT)
+                  else
+                    (LEFT_OUTSIDE, LEFT)
+                in
+                let pos = align x_alignment CENTER tile_group.dest entity.dest.w entity.dest.h in
+                ( { pos with y = randomize pos.y (tile_group.dest.h /. 2.) },
+                  {
+                    x = Config.random_fragment_vx ~direction:(Some vx_direction) ();
+                    y = Config.random_fragment_vy ();
+                  } )
+              in
+
+              if door_is_vertical then
+                adjust_x ()
+              else
+                adjust_y ())
+          in
+          new_fragment.dest.pos <- new_pos;
+          new_fragment.v <- new_v;
           new_fragment.update_pos <- true;
           new_fragment.sprite.facing_right <- Random.bool ();
           new_fragment
@@ -592,7 +606,8 @@ let resolve_slash_collisions (state : state) (game : game) =
             Audio.play_sound state "alarmswitch";
             Audio.play_sound state "punch");
           layer.spawned_fragments <-
-            List.map (spawn_fragment collision) tile_group.fragments @ layer.spawned_fragments;
+            List.map (spawn_fragment tile_group collision ~broken:true) tile_group.fragments
+            @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
           | Some (PURPLE_PEN (name, followup_trigger)) ->
@@ -617,7 +632,7 @@ let resolve_slash_collisions (state : state) (game : game) =
           | STEEL_SOLE ->
             if layer.name = "doors" then
               add_phantom_floor game game.player.ghost.entity.dest.pos);
-          if collision.direction = DOWN && layer.config.pogoable then
+          if collision.collided_from = DOWN && layer.config.pogoable then
             pogo game.player;
           match tile_group.stub_sprite with
           | None -> ()
@@ -626,7 +641,7 @@ let resolve_slash_collisions (state : state) (game : game) =
               (sprite, tile_group.transformation_bits) :: layer.spawned_stub_sprites
         in
         let resolve_tile_group (tile_group : tile_group) =
-          match Collision.with_slash' slash tile_group.dest with
+          match Collision.between_slash_and_rect slash tile_group.dest with
           | None -> new_tile_groups := tile_group :: !new_tile_groups
           | Some coll -> (
             match tile_group.door_health with
@@ -635,11 +650,11 @@ let resolve_slash_collisions (state : state) (game : game) =
               if door_health.last_hit_at < game.player.history.nail.started.at then (
                 door_health.last_hit_at <- state.frame.time;
                 if door_health.hits > 1 then (
-                  (* TODO this isn't quite working - the fragments are spawning on top of the door and not moving *)
                   let make_random_fragment _n = List.sample tile_group.fragments in
-                  let random_fragments = List.init (Random.int 3) make_random_fragment in
+                  let random_fragments = List.init (Random.int_between 2 4) make_random_fragment in
                   layer.spawned_fragments <-
-                    List.map (spawn_fragment coll) random_fragments @ layer.spawned_fragments;
+                    List.map (spawn_fragment tile_group coll ~broken:false) random_fragments
+                    @ layer.spawned_fragments;
                   door_health.hits <- door_health.hits - 1;
                   Audio.play_sound state "alarmswitch";
                   Audio.play_sound state "punch";
@@ -663,7 +678,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         | Some l -> l
       in
       let new_tile_groups : tile_group list ref = ref [] in
-      match Collision.with_slash slash lever.sprite with
+      match Collision.between_slash_and_sprite slash lever.sprite with
       | None -> ()
       | Some collision -> (
         if lever.sprite.texture = state.global.textures.door_lever then (
@@ -686,7 +701,7 @@ let resolve_slash_collisions (state : state) (game : game) =
     List.iter resolve_lever game.room.triggers.levers;
     List.iter resolve_colliding_layers game.room.layers;
     List.iter (maybe_pogo "nail-hit-metal") game.room.spikes;
-    IntMap.iter maybe_pogo_platform_spikes game.room.platform_spikes;
+    Int.Map.iter maybe_pogo_platform_spikes game.room.platform_spikes;
     List.iter resolve_enemy game.room.enemies
 
 let reset_current_status ?(taking_hazard_damage = None) () =
@@ -905,7 +920,8 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   in
   let projectile : projectile =
     {
-      entity = Entity.create_for_sprite ~v:{ x = vx; y = 0. } vengeful_spirit dest;
+      entity =
+        Entity.create_for_sprite ~v:{ x = vx; y = 0. } ~gravity_multiplier:0. vengeful_spirit dest;
       despawn = TIME_LEFT { seconds = Config.action.vengeful_spirit_duration };
       spawned = { at = state.frame.time };
       pogoable = true;
@@ -913,6 +929,8 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
          currently "damage done to ghost" for enemy projectiles
       *)
       damage = 1;
+      (* TODO this should be based on shade soul *)
+      collide_with_floors = false;
     }
   in
   game.player.spawned_vengeful_spirits <- projectile :: game.player.spawned_vengeful_spirits
@@ -955,8 +973,8 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
 
       let relative_pos =
         match direction with
-        | UP -> ALIGNED (CENTER, BOTTOM)
-        | DOWN -> ALIGNED (CENTER, TOP)
+        | UP -> ALIGNED (CENTER, BOTTOM_INSIDE)
+        | DOWN -> ALIGNED (CENTER, TOP_INSIDE)
         | LEFT
         | RIGHT ->
           IN_FRONT
@@ -966,7 +984,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           state.frame.time
       in
       game.player.children <-
-        GhostChildKindMap.update (NAIL slash)
+        Ghost_child_kind.Map.update (NAIL slash)
           (fun _ -> Some { relative_pos; sprite = slash.sprite; in_front = true })
           game.player.children;
       cooldown_scale := game.player.current_weapon.cooldown_scale;
@@ -982,7 +1000,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | C_DASH_COOLDOWN ->
       (* TODO stop playing c-dash sound *)
       game.player.current.is_c_dashing <- false;
-      game.player.children <- GhostChildKindMap.remove C_DASH_WHOOSH game.player.children;
+      game.player.children <- Ghost_child_kind.Map.remove C_DASH_WHOOSH game.player.children;
       game.player.history.c_dash_cooldown
     | C_DASH ->
       (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
@@ -996,9 +1014,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.ghost.entity.current_floor <- None;
       let alignment =
         if game.player.ghost.entity.sprite.facing_right then
-          ALIGNED (RIGHT, CENTER)
+          ALIGNED (RIGHT_INSIDE, CENTER)
         else
-          ALIGNED (LEFT, CENTER)
+          ALIGNED (LEFT_INSIDE, CENTER)
       in
       spawn_child game.player C_DASH_WHOOSH ~scale:Config.ghost.c_dash_whoosh_scale alignment
         game.player.shared_textures.c_dash_whoosh;
@@ -1038,14 +1056,14 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         in
         let child =
           make_ghost_child game.player DIVE
-            (ALIGNED (CENTER, BOTTOM))
+            (ALIGNED (CENTER, BOTTOM_INSIDE))
             game.player.shared_textures.desolate_dive w h
         in
         add_child game.player DIVE child;
         game.player.history.cast_dive
       | HOWLING_WRAITHS ->
         spawn_child game.player WRAITHS
-          (ALIGNED (CENTER, BOTTOM))
+          (ALIGNED (CENTER, BOTTOM_INSIDE))
           ~scale:Config.ghost.wraiths_scale game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
     | DIE ->
@@ -1102,7 +1120,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.current <-
         reset_current_status
           ~taking_hazard_damage:(Some game.player.current.is_taking_hazard_damage) ();
-      game.player.children <- GhostChildKindMap.empty;
+      game.player.children <- Ghost_child_kind.Map.empty;
       (match game.mode with
       | STEEL_SOLE -> ()
       | CLASSIC
@@ -1160,9 +1178,9 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
     then (
       let alignment =
         if game.player.ghost.entity.sprite.facing_right then
-          ALIGNED (LEFT, CENTER)
+          ALIGNED (LEFT_INSIDE, CENTER)
         else
-          ALIGNED (RIGHT, CENTER)
+          ALIGNED (RIGHT_INSIDE, CENTER)
       in
       spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash
         ~scale:Config.scale.dream_nail)
@@ -1287,19 +1305,19 @@ let enable_ability ghost ability_name = change_ability ~only_enable:true ghost a
 let toggle_ability ghost ability_name = change_ability ~debug:true ghost ability_name
 
 let acquire_weapon (state : state) (game : game) weapon_name =
-  match StringMap.find_opt weapon_name state.global.weapons with
+  match String.Map.find_opt weapon_name state.global.weapons with
   | Some weapon_config ->
-    let current_weapon_names = game.player.weapons |> StringMap.to_list |> List.map fst in
+    let current_weapon_names = game.player.weapons |> String.Map.to_list |> List.map fst in
     (* if not (List.mem weapon_name current_weapon_names) then *)
     game.player.weapons <-
-      StringMap.update weapon_name (fun _ -> Some weapon_config) game.player.weapons
+      String.Map.update weapon_name (fun _ -> Some weapon_config) game.player.weapons
   | None -> failwithf "acquire_weapon bad weapon name: %s" weapon_name
 
 let equip_weapon (player : player) weapon_name =
-  match StringMap.find_opt weapon_name player.weapons with
+  match String.Map.find_opt weapon_name player.weapons with
   | None ->
     failwithf "can't equip %s, not in player.weapons: %s" weapon_name
-      (player.weapons |> StringMap.to_list |> List.map fst |> join)
+      (player.weapons |> String.Map.to_list |> List.map fst |> join)
   | Some weapon_config ->
     player.current_weapon <-
       (let config = weapon_config.tint in
@@ -1510,6 +1528,7 @@ let tick (game : game) (state : state) =
           *)
           ref false
         in
+        let still_waiting_for_floor = ref false in
 
         let set_layer_hidden (layer_name : string) hidden =
           (match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
@@ -1528,7 +1547,7 @@ let tick (game : game) (state : state) =
             game.player.ghost.entity.v <- Zero.vector ();
             if remove_nail then (
               match get_current_slash game.player with
-              | Some slash -> game.player.children <- GhostChildKindMap.empty
+              | Some slash -> game.player.children <- Ghost_child_kind.Map.empty
               | None -> ())
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
@@ -1629,6 +1648,9 @@ let tick (game : game) (state : state) =
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =
           match entity_step with
           | SET_FACING direction -> Entity.set_facing direction entity
+          | WAIT_UNTIL_LANDED ->
+            if Option.is_none entity.current_floor then
+              still_waiting_for_floor := true
           | UNHIDE -> Entity.unhide entity
           | UNHIDE_AT (start_tile_x, start_tile_y, x_offset, y_offset) ->
             let tile = (start_tile_x, start_tile_y) |> Tiled.Tile.coords_to_pos in
@@ -1653,7 +1675,7 @@ let tick (game : game) (state : state) =
             game.interaction.use_dashes_in_archives <- Some false;
             game.interaction.text <- Some (PLAIN text)
           | WEAPON weapon_name ->
-            let weapon_config = StringMap.find weapon_name state.global.weapons in
+            let weapon_config = String.Map.find weapon_name state.global.weapons in
             let text : string list =
               [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]
             in
@@ -1809,7 +1831,7 @@ let tick (game : game) (state : state) =
 
         let set_npc_pose (npc : npc) pose =
           let texture =
-            match StringMap.find_opt pose npc.textures with
+            match String.Map.find_opt pose npc.textures with
             | Some t -> t
             | None -> failwithf "could not find pose %s for npc %s" pose (Show.npc_id npc.id)
           in
@@ -1860,7 +1882,7 @@ let tick (game : game) (state : state) =
           handle_npc_step (find_existing_npc ()) npc_step
         | ENEMY (enemy_id, enemy_step) -> handle_enemy_step enemy_id enemy_step);
 
-        if !still_walking then
+        if !still_walking || !still_waiting_for_floor then
           ( (* leave the current step on top of the stack *) )
         else if !new_wait > 0. && not speed_through_interaction then
           game.interaction.steps <- STEP (WAIT !new_wait) :: List.tl game.interaction.steps
@@ -1924,7 +1946,7 @@ let tick (game : game) (state : state) =
               start_action state game DIVE_COOLDOWN;
               let child =
                 let dest = game.player.ghost.entity.dest in
-                let relative_pos = ALIGNED (CENTER, BOTTOM) in
+                let relative_pos = ALIGNED (CENTER, BOTTOM_INSIDE) in
                 let w, h =
                   (* TODO this scaling is temporary so the current dive.png can be used *)
                   (dest.w *. 15., dest.h *. 3.)
@@ -2256,7 +2278,7 @@ let tick (game : game) (state : state) =
 
   let start_swimming (rect : rect) =
     game.player.current.is_diving <- false;
-    game.player.children <- GhostChildKindMap.empty;
+    game.player.children <- Ghost_child_kind.Map.empty;
     if not (in_water game.player) then
       game.player.ghost.entity.dest.pos.y <-
         game.player.ghost.entity.dest.pos.y +. (game.player.ghost.entity.dest.h /. 2.);
@@ -2303,7 +2325,7 @@ let tick (game : game) (state : state) =
     in
     let check_damage_collisions hazard_collisions platform_spike_collisions =
       state.debug.rects <-
-        List.map (fun c -> (Raylib.Color.red, snd c)) hazard_collisions @ state.debug.rects;
+        List.map (fun c -> (Raylib.Color.red, c.other_rect)) hazard_collisions @ state.debug.rects;
       let collisions' =
         if game.player.abilities.ismas_tear then
           hazard_collisions
@@ -2358,22 +2380,20 @@ let tick (game : game) (state : state) =
         game.player.current.is_taking_hazard_damage <- true;
         start_action state game TAKE_DAMAGE_AND_RESPAWN)
     in
-    let handle_c_dash_wall_collisions collisions =
+    let handle_c_dash_wall_collisions (collisions : collision list) =
       let wall_collision =
-        List.find_opt
-          (fun ((c, _) : collision * 'a) -> List.mem c.direction [ LEFT; RIGHT ])
-          collisions
+        List.find_opt (fun (c : collision) -> List.mem c.collided_from [ LEFT; RIGHT ]) collisions
       in
       match wall_collision with
       | None -> ()
-      | Some (_, wall_rect) ->
+      | Some coll ->
         if game.player.current.is_c_dashing then (
           if game.player.abilities.mantis_claw then
-            game.player.current.wall <- Some wall_rect;
+            game.player.current.wall <- Some coll.other_rect;
           state.camera.shake <- 1.;
           start_action state game C_DASH_WALL_COOLDOWN)
     in
-    let handle_wall_sliding collisions =
+    let handle_wall_sliding (collisions : collision list) =
       let high_enough_to_slide_on wall =
         let wall_bottom_y = wall.pos.y +. wall.h in
         game.player.ghost.entity.dest.pos.y +. (game.player.ghost.entity.dest.h /. 2.)
@@ -2401,24 +2421,25 @@ let tick (game : game) (state : state) =
             game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x +. dx;
             match
               List.find_opt
-                (fun (_, rect) -> rect <> wall)
+                (fun coll -> coll.other_rect <> wall)
                 (Entity.get_floor_collisions game.room game.player.ghost.entity)
             with
             | None ->
               game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x -. dx;
               game.player.current.wall <- None
-            | Some (collision, new_wall) -> set_pose' (WALL_SLIDING new_wall)))
+            | Some collision -> set_pose' (WALL_SLIDING collision.other_rect)))
         else (
           game.player.current.wall <- None;
           if not (is_doing game.player (ATTACK RIGHT) state.frame.time) then (
-            let check_collision ((c, wall) : collision * rect) =
+            let check_collision (collision : collision) =
               if
                 (not (Entity.on_ground game.player.ghost.entity))
                 && Entity.descending game.player.ghost.entity
               then (
+                let wall = collision.other_rect in
                 let wall_is_tall_enough = wall.h > game.player.ghost.entity.dest.h /. 2. in
                 if high_enough_to_slide_on wall && wall_is_tall_enough then (
-                  match c.direction with
+                  match collision.collided_from with
                   | LEFT -> set_pose' (WALL_SLIDING wall)
                   | RIGHT -> set_pose' (WALL_SLIDING wall)
                   | _ -> ()))
@@ -2430,7 +2451,9 @@ let tick (game : game) (state : state) =
     let floor_v, floor_collisions =
       match Entity.get_conveyor_belt_collision game.room game.player.ghost.entity with
       | None -> (Zero.vector (), floor_collisions')
-      | Some (collision, rect, floor_v) -> (floor_v, [ (collision, rect) ])
+      | Some (collision, floor_v) ->
+        (* TODO this is causing the falling-through-floor bug in forgotten_g *)
+        (floor_v, [ collision ])
     in
 
     let hazard_collisions, platform_spike_collisions' =
@@ -2440,7 +2463,7 @@ let tick (game : game) (state : state) =
       | DEMO ->
         (damage.hazards, damage.platform_spikes)
       | STEEL_SOLE -> (
-        let up_floor_collision : (collision * rect) option =
+        let up_floor_collision : collision option =
           (* safe to walk on the ground in the vents *)
           if state.debug.safe_ss || game.room.area.id = VENTWAYS then
             None
@@ -2455,7 +2478,7 @@ let tick (game : game) (state : state) =
           then
             None
           else
-            List.find_opt (fun ((c : collision), _) -> c.direction = UP) floor_collisions
+            List.find_opt (fun (c : collision) -> c.collided_from = UP) floor_collisions
         in
         match up_floor_collision with
         | None -> (damage.hazards, damage.platform_spikes)
@@ -2475,8 +2498,8 @@ let tick (game : game) (state : state) =
     *)
     (match List.nth_opt bench_collisions 0 with
     | None -> ()
-    | Some (coll, rect) -> (
-      match coll.direction with
+    | Some coll -> (
+      match coll.collided_from with
       | UP ->
         game.interaction.corner_text <-
           Some { content = "Game saved."; visible = TIME { at = state.frame.time +. 1.5 } };
@@ -2493,11 +2516,11 @@ let tick (game : game) (state : state) =
     in
     (match List.nth_opt liquid_collisions 0 with
     | None -> game.player.current.water <- None
-    | Some (_coll, rect) -> start_swimming rect);
+    | Some coll -> start_swimming coll.other_rect);
     check_enemy_collisions ();
     state.debug.rects <-
-      List.map (fun c -> (Raylib.Color.green, snd c)) floor_collisions @ state.debug.rects;
-    apply_collisions ~floor_v game.player.ghost.entity floor_collisions;
+      List.map (fun c -> (Raylib.Color.green, c.other_rect)) floor_collisions @ state.debug.rects;
+    Entity.apply_collisions ~floor_v game.player.ghost.entity floor_collisions;
     handle_wall_sliding floor_collisions;
     check_damage_collisions hazard_collisions platform_spike_collisions;
     handle_c_dash_wall_collisions (floor_collisions @ hazard_collisions)
@@ -2538,9 +2561,7 @@ let tick (game : game) (state : state) =
       start_action state game DIE
   else (
     game.player.ghost.entity.current_platforms <- [];
-    Entity.apply_v
-      ~debug:(if state.debug.enabled then Some (fmt "%d" state.frame.idx) else None)
-      state.frame.dt game.player.ghost.entity;
+    Entity.apply_v state.frame.dt game.player.ghost.entity;
     (match game.player.ghost.entity.current_floor with
     | None -> ()
     | Some (floor, v) ->
@@ -2568,8 +2589,10 @@ let tick (game : game) (state : state) =
     let exiting = Room.handle_transitions state game in
     if not exiting then (
       let interacting = handle_interactions () in
-      if interacting then
-        Entity.update_pos game.room game.player.ghost.entity state.frame.dt
+      if interacting then (
+        if game.player.ghost.entity.update_pos then (
+          game.player.ghost.entity.v.y <- new_vy;
+          handle_collisions ()))
       else (
         reveal_shadows ();
         if game.player.ghost.entity.update_pos then (
@@ -2603,7 +2626,7 @@ let tick (game : game) (state : state) =
     Sprite.advance_animation state.frame.time game.player.ghost.entity.sprite);
   state
 
-let load_shared_textures (shared_texture_configs : texture_config StringMap.t) =
+let load_shared_textures (shared_texture_configs : texture_config String.Map.t) =
   let build_shared_texture ?(particle = false) ?(once = false) ?(config_name = None) pose_name =
     let config =
       let config_name' =
@@ -2612,7 +2635,7 @@ let load_shared_textures (shared_texture_configs : texture_config StringMap.t) =
         | None -> pose_name
         | Some name -> name
       in
-      match StringMap.find_opt config_name' shared_texture_configs with
+      match String.Map.find_opt config_name' shared_texture_configs with
       | Some config ->
         (* the `with pose_name` is also because of the "nail" config naming *)
         { config with path = { config.path with pose_name } }
@@ -2657,13 +2680,13 @@ let init
     (ghost_id : ghost_id)
     (idle_texture : texture)
     (head_textures : ghost_head_textures)
-    (action_config : ghost_action_config StringMap.t)
+    (action_config : ghost_action_config String.Map.t)
     (start_pos : vector)
     (save_file : Json_t.save_file)
-    (weapons_configs : Json_t.weapon StringMap.t)
+    (weapons_configs : Json_t.weapon String.Map.t)
     shared_textures : player =
   let use_json_action_config action_name : ghost_action_config =
-    match StringMap.find_opt action_name action_config with
+    match String.Map.find_opt action_name action_config with
     | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
     | Some config -> config
   in
@@ -2677,7 +2700,7 @@ let init
     }
   in
 
-  let load_weapon name = (name, StringMap.find name weapons_configs) in
+  let load_weapon name = (name, String.Map.find name weapons_configs) in
   let weapons = List.map load_weapon save_file.weapons in
 
   {
@@ -2699,7 +2722,7 @@ let init
             };
       };
     current = reset_current_status ();
-    children = GhostChildKindMap.empty;
+    children = Ghost_child_kind.Map.empty;
     history =
       {
         cast_dive = make_action "cast-dive";

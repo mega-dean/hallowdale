@@ -42,7 +42,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     in
 
     let get_lore () : string =
-      match StringMap.find_opt trigger.name_suffix state.global.lore with
+      match String.Map.find_opt trigger.name_suffix state.global.lore with
       | None -> failwithf "lore name '%s' not found in lore.json" trigger.name_suffix
       | Some lore -> lore
     in
@@ -213,6 +213,8 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       match trigger.name_suffix with
       | "opening-poem" ->
         [
+          CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
+          CURRENT_GHOST (ENTITY FREEZE);
           (* TODO center this text box *)
           STEP (TEXT [ "Give me some rope, tie me to dream." ]);
           STEP
@@ -242,10 +244,13 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                  " - excerpt from \"At Least It Was Here\" by The 88";
                ]);
           STEP (WAIT 1.);
+          CURRENT_GHOST (ENTITY UNFREEZE);
           STEP FADE_SCREEN_IN;
+          CURRENT_GHOST (ENTITY WAIT_UNTIL_LANDED);
+          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+          STEP (SHAKE_SCREEN 1.5);
+          STEP (WAIT 2.5);
         ]
-      | "kp-landing" ->
-        [ CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); STEP (SHAKE_SCREEN 1.); STEP (WAIT 2.0) ]
       | "fight-duncan" ->
         [
           ENEMY (DUNCAN, ENTITY UNHIDE);
@@ -276,7 +281,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                ( "Britta",
                  "Don't regress to primal behavior just because it's allowed - we're Human Beings, \
                   not the editors of Teen Vogue." ));
-          STEP (WAIT 0.7);
+          STEP (WAIT 1.3);
           STEP (DIALOGUE ("Britta", "They're setting a terrible example for today's young women."));
           STEP
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
@@ -569,7 +574,8 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (DIALOGUE ("Troy", "Troy and Abed Intimidation Stance!"));
           NPC (CHANG, SET_POSE "take-damage");
         ]
-        @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT Config.interactions.troy_dive_jump_vx
+        @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT
+            Config.interactions.troy_dive_jump_vx
         @ [ STEP (WAIT 0.3); NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
         @ get_ability_steps "desolate_dive" 0. 3.
             [ "Consumed the"; "Troy and Abed Intimidation Stance." ]

@@ -268,17 +268,11 @@ type entity = {
   mutable current_platforms : platform list;
 }
 
-let of_Rect (r : Raylib.Rectangle.t) : rect =
-  Raylib.Rectangle.{ w = width r; h = height r; pos = { x = x r; y = y r } }
-
-let to_Rect (r : rect) : Raylib.Rectangle.t = Raylib.Rectangle.create r.pos.x r.pos.y r.w r.h
-
-(* A rect representing the overlap between a source entity and a target entity, and the direction
-   that the source entity (probably) collided from
-*)
 type collision = {
-  rect : rect;
-  direction : direction;
+  (* .center is roughly where the collision occurred, only used for drawing damage_sprite *)
+  center : vector;
+  other_rect : rect;
+  collided_from : direction;
 }
 
 type spell_kind =
@@ -360,6 +354,7 @@ type enemy_id =
   | WIRED_ELECTRICITY
   (* | HIPPIE *)
   | FLYING_HIPPIE
+  | BIRD
   (* bosses *)
   | DUNCAN
   | LOCKER_BOY
@@ -489,6 +484,7 @@ module Interaction = struct
 
   type entity_step =
     | SET_FACING of direction
+    | WAIT_UNTIL_LANDED
     | HIDE
     | UNHIDE
     | (* TODO add another param facing_right : bool *)
@@ -614,23 +610,29 @@ type enemy_action =
   | TOOK_DAMAGE of damage_kind
 [@@deriving ord]
 
-module Enemy_action = struct
+module Enemy_action' = struct
   type t = enemy_action
 
   let compare = compare_enemy_action
 end
 
-module EnemyActionMap = Map.Make (Enemy_action)
+module Enemy_action = struct
+  include Enemy_action'
+  module Map = Map.Make (Enemy_action')
+end
 
 type projectile_duration =
   | TIME_LEFT of duration
   | X_BOUNDS of float * float
+  | UNTIL_FLOOR_COLLISION
 
 type projectile = {
   entity : entity;
+  (* TODO maybe make this a list of projectile_durations *)
   mutable despawn : projectile_duration;
   spawned : time;
   pogoable : bool;
+  collide_with_floors : bool;
   damage : int;
 }
 
@@ -638,7 +640,7 @@ type enemy_status = {
   mutable check_damage_collisions : bool;
   mutable active : bool;
   (* status.props are values representing the current state of the enemy *)
-  mutable props : float StringMap.t;
+  mutable props : float String.Map.t;
 }
 
 type enemy_kind =
@@ -654,18 +656,18 @@ type enemy = {
   damage : int;
   initial_pos : vector;
   mutable health : health;
-  mutable history : time EnemyActionMap.t;
+  mutable history : time Enemy_action.Map.t;
   mutable last_performed : (string * time) option;
   (* keep track of this so they only have to be checked once per frame
      (during State.update_enemies, and reused in Enemy.choose_behavior) *)
-  mutable floor_collisions_this_frame : (collision * rect) list;
+  mutable floor_collisions_this_frame : collision list;
   mutable spawned_projectiles : projectile list;
   mutable damage_sprites : sprite list;
-  textures : texture StringMap.t;
+  textures : texture String.Map.t;
   (* TODO maybe move these into global_cache since they will be the same for every enemy of
      the same type *)
   (* attrs are immutable properties of the enemy, defined in enemies.json *)
-  attrs : float StringMap.t;
+  attrs : float String.Map.t;
   json : Json_t.enemy_config;
   on_killed : enemy_on_killed;
 }
@@ -673,11 +675,11 @@ type enemy = {
 type npc = {
   id : npc_id;
   entity : entity;
-  textures : texture StringMap.t;
+  textures : texture String.Map.t;
 }
 
 let get_npc_texture (npc : npc) (texture_name : string) : texture =
-  match StringMap.find_opt texture_name npc.textures with
+  match String.Map.find_opt texture_name npc.textures with
   | None -> failwithf "could not find texture '%s' for npc %s" texture_name npc.entity.sprite.ident
   | Some v -> v
 
@@ -796,8 +798,8 @@ type frame_inputs = {
   interact : frame_input;
 }
 
-(* These align with the inside of the parent:
-   x = LEFT, y = CENTER ->
+(* Examples:
+   x = LEFT_INSIDE, y = CENTER ->
    pppppppppppppppp
    p              p
    ccccc          p
@@ -807,25 +809,50 @@ type frame_inputs = {
    p              p
    pppppppppppppppp
 
-   x = CENTER, y = BOTTOM ->
+   x = CENTER, y = BOTTOM_OUTSIDE ->
    pppppppppppppppp
    p              p
    p              p
    p              p
    p              p
-   p    cccccc    p
-   p    c    c    p
+   p              p
+   p              p
    pppppccccccppppp
+        c    c
+        cccccc
 *)
 type x_alignment =
-  | LEFT
-  | RIGHT
+  | LEFT_INSIDE
+  | RIGHT_INSIDE
+  | LEFT_OUTSIDE
+  | RIGHT_OUTSIDE
   | CENTER
 
 type y_alignment =
-  | TOP
-  | BOTTOM
+  | TOP_INSIDE
+  | BOTTOM_INSIDE
+  | TOP_OUTSIDE
+  | BOTTOM_OUTSIDE
   | CENTER
+
+let align x_alignment y_alignment parent_dest child_w child_h : vector =
+  let x =
+    match x_alignment with
+    | LEFT_INSIDE -> parent_dest.pos.x
+    | RIGHT_INSIDE -> parent_dest.pos.x +. parent_dest.w -. child_w
+    | LEFT_OUTSIDE -> parent_dest.pos.x -. child_w
+    | RIGHT_OUTSIDE -> parent_dest.pos.x +. parent_dest.w
+    | CENTER -> parent_dest.pos.x +. ((parent_dest.w -. child_w) /. 2.)
+  in
+  let y =
+    match y_alignment with
+    | TOP_INSIDE -> parent_dest.pos.y
+    | BOTTOM_INSIDE -> parent_dest.pos.y +. parent_dest.h -. child_h
+    | TOP_OUTSIDE -> parent_dest.pos.y -. child_h
+    | BOTTOM_OUTSIDE -> parent_dest.pos.y +. parent_dest.h
+    | CENTER -> parent_dest.pos.y +. ((parent_dest.h -. child_h) /. 2.)
+  in
+  { x; y }
 
 type relative_position =
   | IN_FRONT
@@ -854,13 +881,16 @@ type ghost_child_kind =
   | FOCUS
 [@@deriving ord]
 
-module Ghost_child_kind = struct
+module Ghost_child_kind' = struct
   type t = ghost_child_kind
 
   let compare a b = compare_ghost_child_kind a b
 end
 
-module GhostChildKindMap = Map.Make (Ghost_child_kind)
+module Ghost_child_kind = struct
+  include Ghost_child_kind'
+  module Map = Map.Make (Ghost_child_kind')
+end
 
 type ghost_child = {
   relative_pos : relative_position;
@@ -876,9 +906,9 @@ type invincibility_kind =
   | SHADE_CLOAK
 
 type ghosts_file = {
-  body_textures : texture_config StringMap.t;
-  actions : ghost_action_config StringMap.t;
-  shared_textures : texture_config StringMap.t;
+  body_textures : texture_config String.Map.t;
+  actions : ghost_action_config String.Map.t;
+  shared_textures : texture_config String.Map.t;
 }
 
 type ghost_body_texture = {
@@ -958,11 +988,11 @@ type player = {
   history : ghost_action_history;
   mutable ghost : ghost;
   mutable current_weapon : weapon;
-  mutable weapons : Json_t.weapon StringMap.t;
+  mutable weapons : Json_t.weapon String.Map.t;
   mutable abilities : Json_t.ghost_abilities;
   mutable health : health;
   mutable soul : soul;
-  mutable children : ghost_child GhostChildKindMap.t;
+  mutable children : ghost_child Ghost_child_kind.Map.t;
   mutable spawned_vengeful_spirits : projectile list;
 }
 
@@ -1150,8 +1180,8 @@ type jug_config = {
 }
 
 type room_cache = {
-  jug_fragments_by_gid : jug_fragments IntMap.t;
-  tilesets_by_path : tileset StringMap.t;
+  jug_fragments_by_gid : jug_fragments Int.Map.t;
+  tilesets_by_path : tileset String.Map.t;
 }
 
 type trigger = {
@@ -1209,14 +1239,14 @@ type idx_config =
 
 type room_params = {
   file_name : string;
-  progress_by_room : Json_t.room_progress StringMap.t;
+  progress_by_room : Json_t.room_progress String.Map.t;
   exits : rect list;
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;
   lever_texture : texture;
   respawn_pos : vector;
-  platforms : texture StringMap.t;
+  platforms : texture String.Map.t;
 }
 
 (* TODO add current_interaction : string to handle dying during a boss-fight
@@ -1247,7 +1277,7 @@ type room = {
   (* int is the platform.id (which is just an int idx into room.objects, not corresponding to the coll_rect.id field)
      - want to keep this in a separate list (rather than as a variant arg to ROTATABLE) so it doesn't have to be looked up every frame
   *)
-  platform_spikes : rect IntMap.t;
+  platform_spikes : rect Int.Map.t;
   spikes : rect list;
   conveyor_belts : (rect * float) list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
@@ -1278,7 +1308,7 @@ type texture_cache = {
   main_menu : texture;
   door_lever : texture;
   door_lever_struck : texture;
-  platforms : texture StringMap.t;
+  platforms : texture String.Map.t;
   (* this is the only animated platform for now, maybe want a separate animated_platforms if more are added *)
   rotating_platform : texture;
   skybox : texture;
@@ -1289,13 +1319,13 @@ type texture_cache = {
 (* these are all things that are eager-loaded from json config files *)
 type global_cache = {
   textures : texture_cache;
-  lore : string StringMap.t;
-  weapons : Json_t.weapon StringMap.t;
+  lore : string String.Map.t;
+  weapons : Json_t.weapon String.Map.t;
   (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
   (* TODO could add sound_id instead of using strings *)
-  sounds : Raylib.Sound.t StringMap.t;
+  sounds : Raylib.Sound.t String.Map.t;
 }
 
 type debug = {

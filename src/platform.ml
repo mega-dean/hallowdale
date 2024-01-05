@@ -2,13 +2,13 @@ open Utils
 open Types
 
 let get_spikes (platform : platform) game =
-  match IntMap.find_opt platform.id game.room.platform_spikes with
+  match Int.Map.find_opt platform.id game.room.platform_spikes with
   | None -> failwith "rotatable platform needs spikes"
   | Some s -> s
 
 let set_texture (platform : platform) texture_cache name =
   let texture =
-    match StringMap.find_opt name texture_cache.platforms with
+    match String.Map.find_opt name texture_cache.platforms with
     | None -> failwithf "could not find texture with name %s" name
     | Some t -> t
   in

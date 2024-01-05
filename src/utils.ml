@@ -5,14 +5,15 @@ let itmp fmtstr = Printf.ifprintf print_endline fmtstr
 let failwithf f = Printf.ksprintf failwith f
 let join ?(sep = ", ") strs = String.concat sep strs
 
-module StringSet = Set.Make (String)
-module StringMap = Map.Make (String)
-module IntMap = Map.Make (Int)
-
 type vector = {
   mutable x : float;
   mutable y : float;
 }
+
+let get_distance (pos1 : vector) (pos2 : vector) : float =
+  let x = abs_float (pos1.x -. pos2.x) in
+  let y = abs_float (pos1.y -. pos2.y) in
+  sqrt ((x *. x) +. (y *. y))
 
 (* this is here so that values with .pos are inferred as rects *)
 type warp_target = {
@@ -30,12 +31,22 @@ let rect_center_x (rect : rect) = rect.pos.x +. (rect.w /. 2.)
 let rect_center_y (rect : rect) = rect.pos.y +. (rect.h /. 2.)
 let get_rect_center (rect : rect) = { x = rect_center_x rect; y = rect_center_y rect }
 
+let raylib_Rect_to_rect (r : Raylib.Rectangle.t) : rect =
+  Raylib.Rectangle.{ w = width r; h = height r; pos = { x = x r; y = y r } }
+
+let rect_to_Rect (r : rect) : Raylib.Rectangle.t = Raylib.Rectangle.create r.pos.x r.pos.y r.w r.h
+
 let scale_rect scale rect =
   {
     pos = { x = rect.pos.x *. scale; y = rect.pos.y *. scale };
     w = rect.w *. scale;
     h = rect.h *. scale;
   }
+
+let get_midpoint (r1 : rect) (r2 : rect) : vector =
+  let c1 = get_rect_center r1 in
+  let c2 = get_rect_center r2 in
+  { x = (c1.x +. c2.x) /. 2.; y = (c1.y +. c2.y) /. 2. }
 
 module Float = struct
   include Float
@@ -46,58 +57,16 @@ end
 
 module Int = struct
   include Int
+  module Map = Map.Make (Int)
 
   let range (n : int) : int list = List.init n (fun x -> x)
   let bound (min : int) (n : int) (max : int) : int = Int.max min (Int.min n max)
 end
 
-module List = struct
-  include List
-
-  let replace_assoc (k : 'a) (v : 'b) (xs : ('a * 'b) list) : ('a * 'b) list =
-    (k, v) :: List.remove_assoc k xs
-
-  let find_idx x xs =
-    let matches ((_i, x') : int * 'a) : bool = x = x' in
-    match List.find_opt matches (List.mapi (fun i x -> (i, x)) xs) with
-    | None -> failwith "find_idx: no matches"
-    | Some (idx, _) -> idx
-
-  let filter_somes xs =
-    (* TODO seems like there is probably a better way to do List.filter_mapi, but this works *)
-    xs |> List.filter Option.is_some |> List.map Option.get
-
-  let only xs =
-    if List.length xs = 1 then
-      List.nth xs 0
-    else
-      failwithf "only: expected 1, got %d" (List.length xs)
-
-  (* returns a random element from xs *)
-  let sample xs = List.nth xs (Random.int (List.length xs))
-
-  let uniq xs =
-    let res = ref [] in
-    let add_x x =
-      if not (List.mem x !res) then
-        res := x :: !res
-    in
-    List.iter add_x xs;
-    !res
-
-  let last xs =
-    if List.length xs = 0 then
-      failwith "List.last on empty list"
-    else
-      List.nth xs (List.length xs - 1)
-
-  let to_array xs = Array.of_list xs
-  let to_string_map xs = StringMap.of_list xs
-  let to_int_map xs = IntMap.of_list xs
-end
-
 module String = struct
   include String
+  module Map = Map.Make (String)
+  module Set = Set.Make (String)
 
   (* returns the strings before and after the first occurrence of char c:
      split_at_first "a.b.c.d" '.' => "a", "b.c.d"
@@ -142,6 +111,51 @@ module Random = struct
 
   let in_rect_x (rect : rect) = float_between rect.pos.x (rect.pos.x +. rect.w)
   let in_rect_y (rect : rect) = float_between rect.pos.y (rect.pos.y +. rect.h)
+end
+
+module List = struct
+  include List
+
+  let replace_assoc (k : 'a) (v : 'b) (xs : ('a * 'b) list) : ('a * 'b) list =
+    (k, v) :: List.remove_assoc k xs
+
+  let find_idx x xs =
+    let matches ((_i, x') : int * 'a) : bool = x = x' in
+    match List.find_opt matches (List.mapi (fun i x -> (i, x)) xs) with
+    | None -> failwith "find_idx: no matches"
+    | Some (idx, _) -> idx
+
+  let filter_somes xs =
+    (* TODO seems like there is probably a better way to do List.filter_mapi, but this works *)
+    xs |> List.filter Option.is_some |> List.map Option.get
+
+  let only xs =
+    if List.length xs = 1 then
+      List.nth xs 0
+    else
+      failwithf "only: expected 1, got %d" (List.length xs)
+
+  (* returns a random element from xs *)
+  let sample xs = List.nth xs (Random.int (List.length xs))
+
+  let uniq xs =
+    let res = ref [] in
+    let add_x x =
+      if not (List.mem x !res) then
+        res := x :: !res
+    in
+    List.iter add_x xs;
+    !res
+
+  let last xs =
+    if List.length xs = 0 then
+      failwith "List.last on empty list"
+    else
+      List.nth xs (List.length xs - 1)
+
+  let to_array xs = Array.of_list xs
+  let to_string_map xs = String.Map.of_list xs
+  let to_int_map xs = Int.Map.of_list xs
 end
 
 (* 2-d array *)

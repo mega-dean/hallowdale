@@ -27,7 +27,7 @@ let init (params : room_params) : room =
     { finished_interactions = []; revealed_shadow_layers = []; removed_tile_idxs = [] }
   in
   let room_progress =
-    match StringMap.find_opt room_key params.progress_by_room with
+    match String.Map.find_opt room_key params.progress_by_room with
     | None -> new_room_progress ()
     | Some rp -> clone_room_progress rp
   in
@@ -505,7 +505,7 @@ let init (params : room_params) : room =
     match List.assoc_opt "../tilesets/jugs.json" tilesets_by_path with
     | None ->
       {
-        jug_fragments_by_gid = IntMap.empty;
+        jug_fragments_by_gid = Int.Map.empty;
         tilesets_by_path = tilesets_by_path |> List.to_string_map;
       }
     | Some tileset ->
@@ -738,11 +738,11 @@ let reset_tile_groups (room : room) =
                   (!idxs |> List.uniq)
                 |> List.uniq
               in
-              let keys = IntMap.to_list room.cache.jug_fragments_by_gid |> List.map fst in
+              let keys = Int.Map.to_list room.cache.jug_fragments_by_gid |> List.map fst in
               match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
               | None -> (None, [])
               | Some raw_gid -> (
-                match IntMap.find_opt raw_gid room.cache.jug_fragments_by_gid with
+                match Int.Map.find_opt raw_gid room.cache.jug_fragments_by_gid with
                 | None -> (None, [])
                 | Some destroy_resources ->
                   let sprite =
@@ -843,7 +843,7 @@ let change_current_room
   in
   let unload_tilesets (room : room) : unit =
     let unload_tileset _path tileset = Raylib.unload_texture (Tiled.Tileset.image tileset) in
-    StringMap.iter unload_tileset room.cache.tilesets_by_path
+    String.Map.iter unload_tileset room.cache.tilesets_by_path
   in
   let get_music area_id =
     List.find (fun (area_music : area_music) -> List.mem area_id area_music.areas) state.area_musics
@@ -887,23 +887,34 @@ let get_global_pos (current_pos : vector) (room_location : room_location) : vect
   { x = current_pos.x +. room_location.global_x; y = current_pos.y +. room_location.global_y }
 
 let handle_transitions (state : state) (game : game) =
-  let colliding exit_rect = Collision.with_entity game.player.ghost.entity exit_rect in
+  let colliding exit_rect =
+    match Collision.with_entity game.player.ghost.entity exit_rect with
+    | None -> None
+    | Some c -> Some (exit_rect, c)
+  in
   match List.find_map colliding game.room.exits with
   | None -> false
-  | Some collision ->
-    if collision.rect.w < 10. || collision.rect.h < 10. then
-      (* don't trigger the exit immediately when the ghost hits the edge of the screen *)
+  | Some (exit_rect, collision) ->
+    let overlap_w, overlap_h =
+      match collision.collided_from with
+      (* multiply by 2 to get the whole width using distance from center *)
+      | UP -> (0., 2. *. abs_float (collision.center.y -. exit_rect.pos.y))
+      | DOWN -> (0., 2. *. abs_float (exit_rect.pos.y +. exit_rect.h -. collision.center.y))
+      | LEFT -> (2. *. abs_float (collision.center.x -. exit_rect.pos.x), 0.)
+      | RIGHT -> (2. *. abs_float (exit_rect.pos.x +. exit_rect.w -. collision.center.x), 0.)
+    in
+    if overlap_w < game.player.ghost.entity.dest.w && overlap_h < game.player.ghost.entity.dest.h
+    then
       false
     else (
-      let cr = collision.rect in
       let current_room_location = List.assoc game.room.id state.world in
       let global_ghost_pos =
         get_global_pos game.player.ghost.entity.dest.pos current_room_location
       in
       let target_room_id, room_location =
         let global_x, global_y =
-          ( rect_center_x cr +. current_room_location.global_x,
-            rect_center_y cr +. current_room_location.global_y )
+          ( collision.center.x +. current_room_location.global_x,
+            collision.center.y +. current_room_location.global_y )
         in
         Tiled.JsonRoom.locate_by_coords state.world global_x global_y
       in
@@ -914,15 +925,16 @@ let handle_transitions (state : state) (game : game) =
       let start_pos' = get_local_pos global_ghost_pos target_room_id state.world in
       let start_pos : vector =
         (* fixes ghost.facing_right, and adjusts the ghost to be further from the edge of screen *)
-        match collision.direction with
+        match collision.collided_from with
         | LEFT ->
           game.player.ghost.entity.sprite.facing_right <- true;
-          { x = start_pos'.x +. game.player.ghost.entity.dest.w; y = start_pos'.y }
+          { start_pos' with x = start_pos'.x +. game.player.ghost.entity.dest.w }
         | RIGHT ->
           game.player.ghost.entity.sprite.facing_right <- false;
-          { x = start_pos'.x -. game.player.ghost.entity.dest.w; y = start_pos'.y }
-        | UP -> { start_pos' with y = start_pos'.y +. game.player.ghost.entity.dest.h }
-        | DOWN -> { start_pos' with y = start_pos'.y -. game.player.ghost.entity.dest.h }
+          { start_pos' with x = start_pos'.x -. game.player.ghost.entity.dest.w }
+        | UP
+        | DOWN ->
+          start_pos'
       in
       change_current_room state game room_location start_pos;
       true)

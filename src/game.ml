@@ -3,12 +3,6 @@ open Types
 
 let empty_save_file () : Json_t.save_file =
   let kings_pass_drop = { x = Config.other.kp_start_x; y = Config.other.kp_start_y } in
-  let b =
-    (* newgame *)
-    false
-    (* newgameplus *)
-    (* true *)
-  in
   {
     (* this is only needed because these stub save files are created before game mode is chosen *)
     game_mode = Show.game_mode CLASSIC;
@@ -22,17 +16,17 @@ let empty_save_file () : Json_t.save_file =
     abilities =
       {
         (* movement *)
-        crystal_heart = b;
-        dream_nail = b;
-        ismas_tear = b;
-        mantis_claw = b;
-        monarch_wings = b;
-        mothwing_cloak = b;
-        shade_cloak = b;
+        crystal_heart = false;
+        dream_nail = false;
+        ismas_tear = false;
+        mantis_claw = false;
+        monarch_wings = false;
+        mothwing_cloak = false;
+        shade_cloak = false;
         (* spells *)
-        vengeful_spirit = b;
-        desolate_dive = b;
-        howling_wraiths = b;
+        vengeful_spirit = true;
+        desolate_dive = false;
+        howling_wraiths = false;
       };
     progress =
       {
@@ -95,7 +89,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       room_name = Room.get_filename game.room;
       abilities = game.player.abilities;
       progress = clone_game_progress game.progress;
-      weapons = game.player.weapons |> StringMap.to_list |> List.map fst;
+      weapons = game.player.weapons |> String.Map.to_list |> List.map fst;
       current_weapon = game.player.current_weapon.name;
       max_health = game.player.health.max;
     }
@@ -123,18 +117,14 @@ let initialize_steel_sole (save_file : Json_t.save_file) =
         mothwing_cloak = true;
         vengeful_spirit = true;
         howling_wraiths = true;
+        desolate_dive = true;
         (* not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
         shade_cloak = false;
-        (* no dive because it can cause a soft-lock in water/acid (because it waits for
-           current_floor to know when it is done diving)
-        *)
-        desolate_dive = false;
       };
   }
 
 let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
   if is_new_game then (
-    Entity.freeze game.player.ghost.entity;
     state.screen_fade <- Some 255;
     let trigger : trigger = make_stub_trigger INFO "cutscene" "opening-poem" in
     Player.maybe_begin_interaction state game trigger)
