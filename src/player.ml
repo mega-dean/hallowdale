@@ -368,34 +368,6 @@ let get_damage (player : player) (damage_kind : damage_kind) =
   | DESOLATE_DIVE_SHOCKWAVE -> 20
   | HOWLING_WRAITHS -> (* TODO this should be 13 with multihits *) 26
 
-let honda_quotes =
-  [
-    "... someone just told me that Honda has released some kind of super vehicle called the Honda \
-     Fit...";
-    "... it's a small car with a big personality that can handle anything life throws at you.....";
-    "... I have to find a Honda dealer... School is cancelled.....";
-    "... the Honda Fit - it's happening! It's finally happening!";
-    "... the hub of a quality camping experience is a safe and reliable generator...";
-    "... the Fit combines the efficiency of a subcompact with the versatility to take what life \
-     throws at it...";
-    "... can the CR-V not take what life throws at it?";
-    "... the CR-V adds durability and storage...";
-    "... can I at least show you the CR-V's easy fold-down 60/40 split-rear seat?";
-    "... there's 35.2 cubic feet of cargo space back here...";
-    "... I can't shake this fear of losing even one small part of what Honda has to offer...";
-    "... what Rick does is surgical... He finds that part of each life that Honda can improve, and \
-     gently bathes it in the most helpful information possible...";
-    "... I hated finding these treasures and not being able to fit them in the car... Now I got a \
-     CR-V...";
-    "... Honda's amazing...";
-    "... I love this carpet... It reminds me of the quality floormats in my CR-V...";
-    "... do you not think Honda makes good products?";
-    "... people don't want to drive what a monster drives...";
-    "... use a light press of your foot to engage the highly responsive anti-lock breaks of this \
-     incredible vehicle...";
-    "... when I influence people to buy Honda products, I feel God's pleasure...";
-  ]
-
 (* TODO use collision shape for dream nail *)
 let check_dream_nail_collisions (state : state) (game : game) =
   match get_dream_nail game.player with
@@ -408,7 +380,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
           | Some c ->
             (* TODO add dream nail sound *)
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
-              let text = List.sample honda_quotes in
+              let text = List.sample state.global.honda_quotes in
               let dream_nail_duration = 3. in
               let end_time = state.frame.time +. dream_nail_duration in
               game.interaction.floating_text <-

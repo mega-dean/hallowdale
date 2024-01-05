@@ -1320,6 +1320,7 @@ type texture_cache = {
 type global_cache = {
   textures : texture_cache;
   lore : string String.Map.t;
+  honda_quotes : string list;
   weapons : Json_t.weapon String.Map.t;
   (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;

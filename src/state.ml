@@ -178,10 +178,17 @@ let init () : state =
       ]
   in
 
+  let (lore, honda_quotes) : string String.Map.t * string list =
+    let lore_file = File.read_config "lore" Json_j.lore_file_of_string in
+    let honda_lines, lore_lines = List.partition (fun (k, v) -> k = "honda") lore_file in
+    (lore_lines |> List.to_string_map, List.map snd honda_lines)
+  in
+
   let global =
     {
-      lore = File.read_config "lore" Json_j.lore_file_of_string |> List.to_string_map;
+      lore;
       weapons = File.read_config "weapons" Json_j.weapons_file_of_string |> List.to_string_map;
+      honda_quotes;
       enemy_configs;
       npc_configs;
       textures =
