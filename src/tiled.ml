@@ -174,8 +174,6 @@ module JsonRoom = struct
       string * texture * platform_kind option =
     let gid = Tile.raw_gid gid' in
     let bits = Tile.transformation_bits gid' in
-    (* TODO get rid of this fn and just try accessing `tileset.tiles.(gid - firstgid)` for each
-       tileset_source, and rescue out-of-bounds *)
     let platforms_tileset_source =
       List.find
         (fun (source : Json_t.tileset_source) ->

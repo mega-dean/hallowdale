@@ -340,7 +340,6 @@ let update_environment (game : game) (state : state) =
         change new_f
     in
 
-    (* TODO this respawns the floor when the room is exited *)
     let handle_temporary_platform (state' : disappearable_state) =
       match state' with
       | VISIBLE -> ()
@@ -350,6 +349,8 @@ let update_environment (game : game) (state : state) =
             shake_platform ();
             platform.kind <- Some (TEMPORARY (TOUCHED new_f)))
           ~change:(fun new_f ->
+            game.room.progress.removed_platform_ids <-
+              platform.id :: game.room.progress.removed_platform_ids;
             game.player.ghost.entity.current_floor <- None;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
@@ -737,7 +738,7 @@ let tick (state : state) =
                (fun (r : rect) -> (Raylib.Color.red, r))
                (game.room.spikes
                @ game.room.hazards
-               @ (game.room.platform_spikes |> Int.Map.to_list |> List.map snd))));
+               @ (game.room.platform_spikes |> String.Map.to_list |> List.map snd))));
 
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors

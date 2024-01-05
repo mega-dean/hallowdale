@@ -80,6 +80,7 @@ type steel_sole_progress = Json_t.steel_sole_progress = {
 
 type room_progress = Json_t.room_progress = {
   mutable removed_tile_idxs: int list;
+  mutable removed_platform_ids: string list;
   mutable finished_interactions: string list;
   mutable revealed_shadow_layers: string list
 }
@@ -3467,6 +3468,15 @@ let write_room_progress : _ -> room_progress -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
+      Buffer.add_string ob "\"removed_platform_ids\":";
+    (
+      write__string_list
+    )
+      ob x.removed_platform_ids;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
       Buffer.add_string ob "\"finished_interactions\":";
     (
       write__string_list
@@ -3492,6 +3502,7 @@ let read_room_progress = (
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
     let field_removed_tile_idxs = ref (None) in
+    let field_removed_platform_ids = ref (None) in
     let field_finished_interactions = ref (None) in
     let field_revealed_shadow_layers = ref (None) in
     try
@@ -3511,9 +3522,17 @@ let read_room_progress = (
                   -1
                 )
               )
+            | 20 -> (
+                if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'p' && String.unsafe_get s (pos+9) = 'l' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'r' && String.unsafe_get s (pos+15) = 'm' && String.unsafe_get s (pos+16) = '_' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'd' && String.unsafe_get s (pos+19) = 's' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
             | 21 -> (
                 if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'r' && String.unsafe_get s (pos+14) = 'a' && String.unsafe_get s (pos+15) = 'c' && String.unsafe_get s (pos+16) = 't' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'o' && String.unsafe_get s (pos+19) = 'n' && String.unsafe_get s (pos+20) = 's' then (
-                  1
+                  2
                 )
                 else (
                   -1
@@ -3521,7 +3540,7 @@ let read_room_progress = (
               )
             | 22 -> (
                 if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'v' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'l' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'h' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'd' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'w' && String.unsafe_get s (pos+15) = '_' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 'a' && String.unsafe_get s (pos+18) = 'y' && String.unsafe_get s (pos+19) = 'e' && String.unsafe_get s (pos+20) = 'r' && String.unsafe_get s (pos+21) = 's' then (
-                  2
+                  3
                 )
                 else (
                   -1
@@ -3544,7 +3563,7 @@ let read_room_progress = (
               )
             );
           | 1 ->
-            field_finished_interactions := (
+            field_removed_platform_ids := (
               Some (
                 (
                   read__string_list
@@ -3552,6 +3571,14 @@ let read_room_progress = (
               )
             );
           | 2 ->
+            field_finished_interactions := (
+              Some (
+                (
+                  read__string_list
+                ) p lb
+              )
+            );
+          | 3 ->
             field_revealed_shadow_layers := (
               Some (
                 (
@@ -3580,9 +3607,17 @@ let read_room_progress = (
                     -1
                   )
                 )
+              | 20 -> (
+                  if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'o' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'd' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'p' && String.unsafe_get s (pos+9) = 'l' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'r' && String.unsafe_get s (pos+15) = 'm' && String.unsafe_get s (pos+16) = '_' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'd' && String.unsafe_get s (pos+19) = 's' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 21 -> (
                   if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'i' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'i' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'e' && String.unsafe_get s (pos+13) = 'r' && String.unsafe_get s (pos+14) = 'a' && String.unsafe_get s (pos+15) = 'c' && String.unsafe_get s (pos+16) = 't' && String.unsafe_get s (pos+17) = 'i' && String.unsafe_get s (pos+18) = 'o' && String.unsafe_get s (pos+19) = 'n' && String.unsafe_get s (pos+20) = 's' then (
-                    1
+                    2
                   )
                   else (
                     -1
@@ -3590,7 +3625,7 @@ let read_room_progress = (
                 )
               | 22 -> (
                   if String.unsafe_get s pos = 'r' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'v' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'l' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 's' && String.unsafe_get s (pos+10) = 'h' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'd' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'w' && String.unsafe_get s (pos+15) = '_' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 'a' && String.unsafe_get s (pos+18) = 'y' && String.unsafe_get s (pos+19) = 'e' && String.unsafe_get s (pos+20) = 'r' && String.unsafe_get s (pos+21) = 's' then (
-                    2
+                    3
                   )
                   else (
                     -1
@@ -3613,7 +3648,7 @@ let read_room_progress = (
                 )
               );
             | 1 ->
-              field_finished_interactions := (
+              field_removed_platform_ids := (
                 Some (
                   (
                     read__string_list
@@ -3621,6 +3656,14 @@ let read_room_progress = (
                 )
               );
             | 2 ->
+              field_finished_interactions := (
+                Some (
+                  (
+                    read__string_list
+                  ) p lb
+                )
+              );
+            | 3 ->
               field_revealed_shadow_layers := (
                 Some (
                   (
@@ -3638,6 +3681,7 @@ let read_room_progress = (
         (
           {
             removed_tile_idxs = (match !field_removed_tile_idxs with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "removed_tile_idxs");
+            removed_platform_ids = (match !field_removed_platform_ids with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "removed_platform_ids");
             finished_interactions = (match !field_finished_interactions with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "finished_interactions");
             revealed_shadow_layers = (match !field_revealed_shadow_layers with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "revealed_shadow_layers");
           }

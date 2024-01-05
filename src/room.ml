@@ -24,7 +24,12 @@ let init (params : room_params) : room =
   in
   let room_key = get_filename_from_ids area_id room_id in
   let new_room_progress () : Json_t.room_progress =
-    { finished_interactions = []; revealed_shadow_layers = []; removed_tile_idxs = [] }
+    {
+      finished_interactions = [];
+      revealed_shadow_layers = [];
+      removed_tile_idxs = [];
+      removed_platform_ids = [];
+    }
   in
   let room_progress =
     match String.Map.find_opt room_key params.progress_by_room with
@@ -40,7 +45,7 @@ let init (params : room_params) : room =
   let json_room = parse_room (fmt "%s.json" params.file_name) in
   let platforms : platform list ref = ref [] in
   let floors : rect list ref = ref [] in
-  let platform_spikes : (int * rect) list ref = ref [] in
+  let platform_spikes : (string * rect) list ref = ref [] in
   let conveyor_belts : (rect * float) list ref = ref [] in
   let spikes : rect list ref = ref [] in
   let hazards : rect list ref = ref [] in
@@ -102,18 +107,28 @@ let init (params : room_params) : room =
           collision = None;
         }
       in
+      let platform_id = fmt "%d,%d" (coll_rect.x |> Float.to_int) (coll_rect.y |> Float.to_int) in
       (match platform_kind with
       | Some (ROTATABLE _) ->
-        let dest =
+        let spikes_dest =
           scale_room_rect (coll_rect.x -. 1.)
             (coll_rect.y +. (coll_rect.h /. 2.))
             (coll_rect.w +. 2.) (coll_rect.h *. 0.55)
         in
-        platform_spikes := (idx, dest) :: !platform_spikes
-      | _ -> ());
-      platforms :=
-        { id = idx; original_x = coll_rect.x *. Config.scale.room; sprite; kind = platform_kind }
-        :: !platforms
+        platform_spikes := (platform_id, spikes_dest) :: !platform_spikes
+      | None
+      | Some (TEMPORARY _)
+      | Some (DISAPPEARABLE _) ->
+        ());
+      if not (List.mem platform_id room_progress.removed_platform_ids) then
+        platforms :=
+          {
+            id = platform_id;
+            original_x = coll_rect.x *. Config.scale.room;
+            sprite;
+            kind = platform_kind;
+          }
+          :: !platforms
     in
 
     let categorize_trigger (coll_rect : Json_t.coll_rect) =
@@ -655,7 +670,7 @@ let init (params : room_params) : room =
         shadows = !shadow_triggers;
       };
     spikes = !spikes;
-    platform_spikes = !platform_spikes |> List.to_int_map;
+    platform_spikes = !platform_spikes |> List.to_string_map;
     conveyor_belts = !conveyor_belts;
     hazards = !hazards;
     layers = tile_layers;

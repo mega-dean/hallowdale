@@ -80,6 +80,7 @@ type steel_sole_progress = Json_t.steel_sole_progress = {
 
 type room_progress = Json_t.room_progress = {
   mutable removed_tile_idxs: int list;
+  mutable removed_platform_ids: string list;
   mutable finished_interactions: string list;
   mutable revealed_shadow_layers: string list
 }

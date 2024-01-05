@@ -200,6 +200,7 @@ type npcs_file = {
 *)
 type room_progress = {
   removed_tile_idxs <ocaml mutable> : int list;
+  removed_platform_ids <ocaml mutable> : string list;
   finished_interactions <ocaml mutable> : string list;
   revealed_shadow_layers <ocaml mutable> : string list;
 }

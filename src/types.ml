@@ -240,7 +240,7 @@ type platform_kind =
 
 type platform = {
   (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)
-  id : int;
+  id : string;
   (* this is used for resetting position after shaking *)
   original_x : float;
   mutable kind : platform_kind option;
@@ -1274,10 +1274,8 @@ type room = {
   triggers : triggers;
   floors : rect list;
   platforms : platform list;
-  (* int is the platform.id (which is just an int idx into room.objects, not corresponding to the coll_rect.id field)
-     - want to keep this in a separate list (rather than as a variant arg to ROTATABLE) so it doesn't have to be looked up every frame
-  *)
-  platform_spikes : rect Int.Map.t;
+  (* key is the platform.id, which is just the platform's coordinates as a string *)
+  platform_spikes : rect String.Map.t;
   spikes : rect list;
   conveyor_belts : (rect * float) list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
@@ -1429,6 +1427,7 @@ let clone_entity (entity : entity) : entity =
 let clone_room_progress (room_progress : Json_t.room_progress) : Json_t.room_progress =
   {
     removed_tile_idxs = room_progress.removed_tile_idxs;
+    removed_platform_ids = room_progress.removed_platform_ids;
     finished_interactions = room_progress.finished_interactions;
     revealed_shadow_layers = room_progress.revealed_shadow_layers;
   }
