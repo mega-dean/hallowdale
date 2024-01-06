@@ -198,7 +198,14 @@ let apply_collisions
     let right_of r = r.pos.x +. r.w in
     match coll.collided_from with
     | UP ->
-      if Option.is_none entity.y_recoil && above_floor entity floor then (
+      let not_recoiling_upward =
+        match entity.y_recoil with
+        | None -> true
+        | Some r -> r.speed > 0.
+      in
+      if not_recoiling_upward && above_floor entity floor then (
+        if entity.v.y > 0. then
+          entity.v.y <- 0.;
         entity.dest.pos.y <- top_of floor -. entity.dest.h;
         (* the floor shouldn't be set for fragments (because it forces the new_vy to be 0.) *)
         if entity.config.bounce < 0.01 then
@@ -226,6 +233,7 @@ let apply_collisions
   List.iter adjust_position up_down_collisions
 
 let update_pos
+    ?(_debug = false)
     ?(gravity_multiplier_override = None)
     ?(apply_floor_collisions = true)
     (room : room)
@@ -247,7 +255,7 @@ let update_pos
     entity.v.y <- entity.v.y +. dvy;
     let collisions = get_floor_collisions room entity in
     if apply_floor_collisions then (
-      apply_collisions entity collisions;
+      apply_collisions ~_debug entity collisions;
       collisions)
     else
       [])

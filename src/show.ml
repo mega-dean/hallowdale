@@ -35,6 +35,9 @@ let direction (d : direction) : string =
   | LEFT -> "left"
   | RIGHT -> "right"
 
+let recoil (recoil : recoil) : string =
+  fmt "speed: %f, time_left: %f, reset_v: %b" recoil.speed recoil.time_left.seconds recoil.reset_v
+
 let disappearable_state (state : disappearable_state) =
   match state with
   | VISIBLE -> "VISIBLE"

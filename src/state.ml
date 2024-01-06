@@ -456,7 +456,7 @@ let update_enemies (game : game) (state : state) =
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
     enemy.floor_collisions_this_frame <-
-      Entity.update_pos
+      Entity.update_pos ~_debug:true
         ~gravity_multiplier_override:
           (if Enemy.is_dead enemy then
              Some enemy.json.death_gravity_multiplier

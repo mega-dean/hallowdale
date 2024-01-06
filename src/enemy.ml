@@ -866,11 +866,16 @@ module Penguin : M = struct
         || enemy.entity.dest.pos.x +. enemy.entity.dest.w > floor.pos.x +. floor.w
       in
       match enemy.floor_collisions_this_frame with
-      | [ collision ] when collision.collided_from <> UP -> TURN
-      | _ -> (
+      | [] -> (
         match enemy.entity.current_floor with
         | Some (floor, _) when at_edge floor -> TURN
         | _ -> WALK)
+      | [ collision ] ->
+        if collision.collided_from = UP then
+          WALK
+        else
+          TURN
+      | multiple_collisions -> TURN
     in
     Action.start_and_log enemy action args.frame_time []
 end
