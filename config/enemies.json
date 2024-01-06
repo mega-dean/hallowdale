@@ -334,7 +334,7 @@
 
     "shared_textures": [
         ["damage", {
-            "count": 7,
+            "count": 4,
             "duration": 0.05
         }]
     ]

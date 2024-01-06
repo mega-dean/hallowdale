@@ -175,10 +175,11 @@ let maybe_take_damage
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size Config.scale.room damage_texture in
     let new_damage_sprite =
+      let pos = align CENTER CENTER enemy.entity.dest texture_w texture_h in
       Sprite.spawn_particle
         (fmt "damage %s" (Show.enemy_name enemy))
         damage_texture
-        { pos = collision.center; w = texture_w; h = texture_h }
+        { pos; w = texture_w; h = texture_h }
         state.frame.time
     in
     enemy.damage_sprites <- new_damage_sprite :: enemy.damage_sprites;
