@@ -126,7 +126,14 @@ let initialize_steel_sole (save_file : Json_t.save_file) =
 let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
   if is_new_game then (
     state.screen_fade <- Some 255;
-    let trigger : trigger = make_stub_trigger INFO "cutscene" "opening-poem" in
+    let interaction_name =
+      match game.mode with
+      | STEEL_SOLE -> "ss-opening-poem"
+      | CLASSIC
+      | DEMO ->
+        "opening-poem"
+    in
+    let trigger : trigger = make_stub_trigger INFO "cutscene" interaction_name in
     Player.maybe_begin_interaction state game trigger)
   else
     state.frame.idx <- save_file.progress.frame_idx;

@@ -68,6 +68,44 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     in
     let read_sign = [ CURRENT_GHOST (SET_POSE READING); STEP (WAIT 0.4) ] in
 
+    let opening_poem : step list =
+      [
+        CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
+        CURRENT_GHOST (ENTITY FREEZE);
+        (* TODO center this text box *)
+        STEP (TEXT [ "Give me some rope, tie me to dream." ]);
+        STEP
+          (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
+        STEP
+          (TEXT
+             [
+               "Give me some rope, tie me to dream.";
+               "Give me the hope to run out of steam.";
+               "Somebody said it could be here.";
+             ]);
+        STEP
+          (TEXT
+             [
+               "Give me some rope, tie me to dream.";
+               "Give me the hope to run out of steam.";
+               "Somebody said it could be here.";
+               "We could be roped up, tied up, dead in a year.";
+             ]);
+        STEP
+          (TEXT
+             [
+               "Give me some rope, tie me to dream.";
+               "Give me the hope to run out of steam.";
+               "Somebody said it could be here.";
+               "We could be roped up, tied up, dead in a year.";
+               " - excerpt from \"At Least It Was Here\" by The 88";
+             ]);
+        STEP (WAIT 1.);
+        CURRENT_GHOST (ENTITY UNFREEZE);
+        STEP FADE_SCREEN_IN;
+      ]
+    in
+
     (* TODO add dialogue for Shirley Island npcs
        HILDA -> "I live in the village. I love {{orange}} Abed.",
     *)
@@ -211,46 +249,15 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
+      | "ss-opening-poem" -> opening_poem
       | "opening-poem" ->
-        [
-          CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
-          CURRENT_GHOST (ENTITY FREEZE);
-          (* TODO center this text box *)
-          STEP (TEXT [ "Give me some rope, tie me to dream." ]);
-          STEP
-            (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
-          STEP
-            (TEXT
-               [
-                 "Give me some rope, tie me to dream.";
-                 "Give me the hope to run out of steam.";
-                 "Somebody said it could be here.";
-               ]);
-          STEP
-            (TEXT
-               [
-                 "Give me some rope, tie me to dream.";
-                 "Give me the hope to run out of steam.";
-                 "Somebody said it could be here.";
-                 "We could be roped up, tied up, dead in a year.";
-               ]);
-          STEP
-            (TEXT
-               [
-                 "Give me some rope, tie me to dream.";
-                 "Give me the hope to run out of steam.";
-                 "Somebody said it could be here.";
-                 "We could be roped up, tied up, dead in a year.";
-                 " - excerpt from \"At Least It Was Here\" by The 88";
-               ]);
-          STEP (WAIT 1.);
-          CURRENT_GHOST (ENTITY UNFREEZE);
-          STEP FADE_SCREEN_IN;
-          CURRENT_GHOST (ENTITY WAIT_UNTIL_LANDED);
-          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-          STEP (SHAKE_SCREEN 1.5);
-          STEP (WAIT 2.5);
-        ]
+        opening_poem
+        @ [
+            CURRENT_GHOST (ENTITY WAIT_UNTIL_LANDED);
+            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+            STEP (SHAKE_SCREEN 1.5);
+            STEP (WAIT 2.5);
+          ]
       | "fight-duncan" ->
         [
           ENEMY (DUNCAN, ENTITY UNHIDE);
