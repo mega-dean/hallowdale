@@ -19,6 +19,8 @@
   - FLYING_HIPPIE
 - allow platforms to be permanently removed
 - add keys to open locked doors
+- add hardfalls
+- fix floor seams for steel sole
 
 ## [0.0.8] - 2023-11-19
 

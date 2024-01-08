@@ -750,6 +750,10 @@ let set_pose
     | DREAM_NAIL ->
       update_vx 0.;
       (player.ghost.head_textures.idle, bodies.nail)
+    | HARDFALL ->
+      update_vx 0.;
+      player.ghost.entity.v.y <- 0.;
+      (player.ghost.head_textures.look_down, bodies.focus)
     | C_DASH_WALL_COOLDOWN ->
       update_vx 0.;
       player.ghost.entity.v.y <- 0.;
@@ -817,12 +821,6 @@ let set_pose
       reset_standing_abilities ();
       update_vx 0.;
       (player.ghost.head_textures.idle, bodies.idle)
-    | LANDING (floor, v) ->
-      player.ghost.entity.v.y <- 0.;
-      player.ghost.entity.current_floor <- Some (floor, v);
-      player.current.can_dash <- true;
-      player.current.can_flap <- true;
-      (player.ghost.head_textures.idle, bodies.jump)
     | READING ->
       update_vx 0.;
       (player.ghost.head_textures.read, bodies.read)
@@ -926,6 +924,7 @@ let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind
     | C_DASH
     | C_DASH_COOLDOWN
     | C_DASH_WALL_COOLDOWN
+    | HARDFALL
     | DREAM_NAIL
     | ATTACK _
     | DIE
@@ -961,6 +960,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       cooldown_scale := game.player.current_weapon.cooldown_scale;
       game.player.history.nail
     | DREAM_NAIL -> game.player.history.dream_nail
+    | HARDFALL ->
+      state.camera.shake <- 1.;
+      game.player.history.hardfall
     | C_DASH_WALL_COOLDOWN ->
       (* TODO stop playing c-dash sound *)
       game.player.ghost.entity.sprite.facing_right <-
@@ -1181,6 +1183,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
   | TAKE_DAMAGE _
   | CAST _
   | DIVE_COOLDOWN
+  | HARDFALL
   | DASH
   | C_DASH_COOLDOWN
   | C_DASH_WALL_COOLDOWN
@@ -1207,6 +1210,7 @@ let is_doing (player : player) (action_kind : ghost_action_kind) (frame_time : f
   | SHADE_DASH -> check_action player.history.shade_dash
   | DASH -> check_action player.history.dash
   | DIVE_COOLDOWN -> check_action player.history.dive_cooldown
+  | HARDFALL -> check_action player.history.hardfall
   | TAKE_DAMAGE_AND_RESPAWN -> check_action player.history.take_damage_and_respawn
   | FLAP -> check_action player.history.flap
   | DREAM_NAIL -> check_action player.history.dream_nail
@@ -1695,7 +1699,6 @@ let tick (game : game) (state : state) =
                      cutscene because Abed doesn't have enough time to fall to the lower level *)
                   party_ghost.ghost.entity.v.x <- party_ghost.ghost.entity.v.x *. 2.;
                 (party_ghost.ghost.head_textures.walk, state.global.textures.ghost_bodies.walk)
-              | LANDING _
               | READING
               | WALL_SLIDING _
               | SWIMMING _ ->
@@ -2161,9 +2164,6 @@ let tick (game : game) (state : state) =
         cancel_action state game FLAP
       else if pressed_or_buffered JUMP then
         set_pose' (PERFORMING JUMP)
-      else if game.player.ghost.entity.v.y > 0. then (
-        stop_wall_sliding := true;
-        set_pose' (LANDING (floor, floor_v)))
   in
 
   let handle_attacking () =
@@ -2428,6 +2428,10 @@ let tick (game : game) (state : state) =
         (floor_v, [ collision ])
     in
 
+    let up_floor_collision : collision option =
+      List.find_opt (fun (c : collision) -> c.collided_from = UP) floor_collisions
+    in
+
     let hazard_collisions, platform_spike_collisions' =
       let damage = Entity.get_damage_collisions game.room game.player.ghost.entity in
       match game.mode with
@@ -2435,24 +2439,26 @@ let tick (game : game) (state : state) =
       | DEMO ->
         (damage.hazards, damage.platform_spikes)
       | STEEL_SOLE -> (
-        let up_floor_collision : collision option =
+        let up_floor_collision' : collision option =
           (* safe to walk on the ground in the vents *)
           if state.debug.safe_ss || game.room.area.id = VENTWAYS then
             None
           else if
-            (* TODO this fixes the steel sole hazard respawns on wall seams, but allows
-               the ghost to walk on floors when colliding in a corner
-               - this doesn't work because now it allows landing on seams
-               - maybe just check that _both_ floor_collisions are UP, and return Some in that case
-            *)
             (* TODO add Entity.ascending/descending functions *)
-            List.length floor_collisions > 1 || game.player.ghost.entity.v.y < 0.
+            game.player.ghost.entity.v.y < 0.
           then
             None
-          else
-            List.find_opt (fun (c : collision) -> c.collided_from = UP) floor_collisions
+          else (
+            match List.length floor_collisions with
+            | 0 -> None
+            | 1 -> up_floor_collision
+            | n ->
+              if List.for_all (fun c -> c.collided_from = UP) floor_collisions then
+                up_floor_collision
+              else
+                None)
         in
-        match up_floor_collision with
+        match up_floor_collision' with
         | None -> (damage.hazards, damage.platform_spikes)
         | Some coll ->
           game.progress.steel_sole.dunks <- 1 + game.progress.steel_sole.dunks;
@@ -2493,6 +2499,28 @@ let tick (game : game) (state : state) =
     state.debug.rects <-
       List.map (fun c -> (Raylib.Color.green, c.other_rect)) floor_collisions @ state.debug.rects;
     Entity.apply_collisions ~floor_v game.player.ghost.entity floor_collisions;
+    (match up_floor_collision with
+    | None -> ()
+    | Some coll ->
+      let started_hardfalling : time =
+        match game.player.ghost.hardfall_timer with
+        | None -> { at = state.frame.time }
+        | Some time -> time
+      in
+      if started_hardfalling.at +. Config.ghost.hardfall_duration < state.frame.time then
+        start_action state game HARDFALL);
+    let reset_hardfall_timer =
+      Option.is_some game.player.ghost.entity.current_floor
+      || Option.is_some game.player.current.wall
+      || Option.is_some game.player.ghost.entity.y_recoil
+      || game.player.ghost.entity.v.y <= 0.
+    in
+    if reset_hardfall_timer then
+      game.player.ghost.hardfall_timer <- None
+    else (
+      match game.player.ghost.hardfall_timer with
+      | None -> game.player.ghost.hardfall_timer <- Some { at = state.frame.time }
+      | Some _ -> ());
     handle_wall_sliding floor_collisions;
     check_damage_collisions hazard_collisions platform_spike_collisions;
     handle_c_dash_wall_collisions (floor_collisions @ hazard_collisions)
@@ -2569,7 +2597,7 @@ let tick (game : game) (state : state) =
         reveal_shadows ();
         if game.player.ghost.entity.update_pos then (
           let cooling_down =
-            check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN ]
+            check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN; HARDFALL ]
           in
           if not cooling_down then
             if in_water game.player then (
@@ -2659,7 +2687,7 @@ let init
     shared_textures : player =
   let use_json_action_config action_name : ghost_action_config =
     match String.Map.find_opt action_name action_config with
-    | None -> failwithf "could not find action config for '%s' in ghosts/config.json" action_name
+    | None -> failwithf "could not find action config for '%s' in config/ghosts.json" action_name
     | Some config -> config
   in
   let dest = Sprite.make_dest start_pos.x start_pos.y idle_texture in
@@ -2692,6 +2720,7 @@ let init
               w = Config.ghost.width *. Config.scale.ghost;
               h = Config.ghost.height *. Config.scale.ghost;
             };
+        hardfall_timer = None;
       };
     current = reset_current_status ();
     children = Ghost_child_kind.Map.empty;
@@ -2710,6 +2739,7 @@ let init
         dive_cooldown = make_action "dive-cooldown";
         flap = make_action "flap";
         focus = make_action "focus";
+        hardfall = make_action "hardfall";
         jump = make_action "jump";
         nail = make_action "nail";
         shade_dash = make_action "shade-dash";
@@ -2763,4 +2793,15 @@ let init_party
     Entity.hide entity';
     entity'
   in
-  { ghost = { id; head = head_textures.idle; body_render_offset; head_textures; entity }; in_party }
+  {
+    ghost =
+      {
+        id;
+        head = head_textures.idle;
+        body_render_offset;
+        head_textures;
+        entity;
+        hardfall_timer = None;
+      };
+    in_party;
+  }

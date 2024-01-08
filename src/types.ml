@@ -290,6 +290,7 @@ type ghost_action_kind =
   | TAKE_DAMAGE of int * direction
   | CAST of spell_kind
   | DIVE_COOLDOWN
+  | HARDFALL
   | SHADE_DASH
   | DASH
   | (* TODO maybe do this like CAST, ie C_DASH of [CHARGE,DASH,COOLDOWN] *)
@@ -308,7 +309,6 @@ type ghost_pose =
   | AIRBORNE of float (* new_vy *)
   | CRAWLING
   | IDLE
-  | LANDING of rect * vector (* floor, floor_v *)
   | READING
   | WALKING of direction
   | WALL_SLIDING of rect
@@ -748,6 +748,7 @@ type ghost_action_history = {
   nail : ghost_action;
   dream_nail : ghost_action;
   focus : ghost_action;
+  hardfall : ghost_action;
 }
 
 (* - instead of keeping track of the current ghost_pose in state, we just update the sprite texture whenever
@@ -976,6 +977,7 @@ type ghost = {
   (* the entity.texture is the ghost body *)
   entity : entity;
   mutable body_render_offset : vector;
+  mutable hardfall_timer : time option;
 }
 
 (* this is for the ghosts that are not being controlled right now *)

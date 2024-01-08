@@ -122,7 +122,7 @@ type ghost_config = {
   jump_vy : float;
   wall_jump_vy : float;
   upslash_vy : float;
-  dash_duration : int;
+  hardfall_duration : float;
   dive_vy : float;
   c_dash_whoosh_scale : float;
   wraiths_scale : float;
@@ -150,6 +150,7 @@ let ghost : ghost_config =
     height;
     max_vy = 1100. *. window_scale;
     dive_vy = 1600. *. window_scale;
+    hardfall_duration = 1.2;
     c_dash_whoosh_scale = 6. *. window_scale;
     wraiths_scale = 1.7 *. window_scale;
     vx = 400. *. window_scale;
@@ -158,7 +159,6 @@ let ghost : ghost_config =
     wall_jump_vy;
     wall_slide_vy = 400. *. window_scale;
     upslash_vy = 300. *. window_scale;
-    dash_duration = 20;
     debug_v = 20. *. window_scale;
     small_debug_v = 2. *. window_scale;
     pogo_recoil_time = 0.2;

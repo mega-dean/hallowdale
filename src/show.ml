@@ -127,6 +127,7 @@ let ghost_action_kind id =
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
   | DREAM_NAIL -> "DREAM_NAIL"
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
+  | HARDFALL -> "HARDFALL"
   | C_DASH_COOLDOWN -> "C_DASH_COOLDOWN"
   | C_DASH_WALL_COOLDOWN -> "C_DASH_WALL_COOLDOWN"
   | C_DASH_CHARGE -> "C_DASH_CHARGE"
@@ -144,7 +145,6 @@ let ghost_pose pose =
   | AIRBORNE f -> fmt (if f >= 0. then "DESCENDING(%f)" else "ASCENDING(%f)") f
   | CRAWLING -> "CRAWLING"
   | IDLE -> "IDLE"
-  | LANDING (f, v) -> fmt "LANDING on %s with v %s" (rect f) (vector v)
   | READING -> "READING"
   | WALKING d -> fmt "WALKING (%s)" (direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"
