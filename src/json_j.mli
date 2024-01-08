@@ -101,7 +101,8 @@ type ghost_abilities = Json_t.ghost_abilities = {
 type game_progress = Json_t.game_progress = {
   mutable frame_idx: int;
   steel_sole: steel_sole_progress;
-  mutable by_room: (string * room_progress) list
+  mutable by_room: (string * room_progress) list;
+  mutable keys_found: string list
 }
 
 type save_file = Json_t.save_file = {

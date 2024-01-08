@@ -9,9 +9,9 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":23,
+ "tilecount":24,
  "tiledversion":"1.10.2",
- "tileheight":72,
+ "tileheight":108,
  "tiles":[
         {
          "id":1,
@@ -150,6 +150,12 @@
          "image":"bookshelf-wide.png",
          "imageheight":28,
          "imagewidth":96
+        }, 
+        {
+         "id":24,
+         "image":"deans-closet.png",
+         "imageheight":108,
+         "imagewidth":48
         }],
  "tilewidth":264,
  "type":"tileset",

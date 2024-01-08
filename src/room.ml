@@ -117,6 +117,7 @@ let init (params : room_params) : room =
         in
         platform_spikes := (platform_id, spikes_dest) :: !platform_spikes
       | None
+      | Some (LOCKED_DOOR _)
       | Some (TEMPORARY _)
       | Some (DISAPPEARABLE _) ->
         ());

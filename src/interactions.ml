@@ -118,6 +118,14 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "purple-pen" ->
       remove_nail := false;
       [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]
+    | "key" ->
+      [
+        STEP (WAIT 0.5);
+        CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
+        STEP (WAIT 1.);
+        STEP (TEXT [ fmt "Got the %s key" trigger.name_suffix ]);
+        CURRENT_GHOST (ADD_ITEM (KEY trigger.name_suffix));
+      ]
     | "increase-health" ->
       [
         STEP (WAIT 0.5);

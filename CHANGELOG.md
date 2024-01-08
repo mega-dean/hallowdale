@@ -17,6 +17,8 @@
 - add new enemies:
   - PENGIUN
   - FLYING_HIPPIE
+- allow platforms to be permanently removed
+- add keys to open locked doors
 
 ## [0.0.8] - 2023-11-19
 

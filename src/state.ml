@@ -321,7 +321,23 @@ let update_environment (game : game) (state : state) =
       platform.kind <- Some (DISAPPEARABLE (TOUCHED Config.platform.disappearable_touched_time))
     | Some (ROTATABLE UPRIGHT) ->
       platform.kind <- Some (ROTATABLE (TOUCHED Config.platform.rotatable_touched_time))
-    | _ -> ()
+    | Some (LOCKED_DOOR (key, state')) ->
+      if List.mem key game.progress.keys_found then
+        (* after unlocking a door, shake and permanently disappear like a TEMPORARY platform *)
+        platform.kind <-
+          Some (LOCKED_DOOR (key, TOUCHED Config.platform.disappearable_touched_time))
+      else
+        game.interaction.floating_text <-
+          Some
+            {
+              content = "This door is locked.";
+              visible = TIME { at = state.frame.time +. Config.text.short_floating_duration };
+            }
+    | None
+    | Some (TEMPORARY _)
+    | Some (DISAPPEARABLE _)
+    | Some (ROTATABLE _) ->
+      ()
   in
   let finish_platform_reactions (platform : platform) =
     let shake_platform () =
@@ -340,23 +356,44 @@ let update_environment (game : game) (state : state) =
         change new_f
     in
 
-    let handle_temporary_platform (state' : disappearable_state) =
+    let handle_permanently_removable_platform ~(key : string option) (state' : disappearable_state)
+        =
+      let locked_door =
+        match key with
+        | None -> false
+        | Some k -> true
+      in
+      let new_platform_kind s =
+        if locked_door then
+          Some (LOCKED_DOOR (Option.get key, s))
+        else
+          Some (TEMPORARY s)
+      in
       match state' with
       | VISIBLE -> ()
       | TOUCHED f ->
         decrement_time
           ~continue:(fun new_f ->
             shake_platform ();
-            platform.kind <- Some (TEMPORARY (TOUCHED new_f)))
+            platform.kind <- new_platform_kind (TOUCHED new_f))
           ~change:(fun new_f ->
             game.room.progress.removed_platform_ids <-
               platform.id :: game.room.progress.removed_platform_ids;
-            game.player.ghost.entity.current_floor <- None;
+            if not locked_door then
+              game.player.ghost.entity.current_floor <- None;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
-              Some (TEMPORARY (INVISIBLE Config.platform.disappearable_invisible_time)))
+              new_platform_kind (INVISIBLE Config.platform.disappearable_invisible_time))
           f
       | INVISIBLE f -> ()
+    in
+
+    let handle_temporary_platform (state' : disappearable_state) =
+      handle_permanently_removable_platform ~key:None state'
+    in
+
+    let handle_locked_door_platform ~key (state' : disappearable_state) =
+      handle_permanently_removable_platform ~key state'
     in
 
     let handle_disappearable_platform (state' : disappearable_state) =
@@ -409,6 +446,7 @@ let update_environment (game : game) (state : state) =
     | Some (TEMPORARY state') -> handle_temporary_platform state'
     | Some (DISAPPEARABLE state') -> handle_disappearable_platform state'
     | Some (ROTATABLE state') -> handle_rotatable_platform state'
+    | Some (LOCKED_DOOR (key, state')) -> handle_locked_door_platform ~key:(Some key) state'
   in
   List.iter initiate_platform_reactions game.player.ghost.entity.current_platforms;
   List.iter finish_platform_reactions game.room.platforms;

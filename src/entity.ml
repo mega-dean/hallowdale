@@ -113,6 +113,7 @@ let get_platform_collisions (entity : entity) (platforms : platform list) : coll
       | Some (DISAPPEARABLE _) ->
         if coll.collided_from = UP then
           entity.current_platforms <- platform :: entity.current_platforms
+      | Some (LOCKED_DOOR _)
       | Some (ROTATABLE _) -> entity.current_platforms <- platform :: entity.current_platforms)
   in
   List.iter check_collision platforms;

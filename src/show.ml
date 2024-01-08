@@ -56,6 +56,7 @@ let platform_kind (kind : platform_kind) =
   | TEMPORARY state -> fmt "TEMPORARY (%s)" (disappearable_state state)
   | DISAPPEARABLE state -> fmt "DISAPPEARABLE (%s)" (disappearable_state state)
   | ROTATABLE state -> fmt "ROTATABLE (%s)" (rotatable_state state)
+  | LOCKED_DOOR (key, state) -> fmt "LOCKED_DOOR (%s, %s)" key (disappearable_state state)
 
 let platform_kind_opt (kind : platform_kind option) =
   match kind with

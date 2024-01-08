@@ -381,8 +381,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
             (* TODO add dream nail sound *)
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
               let text = List.sample state.global.honda_quotes in
-              let dream_nail_duration = 3. in
-              let end_time = state.frame.time +. dream_nail_duration in
+              let end_time = state.frame.time +. Config.text.long_floating_duration in
               game.interaction.floating_text <-
                 Some { content = text; visible = TIME { at = end_time } };
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
@@ -1639,6 +1638,7 @@ let tick (game : game) (state : state) =
         let add_item (item_kind : Interaction.item_kind) =
           match item_kind with
           | ABILITY ability_name -> enable_ability game.player ability_name
+          | KEY key_name -> game.progress.keys_found <- key_name :: game.progress.keys_found
           | DREAMER (item_name, dreamer_item_text) ->
             let text : string list =
               [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]

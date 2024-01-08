@@ -31,6 +31,7 @@ let empty_save_file () : Json_t.save_file =
     progress =
       {
         frame_idx = 0;
+        keys_found = [];
         by_room = [];
         steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0 };
       };

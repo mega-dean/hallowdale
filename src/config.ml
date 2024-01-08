@@ -236,6 +236,8 @@ type text = {
   base_config : Interaction.text_config;
   dialogue_config : Interaction.text_config;
   floating_config : Interaction.text_config;
+  short_floating_duration : float;
+  long_floating_duration : float;
 }
 
 let get_text_margins menu_choice =
@@ -297,6 +299,8 @@ let text =
         cursor_padding = 0.;
         centered = true;
       };
+    short_floating_duration = 2.;
+    long_floating_duration = 3.;
   }
 
 let get_plain_text_config margin_y_bottom =

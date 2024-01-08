@@ -236,7 +236,8 @@ type platform_kind =
   | TEMPORARY of disappearable_state
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
-(* TODO maybe add | BENCH *)
+  (* string is key name *)
+  | LOCKED_DOOR of string * disappearable_state
 
 type platform = {
   (* this is used to keep track of the associated spikes (which are tracked separately in room.platform_spikes) *)
@@ -496,6 +497,7 @@ module Interaction = struct
     | WEAPON of string
     | ABILITY of string
     | DREAMER of string * string
+    | KEY of string
 
   type party_ghost_step =
     | SET_POSE of ghost_pose
@@ -1439,6 +1441,7 @@ let clone_progress_by_room (progress_by_room : (string * Json_t.room_progress) l
 let clone_game_progress (game_progress : Json_t.game_progress) : Json_t.game_progress =
   {
     by_room = clone_progress_by_room game_progress.by_room;
+    keys_found = game_progress.keys_found;
     frame_idx = game_progress.frame_idx;
     steel_sole =
       {
