@@ -185,7 +185,7 @@ let draw_tiled_layer
         | None -> { x = camera_x; y = camera_y }
         | Some p -> { x = camera_x -. p.x; y = camera_y -. p.y }
       in
-      pos |> Tiled.Tile.pos_to_coords
+      pos |> Tiled.Tile.pos_to_dest_coords
     in
 
     let layer_data_in_camera : int array array =

@@ -651,22 +651,22 @@ let resolve_slash_collisions (state : state) (game : game) =
       let new_tile_groups : tile_group list ref = ref [] in
       match Collision.between_slash_and_sprite slash lever.sprite with
       | None -> ()
-      | Some collision -> (
+      | Some collision ->
         if lever.sprite.texture = state.global.textures.door_lever then (
           Audio.play_sound state "nail-hit-metal";
           Audio.play_sound state "punch");
         lever.sprite.texture <- state.global.textures.door_lever_struck;
-        let has_tile_idx tile_group = List.mem lever.door_tile_idx tile_group.tile_idxs in
-        match List.find_opt has_tile_idx layer.tile_groups with
-        | None ->
-          (* TODO maybe check that the lever has actually been destroyed, to validate the door_coords are correct
-             - ideally this would happen on room load though
-          *)
-          ()
-        | Some tile_group ->
-          layer.tile_groups <-
-            List.filter (fun (t : tile_group) -> t.dest <> tile_group.dest) layer.tile_groups;
-          destroy_tile_group layer tile_group)
+        (* CLEANUP  *)
+        List.iter
+          (fun (tg : tile_group) ->
+            List.iter
+              (fun idx ->
+                if List.mem idx tg.tile_idxs then (
+                  layer.tile_groups <-
+                    List.filter (fun (t : tile_group) -> t.dest <> tg.dest) layer.tile_groups;
+                  destroy_tile_group layer tg))
+              lever.door_tile_idxs)
+          layer.tile_groups
     in
 
     List.iter resolve_lever game.room.triggers.levers;

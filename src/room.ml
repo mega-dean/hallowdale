@@ -57,6 +57,7 @@ let init (params : room_params) : room =
   let d_nail_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
   let respawn_triggers : (vector * trigger) list ref = ref [] in
+  let targets : (int * vector) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let boss_area : rect option ref = ref None in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
@@ -132,6 +133,20 @@ let init (params : room_params) : room =
           :: !platforms
     in
 
+    let collect_targets (coll_rect : Json_t.coll_rect) =
+      (* CLEANUP duplicated *)
+      let split s = String.split_at_first ':' s in
+      let name_prefix', name_suffix = split coll_rect.name in
+      let (blocking_interaction, name_prefix) : string option * string =
+        String.split_at_first_opt '|' name_prefix'
+      in
+      let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
+
+      match name_prefix with
+      | "target" -> targets := (coll_rect.id, { x = coll_rect.x; y = coll_rect.y }) :: !targets
+      | _ -> ()
+    in
+
     let categorize_trigger (coll_rect : Json_t.coll_rect) =
       let split s = String.split_at_first ':' s in
       let name_prefix', name_suffix = split coll_rect.name in
@@ -198,20 +213,31 @@ let init (params : room_params) : room =
         let x, y = String.split_at_first ',' name_suffix in
         camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
-        let direction', door_coords' = String.split_at_first '@' name_suffix in
         let direction, transformation =
-          match direction' with
+          match name_suffix with
           | "up" -> (UP, 0)
           | "down" -> (DOWN, 2)
           | "left"
           | "right" ->
-            failwithf "horizontal levers aren't supported" direction'
-          | _ -> failwithf "unknown direction '%s' in get_transformation_bits" direction'
+            failwithf "horizontal levers aren't supported (%s)" name_suffix
+          | _ -> failwithf "got 'lever:%s', needs to be lever:up or lever:down" name_suffix
         in
-        let x', y' = String.split_at_first ',' door_coords' in
-        let door_tile_idx =
-          (x' |> int_of_string, y' |> int_of_string)
-          |> Tiled.Tile.coords_to_idx ~width:json_room.w_in_tiles
+        let target_ids =
+          List.map (fun (target : Json_t.connected_object) -> target.id) coll_rect.targets
+        in
+        let door_tile_idxs : int list =
+          let connected (id, pos) = List.mem id target_ids in
+          (* CLEANUP  *)
+          List.filter_map
+            (fun ((target_id, target_pos) : int * vector) ->
+              if List.mem target_id target_ids then
+                Some
+                  (target_pos
+                  |> Tiled.Tile.pos_to_coords
+                  |> Tiled.Tile.coords_to_idx ~width:json_room.w_in_tiles)
+              else
+                None)
+            !targets
         in
         let lever_sprite : sprite =
           {
@@ -230,7 +256,7 @@ let init (params : room_params) : room =
           {
             sprite = lever_sprite;
             transformation;
-            door_tile_idx;
+            door_tile_idxs;
             trigger =
               {
                 full_name = coll_rect.name;
@@ -309,9 +335,7 @@ let init (params : room_params) : room =
         let respawn_pos = name_suffix |> Tiled.JsonRoom.coords_to_dest json_room in
         respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
       | "target" ->
-        (* TODO add to respawn_targets : (int * vector) list
-           - x/y here will be raw x/y, so shouldn't need to convert from tile_idx
-        *)
+        (* targets were already processed in collect_targets *)
         ()
       | "door-warp" ->
         let target = parse_warp_target name_suffix in
@@ -331,7 +355,9 @@ let init (params : room_params) : room =
       | "floors" -> List.iter (add_object_rect floors) json.objects
       | "platforms" -> List.iteri make_platform json.objects
       | "conveyor-belts" -> List.iteri make_conveyor_belt json.objects
-      | "triggers" -> List.iter categorize_trigger json.objects
+      | "triggers" ->
+        List.iter collect_targets json.objects;
+        List.iter categorize_trigger json.objects
       | "world-map-labels" -> ( (* only used for generating world map *) )
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
     | `IMAGE_LAYER _

@@ -1189,13 +1189,13 @@ type room_cache = {
 }
 
 type trigger = {
+  kind : trigger_kind;
   full_name : string;
   name_prefix : string;
   name_suffix : string;
   dest : rect;
   label : string option;
   blocking_interaction : string option;
-  kind : trigger_kind;
 }
 
 (* this is for things that aren't created from Tiled objects in the triggers layer *)
@@ -1214,7 +1214,7 @@ type lever = {
   sprite : sprite;
   trigger : trigger;
   transformation : int;
-  door_tile_idx : int;
+  door_tile_idxs : int list;
 }
 
 type triggers = {

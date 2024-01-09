@@ -21,13 +21,19 @@ type object_layer = {
   objects : coll_rect list;
 }
 
+type connected_object = {
+  id <json name="value"> : int;
+}
+
 type coll_rect = {
   ~gid : int;
+  id : int;
   name : string;
   x : float;
   y : float;
   h <json name="height"> : float;
   w <json name="width"> : float;
+  ~targets <json name="properties"> : connected_object list;
 }
 
 (* the Type_field adapter pulls out the "type" field from json

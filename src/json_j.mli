@@ -29,13 +29,17 @@ type tileset_source = Json_t.tileset_source = {
   source: string
 }
 
+type connected_object = Json_t.connected_object = { id: int }
+
 type coll_rect = Json_t.coll_rect = {
   gid: int;
+  id: int;
   name: string;
   x: float;
   y: float;
   h: float;
-  w: float
+  w: float;
+  targets: connected_object list
 }
 
 type object_group = Json_t.object_group = { objects: coll_rect list }
@@ -320,6 +324,26 @@ val read_tileset_source :
 val tileset_source_of_string :
   string -> tileset_source
   (** Deserialize JSON data of type {!type:tileset_source}. *)
+
+val write_connected_object :
+  Buffer.t -> connected_object -> unit
+  (** Output a JSON value of type {!type:connected_object}. *)
+
+val string_of_connected_object :
+  ?len:int -> connected_object -> string
+  (** Serialize a value of type {!type:connected_object}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_connected_object :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> connected_object
+  (** Input JSON data of type {!type:connected_object}. *)
+
+val connected_object_of_string :
+  string -> connected_object
+  (** Deserialize JSON data of type {!type:connected_object}. *)
 
 val write_coll_rect :
   Buffer.t -> coll_rect -> unit

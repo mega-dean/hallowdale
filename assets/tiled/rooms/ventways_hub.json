@@ -68,7 +68,7 @@
          "name":"auto:floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -103,7 +103,13 @@
                 {
                  "height":27,
                  "id":3,
-                 "name":"lever:down@33,17",
+                 "name":"lever:down",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":43
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -113,19 +119,14 @@
                 }, 
                 {
                  "height":27,
-                 "id":4,
-                 "name":"lever:up@22,11",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":22,
-                 "x":185,
-                 "y":201
-                }, 
-                {
-                 "height":27,
                  "id":5,
-                 "name":"lever:up@56,11",
+                 "name":"lever:up",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":44
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -136,7 +137,13 @@
                 {
                  "height":27,
                  "id":6,
-                 "name":"lever:up@56,36",
+                 "name":"lever:up",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":46
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -147,23 +154,18 @@
                 {
                  "height":27,
                  "id":7,
-                 "name":"lever:up@33,41",
+                 "name":"lever:up",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":47
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":22,
                  "x":529,
-                 "y":645
-                }, 
-                {
-                 "height":27,
-                 "id":8,
-                 "name":"lever:up@22,36",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":22,
-                 "x":206,
                  "y":645
                 }, 
                 {
@@ -231,6 +233,106 @@
                  "width":72,
                  "x":768,
                  "y":48
+                }, 
+                {
+                 "height":24,
+                 "id":43,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":120,
+                 "x":396,
+                 "y":204
+                }, 
+                {
+                 "height":168,
+                 "id":44,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":672,
+                 "y":120
+                }, 
+                {
+                 "height":168,
+                 "id":45,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":264,
+                 "y":120
+                }, 
+                {
+                 "height":180,
+                 "id":46,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":672,
+                 "y":432
+                }, 
+                {
+                 "height":24,
+                 "id":47,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":168,
+                 "x":396,
+                 "y":492
+                }, 
+                {
+                 "height":180,
+                 "id":49,
+                 "name":"target:",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":264,
+                 "y":432
+                }, 
+                {
+                 "height":27,
+                 "id":51,
+                 "name":"lever:up",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":49
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":22,
+                 "x":208,
+                 "y":645
+                }, 
+                {
+                 "height":27,
+                 "id":52,
+                 "name":"lever:up",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":45
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":22,
+                 "x":186,
+                 "y":201
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -245,7 +347,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -553,7 +655,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -623,7 +725,7 @@
          "name":"bg3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -694,7 +796,7 @@
          "name":"bg2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -765,7 +867,7 @@
          "name":"bg",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -836,7 +938,7 @@
          "name":"bg4",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -907,7 +1009,7 @@
          "name":"bg-jugs",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -978,7 +1080,7 @@
          "name":"lever-doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -1049,7 +1151,7 @@
          "name":"fg-flowers",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -1120,7 +1222,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -1191,7 +1293,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":80,
          "x":0,
          "y":0
@@ -1271,7 +1373,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":43,
+ "nextobjectid":53,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

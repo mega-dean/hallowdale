@@ -26,13 +26,17 @@ type weapons_file = (string * weapon) list
 
 type tileset_source = { firstgid: int; source: string }
 
+type connected_object = { id: int }
+
 type coll_rect = {
   gid: int;
+  id: int;
   name: string;
   x: float;
   y: float;
   h: float;
-  w: float
+  w: float;
+  targets: connected_object list
 }
 
 type object_group = { objects: coll_rect list }

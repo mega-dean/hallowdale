@@ -29,13 +29,17 @@ type tileset_source = Json_t.tileset_source = {
   source: string
 }
 
+type connected_object = Json_t.connected_object = { id: int }
+
 type coll_rect = Json_t.coll_rect = {
   gid: int;
+  id: int;
   name: string;
   x: float;
   y: float;
   h: float;
-  w: float
+  w: float;
+  targets: connected_object list
 }
 
 type object_group = Json_t.object_group = { objects: coll_rect list }
@@ -1372,6 +1376,120 @@ let read_tileset_source = (
 )
 let tileset_source_of_string s =
   read_tileset_source (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_connected_object : _ -> connected_object -> _ = (
+  fun ob (x : connected_object) ->
+    Buffer.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"value\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.id;
+    Buffer.add_char ob '}';
+)
+let string_of_connected_object ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_connected_object ob x;
+  Buffer.contents ob
+let read_connected_object = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_id = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+          if len = 5 && String.unsafe_get s pos = 'v' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'l' && String.unsafe_get s (pos+3) = 'u' && String.unsafe_get s (pos+4) = 'e' then (
+            0
+          )
+          else (
+            -1
+          )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_id := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+            if len = 5 && String.unsafe_get s pos = 'v' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'l' && String.unsafe_get s (pos+3) = 'u' && String.unsafe_get s (pos+4) = 'e' then (
+              0
+            )
+            else (
+              -1
+            )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_id := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            id = (match !field_id with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "id");
+          }
+         : connected_object)
+      )
+)
+let connected_object_of_string s =
+  read_connected_object (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__connected_object_list = (
+  Atdgen_runtime.Oj_run.write_list (
+    write_connected_object
+  )
+)
+let string_of__connected_object_list ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__connected_object_list ob x;
+  Buffer.contents ob
+let read__connected_object_list = (
+  Atdgen_runtime.Oj_run.read_list (
+    read_connected_object
+  )
+)
+let _connected_object_list_of_string s =
+  read__connected_object_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_coll_rect : _ -> coll_rect -> _ = (
   fun ob (x : coll_rect) ->
     Buffer.add_char ob '{';
@@ -1387,6 +1505,15 @@ let write_coll_rect : _ -> coll_rect -> _ = (
       )
         ob x.gid;
     );
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"id\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.id;
     if !is_first then
       is_first := false
     else
@@ -1432,6 +1559,17 @@ let write_coll_rect : _ -> coll_rect -> _ = (
       Yojson.Safe.write_float
     )
       ob x.w;
+    if x.targets <> [] then (
+      if !is_first then
+        is_first := false
+      else
+        Buffer.add_char ob ',';
+        Buffer.add_string ob "\"properties\":";
+      (
+        write__connected_object_list
+      )
+        ob x.targets;
+    );
     Buffer.add_char ob '}';
 )
 let string_of_coll_rect ?(len = 1024) x =
@@ -1443,11 +1581,13 @@ let read_coll_rect = (
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
     let field_gid = ref (0) in
+    let field_id = ref (None) in
     let field_name = ref (None) in
     let field_x = ref (None) in
     let field_y = ref (None) in
     let field_h = ref (None) in
     let field_w = ref (None) in
+    let field_targets = ref ([]) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -1460,14 +1600,22 @@ let read_coll_rect = (
             | 1 -> (
                 match String.unsafe_get s pos with
                   | 'x' -> (
-                      2
+                      3
                     )
                   | 'y' -> (
-                      3
+                      4
                     )
                   | _ -> (
                       -1
                     )
+              )
+            | 2 -> (
+                if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 'd' then (
+                  1
+                )
+                else (
+                  -1
+                )
               )
             | 3 -> (
                 if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' then (
@@ -1479,7 +1627,7 @@ let read_coll_rect = (
               )
             | 4 -> (
                 if String.unsafe_get s pos = 'n' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' then (
-                  1
+                  2
                 )
                 else (
                   -1
@@ -1487,7 +1635,7 @@ let read_coll_rect = (
               )
             | 5 -> (
                 if String.unsafe_get s pos = 'w' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' then (
-                  5
+                  6
                 )
                 else (
                   -1
@@ -1495,7 +1643,15 @@ let read_coll_rect = (
               )
             | 6 -> (
                 if String.unsafe_get s pos = 'h' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'h' && String.unsafe_get s (pos+5) = 't' then (
-                  4
+                  5
+                )
+                else (
+                  -1
+                )
+              )
+            | 10 -> (
+                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'r' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'i' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 's' then (
+                  7
                 )
                 else (
                   -1
@@ -1518,6 +1674,14 @@ let read_coll_rect = (
               );
             )
           | 1 ->
+            field_id := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 2 ->
             field_name := (
               Some (
                 (
@@ -1525,7 +1689,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 2 ->
+          | 3 ->
             field_x := (
               Some (
                 (
@@ -1533,7 +1697,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 3 ->
+          | 4 ->
             field_y := (
               Some (
                 (
@@ -1541,7 +1705,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 4 ->
+          | 5 ->
             field_h := (
               Some (
                 (
@@ -1549,7 +1713,7 @@ let read_coll_rect = (
                 ) p lb
               )
             );
-          | 5 ->
+          | 6 ->
             field_w := (
               Some (
                 (
@@ -1557,6 +1721,14 @@ let read_coll_rect = (
                 ) p lb
               )
             );
+          | 7 ->
+            if not (Yojson.Safe.read_null_if_possible p lb) then (
+              field_targets := (
+                (
+                  read__connected_object_list
+                ) p lb
+              );
+            )
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -1573,14 +1745,22 @@ let read_coll_rect = (
               | 1 -> (
                   match String.unsafe_get s pos with
                     | 'x' -> (
-                        2
+                        3
                       )
                     | 'y' -> (
-                        3
+                        4
                       )
                     | _ -> (
                         -1
                       )
+                )
+              | 2 -> (
+                  if String.unsafe_get s pos = 'i' && String.unsafe_get s (pos+1) = 'd' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
                 )
               | 3 -> (
                   if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' then (
@@ -1592,7 +1772,7 @@ let read_coll_rect = (
                 )
               | 4 -> (
                   if String.unsafe_get s pos = 'n' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' then (
-                    1
+                    2
                   )
                   else (
                     -1
@@ -1600,7 +1780,7 @@ let read_coll_rect = (
                 )
               | 5 -> (
                   if String.unsafe_get s pos = 'w' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' then (
-                    5
+                    6
                   )
                   else (
                     -1
@@ -1608,7 +1788,15 @@ let read_coll_rect = (
                 )
               | 6 -> (
                   if String.unsafe_get s pos = 'h' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'i' && String.unsafe_get s (pos+3) = 'g' && String.unsafe_get s (pos+4) = 'h' && String.unsafe_get s (pos+5) = 't' then (
-                    4
+                    5
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 10 -> (
+                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'e' && String.unsafe_get s (pos+5) = 'r' && String.unsafe_get s (pos+6) = 't' && String.unsafe_get s (pos+7) = 'i' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 's' then (
+                    7
                   )
                   else (
                     -1
@@ -1631,6 +1819,14 @@ let read_coll_rect = (
                 );
               )
             | 1 ->
+              field_id := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 2 ->
               field_name := (
                 Some (
                   (
@@ -1638,7 +1834,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 2 ->
+            | 3 ->
               field_x := (
                 Some (
                   (
@@ -1646,7 +1842,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 3 ->
+            | 4 ->
               field_y := (
                 Some (
                   (
@@ -1654,7 +1850,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 4 ->
+            | 5 ->
               field_h := (
                 Some (
                   (
@@ -1662,7 +1858,7 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
-            | 5 ->
+            | 6 ->
               field_w := (
                 Some (
                   (
@@ -1670,6 +1866,14 @@ let read_coll_rect = (
                   ) p lb
                 )
               );
+            | 7 ->
+              if not (Yojson.Safe.read_null_if_possible p lb) then (
+                field_targets := (
+                  (
+                    read__connected_object_list
+                  ) p lb
+                );
+              )
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -1680,11 +1884,13 @@ let read_coll_rect = (
         (
           {
             gid = !field_gid;
+            id = (match !field_id with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "id");
             name = (match !field_name with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "name");
             x = (match !field_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x");
             y = (match !field_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y");
             h = (match !field_h with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "h");
             w = (match !field_w with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "w");
+            targets = !field_targets;
           }
          : coll_rect)
       )

@@ -82,9 +82,13 @@ module Tile = struct
       y = (y |> Int.to_float) *. Config.window.tile_size;
     }
 
-  let pos_to_coords (pos : vector) : int * int =
+  let pos_to_dest_coords (pos : vector) : int * int =
     ( pos.x /. Config.window.dest_tile_size |> Float.to_int,
       pos.y /. Config.window.dest_tile_size |> Float.to_int )
+
+  let pos_to_coords (pos : vector) : int * int =
+    ( pos.x /. Config.window.tile_size |> Float.to_int,
+      pos.y /. Config.window.tile_size |> Float.to_int )
 
   let tile_dest ~tile_w ~tile_h (x, y) : float * float =
     ( (x |> Int.to_float) *. tile_w *. Config.scale.room,
