@@ -58,7 +58,11 @@ end
 # end
 
 pen_names = all_purple_pens.map do |pen|
-  pen['name'].gsub('purple-pen:', '').gsub(/\/.*/, '')
+  pen['name']
+    .gsub('purple-pen:', '')
+    .gsub('+increase-health', '')
+    .gsub(/\+(ability|dreamer|weapon):.*/, '')
+    .gsub(/\/.*/, '')
 end.sort
 
 dupe_count = 0
@@ -111,6 +115,14 @@ with_shadow, without_shadow = jsons.partition do |json|
   json['layers'].any? { |layer| layer['name'] == 'shadow' }
 end
 
+missing_respawns = jsons.select do |json|
+  layer_names = json['layers'].map { |layer| layer['name'] }
+  (layer_names.include?('hazard') ||
+   layer_names.include?('spikes') ||
+   layer_names.include?('acid')) &&
+    !layer_names.include?('respawns')
+end
+
 with_visible_camera, without_visible_camera = jsons.partition do |json|
   json['layers'].any? { |layer| layer['name'] == 'ref:camera' && layer['visible'] }
 end
@@ -134,5 +146,6 @@ end
 
 show_layers(with_visible_camera, "with visible camera")
 show_layers(without_shadow, "without shadows")
+show_layers(missing_respawns, "missing respawns")
 # show_layers(with_complete_shadow, "with complete shadows")
 show_layers(with_empty_shadow, "with empty shadows")

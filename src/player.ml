@@ -117,8 +117,9 @@ let find_trigger_collision' ghost (xs : 'a list) get_trigger_dest : 'a option =
 let find_trigger_collision ghost (triggers : trigger list) =
   find_trigger_collision' ghost triggers (fun t -> t.dest)
 
-let find_respawn_trigger_collision ghost (triggers : (vector * trigger) list) =
-  find_trigger_collision' ghost triggers (fun (_, t) -> t.dest)
+let find_respawn_trigger_collision ghost (triggers : respawn_trigger list) : respawn_trigger option
+    =
+  find_trigger_collision' ghost triggers (fun rt -> rt.trigger.dest)
 
 let pogo (player : player) =
   player.ghost.entity.current_floor <- None;
@@ -566,7 +567,7 @@ let resolve_slash_collisions (state : state) (game : game) =
           in
           new_fragment.dest.pos <- new_pos;
           new_fragment.v <- new_v;
-          new_fragment.update_pos <- true;
+          new_fragment.frozen <- false;
           new_fragment.sprite.facing_right <- Random.bool ();
           new_fragment
         in
@@ -656,17 +657,16 @@ let resolve_slash_collisions (state : state) (game : game) =
           Audio.play_sound state "nail-hit-metal";
           Audio.play_sound state "punch");
         lever.sprite.texture <- state.global.textures.door_lever_struck;
-        (* CLEANUP  *)
-        List.iter
-          (fun (tg : tile_group) ->
-            List.iter
-              (fun idx ->
-                if List.mem idx tg.tile_idxs then (
-                  layer.tile_groups <-
-                    List.filter (fun (t : tile_group) -> t.dest <> tg.dest) layer.tile_groups;
-                  destroy_tile_group layer tg))
-              lever.door_tile_idxs)
-          layer.tile_groups
+        let maybe_remove_door (tile_group : tile_group) =
+          let check_idx (idx : int) =
+            if List.mem idx tile_group.tile_idxs then (
+              layer.tile_groups <-
+                List.filter (fun (t : tile_group) -> t.dest <> tile_group.dest) layer.tile_groups;
+              destroy_tile_group layer tile_group)
+          in
+          List.Non_empty.iter check_idx lever.door_tile_idxs
+        in
+        List.iter maybe_remove_door layer.tile_groups
     in
 
     List.iter resolve_lever game.room.triggers.levers;
@@ -728,7 +728,10 @@ let set_pose
     | VENGEFUL_SPIRIT ->
       player.ghost.entity.v.y <- 0.;
       (player.ghost.head_textures.walk, bodies.cast)
-    | DESOLATE_DIVE -> (player.ghost.head_textures.look_down, bodies.dive)
+    | DESOLATE_DIVE ->
+      update_vx 0.;
+      player.ghost.entity.v.y <- Config.ghost.dive_vy;
+      (player.ghost.head_textures.look_down, bodies.dive)
     | HOWLING_WRAITHS ->
       player.ghost.entity.v.x <- 0.;
       player.ghost.entity.v.y <- 0.;
@@ -776,10 +779,6 @@ let set_pose
       player.ghost.entity.v.y <- 0.;
       update_vx 2.;
       (player.ghost.head_textures.idle, bodies.dash)
-    | CAST DESOLATE_DIVE ->
-      update_vx 0.;
-      player.ghost.entity.v.y <- Config.ghost.dive_vy;
-      (player.ghost.head_textures.look_down, bodies.dive)
     | CAST spell_kind -> handle_cast spell_kind
     | DIVE_COOLDOWN ->
       update_vx 0.;
@@ -904,7 +903,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   in
   game.player.spawned_vengeful_spirits <- projectile :: game.player.spawned_vengeful_spirits
 
-let respawn_ghost game = game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn_pos
+let respawn_ghost game = game.player.ghost.entity.dest.pos <- clone_vector game.room.respawn.target
 
 let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   let action =
@@ -1436,14 +1435,15 @@ let tick (game : game) (state : state) =
   in
 
   (* TODO try moving this to interactions.ml *)
-  let handle_interactions () =
+  (* return value is (currently interacting, currently warping) *)
+  let handle_interactions () : bool * bool =
     (* the ghost can only collide with one trigger of each type per frame *)
     let all_finished_interactions =
       List.map snd game.progress.by_room
       |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
       |> List.flatten
     in
-    let check_for_new_interactions () : bool =
+    let check_for_new_interactions () : bool * bool =
       let interactable_triggers = game.room.triggers.lore in
       (match find_trigger_collision game.player interactable_triggers with
       | None -> game.room.interaction_label <- None
@@ -1454,7 +1454,6 @@ let tick (game : game) (state : state) =
           | Some label' -> label'
         in
         let check_interact_key () =
-          (* TODO maybe want to also check `Entity.on_ground game.ghost.ghost.entity` *)
           if state.frame_inputs.interact.pressed then
             maybe_begin_interaction state game trigger
         in
@@ -1469,15 +1468,37 @@ let tick (game : game) (state : state) =
       (match find_trigger_collision game.player game.room.triggers.cutscene with
       | None -> ()
       | Some trigger -> maybe_begin_interaction state game trigger);
-      (match find_respawn_trigger_collision game.player game.room.triggers.respawn with
+      let respawn_trigger_collision =
+        find_respawn_trigger_collision game.player game.room.triggers.respawns
+      in
+      (match respawn_trigger_collision with
       | None -> ()
-      | Some (new_respawn_pos, trigger) -> (
+      | Some respawn_trigger -> (
         match game.mode with
         | DEMO
         | CLASSIC ->
-          game.room.respawn_pos <- new_respawn_pos
-        | STEEL_SOLE -> ()));
-      List.length game.interaction.steps > 0
+          (* only update this on the first frame when colliding with respawn trigger,
+             not every frame *)
+          if not game.room.respawn.in_trigger_now then (
+            let new_respawn_pos =
+              let head, tail = respawn_trigger.targets in
+              let nearest = ref head in
+              let distance = ref (get_distance !nearest game.player.ghost.entity.dest.pos) in
+              let find_nearest target =
+                let new_distance = get_distance target game.player.ghost.entity.dest.pos in
+                if new_distance < !distance then (
+                  distance := new_distance;
+                  nearest := target)
+              in
+              List.Non_empty.iter find_nearest respawn_trigger.targets;
+              !nearest
+            in
+            game.room.respawn.target <- new_respawn_pos)
+        | STEEL_SOLE ->
+          ();
+          game.room.respawn.in_trigger_now <- true));
+      game.room.respawn.in_trigger_now <- Option.is_some respawn_trigger_collision;
+      (List.length game.interaction.steps > 0, false)
     in
     let speed_through_interaction =
       (* holding down c-dash will skip through interactions quickly, but still perform each step
@@ -1491,7 +1512,7 @@ let tick (game : game) (state : state) =
       (* press interact key to advance dialogue by one *)
       if state.frame_inputs.interact.pressed || speed_through_interaction then
         game.interaction.text <- None;
-      true
+      (true, false)
     | None -> (
       match List.nth_opt game.interaction.steps 0 with
       | None -> check_for_new_interactions ()
@@ -1504,6 +1525,7 @@ let tick (game : game) (state : state) =
           ref false
         in
         let still_waiting_for_floor = ref false in
+        let warping = ref false in
 
         let set_layer_hidden (layer_name : string) hidden =
           (match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
@@ -1528,32 +1550,26 @@ let tick (game : game) (state : state) =
           | FADE_SCREEN_IN -> state.screen_fade <- None
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
+            warping := true;
             match trigger_kind with
-            | WARP target -> (
-              let target_room_location =
-                Tiled.JsonRoom.locate_by_name state.world target.room_name
-              in
-              let warp_to target =
-                Room.change_current_room state game target_room_location target
-              in
+            | WARP warp -> (
+              let target_room_location = Tiled.JsonRoom.locate_by_name state.world warp.room_name in
+              let warp_to pos = Room.change_current_room state game target_room_location pos in
               match game.mode with
               | DEMO
               | CLASSIC ->
-                warp_to target.pos
+                warp_to warp.target
               | STEEL_SOLE ->
                 let target_y =
-                  if target.room_name = "ventways_hub" || game.room.id = VENT_HUB then (
-                    (* this prevents ghost from continuing jump after warping back into the
-                       vent they came from *)
-                    game.player.ghost.entity.v.y <- 0.;
-                    target.pos.y)
+                  if warp.room_name = "ventways_hub" || game.room.id = VENT_HUB then
+                    warp.target.y
                   else
-                    target.pos.y -. Config.other.ss_warp_y_offset
+                    warp.target.y -. Config.other.ss_warp_y_offset
                 in
-                warp_to { target.pos with y = target_y };
+                warp_to { warp.target with y = target_y };
                 (* can't take floor damage in vents, so ghost doesn't need a phantom floor *)
-                if target.room_name <> "ventways_hub" then
-                  add_phantom_floor game game.room.respawn_pos)
+                if warp.room_name <> "ventways_hub" then
+                  add_phantom_floor game game.room.respawn.target)
             | _ ->
               failwithf "need WARP trigger kind for WARP steps, got '%s'"
                 (Show.trigger_kind trigger_kind))
@@ -1863,7 +1879,7 @@ let tick (game : game) (state : state) =
           game.interaction.steps <- STEP (WAIT !new_wait) :: List.tl game.interaction.steps
         else
           game.interaction.steps <- List.tl game.interaction.steps;
-        true)
+        (true, !warping))
   in
 
   let handle_casting () : handled_action =
@@ -2335,12 +2351,8 @@ let tick (game : game) (state : state) =
           (match game.mode with
           | CLASSIC
           | DEMO ->
-            let transitioned_from_below =
-              game.room.respawn_pos.y +. 50. > Tiled.JsonRoom.get_h game.room.json
-            in
-            if transitioned_from_below then
-              add_phantom_floor game game.room.respawn_pos
-          | STEEL_SOLE -> add_phantom_floor game game.room.respawn_pos);
+            ()
+          | STEEL_SOLE -> add_phantom_floor game game.room.respawn.target);
           Entity.unfreeze game.player.ghost.entity;
           state.camera.update_instantly <- true;
           respawn_ghost game
@@ -2513,6 +2525,7 @@ let tick (game : game) (state : state) =
       Option.is_some game.player.ghost.entity.current_floor
       || Option.is_some game.player.current.wall
       || Option.is_some game.player.ghost.entity.y_recoil
+      || game.player.current.is_diving
       || game.player.ghost.entity.v.y <= 0.
     in
     if reset_hardfall_timer then
@@ -2588,14 +2601,17 @@ let tick (game : game) (state : state) =
     in
     let exiting = Room.handle_transitions state game in
     if not exiting then (
-      let interacting = handle_interactions () in
+      let interacting, warped = handle_interactions () in
       if interacting then (
-        if game.player.ghost.entity.update_pos then (
-          game.player.ghost.entity.v.y <- new_vy;
+        if not game.player.ghost.entity.frozen then (
+          (* after warping, set vy to 0. so the ghost doesn't continue to jump back up into the
+             vent they came from
+          *)
+          game.player.ghost.entity.v.y <- (if warped then 0. else new_vy);
           handle_collisions ()))
       else (
         reveal_shadows ();
-        if game.player.ghost.entity.update_pos then (
+        if not game.player.ghost.entity.frozen then (
           let cooling_down =
             check_cooldowns [ DIVE_COOLDOWN; C_DASH_COOLDOWN; C_DASH_WALL_COOLDOWN; HARDFALL ]
           in

@@ -237,7 +237,7 @@
                 {
                  "height":24,
                  "id":43,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -248,7 +248,7 @@
                 {
                  "height":168,
                  "id":44,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -259,7 +259,7 @@
                 {
                  "height":168,
                  "id":45,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -270,7 +270,7 @@
                 {
                  "height":180,
                  "id":46,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -281,7 +281,7 @@
                 {
                  "height":24,
                  "id":47,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -292,7 +292,7 @@
                 {
                  "height":180,
                  "id":49,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -347,7 +347,7 @@
          "objects":[],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -655,7 +655,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -725,7 +725,7 @@
          "name":"bg3",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -796,7 +796,7 @@
          "name":"bg2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -867,7 +867,7 @@
          "name":"bg",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -938,7 +938,7 @@
          "name":"bg4",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -1009,7 +1009,7 @@
          "name":"bg-jugs",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -1080,7 +1080,7 @@
          "name":"lever-doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -1151,7 +1151,7 @@
          "name":"fg-flowers",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -1222,7 +1222,7 @@
          "name":"floors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0
@@ -1293,7 +1293,7 @@
          "name":"shadow",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":80,
          "x":0,
          "y":0

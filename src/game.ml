@@ -62,15 +62,15 @@ let load_all_save_slots () : save_slot list =
 
 let save ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress_to_game game;
-  game.room.respawn_pos <-
+  game.room.respawn.target <-
     (match game.mode with
     | CLASSIC
     | DEMO ->
-      clone_vector game.player.ghost.entity.dest.pos
+      clone_vector game.room.respawn.target
     | STEEL_SOLE ->
       {
-        game.player.ghost.entity.dest.pos with
-        y = game.player.ghost.entity.dest.pos.y -. Config.other.ss_respawn_y_offset;
+        game.room.respawn.target with
+        y = game.room.respawn.target.y -. Config.other.ss_respawn_y_offset;
       });
   let save_file : Json_t.save_file =
     {
@@ -85,8 +85,8 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
         |> List.uniq;
       ghost_x = game.player.ghost.entity.dest.pos.x /. Config.window.scale;
       ghost_y = game.player.ghost.entity.dest.pos.y /. Config.window.scale;
-      respawn_x = game.room.respawn_pos.x /. Config.window.scale;
-      respawn_y = game.room.respawn_pos.y /. Config.window.scale;
+      respawn_x = game.room.respawn.target.x /. Config.window.scale;
+      respawn_y = game.room.respawn.target.y /. Config.window.scale;
       room_name = Room.get_filename game.room;
       abilities = game.player.abilities;
       progress = clone_game_progress game.progress;
@@ -217,7 +217,7 @@ let create
   let party_ghost = Option.get (Player.find_party_ghost current_ghost_id party) in
   let player = make_ghost party_ghost in
 
-  player.ghost.entity.update_pos <- true;
+  Entity.unfreeze player.ghost.entity;
   Player.equip_weapon player save_file.current_weapon;
 
   {

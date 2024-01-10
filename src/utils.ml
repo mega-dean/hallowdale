@@ -15,12 +15,6 @@ let get_distance (pos1 : vector) (pos2 : vector) : float =
   let y = abs_float (pos1.y -. pos2.y) in
   sqrt ((x *. x) +. (y *. y))
 
-(* this is here so that values with .pos are inferred as rects *)
-type warp_target = {
-  room_name : string;
-  pos : vector;
-}
-
 type rect = {
   mutable pos : vector;
   mutable w : float;
@@ -86,6 +80,8 @@ module String = struct
     match split_at_first_opt c str with
     | Some prefix, rest -> rest
     | None, _ -> str
+
+  let to_int s = int_of_string s
 end
 
 module Array = struct
@@ -156,7 +152,30 @@ module List = struct
   let to_array xs = Array.of_list xs
   let to_string_map xs = String.Map.of_list xs
   let to_int_map xs = Int.Map.of_list xs
+
+  module Non_empty = struct
+    type 'a t = 'a * 'a list
+
+    let length ((_, rest) : 'a t) : int = List.length rest + 1
+    let hd ((head, rest) : 'a t) = head
+    let tl ((head, rest) : 'a t) = rest
+    let mem (x : 'a) ((head, rest) : 'a t) = x = head || List.mem x rest
+
+    let iter (f : 'a -> 'b) ((head, rest) : 'a t) : unit =
+      f head;
+      List.iter f rest
+
+    let map (f : 'a -> 'b) ((head, rest) : 'a t) : 'b t = (f head, List.map f rest)
+    let to_list ((head, rest) : 'a t) : 'a list = head :: rest
+  end
+
+  let to_ne_list (xs : 'a list) : 'a Non_empty.t =
+    match List.nth_opt xs 0 with
+    | None -> failwith "can't create non-empty list from empty list"
+    | Some head -> (head, List.tl xs)
 end
+
+type 'a ne_list = 'a List.Non_empty.t
 
 (* 2-d array *)
 module Matrix = struct

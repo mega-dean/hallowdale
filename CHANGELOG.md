@@ -21,6 +21,7 @@
 - add keys to open locked doors
 - add hardfalls
 - fix floor seams for steel sole
+- add respawn targets for hazards
 
 ## [0.0.8] - 2023-11-19
 

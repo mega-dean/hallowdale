@@ -1,7 +1,6 @@
 
 // this sets some properties based on layer name
 
-
 let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties", function(/* action */) {
   const map = tiled.activeAsset;
   if (!map.isTileMap) {
@@ -20,6 +19,15 @@ let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties"
     // TODO fg layers
   };
 
+  let colorProps = {
+    "floors": '#6c9e83',
+    "cameras": '#777',
+    "hazard": '#af4848',
+    "spikes": '#df4848',
+    "triggers": '#658faf',
+    "respawns": '#8e77a2',
+  };
+
   let layersToLock = [
     "ref:camera",
     // TODO fg layers
@@ -36,12 +44,17 @@ let setDefaultLayerProperties = tiled.registerAction("SetDefaultLayerProperties"
       layer.parallaxFactor.y = parallaxProps[layerName];
     }
 
+    if (layer.isObjectLayer && colorProps[layerName] !== undefined) {
+      console.log(`setting color for ${layerName}`);
+      layer.color = colorProps[layerName];
+    }
+
     if (layersToLock.includes(layerName)) {
       layer.locked = true;
     }
   }
-
 });
+
 setDefaultLayerProperties.text = "Set Default Layer Properties";
 
 
@@ -68,17 +81,21 @@ tiled.extendMenu("Layer", [
 ]);
 
 let OnlyShowHK = tiled.registerAction("OnlyShowHK", function(/* action */) {
-  for (let i = 0; i <= tiled.openAssets.length; i++) {
+  for (let i = 0; i < tiled.openAssets.length; i++) {
     const map = tiled.openAssets[i];
 
-    for (let j = map.layerCount - 1; j >= 0; j--) {
-      const layer = map.layerAt(j);
+    if (map.fileName.endsWith('ventways_hub.json')) {
+      console.log("skipping ventways");
+    } else {
+      for (let j = map.layerCount - 1; j >= 0; j--) {
+        const layer = map.layerAt(j);
 
-      if (layer.name === "ref:hk") {
-        layer.visible = true;
-        map.currentLayer = layer;
-      } else {
-        layer.visible = false;
+        if (layer.name === "ref:hk") {
+          layer.visible = true;
+          map.currentLayer = layer;
+        } else {
+          layer.visible = false;
+        }
       }
     }
   }

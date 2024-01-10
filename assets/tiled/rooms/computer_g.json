@@ -213,69 +213,15 @@
          "y":0
         }, 
         {
+         "color":"#658faf",
          "draworder":"topdown",
          "id":12,
          "name":"triggers",
          "objects":[
                 {
-                 "height":72,
-                 "id":54,
-                 "name":"respawn:257,19",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":564,
-                 "x":2544,
-                 "y":360
-                }, 
-                {
-                 "height":372,
-                 "id":55,
-                 "name":"respawn:200,24",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":384,
-                 "x":2028,
-                 "y":60
-                }, 
-                {
-                 "height":396,
-                 "id":56,
-                 "name":"respawn:152,21",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":396,
-                 "x":1404,
-                 "y":48
-                }, 
-                {
-                 "height":396,
-                 "id":57,
-                 "name":"respawn:152,21",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":264,
-                 "x":1104,
-                 "y":36
-                }, 
-                {
-                 "height":396,
-                 "id":58,
-                 "name":"respawn:90,11",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":924,
-                 "x":168,
-                 "y":36
-                }, 
-                {
                  "height":17,
                  "id":59,
-                 "name":"purple-pen:1.01.1+increase-health:",
+                 "name":"purple-pen:1.01.1+increase-health",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -290,6 +236,217 @@
          "y":0
         }, 
         {
+         "color":"#8e77a2",
+         "draworder":"topdown",
+         "id":18,
+         "name":"respawns",
+         "objects":[
+                {
+                 "height":384,
+                 "id":74,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":76
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":75
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":516,
+                 "x":2544,
+                 "y":48
+                }, 
+                {
+                 "height":24,
+                 "id":75,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2508,
+                 "y":252
+                }, 
+                {
+                 "height":24,
+                 "id":76,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":3072,
+                 "y":252
+                }, 
+                {
+                 "height":384,
+                 "id":77,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":79
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":78
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":408,
+                 "x":2028,
+                 "y":48
+                }, 
+                {
+                 "height":24,
+                 "id":78,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1980,
+                 "y":324
+                }, 
+                {
+                 "height":24,
+                 "id":79,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2376,
+                 "y":324
+                }, 
+                {
+                 "height":384,
+                 "id":80,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":82
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":81
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":384,
+                 "x":1404,
+                 "y":48
+                }, 
+                {
+                 "height":24,
+                 "id":81,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1380,
+                 "y":144
+                }, 
+                {
+                 "height":24,
+                 "id":82,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1800,
+                 "y":276
+                }, 
+                {
+                 "height":384,
+                 "id":83,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":81
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":84
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":252,
+                 "x":1116,
+                 "y":36
+                }, 
+                {
+                 "height":24,
+                 "id":84,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1092,
+                 "y":144
+                }, 
+                {
+                 "height":384,
+                 "id":85,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":84
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":86
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":900,
+                 "x":192,
+                 "y":48
+                }, 
+                {
+                 "height":24,
+                 "id":86,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":156,
+                 "y":324
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#af4848",
          "draworder":"topdown",
          "id":10,
          "name":"hazard",
@@ -444,6 +601,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",
@@ -1203,8 +1361,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":18,
- "nextobjectid":60,
+ "nextlayerid":19,
+ "nextobjectid":87,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

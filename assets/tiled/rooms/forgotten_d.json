@@ -401,7 +401,7 @@
                 {
                  "height":68,
                  "id":45,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -412,7 +412,7 @@
                 {
                  "height":60,
                  "id":47,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -423,7 +423,7 @@
                 {
                  "height":72,
                  "id":48,
-                 "name":"target:",
+                 "name":"target",
                  "rotation":0,
                  "type":"",
                  "visible":true,

@@ -56,7 +56,7 @@ let init (params : room_params) : room =
   let lore_triggers : trigger list ref = ref [] in
   let d_nail_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
-  let respawn_triggers : (vector * trigger) list ref = ref [] in
+  let respawn_triggers : respawn_trigger list ref = ref [] in
   let targets : (int * vector) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let boss_area : rect option ref = ref None in
@@ -71,7 +71,7 @@ let init (params : room_params) : room =
 
   let tilesets_by_path = Tiled.load_tilesets json_room in
 
-  let get_object_rects (jl : Json_t.layer) =
+  let get_object_rects (json_layer : Json_t.layer) =
     let get_object_rect ?(floor = false) ?(hidden = false) (coll_rect : Json_t.coll_rect) =
       let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       if floor then
@@ -134,21 +134,18 @@ let init (params : room_params) : room =
     in
 
     let collect_targets (coll_rect : Json_t.coll_rect) =
-      (* CLEANUP duplicated *)
-      let split s = String.split_at_first ':' s in
-      let name_prefix', name_suffix = split coll_rect.name in
-      let (blocking_interaction, name_prefix) : string option * string =
-        String.split_at_first_opt '|' name_prefix'
-      in
       let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-
-      match name_prefix with
+      match coll_rect.name with
       | "target" -> targets := (coll_rect.id, { x = coll_rect.x; y = coll_rect.y }) :: !targets
       | _ -> ()
     in
 
     let categorize_trigger (coll_rect : Json_t.coll_rect) =
-      let split s = String.split_at_first ':' s in
+      let split s =
+        match String.split_at_first_opt ':' s with
+        | None, _ -> (s, "")
+        | Some prefix, rest -> (prefix, rest)
+      in
       let name_prefix', name_suffix = split coll_rect.name in
       let (blocking_interaction, name_prefix) : string option * string =
         String.split_at_first_opt '|' name_prefix'
@@ -171,8 +168,8 @@ let init (params : room_params) : room =
       let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
         let dest : rect =
           if floor then
-            (* these were preventing the pixels in the background from being distorted
-               TODO see if that still happens
+            (* TODO see if Float.floor is still needed
+               these were preventing the pixels in the background from being distorted
             *)
             {
               pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
@@ -204,8 +201,14 @@ let init (params : room_params) : room =
 
       let parse_warp_target name : warp_target =
         let room_name, coords = String.split_at_first '@' name in
-        let pos = coords |> Tiled.JsonRoom.coords_to_dest json_room in
-        { room_name; pos }
+        let target = coords |> Tiled.JsonRoom.coords_to_dest json_room in
+        { room_name; target }
+      in
+
+      let get_target_ids (coll_rect : Json_t.coll_rect) =
+        List.Non_empty.map
+          (fun (target : Json_t.connected_object) -> target.id)
+          (coll_rect.targets |> List.to_ne_list)
       in
 
       match name_prefix with
@@ -222,22 +225,20 @@ let init (params : room_params) : room =
             failwithf "horizontal levers aren't supported (%s)" name_suffix
           | _ -> failwithf "got 'lever:%s', needs to be lever:up or lever:down" name_suffix
         in
-        let target_ids =
-          List.map (fun (target : Json_t.connected_object) -> target.id) coll_rect.targets
-        in
-        let door_tile_idxs : int list =
-          let connected (id, pos) = List.mem id target_ids in
-          (* CLEANUP  *)
-          List.filter_map
-            (fun ((target_id, target_pos) : int * vector) ->
-              if List.mem target_id target_ids then
-                Some
-                  (target_pos
-                  |> Tiled.Tile.pos_to_coords
-                  |> Tiled.Tile.coords_to_idx ~width:json_room.w_in_tiles)
-              else
-                None)
-            !targets
+        let target_ids : int ne_list = get_target_ids coll_rect in
+        let door_tile_idxs : int ne_list =
+          let to_tile_idx ((target_id, target_pos) : int * vector) =
+            let to_idx pos =
+              pos
+              |> Tiled.Tile.pos_to_coords
+              |> Tiled.Tile.coords_to_idx ~width:json_room.w_in_tiles
+            in
+            if List.Non_empty.mem target_id target_ids then
+              Some (target_pos |> to_idx)
+            else
+              None
+          in
+          List.filter_map to_tile_idx !targets |> List.to_ne_list
         in
         let lever_sprite : sprite =
           {
@@ -270,10 +271,7 @@ let init (params : room_params) : room =
           }
           :: !lever_triggers
       | "door-health" ->
-        let door_health =
-          (* this uses the object height, eg most breakable walls take 4 hits to destroy, so the door-health rects are 4 pixels high *)
-          coll_rect.h |> Float.to_int
-        in
+        let door_health = name_suffix |> String.to_int in
         add_idx_config (DOOR_HITS door_health)
       | "purple-pen" ->
         let suffix', followup_trigger =
@@ -291,7 +289,6 @@ let init (params : room_params) : room =
         *)
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
       | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
-      (* | "d-nail-item" -> d_nail_triggers := get_object_trigger D_NAIL :: !item_pickup_triggers *)
       | "npc" ->
         (* TODO this should have "Talk" interaction_label *)
         npc_rects :=
@@ -323,17 +320,19 @@ let init (params : room_params) : room =
           :: !enemy_rects
       | "boss-area" -> boss_area := Some (get_object_rect coll_rect)
       | "respawn" ->
-        (* TODO try using connected objects instead of parsing coordinates from the name
-           - get only object in .properties, which should be the respawn:target object
-           - get the coords from that object.id
-
-           - this will only work if the target rect has already been parsed into respawn_targets though
-           - that could be managed manually by creating target first in Tiled, but would be much better for that to be independent
-           - so probably just read all "respawn" triggers into a list, process "target" triggers into respawn_targets,
-             and then after all triggers, build the respawn_triggers from the list + respawn_targets
-        *)
-        let respawn_pos = name_suffix |> Tiled.JsonRoom.coords_to_dest json_room in
-        respawn_triggers := (respawn_pos, get_object_trigger RESPAWN) :: !respawn_triggers
+        let target_ids : int ne_list = get_target_ids coll_rect in
+        let targets : vector ne_list =
+          List.filter_map
+            (fun ((target_id, target_pos) : int * vector) ->
+              if List.Non_empty.mem target_id target_ids then
+                Some
+                  { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
+              else
+                None)
+            !targets
+          |> List.to_ne_list
+        in
+        respawn_triggers := { trigger = get_object_trigger RESPAWN; targets } :: !respawn_triggers
       | "target" ->
         (* targets were already processed in collect_targets *)
         ()
@@ -343,11 +342,12 @@ let init (params : room_params) : room =
       | "cutscene" -> cutscene_triggers := get_object_trigger CUTSCENE :: !cutscene_triggers
       | _ ->
         failwithf
-          "init_room invalid interaction name '%s' - needs to start with 'camera_', 'health_', \
-           'cutscene_', etc."
-          coll_rect.name
+          "init_room invalid interaction name '%s', prefix '%s' - needs to start with 'camera_', \
+           'health_', 'cutscene_', etc."
+          coll_rect.name name_prefix
     in
-    match jl with
+
+    match json_layer with
     | `OBJECT_LAYER json -> (
       match json.name with
       | "spikes" -> List.iter (add_object_rect spikes) json.objects
@@ -355,15 +355,19 @@ let init (params : room_params) : room =
       | "floors" -> List.iter (add_object_rect floors) json.objects
       | "platforms" -> List.iteri make_platform json.objects
       | "conveyor-belts" -> List.iteri make_conveyor_belt json.objects
+      | "respawns"
       | "triggers" ->
+        (* using separate layers for "cameras" and "respawns" so the "triggers" layer is
+           less cluttered *)
         List.iter collect_targets json.objects;
         List.iter categorize_trigger json.objects
-      | "world-map-labels" -> ( (* only used for generating world map *) )
+      | "cameras" -> List.iter categorize_trigger json.objects
       | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
     | `IMAGE_LAYER _
     | `TILE_LAYER _ ->
       ()
   in
+  (* TODO could add some validation that all object layer names are unique *)
   List.iter get_object_rects json_room.layers;
 
   (* need this for on_destroy cache keys *)
@@ -420,7 +424,7 @@ let init (params : room_params) : room =
                 try
                   let number_idx = Str.search_forward r full_name 0 in
                   ( Str.first_chars full_name number_idx,
-                    int_of_string (Str.matched_string full_name) )
+                    Str.matched_string full_name |> String.to_int )
                 with
                 | Not_found -> (full_name, 1)
               in
@@ -683,7 +687,7 @@ let init (params : room_params) : room =
     idx_configs = !idx_configs;
     camera_bounds = create_camera_bounds json_room;
     exits = params.exits;
-    respawn_pos = clone_vector params.respawn_pos;
+    respawn = { in_trigger_now = false; target = clone_vector params.respawn_pos };
     platforms = !platforms;
     floors = !floors;
     triggers =
@@ -693,7 +697,7 @@ let init (params : room_params) : room =
         d_nail = !d_nail_triggers;
         levers = !lever_triggers;
         lore = !lore_triggers;
-        respawn = !respawn_triggers;
+        respawns = !respawn_triggers;
         shadows = !shadow_triggers;
       };
     spikes = !spikes;

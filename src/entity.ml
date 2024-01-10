@@ -37,9 +37,9 @@ let recoil (entity : entity) (direction : direction) =
 
 let freeze (entity : entity) =
   entity.v <- Zero.vector ();
-  entity.update_pos <- false
+  entity.frozen <- true
 
-let unfreeze (entity : entity) = entity.update_pos <- true
+let unfreeze (entity : entity) = entity.frozen <- false
 
 let move_offscreen (entity : entity) =
   entity.dest.pos.x <- -1. *. abs_float entity.dest.pos.x;
@@ -114,7 +114,8 @@ let get_platform_collisions (entity : entity) (platforms : platform list) : coll
         if coll.collided_from = UP then
           entity.current_platforms <- platform :: entity.current_platforms
       | Some (LOCKED_DOOR _)
-      | Some (ROTATABLE _) -> entity.current_platforms <- platform :: entity.current_platforms)
+      | Some (ROTATABLE _) ->
+        entity.current_platforms <- platform :: entity.current_platforms)
   in
   List.iter check_collision platforms;
   !collisions
@@ -214,7 +215,7 @@ let apply_collisions
       if entity.config.inanimate then
         if abs_float entity.v.x < 10. then (
           entity.v.y <- 0.;
-          entity.update_pos <- false)
+          entity.frozen <- true)
         else (
           entity.v.x <- entity.v.x *. 0.3;
           entity.v.y <- entity.v.y *. -1. *. entity.config.bounce)
@@ -240,7 +241,9 @@ let update_pos
     (room : room)
     (dt : float)
     (entity : entity) : collision list =
-  if entity.update_pos then (
+  if entity.frozen then
+    []
+  else (
     let dvy =
       match entity.current_floor with
       | Some _ -> 0.
@@ -260,8 +263,6 @@ let update_pos
       collisions)
     else
       [])
-  else
-    []
 
 (* this is the same as update_pos, but doesn't return the collision list *)
 let update_pos_
@@ -374,32 +375,6 @@ let clone (orig : entity) : entity =
     y_recoil = None;
   }
 
-let create
-    (path : string)
-    ?(scale = Config.scale.ghost)
-    ?(inanimate = false)
-    ?(gravity_multiplier = 1.)
-    ?(v = Zero.vector ())
-    ?(facing_right = true)
-    ?(collision = None)
-    initial_texture
-    (dest : rect) : entity =
-  let animation_src = get_src initial_texture in
-  let sprite_w, sprite_h = (animation_src.w *. scale, animation_src.h *. scale) in
-  {
-    dest;
-    sprite =
-      Sprite.create path initial_texture ~facing_right ~collision
-        { pos = { x = dest.pos.x; y = dest.pos.y }; w = sprite_w; h = sprite_h };
-    config = { bounce = (if inanimate then 0.2 else 0.); inanimate; gravity_multiplier };
-    update_pos = (not inanimate) && is_on_screen' dest;
-    v;
-    current_floor = None;
-    x_recoil = None;
-    y_recoil = None;
-    current_platforms = [];
-  }
-
 let create_for_sprite
     (sprite : sprite)
     ?(inanimate = false)
@@ -410,13 +385,31 @@ let create_for_sprite
     dest;
     sprite;
     config = { bounce = (if inanimate then 0.2 else 0.); inanimate; gravity_multiplier };
-    update_pos = (not inanimate) && is_on_screen' dest;
+    frozen = (inanimate) || not (is_on_screen' dest);
     v;
     current_floor = None;
     x_recoil = None;
     y_recoil = None;
     current_platforms = [];
   }
+
+let create
+    ?(inanimate = false)
+    ?(gravity_multiplier = 1.)
+    ?(v = Zero.vector ())
+    ?(facing_right = true)
+    ?(collision = None)
+    ?(scale = Config.scale.ghost)
+    (path : string)
+    initial_texture
+    (dest : rect) : entity =
+  let animation_src = get_src initial_texture in
+  let sprite_w, sprite_h = (animation_src.w *. scale, animation_src.h *. scale) in
+  let sprite =
+    Sprite.create path initial_texture ~facing_right ~collision
+      { pos = { x = dest.pos.x; y = dest.pos.y }; w = sprite_w; h = sprite_h }
+  in
+  create_for_sprite sprite ~inanimate ~gravity_multiplier ~v dest
 
 let to_texture_config asset_dir character_name ((pose_name, json) : string * Json_t.texture_config)
     : texture_config =

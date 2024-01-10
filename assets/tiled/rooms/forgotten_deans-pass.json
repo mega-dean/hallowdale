@@ -590,21 +590,11 @@
          "y":0
         }, 
         {
+         "color":"#658faf",
          "draworder":"topdown",
          "id":14,
          "name":"triggers",
          "objects":[
-                {
-                 "height":308,
-                 "id":156,
-                 "name":"camera:gx,y",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":549,
-                 "x":1791,
-                 "y":700
-                }, 
                 {
                  "height":72,
                  "id":158,
@@ -639,17 +629,6 @@
                  "y":912
                 }, 
                 {
-                 "height":168,
-                 "id":162,
-                 "name":"respawn:103,84",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":264,
-                 "x":1008,
-                 "y":924
-                }, 
-                {
                  "height":144,
                  "id":166,
                  "name":"hide:shadow3",
@@ -659,17 +638,6 @@
                  "width":84,
                  "x":2940,
                  "y":744
-                }, 
-                {
-                 "height":3,
-                 "id":167,
-                 "name":"door-health:",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":12,
-                 "x":2629,
-                 "y":361
                 }, 
                 {
                  "height":108,
@@ -683,50 +651,6 @@
                  "y":252
                 }, 
                 {
-                 "height":13,
-                 "id":170,
-                 "name":"door-health:",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":12,
-                 "x":3697,
-                 "y":193
-                }, 
-                {
-                 "height":580,
-                 "id":177,
-                 "name":"camera:x,gy",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":605,
-                 "x":315,
-                 "y":-16
-                }, 
-                {
-                 "height":288,
-                 "id":178,
-                 "name":"camera:gx,y",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":1506,
-                 "x":936,
-                 "y":1112
-                }, 
-                {
-                 "height":288,
-                 "id":179,
-                 "name":"camera:gx,y",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":992,
-                 "x":2728,
-                 "y":96
-                }, 
-                {
                  "height":73,
                  "id":180,
                  "name":"hide:shadow5",
@@ -736,17 +660,6 @@
                  "width":82,
                  "x":106,
                  "y":1089
-                }, 
-                {
-                 "height":348,
-                 "id":181,
-                 "name":"camera:>x,y",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":396,
-                 "x":876,
-                 "y":216
                 }, 
                 {
                  "height":73,
@@ -784,7 +697,7 @@
                 {
                  "height":18,
                  "id":189,
-                 "name":"purple-pen:5.09.1+increase-health:",
+                 "name":"purple-pen:5.09.1+increase-health",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -846,17 +759,6 @@
                  "width":24,
                  "x":2136,
                  "y":432
-                }, 
-                {
-                 "height":810,
-                 "id":196,
-                 "name":"camera:>x,<y",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":620,
-                 "x":315,
-                 "y":564
                 }, 
                 {
                  "height":96,
@@ -945,6 +847,278 @@
                  "width":25,
                  "x":1471,
                  "y":390
+                }, 
+                {
+                 "height":168,
+                 "id":218,
+                 "name":"door-health:13",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":3696,
+                 "y":192
+                }, 
+                {
+                 "height":36,
+                 "id":219,
+                 "name":"door-health:3",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":2628,
+                 "y":360
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#777777",
+         "draworder":"topdown",
+         "id":33,
+         "name":"cameras",
+         "objects":[
+                {
+                 "height":580,
+                 "id":233,
+                 "name":"camera:x,gy",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":605,
+                 "x":316,
+                 "y":-16
+                }, 
+                {
+                 "height":288,
+                 "id":234,
+                 "name":"camera:gx,y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":1506,
+                 "x":937,
+                 "y":1112
+                }, 
+                {
+                 "height":810,
+                 "id":235,
+                 "name":"camera:>x,<y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":620,
+                 "x":316,
+                 "y":564
+                }, 
+                {
+                 "height":308,
+                 "id":236,
+                 "name":"camera:gx,y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":549,
+                 "x":1789,
+                 "y":698
+                }, 
+                {
+                 "height":348,
+                 "id":237,
+                 "name":"camera:>x,y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":396,
+                 "x":876,
+                 "y":216
+                }, 
+                {
+                 "height":288,
+                 "id":238,
+                 "name":"camera:gx,y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":984,
+                 "x":2736,
+                 "y":96
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#8e77a2",
+         "draworder":"topdown",
+         "id":32,
+         "name":"respawns",
+         "objects":[
+                {
+                 "height":168,
+                 "id":225,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":226
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":264,
+                 "x":1008,
+                 "y":924
+                }, 
+                {
+                 "height":24,
+                 "id":226,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1260,
+                 "y":1032
+                }, 
+                {
+                 "height":120,
+                 "id":239,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":240
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":241
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":264,
+                 "x":2592,
+                 "y":768
+                }, 
+                {
+                 "height":24,
+                 "id":240,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2412,
+                 "y":708
+                }, 
+                {
+                 "height":24,
+                 "id":241,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2892,
+                 "y":684
+                }, 
+                {
+                 "height":120,
+                 "id":243,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":244
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":245
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":264,
+                 "x":3216,
+                 "y":804
+                }, 
+                {
+                 "height":24,
+                 "id":244,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":3156,
+                 "y":852
+                }, 
+                {
+                 "height":24,
+                 "id":245,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":3504,
+                 "y":852
+                }, 
+                {
+                 "height":432,
+                 "id":248,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":249
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":250
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":264,
+                 "x":24,
+                 "y":528
+                }, 
+                {
+                 "height":24,
+                 "id":249,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":84,
+                 "y":1116
+                }, 
+                {
+                 "height":24,
+                 "id":250,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":60,
+                 "y":348
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1204,6 +1378,7 @@
          "y":0
         }, 
         {
+         "color":"#df4848",
          "draworder":"topdown",
          "id":19,
          "name":"spikes",
@@ -1292,6 +1467,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":4,
          "name":"floors",
@@ -4766,8 +4942,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":31,
- "nextobjectid":216,
+ "nextlayerid":34,
+ "nextobjectid":251,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

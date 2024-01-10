@@ -209,50 +209,7 @@
          "y":0
         }, 
         {
-         "draworder":"topdown",
-         "id":16,
-         "name":"triggers",
-         "objects":[
-                {
-                 "height":18,
-                 "id":14,
-                 "name":"purple-pen:6.12.1",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":20,
-                 "x":2882,
-                 "y":136
-                }],
-         "opacity":1,
-         "type":"objectgroup",
-         "visible":false,
-         "x":0,
-         "y":0
-        }, 
-        {
-         "draworder":"topdown",
-         "id":10,
-         "name":"hazard",
-         "objects":[
-                {
-                 "height":69,
-                 "id":12,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":2376,
-                 "x":189,
-                 "y":393
-                }],
-         "opacity":1,
-         "type":"objectgroup",
-         "visible":false,
-         "x":0,
-         "y":0
-        }, 
-        {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",
@@ -366,6 +323,108 @@
                  "width":276,
                  "x":0,
                  "y":324
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#af4848",
+         "draworder":"topdown",
+         "id":10,
+         "name":"hazard",
+         "objects":[
+                {
+                 "height":69,
+                 "id":12,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":2376,
+                 "x":189,
+                 "y":393
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#8e77a2",
+         "draworder":"topdown",
+         "id":18,
+         "name":"respawns",
+         "objects":[
+                {
+                 "height":24,
+                 "id":15,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":228,
+                 "y":312
+                }, 
+                {
+                 "height":312,
+                 "id":16,
+                 "name":"respawn",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":17
+                        }, 
+                        {
+                         "name":"b",
+                         "type":"object",
+                         "value":15
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":2280,
+                 "x":276,
+                 "y":96
+                }, 
+                {
+                 "height":24,
+                 "id":17,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2580,
+                 "y":312
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#658faf",
+         "draworder":"topdown",
+         "id":16,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":18,
+                 "id":14,
+                 "name":"purple-pen:6.12.1",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":20,
+                 "x":2882,
+                 "y":136
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -762,8 +821,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":18,
- "nextobjectid":15,
+ "nextlayerid":19,
+ "nextobjectid":18,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

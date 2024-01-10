@@ -261,7 +261,7 @@ type entity = {
   config : entity_config;
   dest : rect;
   mutable v : vector;
-  mutable update_pos : bool;
+  mutable frozen : bool;
   mutable x_recoil : recoil option;
   mutable y_recoil : recoil option;
   (* vector is usually 0, but is nonzero for conveyor belts *)
@@ -434,6 +434,11 @@ type menu = {
 type save_slot = {
   file : Json_t.save_file;
   new_game : bool;
+}
+
+type warp_target = {
+  room_name : string;
+  target : vector;
 }
 
 type trigger_kind =
@@ -1214,7 +1219,20 @@ type lever = {
   sprite : sprite;
   trigger : trigger;
   transformation : int;
-  door_tile_idxs : int list;
+  door_tile_idxs : int ne_list;
+}
+
+(* respawn.pos only gets updated to the nearest respawn target whenever the ghost enters
+   a respawn trigger, not every frame
+*)
+type respawn = {
+  mutable in_trigger_now : bool;
+  mutable target : vector;
+}
+
+type respawn_trigger = {
+  trigger : trigger;
+  targets : vector ne_list;
 }
 
 type triggers = {
@@ -1222,12 +1240,9 @@ type triggers = {
   cutscene : trigger list;
   d_nail : trigger list;
   levers : lever list;
-  (* this is used for any infinitely-repeatable interactions, like reading lore or warping
-     TODO maybe use a separate field for warp : (vector * string * trigger) list
-     target x/y, target room name
-  *)
+  (* this is used for any infinitely-repeatable interactions, like reading lore or warping *)
   lore : trigger list;
-  respawn : (vector * trigger) list;
+  respawns : respawn_trigger list;
   shadows : trigger list;
 }
 
@@ -1253,10 +1268,6 @@ type room_params = {
   platforms : texture String.Map.t;
 }
 
-(* TODO add current_interaction : string to handle dying during a boss-fight
-   - unset on death
-   - on duncan-killed, move current_interaction into finished_interactions
-*)
 type room = {
   id : room_id;
   area : area;
@@ -1268,7 +1279,7 @@ type room = {
   enemies : enemy list;
   boss_area : rect option;
   exits : rect list;
-  mutable respawn_pos : vector;
+  mutable respawn : respawn;
   mutable npcs : npc list;
   mutable layers : layer list;
   mutable interaction_label : (string * rect) option;

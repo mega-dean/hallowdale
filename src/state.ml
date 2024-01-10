@@ -574,7 +574,7 @@ let update_npcs (game : game) (state : state) =
   let update_ghost (party_ghost : party_ghost) =
     let ghost = party_ghost.ghost in
     Sprite.advance_animation state.frame.time ghost.entity.sprite;
-    if ghost.entity.update_pos then (
+    if not ghost.entity.frozen then (
       Entity.update_pos_ game.room state.frame.dt ghost.entity;
       Entity.maybe_unset_current_floor ghost.entity game.room)
   in
@@ -764,6 +764,15 @@ let tick (state : state) =
             (List.map
                (fun (p : platform) -> (Raylib.Color.orange, p.sprite.dest))
                game.room.platforms);
+
+          add_debug_rects state
+            [
+              ( (if game.room.respawn.in_trigger_now then
+                   Raylib.Color.red
+                 else
+                   Raylib.Color.green),
+                { pos = game.room.respawn.target; w = 100.; h = 100. } );
+            ];
 
           add_debug_rects state
             (List.map (fun (rect, _) -> (Raylib.Color.orange, rect)) game.room.conveyor_belts);
