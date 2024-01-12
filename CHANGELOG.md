@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.9] - 2024-01-12
+
 - allow another dash in the air after dashing off a ledge
 - fix slash direction when wall-sliding
 - fix Vengeful Spirit recoil
@@ -71,6 +73,7 @@
 
 - demo release
 
+[0.0.9]: https://github.com/mega-dean/hallowdale/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/mega-dean/hallowdale/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/mega-dean/hallowdale/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/mega-dean/hallowdale/compare/v0.0.5...v0.0.6
