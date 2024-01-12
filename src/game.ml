@@ -27,6 +27,9 @@ let empty_save_file () : Json_t.save_file =
         vengeful_spirit = true;
         desolate_dive = false;
         howling_wraiths = false;
+        shade_soul = false;
+        descending_dark = false;
+        abyss_shriek = false;
       };
     progress =
       {
@@ -107,10 +110,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
 let initialize_steel_sole (save_file : Json_t.save_file) =
   {
     save_file with
-    progress = {
-      save_file.progress with
-      keys_found = ["Dean's Closet"];
-    };
+    progress = { save_file.progress with keys_found = [ "Dean's Closet" ] };
     ghosts_in_party = List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
     abilities =
       {
@@ -125,6 +125,10 @@ let initialize_steel_sole (save_file : Json_t.save_file) =
         desolate_dive = true;
         (* not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
         shade_cloak = false;
+
+        shade_soul = false;
+        descending_dark = false;
+        abyss_shriek = false;
       };
   }
 

@@ -828,8 +828,19 @@ type frame_inputs = {
    pppppccccccppppp
         c    c
         cccccc
+
+   x = IN_FRONT, y = CENTER ->
+   (p is facing right)
+   ppppppppppp
+   p         p
+   p    ccccccccccc
+   p    c         c
+   p    ccccccccccc
+   p         p
+   ppppppppppp
 *)
 type x_alignment =
+  | IN_FRONT of bool
   | LEFT_INSIDE
   | RIGHT_INSIDE
   | LEFT_OUTSIDE
@@ -843,9 +854,16 @@ type y_alignment =
   | BOTTOM_OUTSIDE
   | CENTER
 
-let align x_alignment y_alignment parent_dest child_w child_h : vector =
+type relative_position = x_alignment * y_alignment
+
+let align ((x_alignment, y_alignment) : relative_position) parent_dest child_w child_h : vector =
   let x =
     match x_alignment with
+    | IN_FRONT facing_right ->
+      if facing_right then
+        rect_center_x parent_dest
+      else
+        rect_center_x parent_dest -. child_w
     | LEFT_INSIDE -> parent_dest.pos.x
     | RIGHT_INSIDE -> parent_dest.pos.x +. parent_dest.w -. child_w
     | LEFT_OUTSIDE -> parent_dest.pos.x -. child_w
@@ -861,11 +879,6 @@ let align x_alignment y_alignment parent_dest child_w child_h : vector =
     | CENTER -> parent_dest.pos.y +. ((parent_dest.h -. child_h) /. 2.)
   in
   { x; y }
-
-type relative_position =
-  | IN_FRONT
-  | BEHIND
-  | ALIGNED of x_alignment * y_alignment
 
 (* ghost will only have one NAIL child at a time, so slashes don't really need to be comparable *)
 let compare_slash a b = 0
@@ -959,7 +972,11 @@ type ghost_shared_textures = {
   downslash : texture;
   shine : texture;
   health : texture;
-  vengeful_cushion : texture;
+  vengeful_spirit : texture;
+  (* - shade-soul needs a separate texture because it is bigger than vengeful spirit
+     - d-dark and shriek use the same size, but different tint
+  *)
+  shade_soul : texture;
   desolate_dive : texture;
   dive_shockwave : texture;
   howling_wraiths : texture;
@@ -1476,6 +1493,9 @@ let clone_abilities (abilities : Json_t.ghost_abilities) : Json_t.ghost_abilitie
     shade_cloak = abilities.shade_cloak;
     (* spells *)
     vengeful_spirit = abilities.vengeful_spirit;
+    shade_soul = abilities.shade_soul;
     desolate_dive = abilities.desolate_dive;
+    descending_dark = abilities.descending_dark;
     howling_wraiths = abilities.howling_wraiths;
+    abyss_shriek = abilities.abyss_shriek;
   }

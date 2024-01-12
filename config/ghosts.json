@@ -84,7 +84,11 @@
             "count": 3,
             "duration": 0.06
         }],
-        ["vengeful-cushion", {
+        ["vengeful-spirit", {
+            "count": 2,
+            "duration": 0.066666
+        }],
+        ["shade-soul", {
             "count": 2,
             "duration": 0.066666
         }],

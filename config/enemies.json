@@ -2,7 +2,7 @@
     "enemies": [
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 5,
+            "health": 65,
             "w": 19,
             "h": 45,
             "dream_nail": {},
@@ -46,7 +46,7 @@
 
         [ "LOCKER_BOY", {
             "kind": "multi-boss",
-            "health": 1,
+            "health": 80,
             "w": 22,
             "h": 40,
             "dream_nail": {},

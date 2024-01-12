@@ -254,6 +254,23 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             "Hold (X) to charge and slash with the nail.";
             "Cut through the veil between dreams and waking.";
           ]
+      | "sealy-select" ->
+        get_ability_steps "shade_soul" 0. 1. ~quote
+          [ "Consumed the"; "Hypoallergenic Sealy Select." ]
+          [
+            "Tap (A)";
+            "to unleash a more powerful Cushion.";
+            "This spell consumes the same amount of LIFE VAPOR,";
+            "with increased power.";
+          ]
+      | "torvins-flesh-of-fire" ->
+        get_ability_steps "descending_dark" 0. 3. ~quote
+          [ "Learned"; "Torvin's Flesh of Fire." ]
+          [ "Tap (A) while holding DOWN"; "to strike the earth with a burst of white-hot flame." ]
+      | "vapors-of-magmarath" ->
+        get_ability_steps "howling_wraiths" 0. 6. ~quote
+          [ "Consumed the"; "Vapors of Magmarath." ]
+          [ "Tap (A) while holding UP"; "to unleash the Vapors." ]
       | _ -> fail ())
     | "cutscene" -> (
       match trigger.name_suffix with
@@ -707,6 +724,4 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
   let steps = List.concat_map get_interaction_steps triggers in
 
   (* SET_GHOST_CAMERA to reset the camera if it changed *)
-  [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ]
-  @ steps
-  @ [ STEP CONCLUDE_INTERACTIONS ]
+  [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ] @ steps @ [ STEP CONCLUDE_INTERACTIONS ]

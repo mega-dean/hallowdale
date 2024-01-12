@@ -99,7 +99,7 @@ let spawn_projectile
     | None -> get_attr enemy "projectile_vx"
     | Some vx' -> vx'
   in
-  let spawn_pos = Entity.get_child_pos enemy.entity (ALIGNED (x_alignment, CENTER)) w h in
+  let spawn_pos = Entity.get_child_pos enemy.entity (x_alignment, CENTER) w h in
   let vx' =
     match direction with
     | LEFT -> -1. *. vx
@@ -182,7 +182,7 @@ let maybe_take_damage
     let damage_texture = state.global.textures.damage in
     let texture_w, texture_h = get_scaled_texture_size Config.scale.room damage_texture in
     let new_damage_sprite =
-      let pos = align CENTER CENTER enemy.entity.dest texture_w texture_h in
+      let pos = align (CENTER, CENTER) enemy.entity.dest texture_w texture_h in
       Sprite.spawn_particle
         (fmt "damage %s" (Show.enemy_name enemy))
         damage_texture
@@ -1108,7 +1108,7 @@ module Bird : M = struct
         Action.start_and_log enemy CHANGE_DIRECTION args.frame_time
           [ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
     in
-    if get_bool_prop enemy "is_chasing" then
+    if false && get_bool_prop enemy "is_chasing" then
       handle_chasing ()
     else
       handle_drifting ()

@@ -222,8 +222,11 @@ type ghost_abilities = {
   shade_cloak <ocaml mutable> : bool;
   (* spells *)
   vengeful_spirit <ocaml mutable> : bool;
+  shade_soul <ocaml mutable> : bool;
   desolate_dive <ocaml mutable> : bool;
+  descending_dark <ocaml mutable> : bool;
   howling_wraiths <ocaml mutable> : bool;
+  abyss_shriek <ocaml mutable> : bool;
 }
 
 type steel_sole_progress = {

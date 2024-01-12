@@ -586,24 +586,23 @@ let update_npcs (game : game) (state : state) =
   state
 
 let update_spawned_vengeful_spirits (game : game) (state : state) =
-  let damage_enemies vs_start_time (entity : entity) =
+  let damage_enemies vs_start_time (projectile : projectile) =
     let maybe_damage_enemy (enemy : enemy) =
       if enemy.status.check_damage_collisions then (
-        match Collision.with_entity enemy.entity entity.dest with
+        match Collision.with_entity enemy.entity projectile.entity.dest with
         | None -> ()
         | Some collision ->
-          let collision_direction = if entity.v.x > 0. then RIGHT else LEFT in
+          let collision_direction = if projectile.entity.v.x > 0. then RIGHT else LEFT in
           ignore
             (Enemy.maybe_take_damage ~collision_direction state enemy vs_start_time VENGEFUL_SPIRIT
-               (Player.get_damage game.player VENGEFUL_SPIRIT)
-               collision))
+               projectile.damage collision))
     in
     List.iter maybe_damage_enemy game.room.enemies
   in
   let update_vengeful_spirit (projectile : projectile) =
     let keep_spawned = update_projectile projectile game.room state in
     if keep_spawned then
-      damage_enemies projectile.spawned projectile.entity
+      damage_enemies projectile.spawned projectile
     else
       game.player.spawned_vengeful_spirits <-
         List.filter (fun p -> p <> projectile) game.player.spawned_vengeful_spirits

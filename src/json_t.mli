@@ -95,8 +95,11 @@ type ghost_abilities = {
   mutable mothwing_cloak: bool;
   mutable shade_cloak: bool;
   mutable vengeful_spirit: bool;
+  mutable shade_soul: bool;
   mutable desolate_dive: bool;
-  mutable howling_wraiths: bool
+  mutable descending_dark: bool;
+  mutable howling_wraiths: bool;
+  mutable abyss_shriek: bool
 }
 
 type game_progress = {

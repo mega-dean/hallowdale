@@ -324,11 +324,11 @@ let make_c_dash_child ?(full = false) (player : player) : unit =
     | Some _, true -> player.shared_textures.c_dash_wall_crystals_full
     | Some _, false -> player.shared_textures.c_dash_wall_crystals
   in
-  let alignment =
+  let alignment : relative_position =
     match (player.current.wall, player.ghost.entity.sprite.facing_right) with
-    | None, _ -> ALIGNED (CENTER, BOTTOM_INSIDE)
-    | Some _, true -> ALIGNED (LEFT_INSIDE, CENTER)
-    | Some _, false -> ALIGNED (RIGHT_INSIDE, CENTER)
+    | None, _ -> (CENTER, BOTTOM_INSIDE)
+    | Some _, true -> (LEFT_INSIDE, CENTER)
+    | Some _, false -> (RIGHT_INSIDE, CENTER)
   in
   let child_kind =
     match player.current.wall with
@@ -367,10 +367,10 @@ let get_damage (player : player) (damage_kind : damage_kind) =
     |> List.map snd
     |> List.map (fun (w : Json_t.weapon) -> w.damage)
     |> List.fold_left ( + ) 0
-  | VENGEFUL_SPIRIT -> 15
-  | DESOLATE_DIVE -> 15
-  | DESOLATE_DIVE_SHOCKWAVE -> 20
-  | HOWLING_WRAITHS -> 13
+  | VENGEFUL_SPIRIT -> if player.abilities.shade_soul then 30 else 15
+  | DESOLATE_DIVE -> if player.abilities.descending_dark then 30 else 15
+  | DESOLATE_DIVE_SHOCKWAVE -> if player.abilities.descending_dark then 40 else 20
+  | HOWLING_WRAITHS -> if player.abilities.abyss_shriek then 25 else 13
 
 (* TODO use collision shape for dream nail *)
 let check_dream_nail_collisions (state : state) (game : game) =
@@ -521,7 +521,7 @@ let resolve_slash_collisions (state : state) (game : game) =
           let new_fragment = Entity.clone entity in
           let new_pos, new_v =
             if broken then
-              ( align CENTER TOP_INSIDE tile_group.dest entity.dest.w entity.dest.h,
+              ( align (CENTER, TOP_INSIDE) tile_group.dest entity.dest.w entity.dest.h,
                 { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () } )
             else (
               let door_is_vertical = tile_group.dest.h > tile_group.dest.w in
@@ -533,7 +533,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                   else
                     (TOP_OUTSIDE, UP)
                 in
-                let pos = align CENTER y_alignment tile_group.dest entity.dest.w entity.dest.h in
+                let pos = align (CENTER, y_alignment) tile_group.dest entity.dest.w entity.dest.h in
                 ( { pos with x = randomize pos.x (tile_group.dest.w /. 2.) },
                   {
                     x = Config.random_fragment_vx ();
@@ -548,7 +548,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                   else
                     (LEFT_OUTSIDE, LEFT)
                 in
-                let pos = align x_alignment CENTER tile_group.dest entity.dest.w entity.dest.h in
+                let pos = align (x_alignment, CENTER) tile_group.dest entity.dest.w entity.dest.h in
                 ( { pos with y = randomize pos.y (tile_group.dest.h /. 2.) },
                   {
                     x = Config.random_fragment_vx ~direction:(Some vx_direction) ();
@@ -850,14 +850,19 @@ let past_cooldown ?(debug = false) pose_frames frame_time : bool =
   pose_frames.blocked_until.at < frame_time
 
 let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None) state game =
-  let texture = game.player.shared_textures.vengeful_cushion in
-  let w, h = get_scaled_texture_size Config.scale.ghost texture in
-  let x, y =
-    match start with
-    | None -> (game.player.ghost.entity.dest.pos.x, game.player.ghost.entity.dest.pos.y)
-    | Some v -> (v.x, v.y)
+  let texture =
+    if game.player.abilities.shade_soul then
+      game.player.shared_textures.shade_soul
+    else
+      game.player.shared_textures.vengeful_spirit
   in
-  let dest = { pos = { x; y }; w; h } in
+  let w, h = get_scaled_texture_size Config.scale.ghost texture in
+  let pos =
+    align
+      (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER)
+      game.player.ghost.entity.dest w h
+  in
+  let dest = { pos; w; h } in
   let facing_right =
     match direction with
     | None -> game.player.ghost.entity.sprite.facing_right
@@ -877,10 +882,13 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
     }
   in
   let vx =
-    if facing_right then
-      Config.action.vengeful_spirit_vx
-    else
-      -1. *. Config.action.vengeful_spirit_vx
+    let vx =
+      if game.player.abilities.shade_soul then
+        Config.action.shade_soul_vx
+      else
+        Config.action.vengeful_spirit_vx
+    in
+    if facing_right then vx else -1. *. vx
   in
   let projectile : projectile =
     {
@@ -889,10 +897,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
       despawn = TIME_LEFT { seconds = Config.action.vengeful_spirit_duration };
       spawned = { at = state.frame.time };
       pogoable = true;
-      (* TODO could try to use this for ghost projectiles, but this field is
-         currently "damage done to ghost" for enemy projectiles
-      *)
-      damage = 1;
+      damage = get_damage game.player VENGEFUL_SPIRIT;
       (* TODO this should be based on shade soul *)
       collide_with_floors = false;
     }
@@ -936,13 +941,13 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
     | ATTACK direction ->
       Audio.play_sound state "nail-swing";
 
-      let relative_pos =
+      let relative_pos : relative_position =
         match direction with
-        | UP -> ALIGNED (CENTER, BOTTOM_INSIDE)
-        | DOWN -> ALIGNED (CENTER, TOP_INSIDE)
+        | UP -> (CENTER, BOTTOM_INSIDE)
+        | DOWN -> (CENTER, TOP_INSIDE)
         | LEFT
         | RIGHT ->
-          IN_FRONT
+          (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER)
       in
       let slash =
         make_slash game.player direction relative_pos game.player.ghost.entity.sprite
@@ -982,9 +987,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.ghost.entity.current_floor <- None;
       let alignment =
         if game.player.ghost.entity.sprite.facing_right then
-          ALIGNED (RIGHT_INSIDE, CENTER)
+          (RIGHT_INSIDE, CENTER)
         else
-          ALIGNED (LEFT_INSIDE, CENTER)
+          (LEFT_INSIDE, CENTER)
       in
       spawn_child game.player C_DASH_WHOOSH ~scale:Config.ghost.c_dash_whoosh_scale alignment
         game.player.shared_textures.c_dash_whoosh;
@@ -1023,16 +1028,14 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           (game.player.ghost.entity.dest.w *. 5., game.player.ghost.entity.dest.h *. 5.)
         in
         let child =
-          make_ghost_child game.player DIVE
-            (ALIGNED (CENTER, BOTTOM_INSIDE))
+          make_ghost_child game.player DIVE (CENTER, BOTTOM_INSIDE)
             game.player.shared_textures.desolate_dive w h
         in
         add_child game.player DIVE child;
         game.player.history.cast_dive
       | HOWLING_WRAITHS ->
-        spawn_child game.player WRAITHS
-          (ALIGNED (CENTER, BOTTOM_INSIDE))
-          ~scale:Config.ghost.wraiths_scale game.player.shared_textures.howling_wraiths;
+        spawn_child game.player WRAITHS (CENTER, BOTTOM_INSIDE) ~scale:Config.ghost.wraiths_scale
+          game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
     | DIE ->
       Audio.play_sound state "break";
@@ -1100,8 +1103,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.soul.at_focus_start <- game.player.soul.current;
       game.player.soul.health_at_focus_start <- game.player.health.current;
       game.player.soul.last_decremented <- { at = state.frame.time };
-      spawn_child game.player FOCUS ~in_front:true ~scale:Config.scale.focus
-        (ALIGNED (CENTER, CENTER))
+      spawn_child game.player FOCUS ~in_front:true ~scale:Config.scale.focus (CENTER, CENTER)
         game.player.shared_textures.focus_sparkles;
       game.player.history.focus
     | JUMP -> game.player.history.jump
@@ -1144,12 +1146,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       state.frame.time -. game.player.history.dream_nail.started.at
       > game.player.history.dream_nail.config.duration.seconds -. 0.1
     then (
-      let alignment =
-        if game.player.ghost.entity.sprite.facing_right then
-          ALIGNED (LEFT_INSIDE, CENTER)
-        else
-          ALIGNED (RIGHT_INSIDE, CENTER)
-      in
+      let alignment = (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER) in
       spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash
         ~scale:Config.scale.dream_nail)
   | DIE ->
@@ -1262,6 +1259,9 @@ let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   | "vengeful_spirit" -> ghost.abilities.vengeful_spirit <- new_val ghost.abilities.vengeful_spirit
   | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
   | "howling_wraiths" -> ghost.abilities.howling_wraiths <- new_val ghost.abilities.howling_wraiths
+  | "shade_soul" -> ghost.abilities.shade_soul <- new_val ghost.abilities.shade_soul
+  | "descending_dark" -> ghost.abilities.descending_dark <- new_val ghost.abilities.descending_dark
+  | "abyss_shriek" -> ghost.abilities.abyss_shriek <- new_val ghost.abilities.abyss_shriek
   | "mothwing_cloak" -> ghost.abilities.mothwing_cloak <- new_val ghost.abilities.mothwing_cloak
   | "shade_cloak" -> ghost.abilities.shade_cloak <- new_val ghost.abilities.shade_cloak
   | "mantis_claw" -> ghost.abilities.mantis_claw <- new_val ghost.abilities.mantis_claw
@@ -1391,8 +1391,11 @@ let handle_debug_keys (game : game) (state : state) =
         (* game.ghost.health.current <- game.ghost.health.current - 1 *)
         game.player.soul.current <- game.player.soul.max;
         ())
-      else if key_pressed DEBUG_3 then (* toggle_ability game.player "vengeful_spirit" *)
-        print "player water is_some: %b" (Option.is_some game.player.current.water)
+      else if key_pressed DEBUG_3 then (
+        (* print "player water is_some: %b" (Option.is_some game.player.current.water) *)
+        toggle_ability game.player "shade_soul";
+        toggle_ability game.player "descending_dark";
+        toggle_ability game.player "abyss_shriek")
       else if key_pressed DEBUG_4 then (
         toggle_ability game.player "desolate_dive";
         (* toggle_ability game.player "ismas_tear" *)
@@ -1939,7 +1942,7 @@ let tick (game : game) (state : state) =
               start_action state game DIVE_COOLDOWN;
               let child =
                 let dest = game.player.ghost.entity.dest in
-                let relative_pos = ALIGNED (CENTER, BOTTOM_INSIDE) in
+                let relative_pos : relative_position = (CENTER, BOTTOM_INSIDE) in
                 let w, h =
                   (* TODO this scaling is temporary so the current dive.png can be used *)
                   (dest.w *. 15., dest.h *. 3.)
@@ -2084,8 +2087,7 @@ let tick (game : game) (state : state) =
         in
 
         if can_shade_dash () then (
-          spawn_child game.player SHADE_DASH_SPARKLES ~in_front:true ~scale:6.
-            (ALIGNED (CENTER, CENTER))
+          spawn_child game.player SHADE_DASH_SPARKLES ~in_front:true ~scale:6. (CENTER, CENTER)
             game.player.shared_textures.shade_cloak_sparkles;
           start_action state game SHADE_DASH);
         start_action state game DASH;
@@ -2362,6 +2364,8 @@ let tick (game : game) (state : state) =
         if game.player.health.current > 0 then
           hazard_respawn state game)
       else if game.player.health.current > 0 then (
+        game.player.current.is_diving <- false;
+        game.player.children <- Ghost_child_kind.Map.empty;
         state.camera.shake <- 1.;
         game.player.current.is_taking_hazard_damage <- true;
         start_action state game TAKE_DAMAGE_AND_RESPAWN)
@@ -2680,7 +2684,8 @@ let load_shared_textures (shared_texture_configs : texture_config String.Map.t) 
     shine = build_shared_texture "shine";
     health = build_shared_texture "health";
     energon_pod = build_shared_texture "energon-pod";
-    vengeful_cushion = build_shared_texture "vengeful-cushion";
+    vengeful_spirit = build_shared_texture "vengeful-spirit";
+    shade_soul = build_shared_texture "shade-soul";
     desolate_dive = build_shared_texture "desolate-dive";
     dive_shockwave = build_shared_texture ~particle:true "desolate-dive";
     howling_wraiths = build_shared_texture ~particle:true "howling-wraiths";

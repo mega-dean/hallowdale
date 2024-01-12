@@ -630,9 +630,7 @@ let tick (state : state) =
       | None -> ()
       | Some (label, dest) ->
         let w = measure_text label in
-        let pos =
-          Entity.get_child_pos' dest true (ALIGNED (CENTER, TOP_INSIDE)) (w |> Int.to_float) line_height
-        in
+        let pos = align (CENTER, TOP_INSIDE) dest (w |> Int.to_float) line_height in
         Raylib.draw_text label (pos.x |> Float.to_int) (pos.y |> Float.to_int) font_size
           Color.raywhite
     in
@@ -879,27 +877,28 @@ let tick (state : state) =
           sprite.dest.pos <- get_child_pos sprite.dest.w sprite.dest.h;
           draw_sprite ~tint sprite
         in
-        match child_kind with
-        | NAIL slash ->
-          if state.debug.enabled then (
-            debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
-            match slash.collision with
-            | SHAPE shape -> debug_shape_outline ~size:2. ~color:Color.red slash.sprite shape
-            | _ -> ());
-          let tint = player.current_weapon.tint in
-          draw_child_sprite slash.sprite player.current_weapon.tint
-        | DREAM_NAIL
-        | C_DASH_WHOOSH
-        | SHADE_DASH_SPARKLES
-        | C_DASH_CHARGE_CRYSTALS
-        | C_DASH_WALL_CHARGE_CRYSTALS
-        | FOCUS
-        | WRAITHS
-        | DIVE_COOLDOWN
-        | DIVE ->
-          if state.debug.enabled then
-            debug_rect_outline ~size:2. ~color:Color.purple child.sprite.dest;
-          draw_child_sprite child.sprite Color.raywhite
+        let tint =
+          match child_kind with
+          | NAIL slash ->
+            if state.debug.enabled then (
+              debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
+              match slash.collision with
+              | SHAPE shape -> debug_shape_outline ~size:2. ~color:Color.red slash.sprite shape
+              | _ -> ());
+            player.current_weapon.tint
+          | WRAITHS -> if game.player.abilities.abyss_shriek then Color.red else Color.white
+          | DIVE_COOLDOWN
+          | DIVE ->
+            if game.player.abilities.descending_dark then Color.red else Color.white
+          | DREAM_NAIL
+          | C_DASH_WHOOSH
+          | SHADE_DASH_SPARKLES
+          | C_DASH_CHARGE_CRYSTALS
+          | C_DASH_WALL_CHARGE_CRYSTALS
+          | FOCUS ->
+            Color.white
+        in
+        draw_child_sprite child.sprite tint
       in
       let draw_vengeful_spirit (p : projectile) =
         if state.debug.enabled then
@@ -907,27 +906,18 @@ let tick (state : state) =
         draw_entity p.entity
       in
       List.iter draw_vengeful_spirit player.spawned_vengeful_spirits;
-      let shine_sprite : sprite =
-        (* TODO maybe have different shine for each area (this one might be too bright for basement or computer-wing) *)
-        (* TODO same as nail swings - this sprite should be cached somewhere instead of created every frame *)
-        let size = 1200. in
-        {
-          ident = "shine";
-          texture = game.player.shared_textures.shine;
-          dest =
-            {
-              pos = Entity.get_child_pos player.ghost.entity (ALIGNED (CENTER, CENTER)) size size;
-              w = size;
-              h = size;
-            };
-          facing_right = false;
-          collision = None;
-        }
-      in
       let children_in_front, children_behind =
         Ghost_child_kind.Map.partition (fun _ child -> child.in_front) player.children
       in
-      draw_sprite shine_sprite;
+      let shine_dest =
+        let size = Config.ghost.shine_size in
+        {
+          pos = Entity.get_child_pos player.ghost.entity (CENTER, CENTER) size size;
+          w = size;
+          h = size;
+        }
+      in
+      draw_texture game.player.shared_textures.shine shine_dest 0;
       Ghost_child_kind.Map.iter draw_child children_behind;
 
       draw_entity ~tint ~render_offset:(ghost_render_offset player.ghost) player.ghost.entity;

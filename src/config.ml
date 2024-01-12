@@ -133,6 +133,7 @@ type ghost_config = {
   pogo_recoil_time : float;
   nail_recoil_time : float;
   damage_recoil_time : float;
+  shine_size : float;
   head_w : float;
   head_h : float;
   neck_x : float;
@@ -166,6 +167,7 @@ let ghost : ghost_config =
     damage_recoil_time = 0.066666;
     (* this is currently used for both damage recoils and pogos *)
     recoil_speed = 800. *. window_scale;
+    shine_size = 1200. *. window_scale;
     (* every ghost head image is 40px by 40px *)
     head_w = 40. *. scale.ghost;
     head_h = 40. *. scale.ghost;
@@ -183,17 +185,20 @@ type action_config = {
   soul_gained_per_nail : int;
   attack_duration : float;
   vengeful_spirit_vx : float;
+  shade_soul_vx : float;
   vengeful_spirit_recoil : float;
   vengeful_spirit_duration : float;
 }
 
 let action : action_config =
+  let vengeful_spirit_vx = 1000. *. window_scale in
   {
     max_soul = 99;
     soul_per_cast = 33;
     soul_gained_per_nail = 11;
     attack_duration = 0.07;
-    vengeful_spirit_vx = 1000. *. window_scale;
+    vengeful_spirit_vx;
+    shade_soul_vx = vengeful_spirit_vx *. 1.125;
     vengeful_spirit_recoil = 80. *. window_scale;
     vengeful_spirit_duration = 1.5;
   }

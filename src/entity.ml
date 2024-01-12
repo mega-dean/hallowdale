@@ -297,31 +297,8 @@ let maybe_unset_current_floor (entity : entity) (room : room) =
     if walked_over_edge || jumping_over_edge then
       entity.current_floor <- None
 
-let get_child_pos'
-    (parent_dest : rect)
-    (facing_right : bool)
-    (relative_pos : relative_position)
-    child_w
-    child_h =
-  let to_the_left () =
-    { y = parent_dest.pos.y; x = parent_dest.pos.x -. child_w +. (parent_dest.w /. 2.) }
-  in
-  let to_the_right () = { y = parent_dest.pos.y; x = rect_center_x parent_dest } in
-  match relative_pos with
-  | IN_FRONT ->
-    if facing_right then
-      to_the_right ()
-    else
-      to_the_left ()
-  | BEHIND ->
-    if facing_right then
-      to_the_left ()
-    else
-      to_the_right ()
-  | ALIGNED (x_alignment, y_alignment) -> align x_alignment y_alignment parent_dest child_w child_h
-
 let get_child_pos (parent : entity) (relative_pos : relative_position) child_w child_h =
-  get_child_pos' parent.dest parent.sprite.facing_right relative_pos child_w child_h
+  align relative_pos parent.dest child_w child_h
 
 let on_ground (e : entity) = e.current_floor <> None
 let descending (e : entity) = e.v.y > 0.
@@ -385,7 +362,7 @@ let create_for_sprite
     dest;
     sprite;
     config = { bounce = (if inanimate then 0.2 else 0.); inanimate; gravity_multiplier };
-    frozen = (inanimate) || not (is_on_screen' dest);
+    frozen = inanimate || not (is_on_screen' dest);
     v;
     current_floor = None;
     x_recoil = None;
