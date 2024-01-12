@@ -461,6 +461,7 @@ type camera_motion =
 module Interaction = struct
   type general_step =
     | INITIALIZE_INTERACTIONS of bool
+    | CONCLUDE_INTERACTIONS
     | FADE_SCREEN_OUT
     | FADE_SCREEN_IN
     | SHAKE_SCREEN of float
@@ -474,7 +475,6 @@ module Interaction = struct
     | FLOATING_TEXT of string * float
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
-    | RESET_TEXT
     (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
     | DIALOGUE of string * string
     | PURPLE_PEN_TEXT of string

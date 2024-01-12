@@ -509,25 +509,27 @@ let update_enemies (game : game) (state : state) =
       Sprite.advance_or_despawn state.frame.time sprite.texture sprite
     in
     enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
-    (match Player.get_spell_sprite game.player with
-    | None -> ()
-    | Some (sprite, action_started) -> (
-      (* TODO use Collision.between_shapes *)
-      match Collision.with_entity enemy.entity sprite.dest with
+    if Enemy.is_alive enemy then (
+      match Player.get_spell_sprite game.player with
       | None -> ()
-      | Some collision ->
-        let damage_kind =
-          if game.player.current.is_diving then
-            DESOLATE_DIVE
-          else if not (Player.past_cooldown game.player.history.dive_cooldown state.frame.time) then
-            DESOLATE_DIVE_SHOCKWAVE
-          else
-            HOWLING_WRAITHS
-        in
-        ignore
-          (Enemy.maybe_take_damage state enemy action_started damage_kind
-             (Player.get_damage game.player damage_kind)
-             collision)));
+      | Some (sprite, action_started) -> (
+        (* TODO use Collision.between_shapes *)
+        match Collision.with_entity enemy.entity sprite.dest with
+        | None -> ()
+        | Some collision ->
+          let damage_kind, collision_direction =
+            if game.player.current.is_diving then
+              (DESOLATE_DIVE, DOWN)
+            else if not (Player.past_cooldown game.player.history.dive_cooldown state.frame.time)
+            then
+              (DESOLATE_DIVE_SHOCKWAVE, UP)
+            else
+              (HOWLING_WRAITHS, UP)
+          in
+          ignore
+            (Enemy.maybe_take_damage ~collision_direction state enemy action_started damage_kind
+               (Player.get_damage game.player damage_kind)
+               collision)));
 
     let begin_boss_interaction () =
       let trigger = make_stub_trigger BOSS_KILLED "boss-killed" (Show.enemy_id enemy.id) in
@@ -584,14 +586,15 @@ let update_npcs (game : game) (state : state) =
   state
 
 let update_spawned_vengeful_spirits (game : game) (state : state) =
-  let damage_enemies vs_start_time (f : sprite) =
+  let damage_enemies vs_start_time (entity : entity) =
     let maybe_damage_enemy (enemy : enemy) =
       if enemy.status.check_damage_collisions then (
-        match Collision.with_entity enemy.entity f.dest with
+        match Collision.with_entity enemy.entity entity.dest with
         | None -> ()
         | Some collision ->
+          let collision_direction = if entity.v.x > 0. then RIGHT else LEFT in
           ignore
-            (Enemy.maybe_take_damage state enemy vs_start_time VENGEFUL_SPIRIT
+            (Enemy.maybe_take_damage ~collision_direction state enemy vs_start_time VENGEFUL_SPIRIT
                (Player.get_damage game.player VENGEFUL_SPIRIT)
                collision))
     in
@@ -600,7 +603,7 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
   let update_vengeful_spirit (projectile : projectile) =
     let keep_spawned = update_projectile projectile game.room state in
     if keep_spawned then
-      damage_enemies projectile.spawned projectile.entity.sprite
+      damage_enemies projectile.spawned projectile.entity
     else
       game.player.spawned_vengeful_spirits <-
         List.filter (fun p -> p <> projectile) game.player.spawned_vengeful_spirits

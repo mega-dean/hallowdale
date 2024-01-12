@@ -709,9 +709,4 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
   (* SET_GHOST_CAMERA to reset the camera if it changed *)
   [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ]
   @ steps
-  @ [
-      STEP
-        (SET_CAMERA_MOTION (SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y)));
-      STEP SET_GHOST_CAMERA;
-      STEP RESET_TEXT;
-    ]
+  @ [ STEP CONCLUDE_INTERACTIONS ]

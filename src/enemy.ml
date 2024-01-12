@@ -121,6 +121,7 @@ let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
   | Some time -> time
 
 let maybe_take_damage
+    ?(collision_direction : direction option)
     (state : state)
     (enemy : enemy)
     (ghost_action_started : time)
@@ -166,7 +167,13 @@ let maybe_take_damage
       enemy.entity.v.y <- Config.enemy.death_vy
   in
 
-  if ghost_action_started > took_damage_at enemy damage_kind then (
+  let hit =
+    if List.mem damage_kind Config.enemy.multi_hit_damage_kinds then
+      state.frame.time > (took_damage_at enemy damage_kind).at +. Config.enemy.multi_hit_cooldown
+    else
+      ghost_action_started > took_damage_at enemy damage_kind
+  in
+  if hit then (
     enemy.history <-
       Enemy_action.Map.update (TOOK_DAMAGE damage_kind)
         (fun _ -> Some { at = state.frame.time })
@@ -184,7 +191,19 @@ let maybe_take_damage
     in
     enemy.damage_sprites <- new_damage_sprite :: enemy.damage_sprites;
     if is_dead enemy then
-      kill_enemy ();
+      kill_enemy ()
+    else (
+      match enemy.kind with
+      | ENEMY ->
+        let direction =
+          match collision_direction with
+          | Some d -> d
+          | None -> collision.collided_from
+        in
+        Entity.recoil enemy.entity direction
+      | BOSS
+      | MULTI_BOSS ->
+        ());
     true)
   else
     false

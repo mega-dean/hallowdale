@@ -108,30 +108,33 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
 let maybe_begin_interaction (state : state) (game : game) trigger =
   maybe_begin_interactions (state : state) (game : game) [ trigger ]
 
-let find_trigger_collision' ghost (xs : 'a list) get_trigger_dest : 'a option =
+let find_trigger_collision' player (xs : 'a list) get_trigger_dest : 'a option =
   let colliding x =
-    Option.is_some (Collision.with_entity ghost.ghost.entity (get_trigger_dest x))
+    Option.is_some (Collision.with_entity player.ghost.entity (get_trigger_dest x))
   in
   List.find_opt colliding xs
 
-let find_trigger_collision ghost (triggers : trigger list) =
-  find_trigger_collision' ghost triggers (fun t -> t.dest)
+let find_trigger_collision player (triggers : trigger list) =
+  find_trigger_collision' player triggers (fun t -> t.dest)
 
-let find_respawn_trigger_collision ghost (triggers : respawn_trigger list) : respawn_trigger option
+let find_respawn_trigger_collision player (triggers : respawn_trigger list) : respawn_trigger option
     =
-  find_trigger_collision' ghost triggers (fun rt -> rt.trigger.dest)
+  find_trigger_collision' player triggers (fun rt -> rt.trigger.dest)
 
 let pogo (player : player) =
-  player.ghost.entity.current_floor <- None;
-  player.current.can_dash <- true;
-  player.current.can_flap <- true;
-  player.ghost.entity.y_recoil <-
-    Some
-      {
-        speed = -.Config.ghost.recoil_speed;
-        time_left = { seconds = Config.ghost.pogo_recoil_time };
-        reset_v = true;
-      }
+  match player.ghost.entity.y_recoil with
+  | Some _ -> ()
+  | None ->
+    player.ghost.entity.current_floor <- None;
+    player.current.can_dash <- true;
+    player.current.can_flap <- true;
+    player.ghost.entity.y_recoil <-
+      Some
+        {
+          speed = -.Config.ghost.recoil_speed;
+          time_left = { seconds = Config.ghost.pogo_recoil_time };
+          reset_v = true;
+        }
 
 let make_slash
     (player : player)
@@ -367,7 +370,7 @@ let get_damage (player : player) (damage_kind : damage_kind) =
   | VENGEFUL_SPIRIT -> 15
   | DESOLATE_DIVE -> 15
   | DESOLATE_DIVE_SHOCKWAVE -> 20
-  | HOWLING_WRAITHS -> (* TODO this should be 13 with multihits *) 26
+  | HOWLING_WRAITHS -> 13
 
 (* TODO use collision shape for dream nail *)
 let check_dream_nail_collisions (state : state) (game : game) =
@@ -426,7 +429,7 @@ let add_phantom_floor (game : game) (target : vector) =
       ( {
           pos = { x = target.x; y = target.y +. game.player.ghost.entity.dest.h };
           w = game.player.ghost.entity.dest.w;
-          h = 20.;
+          h = Config.other.phantom_floor_h;
         },
         Zero.vector () )
 
@@ -457,13 +460,6 @@ let resolve_slash_collisions (state : state) (game : game) =
             | UP ->
               if game.player.ghost.entity.v.y < 0. then
                 game.player.ghost.entity.v.y <- Config.ghost.upslash_vy);
-            (match enemy.kind with
-            | ENEMY ->
-              if enemy.health.current > 0 then
-                Entity.recoil enemy.entity collision.collided_from
-            | BOSS
-            | MULTI_BOSS ->
-              ());
             game.player.soul.current <-
               Int.bound 0
                 (game.player.soul.current + Config.action.soul_gained_per_nail)
@@ -1525,13 +1521,18 @@ let tick (game : game) (state : state) =
           ref false
         in
         let still_waiting_for_floor = ref false in
-        let warping = ref false in
+        let zero_vy = ref false in
 
         let set_layer_hidden (layer_name : string) hidden =
           (match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
           | None -> failwithf "expected %s layer" layer_name
           | Some layer_to_hide -> layer_to_hide.hidden <- hidden);
           Room.reset_tile_groups game.room
+        in
+
+        let set_ghost_camera () =
+          Entity.unfreeze game.player.ghost.entity;
+          state.camera.subject <- GHOST
         in
 
         (* could divide these up into some smaller groups like TEXT or LAYER to get rid of more of the duplication, but
@@ -1546,11 +1547,16 @@ let tick (game : game) (state : state) =
               match get_current_slash game.player with
               | Some slash -> game.player.children <- Ghost_child_kind.Map.empty
               | None -> ())
+          | CONCLUDE_INTERACTIONS ->
+            state.camera.motion <-
+              SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
+            set_ghost_camera ();
+            zero_vy := true;
+            game.interaction.use_dashes_in_archives <- None
           | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
           | FADE_SCREEN_IN -> state.screen_fade <- None
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
-            warping := true;
             match trigger_kind with
             | WARP warp -> (
               let target_room_location = Tiled.JsonRoom.locate_by_name state.world warp.room_name in
@@ -1587,16 +1593,12 @@ let tick (game : game) (state : state) =
             game.interaction.speaker_name <- None;
             game.interaction.text <-
               Some (ABILITY { top_paragraphs = []; outline_src; bottom_paragraphs })
-          | RESET_TEXT -> game.interaction.use_dashes_in_archives <- None
           | SET_FIXED_CAMERA (tile_x, tile_y) ->
             let tile = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
             let x, y = (tile.x *. Config.scale.room, tile.y *. Config.scale.room) in
             state.camera.subject <- FIXED { x; y }
           | SET_CAMERA_MOTION motion -> state.camera.motion <- motion
-          | SET_GHOST_CAMERA ->
-            (* this step is added to the end of every interaction *)
-            Entity.unfreeze game.player.ghost.entity;
-            state.camera.subject <- GHOST
+          | SET_GHOST_CAMERA -> set_ghost_camera ()
           | WAIT time -> new_wait := time -. state.frame.dt
           | HIDE_BOSS_DOORS -> set_layer_hidden "boss-doors" true
           | UNHIDE_BOSS_DOORS -> set_layer_hidden "boss-doors" false
@@ -1879,7 +1881,7 @@ let tick (game : game) (state : state) =
           game.interaction.steps <- STEP (WAIT !new_wait) :: List.tl game.interaction.steps
         else
           game.interaction.steps <- List.tl game.interaction.steps;
-        (true, !warping))
+        (true, !zero_vy))
   in
 
   let handle_casting () : handled_action =
@@ -2601,13 +2603,13 @@ let tick (game : game) (state : state) =
     in
     let exiting = Room.handle_transitions state game in
     if not exiting then (
-      let interacting, warped = handle_interactions () in
+      let interacting, zero_vy = handle_interactions () in
       if interacting then (
         if not game.player.ghost.entity.frozen then (
           (* after warping, set vy to 0. so the ghost doesn't continue to jump back up into the
              vent they came from
           *)
-          game.player.ghost.entity.v.y <- (if warped then 0. else new_vy);
+          game.player.ghost.entity.v.y <- (if zero_vy then 0. else new_vy);
           handle_collisions ()))
       else (
         reveal_shadows ();

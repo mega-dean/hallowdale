@@ -123,8 +123,8 @@ let between_rects (r1 : rect) (r2 : rect) : collision option =
            | false, false, true, false -> LEFT
            | false, false, false, true -> RIGHT
            (* top-bottom / left-right
-              - these are arbitrary directions, because this currently only happens for VS
-              - when VS knockback is implemented, these will probably need to be fixed
+              - these are arbitrary directions because this isn't used by anything
+                that considers .collided_from
            *)
            | true, true, false, false -> UP
            | false, false, true, true -> UP
@@ -152,9 +152,7 @@ let between_rects (r1 : rect) (r2 : rect) : collision option =
            | true, true, true, false -> LEFT
            (* ghost covers entire collision *)
            | true, true, true, true
-           (* ghost is entirely inside collision
-              - this happens for interaction triggers, camera bounds, etc., so the direction doesn't matter
-           *)
+           (* ghost is entirely inside collision *)
            | false, false, false, false ->
              DOWN);
       }

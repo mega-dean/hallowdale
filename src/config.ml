@@ -215,6 +215,8 @@ type enemy = {
   death_recoil_vx : float;
   death_recoil_time : float;
   death_vy : float;
+  multi_hit_damage_kinds : damage_kind list;
+  multi_hit_cooldown : float;
 }
 
 let enemy =
@@ -222,6 +224,8 @@ let enemy =
     death_recoil_vx = -100. *. window_scale;
     death_recoil_time = 0.2;
     death_vy = -500. *. window_scale;
+    multi_hit_damage_kinds = [ VENGEFUL_SPIRIT; HOWLING_WRAITHS ];
+    multi_hit_cooldown = 0.2;
   }
 
 type text = {
@@ -341,6 +345,7 @@ type other = {
   main_menu_y_offset : float;
   hud_padding : float;
   save_slots : int;
+  phantom_floor_h: float;
 }
 
 let other =
@@ -353,6 +358,7 @@ let other =
     main_menu_y_offset = 50. *. window_scale;
     hud_padding = 8. *. window_scale;
     save_slots = 4;
+    phantom_floor_h = 20. *. window_scale;
   }
 
 let lever_shape =

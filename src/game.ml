@@ -107,6 +107,10 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
 let initialize_steel_sole (save_file : Json_t.save_file) =
   {
     save_file with
+    progress = {
+      save_file.progress with
+      keys_found = ["Dean's Closet"];
+    };
     ghosts_in_party = List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
     abilities =
       {

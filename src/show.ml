@@ -485,6 +485,7 @@ let interaction_step (step : Interaction.step) : string =
   let open Interaction in
   match step with
   | STEP (INITIALIZE_INTERACTIONS _) -> "(INITIALIZE_INTERACTIONS _)"
+  | STEP CONCLUDE_INTERACTIONS -> "(CONCLUDE_INTERACTIONS)"
   | STEP FADE_SCREEN_OUT -> "FADE_SCREEN_OUT"
   | STEP FADE_SCREEN_IN -> "FADE_SCREEN_IN"
   | STEP (SHAKE_SCREEN _) -> "(SHAKE_SCREEN _)"
@@ -497,7 +498,6 @@ let interaction_step (step : Interaction.step) : string =
   | STEP (FLOATING_TEXT (_, _)) -> "(FLOATING_TEXT (_, _))"
   | STEP (FOCUS_ABILITY_TEXT (_, _, _)) -> "(FOCUS_ABILITY_TEXT (_, _, _))"
   | STEP (ABILITY_TEXT (_, _)) -> "(ABILITY_TEXT (_, _))"
-  | STEP RESET_TEXT -> "RESET_TEXT"
   | STEP (DIALOGUE (_, _)) -> "(DIALOGUE (_, _))"
   | STEP (PURPLE_PEN_TEXT _) -> "(PURPLE_PEN_TEXT _)"
   | STEP (SET_FIXED_CAMERA (_, _)) -> "(SET_FIXED_CAMERA (_, _))"

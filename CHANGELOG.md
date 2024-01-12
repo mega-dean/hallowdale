@@ -22,6 +22,8 @@
 - add hardfalls
 - fix floor seams for steel sole
 - add respawn targets for hazards
+- fix double-pogoing
+- add multi-hits for Vengeful Spirit and Howling Wraiths
 
 ## [0.0.8] - 2023-11-19
 
