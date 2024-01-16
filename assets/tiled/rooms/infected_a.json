@@ -205,6 +205,7 @@
          "y":0
         }, 
         {
+         "color":"#658faf",
          "draworder":"topdown",
          "id":28,
          "name":"triggers",
@@ -221,15 +222,15 @@
                  "y":216
                 }, 
                 {
-                 "height":36,
+                 "height":51,
                  "id":15,
                  "name":"hidden-enemy:DUNCAN",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
-                 "x":665,
-                 "y":210
+                 "width":54,
+                 "x":643,
+                 "y":187
                 }, 
                 {
                  "height":16,
@@ -260,6 +261,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":4,
          "name":"floors",

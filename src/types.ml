@@ -37,7 +37,7 @@ type image = Raylib.Texture.t
 
 let load_tiled_asset path = Raylib.load_texture (File.make_assets_path [ "tiled"; path ])
 
-let load_image path : image =
+let load_image ?(debug = false) path : image =
   let full_path = File.make_assets_path [ path ] in
   if Sys.file_exists full_path then
     Raylib.load_texture full_path
@@ -71,6 +71,7 @@ let get_frame (a : animation) : animation_frame =
 
 let make_single_frame ~w ~h : rect = { w; h; pos = { x = 0.; y = 0. } }
 
+(* TODO add OTHER for world-map, ability-outlines *)
 type asset_dir =
   | GHOSTS
   | ENEMIES
@@ -96,12 +97,7 @@ type texture_config = {
   duration : duration; (* TODO collision_shape configs should probably go here *)
 }
 
-(* an image that has a collision box and that might be animated
-   - most textures are associated with an entity that has it's own dest rect, so coll_offset is
-   only really used for tiles/tile_groups, which have some weird rules about collision rects:
-   -- left == right so it has to be symmetrical
-   -- bottom == 0
-*)
+(* an image that has a collision box and that might be animated *)
 type texture = {
   (* TODO maybe just make this file_path *)
   ident : string;
@@ -880,6 +876,17 @@ let align ((x_alignment, y_alignment) : relative_position) parent_dest child_w c
   in
   { x; y }
 
+(* this aligns enemy/npc to (CENTER, BOTTOM_INSIDE), and handles hidden entities *)
+let align_to_bottom parent_dest child_w child_h =
+  if parent_dest.pos.y > 0. then
+    align (CENTER, BOTTOM_INSIDE) parent_dest child_w child_h
+  else (
+    let parent_dest' =
+      { parent_dest with pos = { x = -.parent_dest.pos.x; y = -.parent_dest.pos.y } }
+    in
+    let pos' = align (CENTER, BOTTOM_INSIDE) parent_dest' child_w child_h in
+    { x = -.pos'.x; y = -.pos'.y })
+
 (* ghost will only have one NAIL child at a time, so slashes don't really need to be comparable *)
 let compare_slash a b = 0
 
@@ -932,26 +939,21 @@ type ghosts_file = {
   shared_textures : texture_config String.Map.t;
 }
 
-type ghost_body_texture = {
-  texture' : texture;
-  render_offset : vector;
-}
-
 type ghost_body_textures = {
-  cast : ghost_body_texture;
-  crawl : ghost_body_texture;
-  dash : ghost_body_texture;
-  dive : ghost_body_texture;
-  fall : ghost_body_texture;
-  flap : ghost_body_texture;
-  focus : ghost_body_texture;
-  idle : ghost_body_texture;
-  jump : ghost_body_texture;
-  nail : ghost_body_texture;
-  read : ghost_body_texture;
-  take_damage : ghost_body_texture;
-  walk : ghost_body_texture;
-  wall_slide : ghost_body_texture;
+  cast : texture;
+  crawl : texture;
+  dash : texture;
+  dive : texture;
+  fall : texture;
+  flap : texture;
+  focus : texture;
+  idle : texture;
+  jump : texture;
+  nail : texture;
+  read : texture;
+  take_damage : texture;
+  walk : texture;
+  wall_slide : texture;
 }
 
 type ghost_head_textures = {
@@ -996,9 +998,8 @@ type ghost = {
   mutable id : ghost_id;
   mutable head : texture;
   head_textures : ghost_head_textures;
-  (* the entity.texture is the ghost body *)
+  (* the entity.sprite.texture is the ghost body *)
   entity : entity;
-  mutable body_render_offset : vector;
   mutable hardfall_timer : time option;
 }
 
@@ -1025,10 +1026,8 @@ type player = {
 (* a cache for image/tiles that have been loaded for a tileset *)
 type tileset = {
   json : Json_t.tileset;
-  (* TODO this doesn't really need to be an array of textures, since the image is
-     always the same and the animation is always STILL. This is just needed to parse
-     the collision rects per-tile, so maybe this could be a `coll_offsets list`
-  *)
+  image : image;
+  (* all these textures use tileset.image with a different src rect *)
   (* expected to be non-empty *)
   tiles : texture array;
 }
@@ -1408,6 +1407,7 @@ type frame_info = {
   mutable idx : int;
   mutable dt : float;
   mutable time : float;
+  mutable timeout : int;
 }
 
 type world = (room_id * room_location) list

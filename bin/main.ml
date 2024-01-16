@@ -7,7 +7,7 @@ let rec loop (state : Types.state) =
   state.frame.idx <- 1 + state.frame.idx;
   state.frame.dt <- Raylib.get_frame_time ();
 
-  if Raylib.window_should_close () then (
+  if Raylib.window_should_close () || state.frame.idx > state.frame.timeout then (
     print "closing at: %d" state.frame.idx;
     Raylib.close_audio_device ();
     Raylib.close_window ())

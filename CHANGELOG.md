@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- make enemies individually scalable
+
 ## [0.0.9] - 2024-01-12
 
 - allow another dash in the air after dashing off a ledge

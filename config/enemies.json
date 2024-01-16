@@ -2,7 +2,8 @@
     "enemies": [
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 65,
+            "health": 5,
+            "scale": 2.5,
             "w": 19,
             "h": 45,
             "dream_nail": {},
@@ -46,7 +47,8 @@
 
         [ "LOCKER_BOY", {
             "kind": "multi-boss",
-            "health": 80,
+            "health": 1,
+            "scale": 1.5,
             "w": 22,
             "h": 40,
             "dream_nail": {},
@@ -95,6 +97,7 @@
         [ "PENGUIN", {
             "kind": "enemy",
             "health": 15,
+            "scale": 1.5,
             "w": 11,
             "h": 19,
             "dream_nail": {},
@@ -118,8 +121,9 @@
         [ "BIRD", {
             "kind": "enemy",
             "health": 15,
+            "scale": 1.5,
             "w": 30,
-            "h": 32,
+            "h": 22,
             "gravity_multiplier": 0.0,
             "dream_nail": {},
             "attrs": [
@@ -135,18 +139,18 @@
                 ["idle", {
                     "count": 4,
                     "duration": 0.4,
-                    "x_offset": 3,
-                    "y_offset": 3
+                    "x_offset": 1,
+                    "y_offset": 8
                 }],
                 ["chasing", {
                     "count": 4,
                     "duration": 0.1,
-                    "x_offset": 3,
-                    "y_offset": 3
+                    "x_offset": 1,
+                    "y_offset": 8
                 }],
                 ["dead", {
                     "x_offset": 2,
-                    "y_offset": -22
+                    "y_offset": -12
                 }]
             ]
         }],

@@ -193,6 +193,7 @@ type enemy_config = Json_t.enemy_config = {
   h: int;
   health: int;
   kind: string;
+  scale: float;
   damage: int;
   gravity_multiplier: float;
   death_gravity_multiplier: float;

@@ -5,28 +5,39 @@ open Env
 (* TODO make window_scale mutable so window size can be changed while the game is running *)
 type scale_config = {
   ghost : float;
+  enemy : float;
   health : float;
   soul : float;
   dream_nail : float;
   slash : float;
   focus : float;
   room : float;
+  damage : float;
+  npc : float;
   font_size : int;
   paragraph_spacing : int;
 }
 
 let scale =
   let ghost = 2. in
-  let health = 2. in
+  let enemy =
+    (* there is also a per-enemy "scale" in enemy configs *)
+    2.2
+  in
+  let health = ghost in
   let soul = 3. in
+  let npc = ghost in
   {
     ghost = ghost *. window_scale;
+    enemy = enemy *. window_scale;
     health = health *. window_scale;
     soul = soul *. window_scale;
     dream_nail = window_scale;
     slash = 0.8 *. window_scale;
     focus = 3. *. window_scale;
     room = (room_scale |> Int.to_float) *. window_scale;
+    damage = (room_scale |> Int.to_float) *. window_scale;
+    npc = npc *. window_scale;
     font_size = Env.font_size;
     paragraph_spacing = Env.font_size * 2;
   }
@@ -151,7 +162,7 @@ let ghost : ghost_config =
     height;
     max_vy = 1100. *. window_scale;
     dive_vy = 1600. *. window_scale;
-    hardfall_duration = 1.2;
+    hardfall_duration = 1.25;
     c_dash_whoosh_scale = 6. *. window_scale;
     wraiths_scale = 1.7 *. window_scale;
     vx = 400. *. window_scale;
@@ -350,7 +361,7 @@ type other = {
   main_menu_y_offset : float;
   hud_padding : float;
   save_slots : int;
-  phantom_floor_h: float;
+  phantom_floor_h : float;
 }
 
 let other =

@@ -67,12 +67,6 @@ let parse_room_filename source file_name : area_id * room_id =
   | "ventways_hub" -> (VENTWAYS, VENT_HUB)
   | _ -> failwithf "bad file name '%s' (from %s)" file_name source
 
-module Tileset = struct
-  type t = tileset
-
-  let image (tileset : t) : image = (List.nth (tileset.tiles |> Array.to_list) 0).image
-end
-
 module Tile = struct
   let coords_to_idx ~width (x, y) : int = x + (y * width)
 
@@ -227,7 +221,7 @@ module JsonRoom = struct
     match String.Map.find_opt texture_name platform_textures_by_name with
     | None ->
       failwithf "could not find platform %s, keys: %s" texture_name
-        (platform_textures_by_name |> String.Map.to_list |> List.map fst |> join)
+        (platform_textures_by_name |> String.Map.to_list |> List.map fst |> String.join)
     | Some t -> (texture_name, t, platform_kind)
 
   let look_up_tile (json_room : t) ?(animation_offset = 0) room_cache (gid' : int) : texture * int =
@@ -239,8 +233,6 @@ module JsonRoom = struct
       | None -> failwithf "could not find cached tileset %s, gid: %d" source.source gid'
       | Some t -> t
     in
-    (* TODO get rid of this fn and just try accessing `tileset.tiles.(gid - firstgid)` for each
-       tileset_source, and rescue out-of-bounds *)
     let gid_in_tileset (tileset_source : Json_t.tileset_source) =
       (* these paths are coming from Tiled exports, so they don't need to use Filename.dir_sep *)
       if tileset_source.source = "../tilesets/world-map.json" then
@@ -262,10 +254,6 @@ module JsonRoom = struct
       | Invalid_argument _ ->
         failwithf "look_up_tile error: tileset '%s', gid %d, %d tiles, %d" tileset.json.name gid
           (Array.length tileset.tiles) tileset_source.firstgid)
-
-  let lookup_coll_offsets room (gid : int) (json_room : Json_t.room) : vector =
-    let tile, _ = look_up_tile json_room room.cache gid in
-    tile.coll_offset
 end
 
 let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : int) :
@@ -288,17 +276,11 @@ let load_tiles
     (tileset_source : Json_t.tileset_source) : texture array =
   let load_tile idx : texture =
     let src = JsonRoom.src_xy room idx json_tileset.columns in
-    let get_coll_offsets id : vector =
-      match get_object_collision json_tileset tileset_source.firstgid id with
-      | None -> Zero.vector ()
-      | Some coll_rect ->
-        { y = coll_rect.y *. Config.scale.room; x = coll_rect.x *. Config.scale.room }
-    in
     {
       ident = fmt "tile %d" idx;
       image;
       animation_src = STILL { w = json_tileset.tile_w; h = json_tileset.tile_h; pos = src };
-      coll_offset = get_coll_offsets (idx + tileset_source.firstgid);
+      coll_offset = Zero.vector ();
     }
   in
   Array.init json_tileset.tile_count load_tile
@@ -331,7 +313,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
     | None -> None
     | Some json ->
       let image = load_tiled_asset (File.make_path [ "tilesets"; json.source ]) in
-      Some (source'.source, { json; tiles = load_tiles room json image source' })
+      Some (source'.source, { json; image; tiles = load_tiles room json image source' })
   in
   List.filter_map load_tileset room.tileset_sources
 
@@ -382,8 +364,8 @@ let init_world (path : string) : (room_id * room_location) list =
   in
   if not (String.Set.is_empty filenames_without_files) then
     print "WARN: got filenames in .world that have no corresponding .json file:\n%s"
-      (String.Set.elements filenames_without_files |> join ~sep:"\n");
+      (String.Set.elements filenames_without_files |> String.join_lines);
   if not (String.Set.is_empty files_without_filenames) then
     print "WARN: got .json files that aren't part of .world:\n%s"
-      (String.Set.elements files_without_filenames |> join ~sep:"\n");
+      (String.Set.elements files_without_filenames |> String.join_lines);
   rooms

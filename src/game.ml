@@ -125,7 +125,6 @@ let initialize_steel_sole (save_file : Json_t.save_file) =
         desolate_dive = true;
         (* not enabling shade_cloak now because it isn't used for any obstacles and it looks bad *)
         shade_cloak = false;
-
         shade_soul = false;
         descending_dark = false;
         abyss_shriek = false;
@@ -144,8 +143,13 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
     in
     let trigger : trigger = make_stub_trigger INFO "cutscene" interaction_name in
     Player.maybe_begin_interaction state game trigger)
-  else
+  else (
     state.frame.idx <- save_file.progress.frame_idx;
+    try
+      let timeout = Unix.getenv "HALLOWDALE_TIMEOUT" |> String.to_int in
+      state.frame.timeout <- save_file.progress.frame_idx + timeout
+    with
+    | Not_found -> ());
   Audio.stop_music state.menu_music.t;
   state.game_context <- IN_PROGRESS game
 
@@ -178,7 +182,7 @@ let create
     }
   in
 
-  let idle_texture = global.textures.ghost_bodies.idle.texture' in
+  let idle_texture = global.textures.ghost_bodies.idle in
   let shared_ghost_textures = Player.load_shared_textures ghosts_file.shared_textures in
   let make_ghost (party_ghost : party_ghost) : player =
     Player.init party_ghost.ghost.id idle_texture party_ghost.ghost.head_textures
@@ -189,8 +193,7 @@ let create
     let make_party_ghost id : party_ghost =
       let in_party = List.mem (Show.ghost_id id) save_file.ghosts_in_party in
       let config = make_head_textures id in
-      Player.init_party id config idle_texture ~start_pos:{ x = 1000.; y = 1000. }
-        ~body_render_offset:global.textures.ghost_bodies.idle.render_offset in_party
+      Player.init_party id config idle_texture ~start_pos:{ x = 1000.; y = 1000. } in_party
     in
     List.map make_party_ghost [ BRITTA; ABED; TROY; ANNIE; JEFF ]
   in

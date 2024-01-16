@@ -153,6 +153,7 @@ type enemy_config = {
   (* TODO maybe use default "enemy", or maybe split into separate keys
      "enemies"/"bosses"/"multi-bosses" in enemies_file *)
   kind : string;
+  ~scale <ocaml default="1.0"> : float;
   ~damage <ocaml default="1"> : int;
   ~gravity_multiplier <ocaml default="1.0"> : float;
    (* TODO not sure about this, maybe would be better to just check enemy_id when

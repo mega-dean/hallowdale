@@ -193,6 +193,7 @@ type enemy_config = Json_t.enemy_config = {
   h: int;
   health: int;
   kind: string;
+  scale: float;
   damage: int;
   gravity_multiplier: float;
   death_gravity_multiplier: float;
@@ -7978,6 +7979,17 @@ let write_enemy_config : _ -> enemy_config -> _ = (
       Yojson.Safe.write_string
     )
       ob x.kind;
+    if x.scale <> 1.0 then (
+      if !is_first then
+        is_first := false
+      else
+        Buffer.add_char ob ',';
+        Buffer.add_string ob "\"scale\":";
+      (
+        Yojson.Safe.write_float
+      )
+        ob x.scale;
+    );
     if x.damage <> 1 then (
       if !is_first then
         is_first := false
@@ -8076,6 +8088,7 @@ let read_enemy_config = (
     let field_h = ref (None) in
     let field_health = ref (None) in
     let field_kind = ref (None) in
+    let field_scale = ref (1.0) in
     let field_damage = ref (1) in
     let field_gravity_multiplier = ref (1.0) in
     let field_death_gravity_multiplier = ref (1.0) in
@@ -8114,18 +8127,32 @@ let read_enemy_config = (
                 )
               )
             | 5 -> (
-                if String.unsafe_get s pos = 'a' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 's' then (
-                  9
-                )
-                else (
-                  -1
-                )
+                match String.unsafe_get s pos with
+                  | 'a' -> (
+                      if String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 's' then (
+                        10
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | 's' -> (
+                      if String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'e' then (
+                        4
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | _ -> (
+                      -1
+                    )
               )
             | 6 -> (
                 match String.unsafe_get s pos with
                   | 'd' -> (
                       if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'g' && String.unsafe_get s (pos+5) = 'e' then (
-                        4
+                        5
                       )
                       else (
                         -1
@@ -8145,7 +8172,7 @@ let read_enemy_config = (
               )
             | 10 -> (
                 if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'm' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'a' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 'l' then (
-                  8
+                  9
                 )
                 else (
                   -1
@@ -8153,7 +8180,7 @@ let read_enemy_config = (
               )
             | 14 -> (
                 if String.unsafe_get s pos = 'u' && String.unsafe_get s (pos+1) = 'n' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'c' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'l' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 't' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 's' then (
-                  10
+                  11
                 )
                 else (
                   -1
@@ -8163,7 +8190,7 @@ let read_enemy_config = (
                 match String.unsafe_get s pos with
                   | 'c' -> (
                       if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = '_' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 'k' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'm' && String.unsafe_get s (pos+12) = 'a' && String.unsafe_get s (pos+13) = 'g' && String.unsafe_get s (pos+14) = 'e' then (
-                        7
+                        8
                       )
                       else (
                         -1
@@ -8171,7 +8198,7 @@ let read_enemy_config = (
                     )
                   | 't' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'x' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'r' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'c' && String.unsafe_get s (pos+9) = 'o' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'f' && String.unsafe_get s (pos+12) = 'i' && String.unsafe_get s (pos+13) = 'g' && String.unsafe_get s (pos+14) = 's' then (
-                        11
+                        12
                       )
                       else (
                         -1
@@ -8183,7 +8210,7 @@ let read_enemy_config = (
               )
             | 18 -> (
                 if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'v' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 't' && String.unsafe_get s (pos+6) = 'y' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'm' && String.unsafe_get s (pos+9) = 'u' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'i' && String.unsafe_get s (pos+13) = 'p' && String.unsafe_get s (pos+14) = 'l' && String.unsafe_get s (pos+15) = 'i' && String.unsafe_get s (pos+16) = 'e' && String.unsafe_get s (pos+17) = 'r' then (
-                  5
+                  6
                 )
                 else (
                   -1
@@ -8191,7 +8218,7 @@ let read_enemy_config = (
               )
             | 24 -> (
                 if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'g' && String.unsafe_get s (pos+7) = 'r' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'v' && String.unsafe_get s (pos+10) = 'i' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'y' && String.unsafe_get s (pos+13) = '_' && String.unsafe_get s (pos+14) = 'm' && String.unsafe_get s (pos+15) = 'u' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 't' && String.unsafe_get s (pos+18) = 'i' && String.unsafe_get s (pos+19) = 'p' && String.unsafe_get s (pos+20) = 'l' && String.unsafe_get s (pos+21) = 'i' && String.unsafe_get s (pos+22) = 'e' && String.unsafe_get s (pos+23) = 'r' then (
-                  6
+                  7
                 )
                 else (
                   -1
@@ -8239,13 +8266,21 @@ let read_enemy_config = (
             );
           | 4 ->
             if not (Yojson.Safe.read_null_if_possible p lb) then (
+              field_scale := (
+                (
+                  Atdgen_runtime.Oj_run.read_number
+                ) p lb
+              );
+            )
+          | 5 ->
+            if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_damage := (
                 (
                   Atdgen_runtime.Oj_run.read_int
                 ) p lb
               );
             )
-          | 5 ->
+          | 6 ->
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_gravity_multiplier := (
                 (
@@ -8253,7 +8288,7 @@ let read_enemy_config = (
                 ) p lb
               );
             )
-          | 6 ->
+          | 7 ->
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_death_gravity_multiplier := (
                 (
@@ -8261,7 +8296,7 @@ let read_enemy_config = (
                 ) p lb
               );
             )
-          | 7 ->
+          | 8 ->
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_can_take_damage := (
                 (
@@ -8269,7 +8304,7 @@ let read_enemy_config = (
                 ) p lb
               );
             )
-          | 8 ->
+          | 9 ->
             field_dream_nail := (
               Some (
                 (
@@ -8277,7 +8312,7 @@ let read_enemy_config = (
                 ) p lb
               )
             );
-          | 9 ->
+          | 10 ->
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_attrs := (
                 (
@@ -8285,7 +8320,7 @@ let read_enemy_config = (
                 ) p lb
               );
             )
-          | 10 ->
+          | 11 ->
             if not (Yojson.Safe.read_null_if_possible p lb) then (
               field_unscaled_attrs := (
                 (
@@ -8293,7 +8328,7 @@ let read_enemy_config = (
                 ) p lb
               );
             )
-          | 11 ->
+          | 12 ->
             field_texture_configs := (
               Some (
                 (
@@ -8335,18 +8370,32 @@ let read_enemy_config = (
                   )
                 )
               | 5 -> (
-                  if String.unsafe_get s pos = 'a' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 's' then (
-                    9
-                  )
-                  else (
-                    -1
-                  )
+                  match String.unsafe_get s pos with
+                    | 'a' -> (
+                        if String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'r' && String.unsafe_get s (pos+4) = 's' then (
+                          10
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | 's' -> (
+                        if String.unsafe_get s (pos+1) = 'c' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'e' then (
+                          4
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | _ -> (
+                        -1
+                      )
                 )
               | 6 -> (
                   match String.unsafe_get s pos with
                     | 'd' -> (
                         if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'g' && String.unsafe_get s (pos+5) = 'e' then (
-                          4
+                          5
                         )
                         else (
                           -1
@@ -8366,7 +8415,7 @@ let read_enemy_config = (
                 )
               | 10 -> (
                   if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'm' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = 'a' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 'l' then (
-                    8
+                    9
                   )
                   else (
                     -1
@@ -8374,7 +8423,7 @@ let read_enemy_config = (
                 )
               | 14 -> (
                   if String.unsafe_get s pos = 'u' && String.unsafe_get s (pos+1) = 'n' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'c' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'l' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 'd' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 't' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 's' then (
-                    10
+                    11
                   )
                   else (
                     -1
@@ -8384,7 +8433,7 @@ let read_enemy_config = (
                   match String.unsafe_get s pos with
                     | 'c' -> (
                         if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = '_' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 'k' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = '_' && String.unsafe_get s (pos+9) = 'd' && String.unsafe_get s (pos+10) = 'a' && String.unsafe_get s (pos+11) = 'm' && String.unsafe_get s (pos+12) = 'a' && String.unsafe_get s (pos+13) = 'g' && String.unsafe_get s (pos+14) = 'e' then (
-                          7
+                          8
                         )
                         else (
                           -1
@@ -8392,7 +8441,7 @@ let read_enemy_config = (
                       )
                     | 't' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'x' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'u' && String.unsafe_get s (pos+5) = 'r' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'c' && String.unsafe_get s (pos+9) = 'o' && String.unsafe_get s (pos+10) = 'n' && String.unsafe_get s (pos+11) = 'f' && String.unsafe_get s (pos+12) = 'i' && String.unsafe_get s (pos+13) = 'g' && String.unsafe_get s (pos+14) = 's' then (
-                          11
+                          12
                         )
                         else (
                           -1
@@ -8404,7 +8453,7 @@ let read_enemy_config = (
                 )
               | 18 -> (
                   if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 'v' && String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 't' && String.unsafe_get s (pos+6) = 'y' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'm' && String.unsafe_get s (pos+9) = 'u' && String.unsafe_get s (pos+10) = 'l' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'i' && String.unsafe_get s (pos+13) = 'p' && String.unsafe_get s (pos+14) = 'l' && String.unsafe_get s (pos+15) = 'i' && String.unsafe_get s (pos+16) = 'e' && String.unsafe_get s (pos+17) = 'r' then (
-                    5
+                    6
                   )
                   else (
                     -1
@@ -8412,7 +8461,7 @@ let read_enemy_config = (
                 )
               | 24 -> (
                   if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'a' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = 'h' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'g' && String.unsafe_get s (pos+7) = 'r' && String.unsafe_get s (pos+8) = 'a' && String.unsafe_get s (pos+9) = 'v' && String.unsafe_get s (pos+10) = 'i' && String.unsafe_get s (pos+11) = 't' && String.unsafe_get s (pos+12) = 'y' && String.unsafe_get s (pos+13) = '_' && String.unsafe_get s (pos+14) = 'm' && String.unsafe_get s (pos+15) = 'u' && String.unsafe_get s (pos+16) = 'l' && String.unsafe_get s (pos+17) = 't' && String.unsafe_get s (pos+18) = 'i' && String.unsafe_get s (pos+19) = 'p' && String.unsafe_get s (pos+20) = 'l' && String.unsafe_get s (pos+21) = 'i' && String.unsafe_get s (pos+22) = 'e' && String.unsafe_get s (pos+23) = 'r' then (
-                    6
+                    7
                   )
                   else (
                     -1
@@ -8460,13 +8509,21 @@ let read_enemy_config = (
               );
             | 4 ->
               if not (Yojson.Safe.read_null_if_possible p lb) then (
+                field_scale := (
+                  (
+                    Atdgen_runtime.Oj_run.read_number
+                  ) p lb
+                );
+              )
+            | 5 ->
+              if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_damage := (
                   (
                     Atdgen_runtime.Oj_run.read_int
                   ) p lb
                 );
               )
-            | 5 ->
+            | 6 ->
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_gravity_multiplier := (
                   (
@@ -8474,7 +8531,7 @@ let read_enemy_config = (
                   ) p lb
                 );
               )
-            | 6 ->
+            | 7 ->
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_death_gravity_multiplier := (
                   (
@@ -8482,7 +8539,7 @@ let read_enemy_config = (
                   ) p lb
                 );
               )
-            | 7 ->
+            | 8 ->
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_can_take_damage := (
                   (
@@ -8490,7 +8547,7 @@ let read_enemy_config = (
                   ) p lb
                 );
               )
-            | 8 ->
+            | 9 ->
               field_dream_nail := (
                 Some (
                   (
@@ -8498,7 +8555,7 @@ let read_enemy_config = (
                   ) p lb
                 )
               );
-            | 9 ->
+            | 10 ->
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_attrs := (
                   (
@@ -8506,7 +8563,7 @@ let read_enemy_config = (
                   ) p lb
                 );
               )
-            | 10 ->
+            | 11 ->
               if not (Yojson.Safe.read_null_if_possible p lb) then (
                 field_unscaled_attrs := (
                   (
@@ -8514,7 +8571,7 @@ let read_enemy_config = (
                   ) p lb
                 );
               )
-            | 11 ->
+            | 12 ->
               field_texture_configs := (
                 Some (
                   (
@@ -8535,6 +8592,7 @@ let read_enemy_config = (
             h = (match !field_h with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "h");
             health = (match !field_health with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "health");
             kind = (match !field_kind with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "kind");
+            scale = !field_scale;
             damage = !field_damage;
             gravity_multiplier = !field_gravity_multiplier;
             death_gravity_multiplier = !field_death_gravity_multiplier;

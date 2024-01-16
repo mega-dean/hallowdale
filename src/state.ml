@@ -32,6 +32,7 @@ let init () : state =
       | Some c -> c
       | None -> failwithf "missing config for '%s' in config/npcs.json" name
     in
+
     Sprite.build_texture_from_config ~once
       {
         path = { asset_dir = NPCS; character_name = "shared"; pose_name = name };
@@ -54,7 +55,7 @@ let init () : state =
   let ability_outlines = Sprite.build_static_texture ~asset_dir:GHOSTS "ability-outlines" in
 
   let ghost_bodies : ghost_body_textures =
-    let load_ghost_body_texture name : ghost_body_texture =
+    let load_ghost_body_texture name : texture =
       let config =
         let key =
           match name with
@@ -71,19 +72,18 @@ let init () : state =
           else
             failwithf "missing config for '%s' (from name '%s') in config/ghosts.json" key name
       in
-      {
-        texture' =
-          Sprite.build_texture_from_config
-            {
-              path = { asset_dir = GHOSTS; character_name = "body"; pose_name = name };
-              count = config.count;
-              duration = { seconds = config.duration };
-              x_offset = config.x_offset;
-              y_offset = config.y_offset;
-            };
-        render_offset =
-          { x = config.x_offset *. Config.scale.ghost; y = config.y_offset *. Config.scale.ghost };
-      }
+      (* offsets_scale isn't needed here because offsets are already set to the thing they are
+         supposed to be
+      *)
+      Sprite.build_texture_from_config
+        {
+          path = { asset_dir = GHOSTS; character_name = "body"; pose_name = name };
+          count = config.count;
+          duration = { seconds = config.duration };
+          (* entity_neck_x/y is already scaled by scale.ghost in config.ml *)
+          x_offset = (config.x_offset *. Config.scale.ghost) -. Config.ghost.entity_neck_x;
+          y_offset = (config.y_offset *. Config.scale.ghost) -. Config.ghost.entity_neck_y;
+        }
     in
     {
       cast = load_ghost_body_texture "cast";
@@ -115,10 +115,10 @@ let init () : state =
       }
   in
 
-  let platforms =
+  let platforms : (string * texture) list =
     let load_platform_texture name =
       ( name,
-        Sprite.build_texture_from_config
+        Sprite.build_texture_from_config ~debug:true
           {
             path = { asset_dir = TILED; character_name = "platforms"; pose_name = name };
             count = 1;
@@ -252,7 +252,7 @@ let init () : state =
         motion = SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
       };
     screen_fade = None;
-    frame = { idx = 0; dt = 0.; time = 0. };
+    frame = { idx = 0; dt = 0.; time = 0.; timeout = Int.max_int };
     frame_inputs =
       {
         up = { pressed = false; down = false; released = false; down_since = None };
@@ -356,7 +356,7 @@ let update_environment (game : game) (state : state) =
         change new_f
     in
 
-    let handle_permanently_removable_platform ~(key : string option) (state' : disappearable_state)
+    let handle_permanently_removable_platform ?(key : string option) (state' : disappearable_state)
         =
       let locked_door =
         match key with
@@ -380,7 +380,7 @@ let update_environment (game : game) (state : state) =
             game.room.progress.removed_platform_ids <-
               platform.id :: game.room.progress.removed_platform_ids;
             if not locked_door then
-              game.player.ghost.entity.current_floor <- None;
+              Entity.unset_removed_floor game.player.ghost.entity platform.sprite.dest;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
               new_platform_kind (INVISIBLE Config.platform.disappearable_invisible_time))
@@ -389,7 +389,7 @@ let update_environment (game : game) (state : state) =
     in
 
     let handle_temporary_platform (state' : disappearable_state) =
-      handle_permanently_removable_platform ~key:None state'
+      handle_permanently_removable_platform state'
     in
 
     let handle_locked_door_platform ~key (state' : disappearable_state) =
@@ -405,7 +405,7 @@ let update_environment (game : game) (state : state) =
             shake_platform ();
             platform.kind <- Some (DISAPPEARABLE (TOUCHED new_f)))
           ~change:(fun new_f ->
-            game.player.ghost.entity.current_floor <- None;
+            Entity.unset_removed_floor game.player.ghost.entity platform.sprite.dest;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
               Some (DISAPPEARABLE (INVISIBLE Config.platform.disappearable_invisible_time)))
@@ -446,7 +446,7 @@ let update_environment (game : game) (state : state) =
     | Some (TEMPORARY state') -> handle_temporary_platform state'
     | Some (DISAPPEARABLE state') -> handle_disappearable_platform state'
     | Some (ROTATABLE state') -> handle_rotatable_platform state'
-    | Some (LOCKED_DOOR (key, state')) -> handle_locked_door_platform ~key:(Some key) state'
+    | Some (LOCKED_DOOR (key, state')) -> handle_locked_door_platform ~key state'
   in
   List.iter initiate_platform_reactions game.player.ghost.entity.current_platforms;
   List.iter finish_platform_reactions game.room.platforms;
@@ -677,7 +677,8 @@ let tick (state : state) =
     *)
     Audio.play_game_music game;
 
-    if state.debug.paused then
+    if state.debug.paused then (
+      game.player.ghost.hardfall_timer <- None;
       if key_pressed DEBUG_2 then
         state
         |> update_frame_inputs
@@ -690,7 +691,7 @@ let tick (state : state) =
         |> update_environment game
         |> Camera.tick game
       else
-        state |> update_frame_inputs |> Menu.update_pause_menu game |> Player.handle_debug_keys game
+        state |> update_frame_inputs |> Menu.update_pause_menu game |> Player.handle_debug_keys game)
     else (
       let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
       match state'.pause_menu with
@@ -792,6 +793,8 @@ let tick (state : state) =
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors
         *)
+        if state.frame.idx mod 50 = 0 then
+          itmp "------------------------ %d" state.frame.idx;
         if game.room_changed_last_frame then (
           game.room_changed_last_frame <- false;
           state')

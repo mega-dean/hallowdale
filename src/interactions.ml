@@ -507,7 +507,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                  ( "Duncan",
                    "This is why the English never win any sports - because everyone else cheats!" ));
             ENEMY (DUNCAN, ENTITY UNFREEZE);
-            ENEMY (DUNCAN, WALK_TO 8);
+            ENEMY (DUNCAN, WALK_TO 7);
             STEP (WAIT 0.2);
             STEP (DIALOGUE ("Annie", "Britta, there you are."));
             PARTY_GHOST (JEFF, SET_POSE CRAWLING);
@@ -559,9 +559,11 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           (* TODO center this text box so it doesn't overlap the ghosts or chang *)
           STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
           STEP (SET_FIXED_CAMERA (169, 42));
-          STEP (WAIT 0.5);
+          STEP (WAIT 1.5);
+          NPC (CHANG, SET_POSE "combination");
           STEP (DIALOGUE ("Chang", "What a delicious {{blue}} combination!"));
           STEP (DIALOGUE ("Britta", "What are we getting from this extra level of commitment?"));
+          NPC (CHANG, SET_POSE "idle");
           STEP
             (DIALOGUE
                ( "Chang",

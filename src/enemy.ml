@@ -39,15 +39,15 @@ let last_damage (enemy : enemy) : time =
   Enemy_action.Map.iter check_history enemy.history;
   { at = !damage }
 
-let load_pose (texture_config : texture_config) : string * texture =
-  (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
-
 let set_pose (enemy : enemy) (pose_name : string) : unit =
   match String.Map.find_opt pose_name enemy.textures with
   | None ->
     failwithf "could not find pose '%s' configured in enemies.json for enemy %s" pose_name
       (Show.enemy enemy)
-  | Some texture -> Entity.update_sprite_texture enemy.entity texture
+  | Some texture ->
+    Entity.update_sprite_texture
+      ~scale:(enemy.json.scale *. Config.scale.enemy)
+      enemy.entity texture
 
 (* this can't take an enemy arg like the other functions because it uses current_props
    for "single-frame"/"temporary" props
@@ -80,6 +80,7 @@ let spawn_projectile
     ?(damage = 1)
     ?(gravity_multiplier = 0.)
     ?(collide_with_floors = false)
+    ?(y_alignment = CENTER)
     ~(x_alignment : x_alignment)
     ~(direction : direction)
     (enemy : enemy)
@@ -93,13 +94,13 @@ let spawn_projectile
         (Show.enemy_name enemy)
   in
   let src = get_src projectile_texture in
-  let w, h = (src.w *. Config.scale.room *. scale, src.h *. Config.scale.room *. scale) in
+  let w, h = (src.w *. Config.scale.enemy *. scale, src.h *. Config.scale.enemy *. scale) in
   let vx =
     match projectile_vx_opt with
     | None -> get_attr enemy "projectile_vx"
     | Some vx' -> vx'
   in
-  let spawn_pos = Entity.get_child_pos enemy.entity (x_alignment, CENTER) w h in
+  let spawn_pos = Entity.get_child_pos enemy.entity (x_alignment, y_alignment) w h in
   let vx' =
     match direction with
     | LEFT -> -1. *. vx
@@ -180,7 +181,7 @@ let maybe_take_damage
         enemy.history;
     enemy.health.current <- enemy.health.current - damage;
     let damage_texture = state.global.textures.damage in
-    let texture_w, texture_h = get_scaled_texture_size Config.scale.room damage_texture in
+    let texture_w, texture_h = get_scaled_texture_size Config.scale.damage damage_texture in
     let new_damage_sprite =
       let pos = align (CENTER, CENTER) enemy.entity.dest texture_w texture_h in
       Sprite.spawn_particle
@@ -224,6 +225,11 @@ let chase_to enemy (target : vector) =
   in
   let max_v = get_attr enemy "max_chase_v" in
   (Float.bound (-.max_v) new_vx max_v, Float.bound (-.max_v) new_vy max_v)
+
+let get_boss_area boss_name game =
+  match game.room.boss_area with
+  | None -> failwithf "missing boss-area for %s" boss_name
+  | Some rect -> rect
 
 module type Enemy_actions = sig
   type t
@@ -308,7 +314,8 @@ module Duncan_actions = struct
           (* TODO might help to use a prefix like is_ or bool_ for these props that are used as booleans *)
           get_frame_prop "facing_right" = 1.;
         let spawn x_alignment direction =
-          spawn_projectile enemy ~x_alignment ~direction projectile_duration current_time
+          spawn_projectile enemy ~x_alignment ~y_alignment:BOTTOM_INSIDE ~direction
+            projectile_duration current_time
         in
         enemy.spawned_projectiles <-
           [ spawn LEFT_INSIDE RIGHT; spawn RIGHT_INSIDE LEFT ] @ enemy.spawned_projectiles;
@@ -321,11 +328,6 @@ module Duncan_actions = struct
     in
     set_pose enemy pose_name
 end
-
-let get_boss_area boss_name game =
-  match game.room.boss_area with
-  | None -> failwithf "missing boss-area for %s" boss_name
-  | Some rect -> rect
 
 module Duncan : M = struct
   module Action = Make_loggable (Duncan_actions)
@@ -959,7 +961,7 @@ module Flying_hippie_actions = struct
         in
         enemy.spawned_projectiles <-
           [
-            spawn_projectile enemy ~scale:0.5 ~x_alignment:RIGHT_INSIDE ~direction
+            spawn_projectile enemy ~scale:0.5 ~x_alignment:CENTER ~direction
               ~gravity_multiplier:(get_prop "gravity_multiplier" frame_props)
               ~collide_with_floors:true projectile_duration current_time;
           ]
@@ -1108,7 +1110,7 @@ module Bird : M = struct
         Action.start_and_log enemy CHANGE_DIRECTION args.frame_time
           [ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
     in
-    if false && get_bool_prop enemy "is_chasing" then
+    if get_bool_prop enemy "is_chasing" then
       handle_chasing ()
     else
       handle_drifting ()
@@ -1136,16 +1138,19 @@ let create_from_rects
     (enemy_rects : (enemy_id * rect) list)
     finished_interactions
     (enemy_configs : (enemy_id * Json_t.enemy_config) list) : enemy list =
-  let texture_cache : (enemy_id * (string * texture) list) list ref = ref [] in
+  let texture_cache : (enemy_id * (string * texture) ne_list) list ref = ref [] in
   let build id kind enemy_name (enemy_config : Json_t.enemy_config) entity_dest on_killed : enemy =
-    let texture_configs : texture_config list =
+    let texture_configs : texture_config ne_list =
       List.map (Entity.to_texture_config ENEMIES enemy_name) enemy_config.texture_configs
+      |> List.to_ne_list
     in
     let entity, textures =
       match List.assoc_opt id !texture_cache with
       | None ->
         Entity.create_from_texture_configs ~collision:(Some DEST)
-          ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs entity_dest
+          ~gravity_multiplier:enemy_config.gravity_multiplier
+          (Entity.scale_texture_configs (Config.scale.enemy *. enemy_config.scale) texture_configs)
+          entity_dest
       | Some textures ->
         Entity.create_from_textures ~collision:(Some DEST)
           ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs textures entity_dest
@@ -1175,7 +1180,7 @@ let create_from_rects
       entity;
       damage = json.damage;
       health = { current = enemy_config.health; max = enemy_config.health };
-      textures = textures |> List.to_string_map;
+      textures = textures |> List.Non_empty.to_list |> List.to_string_map;
       history = Enemy_action.Map.empty;
       last_performed = None;
       initial_pos = clone_vector entity.dest.pos;
@@ -1195,12 +1200,13 @@ let create_from_rects
       | Some config -> config
     in
     let cutscene_name, multiple_enemies, enemy_kind =
-      (* boss_kind could probably be configured as an optional variant in atd, but using a string with default value is easier *)
+      (* boss_kind could probably be configured as an optional variant in atd, but using a
+         string with default value is easier *)
       match enemy_config.kind with
       | "enemy" -> ("", false, ENEMY)
       | "boss" -> (fmt "boss-killed:%s" enemy_name, false, BOSS)
       | "multi-boss" -> (fmt "boss-killed:%s" enemy_name, true, MULTI_BOSS)
-      | _ -> failwithf "%s bad boss_kind '%s'" enemy_name enemy_config.kind
+      | _ -> failwithf "%s bad enemy_config.kind '%s'" enemy_name enemy_config.kind
     in
     let on_killed =
       {
@@ -1212,9 +1218,13 @@ let create_from_rects
       None
     else (
       let w, h =
-        ( (enemy_config.w |> Int.to_float) *. Config.scale.ghost,
-          (enemy_config.h |> Int.to_float) *. Config.scale.ghost )
+        ( (enemy_config.w |> Int.to_float) *. Config.scale.enemy *. enemy_config.scale,
+          (enemy_config.h |> Int.to_float) *. Config.scale.enemy *. enemy_config.scale )
       in
-      Some (build enemy_id enemy_kind enemy_name enemy_config { dest with w; h } on_killed))
+      let pos = align_to_bottom dest w h in
+      let enemy = build enemy_id enemy_kind enemy_name enemy_config { pos; w; h } on_killed in
+      (* without this, the enemy is unscaled for a single frame after room loads *)
+      set_pose enemy "idle";
+      Some enemy)
   in
   List.filter_map build_enemy_from_rect enemy_rects

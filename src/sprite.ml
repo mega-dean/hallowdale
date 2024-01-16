@@ -1,7 +1,7 @@
 open Utils
 open Types
 
-let make_dest x y (t : texture) : rect =
+let make_dest ~scale x y (t : texture) : rect =
   let w =
     match t.animation_src with
     | STILL _ -> Raylib.Texture.width t.image |> Int.to_float
@@ -12,17 +12,11 @@ let make_dest x y (t : texture) : rect =
       | Division_by_zero -> 1.)
   in
   (* w/h here is the animation_frame's full image w/h, not the physical w/h *)
-  {
-    pos = { x; y };
-    h = (Raylib.Texture.height t.image |> Int.to_float) *. Config.scale.ghost;
-    w = w *. Config.scale.ghost;
-  }
+  { pos = { x; y }; h = (Raylib.Texture.height t.image |> Int.to_float) *. scale; w = w *. scale }
 
 let get_current_frame_idx (animation_src : animation_src) : int =
   match animation_src with
-  | STILL _ ->
-    (* TODO maybe just return -1 if crashing is too inconvenient *)
-    failwith "can't get current_idx of STILL animation"
+  | STILL _ -> failwith "can't get current_idx of STILL animation"
   | ONCE animation
   | PARTICLE animation
   | LOOPED animation ->
@@ -88,18 +82,17 @@ let texture_path_to_string (texture_path : texture_path) : string =
       fmt "%s.png" texture_path.pose_name;
     ]
 
-let build_texture'
-    ?(scale = Config.scale.ghost)
+let build_texture
     ?(particle = false)
     ?(once = false)
-    ?(animation_src_rect = None)
+    ?(animation_src_opt = None)
     (texture_config : texture_config)
     (image : image) : texture =
   let count = texture_config.count in
   let w = Raylib.Texture.width image / count |> Int.to_float in
   let h = Raylib.Texture.height image |> Int.to_float in
   let animation_src =
-    match animation_src_rect with
+    match animation_src_opt with
     | Some rect -> STILL rect
     | None ->
       if count = 1 then
@@ -130,15 +123,11 @@ let build_texture'
   {
     ident = texture_path_to_string texture_config.path;
     image;
-    coll_offset = { x = texture_config.x_offset *. scale; y = texture_config.y_offset *. scale };
+    coll_offset = { x = texture_config.x_offset; y = texture_config.y_offset };
     animation_src;
   }
 
-let build_texture_from_path
-    ?(scale = Config.scale.ghost)
-    ?(particle = false)
-    ?(once = false)
-    (path : texture_path) =
+let build_texture_from_path ?(particle = false) ?(once = false) (path : texture_path) =
   let image = load_image (texture_path_to_string path) in
   let texture_config =
     {
@@ -150,16 +139,16 @@ let build_texture_from_path
       y_offset = 0.;
     }
   in
-  build_texture' ~scale ~particle ~once texture_config image
+  build_texture ~particle ~once texture_config image
 
 let build_texture_from_config
-    ?(scale = Config.scale.ghost)
     ?(particle = false)
     ?(once = false)
+    ?(debug = false)
     (texture_config : texture_config) : texture =
   let path = texture_path_to_string texture_config.path in
-  let image = load_image path in
-  build_texture' ~scale ~particle ~once texture_config image
+  let image = load_image ~debug path in
+  build_texture ~particle ~once texture_config image
 
 let build_static_texture ?(asset_dir = NPCS) name =
   build_texture_from_config
@@ -171,11 +160,7 @@ let build_static_texture ?(asset_dir = NPCS) name =
       y_offset = 0.;
     }
 
-let build_texture_from_image
-    ?(scale = Config.scale.ghost)
-    ?(particle = false)
-    (image : image)
-    animation_src_rect : texture =
+let build_texture_from_image ?(particle = false) image animation_src_opt : texture =
   let texture_config =
     {
       (* texture location isn't used because image has already been loaded *)
@@ -186,7 +171,7 @@ let build_texture_from_image
       y_offset = 0.;
     }
   in
-  build_texture' ~scale ~particle ~animation_src_rect texture_config image
+  build_texture ~particle ~animation_src_opt texture_config image
 
 let clone (orig : sprite) : sprite =
   let dest_clone =

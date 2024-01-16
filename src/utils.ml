@@ -3,7 +3,6 @@ let print fmtstr = Printf.ksprintf print_endline fmtstr
 let tmp fmtstr = Printf.ksprintf print_endline fmtstr
 let itmp fmtstr = Printf.ifprintf print_endline fmtstr
 let failwithf f = Printf.ksprintf failwith f
-let join ?(sep = ", ") strs = String.concat sep strs
 
 type vector = {
   mutable x : float;
@@ -81,6 +80,8 @@ module String = struct
     | Some prefix, rest -> rest
     | None, _ -> str
 
+  let join strs = String.concat ", " strs
+  let join_lines strs = String.concat "\n" strs
   let to_int s = int_of_string s
 end
 
@@ -160,6 +161,12 @@ module List = struct
     let hd ((head, rest) : 'a t) = head
     let tl ((head, rest) : 'a t) = rest
     let mem (x : 'a) ((head, rest) : 'a t) = x = head || List.mem x rest
+
+    let assoc_opt (k : 'a) (xs : ('a * 'b) t) =
+      if k = fst (hd xs) then
+        Some (snd (hd xs))
+      else
+        List.assoc_opt k (tl xs)
 
     let iter (f : 'a -> 'b) ((head, rest) : 'a t) : unit =
       f head;

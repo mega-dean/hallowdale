@@ -62,12 +62,6 @@ let unhide_at (entity : entity) (pos : vector) =
 
 let hidden (entity : entity) : bool = entity.dest.pos.x < 0. && entity.dest.pos.y < 0.
 
-let set_facing (direction : direction) (entity : entity) =
-  match direction with
-  | RIGHT -> entity.sprite.facing_right <- true
-  | LEFT -> entity.sprite.facing_right <- false
-  | _ -> failwithf "Entity.set_facing bad direction %s" (Show.direction direction)
-
 let apply_v ?(debug = None) dt (entity : entity) =
   (match entity.y_recoil with
   | None -> entity.dest.pos.y <- entity.dest.pos.y +. (entity.v.y *. dt)
@@ -206,12 +200,12 @@ let apply_collisions
         | Some r -> r.speed > 0.
       in
       if not_recoiling_upward && above_floor entity floor then (
-        if entity.v.y > 0. then
-          entity.v.y <- 0.;
         entity.dest.pos.y <- top_of floor -. entity.dest.h;
         (* the floor shouldn't be set for fragments (because it forces the new_vy to be 0.) *)
-        if entity.config.bounce < 0.01 then
-          entity.current_floor <- Some (floor, floor_v));
+        if entity.config.bounce < 0.01 then (
+          entity.current_floor <- Some (floor, floor_v);
+          if entity.v.y > 0. then
+            entity.v.y <- 0.));
       if entity.config.inanimate then
         if abs_float entity.v.x < 10. then (
           entity.v.y <- 0.;
@@ -273,6 +267,13 @@ let update_pos_
     (entity : entity) : unit =
   update_pos ~gravity_multiplier_override ~apply_floor_collisions room dt entity |> ignore
 
+let unset_removed_floor (entity : entity) (floor : rect) =
+  match entity.current_floor with
+  | Some (dest, _) ->
+    if dest = floor then
+      entity.current_floor <- None
+  | None -> ()
+
 let maybe_unset_current_floor (entity : entity) (room : room) =
   match entity.current_floor with
   | None -> ()
@@ -307,21 +308,20 @@ let is_on_screen (e : entity) = is_on_screen' e.dest
 let is_off_screen (e : entity) = not (is_on_screen e)
 let get_center (entity : entity) : vector = get_rect_center entity.dest
 
-let set_facing_right ?(allow_vertical = true) (entity : entity) (direction : direction) =
+let set_facing_right (entity : entity) (direction : direction) =
   match direction with
   | LEFT -> entity.sprite.facing_right <- false
   | RIGHT -> entity.sprite.facing_right <- true
-  | _ ->
-    if not allow_vertical then
-      failwithf "bad direction in set_facing_right: %s" (Show.direction direction)
+  | _ -> ()
 
 (* this uses Config.ghost.vx, which works fine for npcs in cutscenes *)
 let update_vx (entity : entity) multiplier =
   let mult = if entity.sprite.facing_right then multiplier else -1. *. multiplier in
   entity.v.x <- mult *. Config.ghost.vx
 
-let walk_ghost (entity : entity) (direction : direction) : unit =
-  set_facing_right entity direction;
+let walk_ghost ?(update_facing = true) (entity : entity) (direction : direction) : unit =
+  if update_facing then
+    set_facing_right entity direction;
   update_vx entity 1.
 
 (* called once per frame to align sprite.dest position with entity.dest position *)
@@ -333,10 +333,11 @@ let adjust_sprite_dest ?(skip_coll_offset = false) (e : entity) =
   else
     e.sprite.dest.pos.x <- e.dest.pos.x -. (e.sprite.dest.w -. e.dest.w -. offset.x)
 
-let update_sprite_texture (entity : entity) (texture : texture) =
+let update_sprite_texture ~scale (entity : entity) (texture : texture) =
   entity.sprite.texture <- texture;
   (* this is needed to adjust the w/h *)
-  entity.sprite.dest <- Sprite.make_dest entity.sprite.dest.pos.x entity.sprite.dest.pos.y texture
+  entity.sprite.dest <-
+    Sprite.make_dest ~scale entity.sprite.dest.pos.x entity.sprite.dest.pos.y texture
 
 let clone (orig : entity) : entity =
   let dest_clone =
@@ -398,32 +399,27 @@ let to_texture_config asset_dir character_name ((pose_name, json) : string * Jso
     path = { asset_dir; character_name; pose_name };
   }
 
-let load_pose (texture_config : texture_config) : string * texture =
-  (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
-
 let create_from_textures
     ?(collision = None)
     ?(gravity_multiplier = 1.)
-    (texture_configs : texture_config list)
-    (textures : (string * texture) list)
-    (entity_dest : rect) : entity * (string * texture) list =
-  let config =
-    (* texture_configs can't be empty *)
-    List.nth texture_configs 0
-  in
+    (texture_configs : texture_config ne_list)
+    (textures : (string * texture) ne_list)
+    (entity_dest : rect) : entity * (string * texture) ne_list =
+  let config = List.Non_empty.hd texture_configs in
   let validate_configs_are_complete () =
     let get_filenames asset_dir char_name =
       File.ls (File.make_assets_path [ asset_dir; char_name ])
     in
     let config_names =
-      texture_configs |> List.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
+      texture_configs
+      |> List.Non_empty.map (fun (t : texture_config) -> fmt "%s.png" t.path.pose_name)
     in
     let png_names =
       get_filenames (Show.asset_dir config.path.asset_dir) config.path.character_name
     in
 
     let validate_png_name png_name =
-      if not (List.mem png_name config_names) then
+      if not (List.Non_empty.mem png_name config_names) then
         failwithf "found %s image '%s' that has no corresponding config in enemies.json"
           config.path.character_name png_name
     in
@@ -438,23 +434,30 @@ let create_from_textures
           config.path.character_name short short)
     in
     List.iter validate_png_name png_names;
-    List.iter validate_config_name config_names
+    List.Non_empty.iter validate_config_name config_names
   in
   let initial_texture =
-    match List.assoc_opt "idle" textures with
+    match List.Non_empty.assoc_opt "idle" textures with
     | None -> failwithf "could not find 'idle' texture for %s" config.path.character_name
     | Some texture -> texture
   in
-  let texture_config = List.nth texture_configs 0 in
   validate_configs_are_complete ();
-  ( create ~collision ~gravity_multiplier texture_config.path.character_name initial_texture
-      entity_dest,
+  ( create ~collision ~gravity_multiplier config.path.character_name initial_texture entity_dest,
     textures )
+
+let scale_texture_configs scale configs =
+  let scale_config config =
+    { config with x_offset = config.x_offset *. scale; y_offset = config.y_offset *. scale }
+  in
+  List.Non_empty.map scale_config configs
 
 let create_from_texture_configs
     ?(collision = None)
     ?(gravity_multiplier = 1.)
-    (texture_configs : texture_config list)
-    (entity_dest : rect) : entity * (string * texture) list =
-  let textures = List.map load_pose texture_configs in
+    (texture_configs : texture_config ne_list)
+    (entity_dest : rect) : entity * (string * texture) ne_list =
+  let load_pose (texture_config : texture_config) : string * texture =
+    (texture_config.path.pose_name, Sprite.build_texture_from_config texture_config)
+  in
+  let textures = List.Non_empty.map load_pose texture_configs in
   create_from_textures ~collision ~gravity_multiplier texture_configs textures entity_dest

@@ -59,6 +59,10 @@
                 }],
                 ["attack", {
                 }],
+                ["combination", {
+                    "count": 2,
+                    "duration": 0.4
+                }],
                 ["walking", {
                     "count": 4,
                     "duration": 0.1

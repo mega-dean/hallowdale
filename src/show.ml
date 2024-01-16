@@ -15,18 +15,22 @@ let line_mx_b (line : line) : string =
 
 let vector (v : vector) : string = fmt "(%0.1f, %0.1f)" v.x v.y
 let rect (r : rect) : string = fmt "[w: %0.1f, h: %0.1f, at (%0.1f, %0.1f)]" r.w r.h r.pos.x r.pos.y
+
+let coll_rect (r : Json_t.coll_rect) : string =
+  fmt "[w: %0.1f, h: %0.1f, at (%0.1f, %0.1f)]" r.w r.h r.x r.y
+
 let int_list xs = List.map string_of_int xs
 let sprite (s : sprite) = s.ident
 let entity (e : entity) = sprite e.sprite
 let shape (shape : shape) = fmt "shape with %d edges" (List.length shape.edges)
 
 let shape_lines (shape : shape) =
-  fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> join ~sep:"\n")
+  fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> String.join_lines)
 
 let shape_points shape : string =
   List.map fst shape.edges
   |> List.map (fun v -> fmt "{ x = %f; y = %f };" v.x v.y)
-  |> join ~sep:"\n"
+  |> String.join_lines
 
 let direction (d : direction) : string =
   match d with
@@ -79,7 +83,7 @@ let trigger_kind (kind : trigger_kind) =
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
-  | STILL r -> fmt "STILL (at %s)" (rect r)
+  | STILL r -> fmt "STILL (%s)" (rect r)
   | PARTICLE a -> fmt "PARTICLE (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
   | LOOPED a -> fmt "LOOPED (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
   | ONCE a -> fmt "ONCE (frame %d of %d)" (a.frame_idx + 1) (List.length a.frames)
@@ -313,10 +317,10 @@ let ghost_child_kind (d : ghost_child_kind) : string =
 let time (t : time) = fmt "%f" t.at
 
 let tile_group (tile_group : tile_group) : string =
-  fmt "[%s]" (int_list tile_group.tile_idxs |> join)
+  fmt "[%s]" (int_list tile_group.tile_idxs |> String.join)
 
 let layer_tile_groups (layer : layer) : string =
-  fmt "tile_groups:\n%s" (List.map tile_group layer.tile_groups |> join ~sep:"\n")
+  fmt "tile_groups:\n%s" (List.map tile_group layer.tile_groups |> String.join_lines)
 
 let jug_config (config : jug_config) : string =
   fmt "%s === w %d, h %d, tile x %d" config.jug_name config.w config.h config.tile_x

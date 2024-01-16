@@ -61,22 +61,13 @@ let init (params : room_params) : room =
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
   let boss_area : rect option ref = ref None in
   let npc_rects : (npc_id * rect * bool) list ref = ref [] in
-  let floored_rect rect =
-    {
-      pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
-      w = rect.w |> Float.floor;
-      h = rect.h |> Float.floor;
-    }
-  in
 
   let tilesets_by_path = Tiled.load_tilesets json_room in
 
   let get_object_rects (json_layer : Json_t.layer) =
-    let get_object_rect ?(floor = false) ?(hidden = false) (coll_rect : Json_t.coll_rect) =
+    let get_object_rect ?(hidden = false) (coll_rect : Json_t.coll_rect) =
       let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
-      if floor then
-        floored_rect rect
-      else if hidden then
+      if hidden then
         { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } }
       else
         rect
@@ -101,7 +92,7 @@ let init (params : room_params) : room =
       let sprite : sprite =
         {
           ident = fmt "%s_%d" texture_name idx;
-          dest = floored_rect dest;
+          dest;
           texture;
           facing_right = true;
           (* this could be Some DEST, but the rects are being checked directly like other floors *)
@@ -165,18 +156,9 @@ let init (params : room_params) : room =
         }
       in
 
-      let get_object_trigger ?(floor = false) ?(hidden = false) ?(label = None) kind : trigger =
+      let get_object_trigger ?(hidden = false) ?(label = None) kind : trigger =
         let dest : rect =
-          if floor then
-            (* TODO see if Float.floor is still needed
-               these were preventing the pixels in the background from being distorted
-            *)
-            {
-              pos = { x = rect.pos.x |> Float.floor; y = rect.pos.y |> Float.floor };
-              w = rect.w |> Float.floor;
-              h = rect.h |> Float.floor;
-            }
-          else if hidden then
+          if hidden then
             { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } }
           else
             rect
@@ -214,12 +196,17 @@ let init (params : room_params) : room =
       match name_prefix with
       | "camera" ->
         let x, y = String.split_at_first ',' name_suffix in
-        camera_triggers := get_object_trigger ~floor:true (CAMERA (x, y)) :: !camera_triggers
+        camera_triggers := get_object_trigger (CAMERA (x, y)) :: !camera_triggers
       | "lever" ->
-        let direction, transformation =
+        (* y_offset is to align the lever with the floor, so the trigger rect
+           doesn't need to be the exact size of the lever
+        *)
+        let direction, transformation, y_offset =
           match name_suffix with
-          | "up" -> (UP, 0)
-          | "down" -> (DOWN, 2)
+          | "up" ->
+            let lever_h = (get_src params.lever_texture).h in
+            (UP, 0, lever_h -. coll_rect.h)
+          | "down" -> (DOWN, 2, 0.)
           | "left"
           | "right" ->
             failwithf "horizontal levers aren't supported (%s)" name_suffix
@@ -241,13 +228,15 @@ let init (params : room_params) : room =
           List.filter_map to_tile_idx !targets |> List.to_ne_list
         in
         let lever_sprite : sprite =
+          let dest =
+            Sprite.make_dest ~scale:Config.scale.room
+              (coll_rect.x *. Config.scale.room)
+              ((coll_rect.y -. y_offset) *. Config.scale.room)
+              params.lever_texture
+          in
           {
             ident = fmt "Sprite %s" name_suffix;
-            dest =
-              Sprite.make_dest
-                (coll_rect.x *. Config.scale.room)
-                (coll_rect.y *. Config.scale.room)
-                params.lever_texture;
+            dest;
             texture = params.lever_texture;
             collision = Some (SHAPE Config.lever_shape);
             facing_right = true;
@@ -555,7 +544,6 @@ let init (params : room_params) : room =
         tilesets_by_path = tilesets_by_path |> List.to_string_map;
       }
     | Some tileset ->
-      let jug_tileset_img = Tiled.Tileset.image tileset in
       (* all of the `*. 2.` or `+ 2` in this function is here because jugs were originally
          written for a 24x24 tileset *)
       let make_jug (config : jug_config) : int * jug_fragments =
@@ -567,7 +555,7 @@ let init (params : room_params) : room =
             json_room.tile_h *. 2.
           in
           Some
-            (Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
+            (Sprite.build_texture_from_image tileset.image
                (Some { w = json_room.tile_w *. width; h = stub_h; pos = stub_pos }))
         in
         let fragments : entity list =
@@ -588,8 +576,7 @@ let init (params : room_params) : room =
               let fragment_pos' = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
               let fragment_pos = { fragment_pos' with y = fragment_pos'.y +. y_offset } in
               let texture =
-                Sprite.build_texture_from_image ~scale:Config.scale.room jug_tileset_img
-                  (Some { pos = fragment_pos; w; h })
+                Sprite.build_texture_from_image tileset.image (Some { pos = fragment_pos; w; h })
               in
               let sprite =
                 Sprite.create
@@ -888,7 +875,7 @@ let change_current_room
     List.iter hide_party_ghost game.party
   in
   let unload_tilesets (room : room) : unit =
-    let unload_tileset _path tileset = Raylib.unload_texture (Tiled.Tileset.image tileset) in
+    let unload_tileset _path tileset = Raylib.unload_texture tileset.image in
     String.Map.iter unload_tileset room.cache.tilesets_by_path
   in
   let get_music area_id =

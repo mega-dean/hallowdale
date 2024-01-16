@@ -63,9 +63,10 @@ let read_config () : ghosts_file =
 let ghost_ids_in_party ghosts : ghost_id list =
   ghosts |> List.filter_map (fun g -> if g.in_party then Some g.ghost.id else None)
 
-let maybe_begin_interactions (state : state) (game : game) (triggers : trigger list) =
+let maybe_begin_interactions (state : state) (game : game) (triggers : trigger ne_list) =
   let begin_interactions ?(increase_health = false) () =
-    game.interaction.steps <- Interactions.get_steps ~increase_health state game triggers
+    game.interaction.steps <-
+      Interactions.get_steps ~increase_health state game (triggers |> List.Non_empty.to_list)
   in
   let begin_cutscene_interaction name =
     (* these are only viewable once *)
@@ -76,11 +77,7 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
   let strip_blocking_interaction (full_name : string) : string =
     String.maybe_trim_before '|' full_name
   in
-  let first_trigger =
-    match List.nth_opt triggers 0 with
-    | None -> failwith ""
-    | Some t -> t
-  in
+  let first_trigger = List.Non_empty.hd triggers in
   let name = strip_blocking_interaction first_trigger.full_name in
   match first_trigger.kind with
   | WARP _
@@ -106,7 +103,7 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger l
     failwithf "cannot begin interaction with kind %s" (Show.trigger_kind first_trigger.kind)
 
 let maybe_begin_interaction (state : state) (game : game) trigger =
-  maybe_begin_interactions (state : state) (game : game) [ trigger ]
+  maybe_begin_interactions state game (trigger, [])
 
 let find_trigger_collision' player (xs : 'a list) get_trigger_dest : 'a option =
   let colliding x =
@@ -479,7 +476,8 @@ let resolve_slash_collisions (state : state) (game : game) =
       layer.destroyed_tiles <- tile_group.tile_idxs @ layer.destroyed_tiles;
       if layer.config.permanently_removable then
         game.room.progress.removed_tile_idxs <-
-          tile_group.tile_idxs @ game.room.progress.removed_tile_idxs
+          tile_group.tile_idxs @ game.room.progress.removed_tile_idxs;
+      Entity.unset_removed_floor game.player.ghost.entity tile_group.dest
     in
 
     let maybe_pogo_platform_spikes id rect =
@@ -578,19 +576,19 @@ let resolve_slash_collisions (state : state) (game : game) =
             @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
-          | Some (PURPLE_PEN (name, followup_trigger)) ->
+          | Some (PURPLE_PEN (name, followup_trigger')) ->
             game.progress.steel_sole.purple_pens_found <-
               (state.frame.idx, name) :: game.progress.steel_sole.purple_pens_found;
+            let followup_trigger =
+              match game.mode with
+              | STEEL_SOLE -> None
+              | CLASSIC
+              | DEMO ->
+                followup_trigger'
+            in
             maybe_begin_interactions state game
-              ([
-                 Some (make_stub_trigger PURPLE_PEN "purple-pen" name);
-                 (match game.mode with
-                 | STEEL_SOLE -> None
-                 | CLASSIC
-                 | DEMO ->
-                   followup_trigger);
-               ]
-              |> List.filter_somes)
+              ( make_stub_trigger PURPLE_PEN "purple-pen" name,
+                [ followup_trigger ] |> List.filter_somes )
           | _ -> ());
           destroy_tile_group layer tile_group;
           (match game.mode with
@@ -686,13 +684,9 @@ let reset_current_status ?(taking_hazard_damage = None) () =
     can_flap = true;
   }
 
-let set_new_body_texture ghost body_texture =
-  ghost.body_render_offset <- body_texture.render_offset;
-  Entity.update_sprite_texture ghost.entity body_texture.texture'
-
 let set_ghost_textures ghost ~head_texture ~body_texture =
   ghost.head <- head_texture;
-  set_new_body_texture ghost body_texture
+  Entity.update_sprite_texture ~scale:Config.scale.ghost ghost.entity body_texture
 
 (* - this function handles state updates that should happen every frame of a pose
    -- but some actions don't use start/continue_action, so they set things on every frame
@@ -715,11 +709,8 @@ let set_pose
       player.current.can_dash <- true;
       player.current.can_flap <- true)
   in
-  let set_facing_right ?(allow_vertical = true) (direction : direction) =
-    Entity.set_facing_right ~allow_vertical player.ghost.entity direction
-  in
 
-  let handle_cast (spell_kind : spell_kind) : texture * ghost_body_texture =
+  let handle_cast (spell_kind : spell_kind) : texture * texture =
     match spell_kind with
     | VENGEFUL_SPIRIT ->
       player.ghost.entity.v.y <- 0.;
@@ -734,11 +725,11 @@ let set_pose
       (player.ghost.head_textures.walk, bodies.cast)
   in
 
-  let handle_action_kind action_kind : texture * ghost_body_texture =
+  let handle_action_kind action_kind : texture * texture =
     match action_kind with
     | ATTACK direction ->
       (* handle_attacking is called after handle_walking, so this allows the ghost to walk backwards while attacking *)
-      set_facing_right direction;
+      Entity.set_facing_right player.ghost.entity direction;
       let head =
         match direction with
         | UP -> player.ghost.head_textures.look_up
@@ -799,7 +790,7 @@ let set_pose
     | FLAP -> (player.ghost.head_textures.idle, bodies.flap)
   in
 
-  let (head_texture, body_texture) : texture * ghost_body_texture =
+  let (head_texture, body_texture) : texture * texture =
     match new_pose with
     | PERFORMING action_kind -> handle_action_kind action_kind
     | AIRBORNE new_vy ->
@@ -821,7 +812,12 @@ let set_pose
       (player.ghost.head_textures.read, bodies.read)
     | WALKING direction ->
       reset_standing_abilities ();
-      Entity.walk_ghost player.ghost.entity direction;
+      (* don't update facing_right when wallsliding because even though it gets re-set
+         correctly before the frame ends, slash direction gets messed up when it is wrong
+         in the middle of the frame *)
+      Entity.walk_ghost
+        ~update_facing:(Option.is_none player.current.wall)
+        player.ghost.entity direction;
       (player.ghost.head_textures.walk, bodies.walk)
     | WALL_SLIDING wall ->
       let wall_to_the_left = wall.pos.x < player.ghost.entity.sprite.dest.pos.x in
@@ -858,9 +854,12 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   in
   let w, h = get_scaled_texture_size Config.scale.ghost texture in
   let pos =
-    align
-      (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER)
-      game.player.ghost.entity.dest w h
+    match start with
+    | Some p -> p
+    | None ->
+      align
+        (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER)
+        game.player.ghost.entity.dest w h
   in
   let dest = { pos; w; h } in
   let facing_right =
@@ -1287,7 +1286,7 @@ let equip_weapon (player : player) weapon_name =
   match String.Map.find_opt weapon_name player.weapons with
   | None ->
     failwithf "can't equip %s, not in player.weapons: %s" weapon_name
-      (player.weapons |> String.Map.to_list |> List.map fst |> join)
+      (player.weapons |> String.Map.to_list |> List.map fst |> String.join)
   | Some weapon_config ->
     player.current_weapon <-
       (let config = weapon_config.tint in
@@ -1353,16 +1352,12 @@ let handle_debug_keys (game : game) (state : state) =
     let show_ghost_positions () =
       let positions : string =
         let show_pos (pg : party_ghost) =
-          fmt "%s: %s (body offset: %s)" (Show.ghost_id pg.ghost.id)
-            (Show.vector pg.ghost.entity.dest.pos)
-            (Show.vector pg.ghost.body_render_offset)
+          fmt "%s: %s" (Show.ghost_id pg.ghost.id) (Show.vector pg.ghost.entity.dest.pos)
         in
-        List.map show_pos game.party |> join ~sep:"\n"
+        List.map show_pos game.party |> String.join_lines
       in
       print "party ghost positions:\n%s" positions;
-      print "ghost pos: %s (body offset: %s)"
-        (Show.vector game.player.ghost.entity.dest.pos)
-        (Show.vector game.player.ghost.body_render_offset)
+      print "ghost pos: %s" (Show.vector game.player.ghost.entity.dest.pos)
     in
     let toggle_safe_ss () =
       state.debug.safe_ss <- not state.debug.safe_ss;
@@ -1643,7 +1638,7 @@ let tick (game : game) (state : state) =
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =
           match entity_step with
-          | SET_FACING direction -> Entity.set_facing direction entity
+          | SET_FACING direction -> Entity.set_facing_right entity direction
           | WAIT_UNTIL_LANDED ->
             if Option.is_none entity.current_floor then
               still_waiting_for_floor := true
@@ -1831,7 +1826,7 @@ let tick (game : game) (state : state) =
             | Some t -> t
             | None -> failwithf "could not find pose %s for npc %s" pose (Show.npc_id npc.id)
           in
-          Entity.update_sprite_texture npc.entity texture
+          Entity.update_sprite_texture ~scale:Config.scale.ghost npc.entity texture
         in
 
         let handle_npc_step (npc : npc) (npc_step : Interaction.npc_step) =
@@ -2713,7 +2708,7 @@ let init
     | None -> failwithf "could not find action config for '%s' in config/ghosts.json" action_name
     | Some config -> config
   in
-  let dest = Sprite.make_dest start_pos.x start_pos.y idle_texture in
+  let dest = Sprite.make_dest ~scale:Config.scale.ghost start_pos.x start_pos.y idle_texture in
   let make_action (config_name : string) : ghost_action =
     {
       doing_until = { at = -1000. };
@@ -2732,7 +2727,6 @@ let init
         id = ghost_id;
         head = head_textures.idle;
         head_textures;
-        body_render_offset = Zero.vector ();
         entity =
           Entity.create_for_sprite
             (Sprite.create
@@ -2799,7 +2793,6 @@ let init_party
     (head_textures : ghost_head_textures)
     (idle_texture : texture)
     ~(start_pos : vector)
-    ~(body_render_offset : vector)
     (in_party : bool) : party_ghost =
   let w, h = get_scaled_texture_size Config.scale.ghost idle_texture in
   let dest = { pos = start_pos; w; h } in
@@ -2817,14 +2810,6 @@ let init_party
     entity'
   in
   {
-    ghost =
-      {
-        id;
-        head = head_textures.idle;
-        body_render_offset;
-        head_textures;
-        entity;
-        hardfall_timer = None;
-      };
+    ghost = { id; head = head_textures.idle; head_textures; entity; hardfall_timer = None };
     in_party;
   }

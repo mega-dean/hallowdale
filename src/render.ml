@@ -42,7 +42,7 @@ let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite)
       (Raylib.Vector2.create next_point.x next_point.y)
       size color
   in
-  let points' = List.map Show.vector points |> join in
+  let points' = List.map Show.vector points |> String.join in
   List.iteri draw_edge points
 
 let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
@@ -127,13 +127,23 @@ let draw_sprite
       debug_shape_outline sprite shape
   | _ -> ()
 
-let draw_entity
-    ?(debug = false)
-    ?(tint = Color.create 255 255 255 255)
-    ?(render_offset = None)
-    (e : entity) =
-  Entity.adjust_sprite_dest ~skip_coll_offset:(Option.is_some render_offset) e;
-  draw_sprite ~debug ~tint ~render_offset e.sprite
+let draw_entity ?(debug = false) ?(tint = Color.create 255 255 255 255) (entity : entity) =
+  Entity.adjust_sprite_dest entity;
+  draw_sprite ~debug ~tint entity.sprite
+
+let draw_ghost_head ~tint ghost =
+  let head_dest =
+    {
+      pos =
+        {
+          x = ghost.entity.dest.pos.x +. Config.ghost.entity_neck_x -. Config.ghost.neck_x;
+          y = ghost.entity.dest.pos.y +. Config.ghost.entity_neck_y -. Config.ghost.neck_y;
+        };
+      w = Config.ghost.head_w;
+      h = Config.ghost.head_h;
+    }
+  in
+  draw_texture ~tint ghost.head head_dest (if ghost.entity.sprite.facing_right then 0 else 4)
 
 let center (r : rect) : Raylib.Vector2.t = Raylib.Vector2.create (rect_center_x r) (rect_center_y r)
 
@@ -236,9 +246,7 @@ let draw_fg_tiles room camera_x camera_y state : unit =
 
 let draw_floating_platforms (room : room) state : unit =
   List.iter
-    (fun (platform : platform) ->
-      (* not sure if platforms should take the tint of the current area, since it makes them stand out from the bg less *)
-      draw_sprite ~tint:room.area.tint platform.sprite)
+    (fun (platform : platform) -> draw_sprite ~tint:room.area.tint platform.sprite)
     room.platforms
 
 (* - lines are broken up into line_segments based on colors - this is three line_segments:
@@ -392,6 +400,7 @@ let tick (state : state) =
     Draw.text "*" { x = right_x; y }
   in
 
+  (* TODO colored words look fine at window_scale 1.0 and 0.5, but not at 0.8 *)
   let display_paragraph
       ?(force_spaces = false)
       ?(y_offset = 0.)
@@ -539,7 +548,7 @@ let tick (state : state) =
           match game.interaction.use_dashes_in_archives with
           | Some false -> true
           | _ -> false)
-        | _ -> false
+        | None -> false
       in
       List.iteri (display_paragraph ~force_spaces config) lines
     | Some (MENU (menu, save_slots)) ->
@@ -820,32 +829,9 @@ let tick (state : state) =
       List.iter draw_npc npcs
     in
 
-    let draw_ghost_head ~tint ghost =
-      let head_dest =
-        {
-          pos =
-            {
-              x = ghost.entity.dest.pos.x -. (Config.ghost.neck_x -. Config.ghost.entity_neck_x);
-              y = ghost.entity.dest.pos.y -. (Config.ghost.neck_y -. Config.ghost.entity_neck_y);
-            };
-          w = Config.ghost.head_w;
-          h = Config.ghost.head_h;
-        }
-      in
-      draw_texture ghost.head head_dest (if ghost.entity.sprite.facing_right then 0 else 4)
-    in
-
-    let ghost_render_offset ghost =
-      Some
-        {
-          x = Config.ghost.entity_neck_x -. ghost.body_render_offset.x;
-          y = Config.ghost.entity_neck_y -. ghost.body_render_offset.y;
-        }
-    in
-
     let draw_party_ghosts (ghosts_by_id : party_ghost list) =
       let draw_party_ghost (party_ghost : party_ghost) =
-        draw_entity ~render_offset:(ghost_render_offset party_ghost.ghost) party_ghost.ghost.entity;
+        draw_entity party_ghost.ghost.entity;
         draw_ghost_head ~tint:Color.raywhite party_ghost.ghost;
         if state.debug.enabled then (
           debug_rect party_ghost.ghost.entity.dest;
@@ -920,7 +906,7 @@ let tick (state : state) =
       draw_texture game.player.shared_textures.shine shine_dest 0;
       Ghost_child_kind.Map.iter draw_child children_behind;
 
-      draw_entity ~tint ~render_offset:(ghost_render_offset player.ghost) player.ghost.entity;
+      draw_entity ~tint player.ghost.entity;
       draw_ghost_head ~tint player.ghost;
       Ghost_child_kind.Map.iter draw_child children_in_front
     in
