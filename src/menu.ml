@@ -239,9 +239,10 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
       let save_file' =
         match mode with
         | CLASSIC -> save_file
-        | DEMO
+        | DEMO ->
+            Game.initialize_steel_sole ~with_keys:false save_file
         | STEEL_SOLE ->
-          Game.initialize_steel_sole save_file
+          Game.initialize_steel_sole ~with_keys:true save_file
       in
       start_new_game mode save_file' save_file_idx
     | CONFIRM_DELETE_MENU CANCEL

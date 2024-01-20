@@ -123,7 +123,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         STEP (WAIT 0.5);
         CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
         STEP (WAIT 1.);
-        STEP (TEXT [ fmt "Got the %s key" trigger.name_suffix ]);
+        STEP (TEXT [ fmt "Found a key: {{blue}} %s" trigger.name_suffix; get_lore () ]);
         CURRENT_GHOST (ADD_ITEM (KEY trigger.name_suffix));
       ]
     | "increase-health" ->
@@ -133,10 +133,6 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         STEP (WAIT 1.);
         CURRENT_GHOST (INCREASE_HEALTH_TEXT "Max health increased.");
       ]
-    | "d-nail-item" -> (
-      match trigger.name_suffix with
-      | "dreamnailitem" -> [ STEP (TEXT [ "Give me some rope, tie me to dream." ]) ]
-      | _ -> fail ())
     | "dreamer" ->
       fade_screen_with_dramatic_pause
         [ CURRENT_GHOST (ADD_ITEM (DREAMER (trigger.name_suffix, get_lore ()))) ]

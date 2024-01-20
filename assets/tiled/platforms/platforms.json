@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":24,
+ "tilecount":27,
  "tiledversion":"1.10.2",
  "tileheight":108,
  "tiles":[
@@ -155,6 +155,24 @@
          "id":24,
          "image":"deans-closet.png",
          "imageheight":108,
+         "imagewidth":48
+        }, 
+        {
+         "id":25,
+         "image":"deans-brand.png",
+         "imageheight":108,
+         "imagewidth":60
+        }, 
+        {
+         "id":26,
+         "image":"jukebox.png",
+         "imageheight":72,
+         "imagewidth":48
+        }, 
+        {
+         "id":27,
+         "image":"room-temperature-room.png",
+         "imageheight":96,
          "imagewidth":48
         }],
  "tilewidth":264,

@@ -1661,7 +1661,7 @@ let tick (game : game) (state : state) =
           | KEY key_name -> game.progress.keys_found <- key_name :: game.progress.keys_found
           | DREAMER (item_name, dreamer_item_text) ->
             let text : string list =
-              [ fmt "Got the dreamer item %s" item_name; ""; dreamer_item_text ]
+              [ fmt "Found a dreamer item: %s" item_name; ""; dreamer_item_text ]
             in
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;

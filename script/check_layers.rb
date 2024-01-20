@@ -61,7 +61,7 @@ pen_names = all_purple_pens.map do |pen|
   pen['name']
     .gsub('purple-pen:', '')
     .gsub('+increase-health', '')
-    .gsub(/\+(ability|dreamer|weapon):.*/, '')
+    .gsub(/\+(ability|dreamer|weapon|key):.*/, '')
     .gsub(/\/.*/, '')
 end.sort
 

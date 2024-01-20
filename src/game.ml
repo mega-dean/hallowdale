@@ -107,10 +107,18 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
   else
     failwith "error when trying to save"
 
-let initialize_steel_sole (save_file : Json_t.save_file) =
+let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
   {
     save_file with
-    progress = { save_file.progress with keys_found = [ "Dean's Closet" ] };
+    progress =
+      {
+        save_file.progress with
+        keys_found =
+          (if with_keys then
+             [ "Dean's Closet Key"; "Dean's Brand"; "Song 127"; "Laybourne's Breathprint" ]
+           else
+             []);
+      };
     ghosts_in_party = List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
     abilities =
       {

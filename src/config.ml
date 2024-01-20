@@ -380,10 +380,11 @@ let other =
 let lever_shape =
   make_shape
     [
-      { x = 10. *. window_scale; y = 0. };
-      { x = 28. *. window_scale; y = 0. };
-      { x = 28. *. window_scale; y = 83. *. window_scale };
-      { x = 10. *. window_scale; y = 83. *. window_scale };
+      { x = 10. *. scale.room; y = 0. *. scale.room };
+      { x = 5. *. scale.room; y = 8. *. scale.room };
+      { x = 7. *. scale.room; y = 40. *. scale.room };
+      { x = 12. *. scale.room; y = 40. *. scale.room };
+      { x = 15. *. scale.room; y = 8. *. scale.room };
     ]
 
 let random_fragment_vx ?(direction : direction option = None) () =

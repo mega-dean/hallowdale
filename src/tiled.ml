@@ -205,7 +205,10 @@ module JsonRoom = struct
         ("kp-drop", Some (TEMPORARY VISIBLE));
         ("bookshelf-small", None);
         ("bookshelf-wide", None);
-        ("deans-closet", Some (LOCKED_DOOR ("Dean's Closet", VISIBLE)));
+        ("deans-closet", Some (LOCKED_DOOR ("Dean's Closet Key", VISIBLE)));
+        ("deans-brand", Some (LOCKED_DOOR ("Dean's Brand", VISIBLE)));
+        ("jukebox", Some (LOCKED_DOOR ("Song 127", VISIBLE)));
+        ("room-temperature-room", Some (LOCKED_DOOR ("Laybourne's Breathprint", VISIBLE)));
       ]
     in
     let texture_name, platform_kind =
@@ -216,7 +219,7 @@ module JsonRoom = struct
           gid platforms_tileset_source.firstgid
           (gid - platforms_tileset_source.firstgid - 1)
           (List.length platform_names)
-      | Some name -> name
+      | Some (name, kind) -> (name, kind)
     in
     match String.Map.find_opt texture_name platform_textures_by_name with
     | None ->

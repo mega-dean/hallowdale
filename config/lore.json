@@ -174,5 +174,11 @@
     ["honda", "... do you not think Honda makes good products?"],
     ["honda", "... people don't want to drive what a monster drives..."],
     ["honda", "... use a light press of your foot to engage the highly responsive anti-lock breaks of this incredible vehicle..."],
-    ["honda", "... when I influence people to buy Honda products, I feel God's pleasure..."]
+    ["honda", "... when I influence people to buy Honda products, I feel God's pleasure..."],
+
+    // keys
+    ["Laybourne's Breathprint", "No more {{green}} palm fronds, {{white}} Troy. Now we are the pharaohs."],
+    ["Song 127", "Because the song title is {{purple}} Open the Door {{white}} by {{purple}} The Secret Doors."],
+    ["Dean's Closet Key", "This is my sister's outfit."],
+    ["Dean's Brand", "So after all my work, how will I be remembered? The bald dean with glasses, I guess."]
 ]
