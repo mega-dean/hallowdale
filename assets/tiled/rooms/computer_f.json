@@ -301,6 +301,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",
@@ -848,7 +849,7 @@
          "y":0
         }],
  "nextlayerid":12,
- "nextobjectid":18,
+ "nextobjectid":19,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

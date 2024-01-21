@@ -115,7 +115,13 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
         save_file.progress with
         keys_found =
           (if with_keys then
-             [ "Dean's Closet Key"; "Dean's Brand"; "Song 127"; "Laybourne's Breathprint" ]
+             [
+               "Dean's Closet Key";
+               "Dean's Brand";
+               "Song 127";
+               "Laybourne's Breathprint";
+               "Kentucky Fried Chicken Eleven Herbs and Space Experience Pass";
+             ]
            else
              []);
       };

@@ -1432,11 +1432,6 @@ let tick (game : game) (state : state) =
   (* return value is (currently interacting, currently warping) *)
   let handle_interactions () : bool * bool =
     (* the ghost can only collide with one trigger of each type per frame *)
-    let all_finished_interactions =
-      List.map snd game.progress.by_room
-      |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
-      |> List.flatten
-    in
     let check_for_new_interactions () : bool * bool =
       let interactable_triggers = game.room.triggers.lore in
       (match find_trigger_collision game.player interactable_triggers with
@@ -1456,7 +1451,18 @@ let tick (game : game) (state : state) =
           game.room.interaction_label <- Some (label, trigger.dest);
           check_interact_key ()
         | Some blocking_interaction_name ->
-          if List.mem blocking_interaction_name all_finished_interactions then (
+          let interaction_blocked =
+            match String.split_at_first_opt '$' blocking_interaction_name with
+            | Some "key", key_name -> List.mem key_name game.progress.keys_found
+            | _ ->
+              let all_finished_interactions =
+                List.map snd game.progress.by_room
+                |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
+                |> List.flatten
+              in
+              List.mem blocking_interaction_name all_finished_interactions
+          in
+          if interaction_blocked then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
       (match find_trigger_collision game.player game.room.triggers.cutscene with

@@ -209,6 +209,7 @@
          "y":0
         }, 
         {
+         "color":"#658faf",
          "draworder":"topdown",
          "id":10,
          "name":"triggers",
@@ -216,7 +217,7 @@
                 {
                  "height":75,
                  "id":8,
-                 "name":"warp:computer_h@115,21",
+                 "name":"key$Kentucky Fried Chicken Eleven Herbs and Space Experience Pass|warp:computer_h@115,21",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -242,6 +243,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",

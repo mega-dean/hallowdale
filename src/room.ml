@@ -330,10 +330,7 @@ let init (params : room_params) : room =
         cutscene_triggers := get_object_trigger (WARP target) :: !cutscene_triggers
       | "cutscene" -> cutscene_triggers := get_object_trigger CUTSCENE :: !cutscene_triggers
       | _ ->
-        failwithf
-          "init_room invalid interaction name '%s', prefix '%s' - needs to start with 'camera_', \
-           'health_', 'cutscene_', etc."
-          coll_rect.name name_prefix
+        failwithf "Room.init invalid interaction name '%s', prefix '%s'" coll_rect.name name_prefix
     in
 
     match json_layer with
@@ -351,7 +348,7 @@ let init (params : room_params) : room =
         List.iter collect_targets json.objects;
         List.iter categorize_trigger json.objects
       | "cameras" -> List.iter categorize_trigger json.objects
-      | json_name -> failwithf "init_room bad object layer name: '%s'" json_name)
+      | json_name -> failwithf "Room.init bad object layer name: '%s'" json_name)
     | `IMAGE_LAYER _
     | `TILE_LAYER _ ->
       ()
