@@ -2,7 +2,7 @@
     "enemies": [
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 5,
+            "health": 65,
             "scale": 2.5,
             "w": 19,
             "h": 45,
@@ -47,7 +47,7 @@
 
         [ "LOCKER_BOY", {
             "kind": "multi-boss",
-            "health": 1,
+            "health": 80,
             "scale": 1.5,
             "w": 22,
             "h": 40,
@@ -257,9 +257,8 @@
                     "y_offset": 2
                 }],
                 ["explosion", {
-                    "count": 2,
+                    "count": 9,
                     "duration": 0.1,
-                    // TODO the explosion should be a lot bigger
                     "x_offset": 0,
                     "y_offset": 0
                 }],

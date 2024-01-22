@@ -88,7 +88,9 @@ let spawn_projectile
     spawn_time : projectile =
   let projectile_texture =
     match String.Map.find_opt projectile_texture_name enemy.textures with
-    | Some t -> t
+    | Some t ->
+      Sprite.reset_texture t;
+      t
     | None ->
       failwithf "could not find projectile '%s' for %s" projectile_texture_name
         (Show.enemy_name enemy)
@@ -649,7 +651,11 @@ module Frog : M = struct
           args.state.camera.shake <- 1.;
           let projectile =
             let explosion_scale = 4. in
-            let projectile_duration = TIME_LEFT { seconds = 1. } in
+            (* FIXME collision is off by a little bit, not sure why
+               - same thing is happening to electricity shocks
+               - also need to adjust the electricity on the map for new enemy placement
+            *)
+            let projectile_duration = TIME_LEFT { seconds = 0.8 } in
             spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
               ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT
               ~damage:2 projectile_duration args.frame_time
