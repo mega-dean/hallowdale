@@ -1454,13 +1454,7 @@ let tick (game : game) (state : state) =
           let interaction_blocked =
             match String.split_at_first_opt '$' blocking_interaction_name with
             | Some "key", key_name -> List.mem key_name game.progress.keys_found
-            | _ ->
-              let all_finished_interactions =
-                List.map snd game.progress.by_room
-                |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
-                |> List.flatten
-              in
-              List.mem blocking_interaction_name all_finished_interactions
+            | _ -> Interactions.cutscene_finished game.progress.by_room blocking_interaction_name
           in
           if interaction_blocked then (
             game.room.interaction_label <- Some (label, trigger.dest);

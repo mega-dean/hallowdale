@@ -1165,17 +1165,6 @@
                  "width":14,
                  "x":545,
                  "y":893
-                }, 
-                {
-                 "height":96,
-                 "id":62,
-                 "name":"cutscene:testing",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":84,
-                 "x":48,
-                 "y":120
                 }],
          "opacity":1,
          "type":"objectgroup",

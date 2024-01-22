@@ -2,6 +2,16 @@ open Utils
 open Types
 open Types.Interaction
 
+let cutscene_finished
+    (progress_by_room : (string * Json_t.room_progress) list)
+    (cutscene_name : string) : bool =
+  let all_finished_interactions =
+    List.map snd progress_by_room
+    |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
+    |> List.flatten
+  in
+  List.mem (fmt "cutscene:%s" cutscene_name) all_finished_interactions
+
 let get_steps ?(increase_health = false) state game (triggers : trigger list) : step list =
   let ability_text_outline x y =
     (* TODO move these to config *)

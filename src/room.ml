@@ -381,19 +381,15 @@ let init (params : room_params) : room =
         ()
       | `TILE_LAYER json ->
         let add_new_layer () =
-          (* TODO use this for:
-             - vending machines in teacher's lounge
-             - scootenanny chair
-             - keys unlocking doors
-             - could do something like slightly alter the corkboard when the health has already been increased
-          *)
           let (layer_name', hidden) : string * bool =
             match String.split_at_first_opt '|' json.name with
             | Some interaction_name, layer_name -> (
-              let finished name = List.mem name room_progress.finished_interactions in
+              let finished name =
+                Interactions.cutscene_finished (params.progress_by_room |> String.Map.to_list) name
+              in
               match interaction_name.[0] with
-              | '!' -> (layer_name, not (finished (Str.string_after interaction_name 1)))
-              | _ -> (layer_name, finished interaction_name))
+              | '!' -> (layer_name, finished (Str.string_after interaction_name 1))
+              | _ -> (layer_name, not (finished interaction_name)))
             | _ ->
               let prefix = "hidden-" in
               if String.starts_with ~prefix json.name then

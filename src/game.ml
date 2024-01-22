@@ -124,6 +124,17 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
              ]
            else
              []);
+        by_room =
+          [
+            ( "forgotten_a",
+              {
+                removed_tile_idxs = [];
+                removed_platform_ids = [];
+                (* add this so the warp from teacher's lounge to cpu wing is always available *)
+                finished_interactions = [ "cutscene:arrive-at-shirley-island" ];
+                revealed_shadow_layers = [];
+              } );
+          ];
       };
     ghosts_in_party = List.map Show.ghost_id [ ABED; ANNIE; BRITTA; JEFF; TROY ];
     abilities =
