@@ -19,8 +19,8 @@ automapping/floors-draw-top-corners.tmj
 
 
 ############ draw auto:iso to bg-iso-walls ############
-# automapping/reset-bg-iso-walls.tmj
-# automapping/apply-bg-iso-walls.tmj
+automapping/reset-bg-iso-walls.tmj
+automapping/apply-bg-iso-walls.tmj
 
 
 ############ draw hanging shadows ############

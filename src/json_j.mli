@@ -117,10 +117,10 @@ type save_file = Json_t.save_file = {
   game_mode: string;
   ghost_x: float;
   ghost_y: float;
+  room_name: string;
   respawn_x: float;
   respawn_y: float;
   ghosts_in_party: string list;
-  room_name: string;
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;

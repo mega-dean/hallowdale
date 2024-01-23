@@ -677,6 +677,7 @@
          "y":0
         }, 
         {
+         "color":"#658faf",
          "draworder":"topdown",
          "id":11,
          "name":"triggers",
@@ -959,6 +960,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",

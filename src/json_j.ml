@@ -117,10 +117,10 @@ type save_file = Json_t.save_file = {
   game_mode: string;
   ghost_x: float;
   ghost_y: float;
+  room_name: string;
   respawn_x: float;
   respawn_y: float;
   ghosts_in_party: string list;
-  room_name: string;
   abilities: ghost_abilities;
   weapons: string list;
   current_weapon: string;
@@ -4940,6 +4940,15 @@ let write_save_file : _ -> save_file -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
+      Buffer.add_string ob "\"room_name\":";
+    (
+      Yojson.Safe.write_string
+    )
+      ob x.room_name;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
       Buffer.add_string ob "\"respawn_x\":";
     (
       Yojson.Safe.write_float
@@ -4963,15 +4972,6 @@ let write_save_file : _ -> save_file -> _ = (
       write__string_list
     )
       ob x.ghosts_in_party;
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"room_name\":";
-    (
-      Yojson.Safe.write_string
-    )
-      ob x.room_name;
     if !is_first then
       is_first := false
     else
@@ -5031,10 +5031,10 @@ let read_save_file = (
     let field_game_mode = ref (None) in
     let field_ghost_x = ref (None) in
     let field_ghost_y = ref (None) in
+    let field_room_name = ref (None) in
     let field_respawn_x = ref (None) in
     let field_respawn_y = ref (None) in
     let field_ghosts_in_party = ref (None) in
-    let field_room_name = ref (None) in
     let field_abilities = ref (None) in
     let field_weapons = ref (None) in
     let field_current_weapon = ref (None) in
@@ -5126,10 +5126,10 @@ let read_save_file = (
                             if String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'w' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = '_' then (
                               match String.unsafe_get s (pos+8) with
                                 | 'x' -> (
-                                    4
+                                    5
                                   )
                                 | 'y' -> (
-                                    5
+                                    6
                                   )
                                 | _ -> (
                                     -1
@@ -5141,7 +5141,7 @@ let read_save_file = (
                           )
                         | 'o' -> (
                             if String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'a' && String.unsafe_get s (pos+7) = 'm' && String.unsafe_get s (pos+8) = 'e' then (
-                              7
+                              4
                             )
                             else (
                               -1
@@ -5173,7 +5173,7 @@ let read_save_file = (
               )
             | 15 -> (
                 if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'i' && String.unsafe_get s (pos+8) = 'n' && String.unsafe_get s (pos+9) = '_' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 't' && String.unsafe_get s (pos+14) = 'y' then (
-                  6
+                  7
                 )
                 else (
                   -1
@@ -5220,6 +5220,14 @@ let read_save_file = (
               )
             );
           | 4 ->
+            field_room_name := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              )
+            );
+          | 5 ->
             field_respawn_x := (
               Some (
                 (
@@ -5227,7 +5235,7 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 5 ->
+          | 6 ->
             field_respawn_y := (
               Some (
                 (
@@ -5235,19 +5243,11 @@ let read_save_file = (
                 ) p lb
               )
             );
-          | 6 ->
+          | 7 ->
             field_ghosts_in_party := (
               Some (
                 (
                   read__string_list
-                ) p lb
-              )
-            );
-          | 7 ->
-            field_room_name := (
-              Some (
-                (
-                  Atdgen_runtime.Oj_run.read_string
                 ) p lb
               )
             );
@@ -5381,10 +5381,10 @@ let read_save_file = (
                               if String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'w' && String.unsafe_get s (pos+6) = 'n' && String.unsafe_get s (pos+7) = '_' then (
                                 match String.unsafe_get s (pos+8) with
                                   | 'x' -> (
-                                      4
+                                      5
                                     )
                                   | 'y' -> (
-                                      5
+                                      6
                                     )
                                   | _ -> (
                                       -1
@@ -5396,7 +5396,7 @@ let read_save_file = (
                             )
                           | 'o' -> (
                               if String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 'm' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'n' && String.unsafe_get s (pos+6) = 'a' && String.unsafe_get s (pos+7) = 'm' && String.unsafe_get s (pos+8) = 'e' then (
-                                7
+                                4
                               )
                               else (
                                 -1
@@ -5428,7 +5428,7 @@ let read_save_file = (
                 )
               | 15 -> (
                   if String.unsafe_get s pos = 'g' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 's' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'i' && String.unsafe_get s (pos+8) = 'n' && String.unsafe_get s (pos+9) = '_' && String.unsafe_get s (pos+10) = 'p' && String.unsafe_get s (pos+11) = 'a' && String.unsafe_get s (pos+12) = 'r' && String.unsafe_get s (pos+13) = 't' && String.unsafe_get s (pos+14) = 'y' then (
-                    6
+                    7
                   )
                   else (
                     -1
@@ -5475,6 +5475,14 @@ let read_save_file = (
                 )
               );
             | 4 ->
+              field_room_name := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_string
+                  ) p lb
+                )
+              );
+            | 5 ->
               field_respawn_x := (
                 Some (
                   (
@@ -5482,7 +5490,7 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 5 ->
+            | 6 ->
               field_respawn_y := (
                 Some (
                   (
@@ -5490,19 +5498,11 @@ let read_save_file = (
                   ) p lb
                 )
               );
-            | 6 ->
+            | 7 ->
               field_ghosts_in_party := (
                 Some (
                   (
                     read__string_list
-                  ) p lb
-                )
-              );
-            | 7 ->
-              field_room_name := (
-                Some (
-                  (
-                    Atdgen_runtime.Oj_run.read_string
                   ) p lb
                 )
               );
@@ -5559,10 +5559,10 @@ let read_save_file = (
             game_mode = (match !field_game_mode with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "game_mode");
             ghost_x = (match !field_ghost_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ghost_x");
             ghost_y = (match !field_ghost_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ghost_y");
+            room_name = (match !field_room_name with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "room_name");
             respawn_x = (match !field_respawn_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "respawn_x");
             respawn_y = (match !field_respawn_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "respawn_y");
             ghosts_in_party = (match !field_ghosts_in_party with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "ghosts_in_party");
-            room_name = (match !field_room_name with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "room_name");
             abilities = (match !field_abilities with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "abilities");
             weapons = (match !field_weapons with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "weapons");
             current_weapon = (match !field_current_weapon with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "current_weapon");

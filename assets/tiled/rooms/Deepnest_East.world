@@ -93,7 +93,7 @@
         },
         {
             "fileName": "trampoline_f.json",
-            "height": 624,
+            "height": 744,
             "width": 1248,
             "x": 9000,
             "y": 2460
@@ -367,8 +367,8 @@
         {
             "fileName": "library_d.json",
             "height": 480,
-            "width": 1464,
-            "x": -1248,
+            "width": 1704,
+            "x": -1488,
             "y": 4128
         },
         {
