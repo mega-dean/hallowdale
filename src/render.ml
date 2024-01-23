@@ -522,6 +522,7 @@ let tick (state : state) =
         | "Abed" -> "{{darkpurple}}"
         | "Neil" -> "{{purple}}"
         | "Garrett" -> "{{green}}"
+        | "Annie's Boobs" -> "{{darkpurple}}"
         | "Chang"
         | "Hickey"
         | "Duncan" ->

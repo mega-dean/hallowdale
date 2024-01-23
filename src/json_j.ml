@@ -109,7 +109,8 @@ type game_progress = Json_t.game_progress = {
   mutable frame_idx: int;
   steel_sole: steel_sole_progress;
   mutable by_room: (string * room_progress) list;
-  mutable keys_found: string list
+  mutable keys_found: string list;
+  mutable last_upgrade_claimed: int
 }
 
 type save_file = Json_t.save_file = {
@@ -4686,6 +4687,15 @@ let write_game_progress : _ -> game_progress -> _ = (
       write__string_list
     )
       ob x.keys_found;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"last_upgrade_claimed\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.last_upgrade_claimed;
     Buffer.add_char ob '}';
 )
 let string_of_game_progress ?(len = 1024) x =
@@ -4700,6 +4710,7 @@ let read_game_progress = (
     let field_steel_sole = ref (None) in
     let field_by_room = ref (None) in
     let field_keys_found = ref (None) in
+    let field_last_upgrade_claimed = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -4747,6 +4758,14 @@ let read_game_progress = (
                       -1
                     )
               )
+            | 20 -> (
+                if String.unsafe_get s pos = 'l' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'u' && String.unsafe_get s (pos+6) = 'p' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = 'r' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'd' && String.unsafe_get s (pos+11) = 'e' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'c' && String.unsafe_get s (pos+14) = 'l' && String.unsafe_get s (pos+15) = 'a' && String.unsafe_get s (pos+16) = 'i' && String.unsafe_get s (pos+17) = 'm' && String.unsafe_get s (pos+18) = 'e' && String.unsafe_get s (pos+19) = 'd' then (
+                  4
+                )
+                else (
+                  -1
+                )
+              )
             | _ -> (
                 -1
               )
@@ -4784,6 +4803,14 @@ let read_game_progress = (
               Some (
                 (
                   read__string_list
+                ) p lb
+              )
+            );
+          | 4 ->
+            field_last_upgrade_claimed := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
                 ) p lb
               )
             );
@@ -4838,6 +4865,14 @@ let read_game_progress = (
                         -1
                       )
                 )
+              | 20 -> (
+                  if String.unsafe_get s pos = 'l' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'u' && String.unsafe_get s (pos+6) = 'p' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = 'r' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'd' && String.unsafe_get s (pos+11) = 'e' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'c' && String.unsafe_get s (pos+14) = 'l' && String.unsafe_get s (pos+15) = 'a' && String.unsafe_get s (pos+16) = 'i' && String.unsafe_get s (pos+17) = 'm' && String.unsafe_get s (pos+18) = 'e' && String.unsafe_get s (pos+19) = 'd' then (
+                    4
+                  )
+                  else (
+                    -1
+                  )
+                )
               | _ -> (
                   -1
                 )
@@ -4878,6 +4913,14 @@ let read_game_progress = (
                   ) p lb
                 )
               );
+            | 4 ->
+              field_last_upgrade_claimed := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -4891,6 +4934,7 @@ let read_game_progress = (
             steel_sole = (match !field_steel_sole with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "steel_sole");
             by_room = (match !field_by_room with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "by_room");
             keys_found = (match !field_keys_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "keys_found");
+            last_upgrade_claimed = (match !field_last_upgrade_claimed with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "last_upgrade_claimed");
           }
          : game_progress)
       )

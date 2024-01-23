@@ -510,8 +510,13 @@ module Interaction = struct
     | ENTITY of entity_step
     | MAKE_CURRENT_GHOST
 
+  type reward =
+    | INCREASE_MAX_SOUL
+    | ABILITY of string
+
   type ghost_step =
     | FILL_LIFE_VAPOR
+    | CLAIM_REWARD of int * reward
     | INCREASE_HEALTH_TEXT of string
     | (* this isn't using (PARTY (SET_POSE ...)) because it uses the real Ghost.set_pose
          instead of the simpler one for party_ghosts during interactions
@@ -1480,6 +1485,7 @@ let clone_game_progress (game_progress : Json_t.game_progress) : Json_t.game_pro
         dunks = game_progress.steel_sole.dunks;
         c_dashes = game_progress.steel_sole.c_dashes;
       };
+    last_upgrade_claimed = game_progress.last_upgrade_claimed;
   }
 
 let clone_abilities (abilities : Json_t.ghost_abilities) : Json_t.ghost_abilities =

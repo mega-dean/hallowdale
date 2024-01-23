@@ -1764,6 +1764,22 @@ let tick (game : game) (state : state) =
           match step with
           | SET_POSE pose -> set_pose game pose state.global.textures.ghost_bodies state.frame.time
           | FILL_LIFE_VAPOR -> player.soul.current <- player.soul.max
+          | CLAIM_REWARD (amount, reward) -> (
+            game.progress.last_upgrade_claimed <- amount;
+            match reward with
+            | INCREASE_MAX_SOUL ->
+              let new_max_soul = game.player.soul.max + 33 in
+              if new_max_soul > 198 then
+                failwithf "invalid new_max_soul %d" new_max_soul;
+              player.soul <-
+                {
+                  current = new_max_soul;
+                  max = new_max_soul;
+                  at_focus_start = 0;
+                  health_at_focus_start = 0;
+                  last_decremented = { at = 0. };
+                }
+            | ABILITY ability_name -> enable_ability game.player ability_name)
           | INCREASE_HEALTH_TEXT str ->
             player.health.max <- player.health.max + 1;
             player.health.current <- player.health.max;

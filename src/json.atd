@@ -242,6 +242,7 @@ type game_progress = {
   (* TODO deaths : int *)
   by_room <ocaml mutable> : (string * room_progress) list;
   keys_found <ocaml mutable> : string list;
+  last_upgrade_claimed <ocaml mutable> : int;
 }
 
 type save_file = {

@@ -37,6 +37,7 @@ let empty_save_file () : Json_t.save_file =
         keys_found = [];
         by_room = [];
         steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0 };
+        last_upgrade_claimed = 0;
       };
     max_health = Config.ghost.starting_max_health;
     max_soul = Config.ghost.starting_max_soul;

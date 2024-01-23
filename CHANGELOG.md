@@ -6,6 +6,7 @@
 - add tram pass
 - add warp from teacher's lounge to cpu wing
 - add soul upgrades
+- add purple pen rewards from Annie's Boobs
 
 ## [0.0.10] - 2024-01-16
 

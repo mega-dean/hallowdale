@@ -146,6 +146,32 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "dreamer" ->
       fade_screen_with_dramatic_pause
         [ CURRENT_GHOST (ADD_ITEM (DREAMER (trigger.name_suffix, get_lore ()))) ]
+    | "talk" -> (
+      match trigger.name_suffix with
+      | "annies-boobs" -> (
+        let rewards =
+          [
+            (10, INCREASE_MAX_SOUL);
+            (20, INCREASE_MAX_SOUL);
+            (40, INCREASE_MAX_SOUL);
+          ]
+        in
+        let purple_pens_found = List.length game.progress.steel_sole.purple_pens_found in
+        let last_upgrade = game.progress.last_upgrade_claimed in
+        match List.find_opt (fun (amount, reward) -> amount > last_upgrade) rewards with
+        | None -> [ STEP (DIALOGUE ("Annie's Boobs", "I have no more rewards for you.")) ]
+        | Some (next_upgrade_amount, reward) ->
+          if purple_pens_found >= next_upgrade_amount then
+            [ CURRENT_GHOST (CLAIM_REWARD (next_upgrade_amount, reward)) ]
+          else
+            [
+              STEP
+                (DIALOGUE
+                   ( "Annie's Boobs",
+                     fmt "Come back when you have {{purple}} %d {{white}} purple pens."
+                       next_upgrade_amount ));
+            ])
+      | _ -> fail ())
     | "info" -> (
       match trigger.name_suffix with
       | "focus" ->

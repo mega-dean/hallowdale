@@ -643,6 +643,17 @@
                  "width":22,
                  "x":185,
                  "y":192
+                }, 
+                {
+                 "height":47,
+                 "id":53,
+                 "name":"talk:annies-boobs",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":49,
+                 "x":516,
+                 "y":299
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1375,7 +1386,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":53,
+ "nextobjectid":54,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

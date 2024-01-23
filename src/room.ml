@@ -278,8 +278,8 @@ let init (params : room_params) : room =
         *)
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
       | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
+      | "talk" -> lore_triggers := get_object_trigger ~label:(Some "Talk") INFO :: !lore_triggers
       | "npc" ->
-        (* TODO this should have "Talk" interaction_label *)
         npc_rects :=
           ( Npc.parse_name (fmt "Tiled rect npc_%s" name_suffix) name_suffix,
             get_object_rect coll_rect,
