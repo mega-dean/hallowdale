@@ -541,3 +541,8 @@ let interaction_step (step : Interaction.step) : string =
   | ENEMY (_, _)
   | NPC (_, _) ->
     ""
+
+let reward (reward : Interaction.reward) : string =
+  match reward with
+  | Interaction.INCREASE_MAX_SOUL -> "increased maximum {{blue}} LIFE VAPOR."
+  | Interaction.ABILITY (name, desc) -> fmt "{{blue}} %s: {{white}} %s" name desc

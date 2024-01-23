@@ -196,24 +196,30 @@ let ghost : ghost_config =
 
 type action_config = {
   soul_per_cast : int;
+  spell_twister_soul_per_cast : int;
   soul_gained_per_nail : int;
   attack_duration : float;
   vengeful_spirit_vx : float;
   shade_soul_vx : float;
   vengeful_spirit_recoil : float;
   vengeful_spirit_duration : float;
+  quick_focus_speed : float;
+  dream_wielder_speed : float;
 }
 
 let action : action_config =
   let vengeful_spirit_vx = 1000. *. window_scale in
   {
     soul_per_cast = 33;
+    spell_twister_soul_per_cast = 24;
     soul_gained_per_nail = 11;
     attack_duration = 0.07;
     vengeful_spirit_vx;
     shade_soul_vx = vengeful_spirit_vx *. 1.125;
     vengeful_spirit_recoil = 80. *. window_scale;
     vengeful_spirit_duration = 1.5;
+    quick_focus_speed = 0.5;
+    dream_wielder_speed = 0.5;
   }
 
 type physics_config = {

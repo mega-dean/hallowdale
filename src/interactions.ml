@@ -149,11 +149,32 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "talk" -> (
       match trigger.name_suffix with
       | "annies-boobs" -> (
-        let rewards =
+        let rewards : (int * reward) list =
           [
-            (10, INCREASE_MAX_SOUL);
             (20, INCREASE_MAX_SOUL);
-            (40, INCREASE_MAX_SOUL);
+            ( 30,
+              ABILITY
+                ("Soul Catcher", "increases the amount of LIFE VAPOR gained when striking an enemy.")
+            );
+            (40, ABILITY ("Quick Focus", "increases the speed of focusing LIFE VAPOR."));
+            (50, INCREASE_MAX_SOUL);
+            ( 60,
+              ABILITY
+                ("Soul Catcher", "increases the amount of LIFE VAPOR gained when striking an enemy.")
+            );
+            ( 70,
+              ABILITY
+                ( "Dream Wielder",
+                  "charge the Honda Nail faster and collect more LIFE VAPOR when striking foes." )
+            );
+            (80, INCREASE_MAX_SOUL);
+            ( 90,
+              ABILITY
+                ("Soul Catcher", "increases the amount of LIFE VAPOR gained when striking an enemy.")
+            );
+            (100, ABILITY ("Deep Focus", "heals two masks when focusing."));
+            (110, ABILITY ("Shaman Stone", "increases the power of spells."));
+            (120, ABILITY ("Spell Twister", "reduces the LIFE VAPOR cost of casting spells."));
           ]
         in
         let purple_pens_found = List.length game.progress.steel_sole.purple_pens_found in
@@ -162,7 +183,12 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         | None -> [ STEP (DIALOGUE ("Annie's Boobs", "I have no more rewards for you.")) ]
         | Some (next_upgrade_amount, reward) ->
           if purple_pens_found >= next_upgrade_amount then
-            [ CURRENT_GHOST (CLAIM_REWARD (next_upgrade_amount, reward)) ]
+            [
+              CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
+              STEP (WAIT 1.);
+              CURRENT_GHOST (CLAIM_REWARD (next_upgrade_amount, reward));
+              STEP (TEXT [ "Claimed a reward:"; Show.reward reward ]);
+            ]
           else
             [
               STEP

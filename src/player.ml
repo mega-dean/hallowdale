@@ -364,10 +364,30 @@ let get_damage (player : player) (damage_kind : damage_kind) =
     |> List.map snd
     |> List.map (fun (w : Json_t.weapon) -> w.damage)
     |> List.fold_left ( + ) 0
-  | VENGEFUL_SPIRIT -> if player.abilities.shade_soul then 30 else 15
-  | DESOLATE_DIVE -> if player.abilities.descending_dark then 30 else 15
-  | DESOLATE_DIVE_SHOCKWAVE -> if player.abilities.descending_dark then 40 else 20
-  | HOWLING_WRAITHS -> if player.abilities.abyss_shriek then 25 else 13
+  | VENGEFUL_SPIRIT -> (
+    match (player.abilities.shade_soul, player.abilities.shaman_stone) with
+    | false, false -> 15
+    | true, false -> 30
+    | false, true -> 20
+    | true, true -> 40)
+  | DESOLATE_DIVE -> (
+    match (player.abilities.descending_dark, player.abilities.shaman_stone) with
+    | false, false -> 15
+    | true, false -> 30
+    | false, true -> 23
+    | true, true -> 45)
+  | DESOLATE_DIVE_SHOCKWAVE -> (
+    match (player.abilities.descending_dark, player.abilities.shaman_stone) with
+    | false, false -> 20
+    | true, false -> 40
+    | false, true -> 30
+    | true, true -> 50)
+  | HOWLING_WRAITHS -> (
+    match (player.abilities.abyss_shriek, player.abilities.shaman_stone) with
+    | false, false -> 13
+    | true, false -> 25
+    | false, true -> 20
+    | true, true -> 35)
 
 (* TODO use collision shape for dream nail *)
 let check_dream_nail_collisions (state : state) (game : game) =
@@ -386,10 +406,14 @@ let check_dream_nail_collisions (state : state) (game : game) =
               game.interaction.floating_text <-
                 Some { content = text; visible = TIME { at = end_time } };
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
+              let increase =
+                if game.player.abilities.dream_wielder then
+                  Config.action.soul_per_cast * 2
+                else
+                  Config.action.soul_per_cast
+              in
               game.player.soul.current <-
-                Int.bound 0
-                  (game.player.soul.current + Config.action.soul_per_cast)
-                  game.player.soul.max;
+                Int.bound 0 (game.player.soul.current + increase) game.player.soul.max;
               let recoil_speed =
                 if game.player.ghost.entity.sprite.facing_right then
                   enemy.json.dream_nail.recoil_vx
@@ -459,7 +483,9 @@ let resolve_slash_collisions (state : state) (game : game) =
                 game.player.ghost.entity.v.y <- Config.ghost.upslash_vy);
             game.player.soul.current <-
               Int.bound 0
-                (game.player.soul.current + Config.action.soul_gained_per_nail)
+                (game.player.soul.current
+                + Config.action.soul_gained_per_nail
+                + game.player.abilities.soul_catcher_bonus)
                 game.player.soul.max);
           if slash.direction = DOWN && game.player.ghost.entity.y_recoil = None then (
             (* TODO this isn't working (can't pogo LB projectiles) *)
@@ -852,7 +878,15 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
     else
       game.player.shared_textures.vengeful_spirit
   in
-  let w, h = get_scaled_texture_size Config.scale.ghost texture in
+  let w, h =
+    let scale =
+      if game.player.abilities.shaman_stone then
+        Config.scale.ghost *. 1.3333
+      else
+        Config.scale.ghost
+    in
+    get_scaled_texture_size scale texture
+  in
   let pos =
     match start with
     | Some p -> p
@@ -930,16 +964,15 @@ let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind
     | FOCUS ->
       failwithf "cannot cancel action: %s" (Show.ghost_action_kind action_kind)
   in
-  action.doing_until.at <- state.frame.time;
-  ()
+  action.doing_until.at <- state.frame.time
 
 let start_action ?(debug = false) (state : state) (game : game) (action_kind : ghost_action_kind) =
   let cooldown_scale = ref 1.0 in
+  let is_dream_nail = ref false in
   let action : ghost_action =
     match action_kind with
     | ATTACK direction ->
       Audio.play_sound state "nail-swing";
-
       let relative_pos : relative_position =
         match direction with
         | UP -> (CENTER, BOTTOM_INSIDE)
@@ -958,7 +991,9 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
           game.player.children;
       cooldown_scale := game.player.current_weapon.cooldown_scale;
       game.player.history.nail
-    | DREAM_NAIL -> game.player.history.dream_nail
+    | DREAM_NAIL ->
+      is_dream_nail := true;
+      game.player.history.dream_nail
     | HARDFALL ->
       state.camera.shake <- 1.;
       game.player.history.hardfall
@@ -1009,7 +1044,13 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.history.dash
     | CAST spell_kind -> (
       game.player.current.wall <- None;
-      game.player.soul.current <- game.player.soul.current - Config.action.soul_per_cast;
+      let soul_per_cast =
+        if game.player.abilities.spell_twister then
+          Config.action.spell_twister_soul_per_cast
+        else
+          Config.action.soul_per_cast
+      in
+      game.player.soul.current <- game.player.soul.current - soul_per_cast;
       match spell_kind with
       | VENGEFUL_SPIRIT ->
         Entity.recoil_backwards game.player.ghost.entity
@@ -1111,25 +1152,42 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       game.player.history.flap
     | WALL_KICK -> game.player.history.wall_kick
   in
-
+  let duration =
+    if !is_dream_nail then
+      if game.player.abilities.dream_wielder then
+        action.config.duration.seconds *. Config.action.dream_wielder_speed
+      else
+        action.config.duration.seconds
+    else
+      action.config.duration.seconds
+  in
   action.started <- { at = state.frame.time };
-  action.doing_until.at <- state.frame.time +. action.config.duration.seconds;
+  action.doing_until.at <- state.frame.time +. duration;
   action.blocked_until.at <- state.frame.time +. (action.config.cooldown.seconds *. !cooldown_scale);
   set_pose game (PERFORMING action_kind) state.global.textures.ghost_bodies state.frame.time
 
 let continue_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   (match action_kind with
   | FOCUS ->
-    let decr_dt =
-      game.player.history.focus.config.duration.seconds
-      /. (Config.action.soul_per_cast + 0 |> Int.to_float)
+    let focus_duration =
+      if game.player.abilities.quick_focus then
+        game.player.history.focus.config.duration.seconds *. Config.action.quick_focus_speed
+      else
+        game.player.history.focus.config.duration.seconds
     in
+    let decr_dt = focus_duration /. (Config.action.soul_per_cast |> Int.to_float) in
     if game.player.soul.at_focus_start - game.player.soul.current >= Config.action.soul_per_cast
     then (
+      let increase = if game.player.abilities.deep_focus then 2 else 1 in
       game.player.health.current <-
-        Int.bound 0 (game.player.health.current + 1) game.player.health.max;
-      if game.player.health.current < game.player.health.max then
-        start_action state game FOCUS)
+        Int.bound 0 (game.player.health.current + increase) game.player.health.max;
+      if
+        game.player.soul.current >= Config.action.soul_per_cast
+        && game.player.health.current < game.player.health.max
+      then
+        start_action state game FOCUS
+      else
+        remove_child game.player FOCUS)
     else if state.frame.time -. game.player.soul.last_decremented.at > decr_dt then (
       game.player.soul.current <- game.player.soul.current - 1;
       game.player.soul.last_decremented <- { at = state.frame.time })
@@ -1141,9 +1199,20 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
     if state.frame.time -. game.player.history.flap.started.at > flap_duration then
       game.player.ghost.entity.v.y <- Config.ghost.flap_vy
   | DREAM_NAIL ->
+    let charge_duration =
+      if game.player.abilities.dream_wielder then
+        game.player.history.dream_nail.config.duration.seconds *. Config.action.dream_wielder_speed
+      else
+        game.player.history.dream_nail.config.duration.seconds
+    in
+    let swing_duration =
+      (* need to subtract this to prevent the ghost from turning around immediately after
+         starting the dream nail *)
+      0.15
+    in
     if
       state.frame.time -. game.player.history.dream_nail.started.at
-      > game.player.history.dream_nail.config.duration.seconds -. 0.1
+      > charge_duration -. swing_duration
     then (
       let alignment = (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER) in
       spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash
@@ -1268,6 +1337,12 @@ let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
   | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
   | "ismas_tear" -> ghost.abilities.ismas_tear <- new_val ghost.abilities.ismas_tear
   | "dream_nail" -> ghost.abilities.dream_nail <- new_val ghost.abilities.dream_nail
+  | "Quick Focus" -> ghost.abilities.quick_focus <- new_val ghost.abilities.quick_focus
+  | "Soul Catcher" -> ghost.abilities.soul_catcher_bonus <- ghost.abilities.soul_catcher_bonus + 4
+  | "Dream Wielder" -> ghost.abilities.dream_wielder <- new_val ghost.abilities.dream_wielder
+  | "Deep Focus" -> ghost.abilities.deep_focus <- new_val ghost.abilities.deep_focus
+  | "Shaman Stone" -> ghost.abilities.shaman_stone <- new_val ghost.abilities.shaman_stone
+  | "Spell Twister" -> ghost.abilities.spell_twister <- new_val ghost.abilities.spell_twister
   | _ -> failwithf "change_ability bad ability name: %s" ability_name
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
@@ -1384,14 +1459,15 @@ let handle_debug_keys (game : game) (state : state) =
       else if key_pressed DEBUG_2 then (
         (* toggle_ability game.ghost "mantis_claw" *)
         (* game.player.health.current <- game.player.health.current - 1; *)
-        game.player.soul <-
-          {
-            current = game.player.soul.max + 33;
-            max = game.player.soul.max + 33;
-            at_focus_start = 0;
-            health_at_focus_start = 0;
-            last_decremented = { at = 0. };
-          };
+        toggle_ability game.player "Dream Wielder";
+        (* game.player.soul <-
+         *   {
+         *     current = game.player.soul.max + 33;
+         *     max = game.player.soul.max + 33;
+         *     at_focus_start = 0;
+         *     health_at_focus_start = 0;
+         *     last_decremented = { at = 0. };
+         *   }; *)
         ())
       else if key_pressed DEBUG_3 then (
         (* print "player water is_some: %b" (Option.is_some game.player.current.water) *)
@@ -1779,7 +1855,7 @@ let tick (game : game) (state : state) =
                   health_at_focus_start = 0;
                   last_decremented = { at = 0. };
                 }
-            | ABILITY ability_name -> enable_ability game.player ability_name)
+            | ABILITY (ability_name, _desc) -> enable_ability game.player ability_name)
           | INCREASE_HEALTH_TEXT str ->
             player.health.max <- player.health.max + 1;
             player.health.current <- player.health.max;
@@ -1907,8 +1983,14 @@ let tick (game : game) (state : state) =
 
   let handle_casting () : handled_action =
     let trying_cast =
+      let soul_per_cast =
+        if game.player.abilities.spell_twister then
+          Config.action.spell_twister_soul_per_cast
+        else
+          Config.action.soul_per_cast
+      in
       pressed_or_buffered CAST
-      && game.player.soul.current >= Config.action.soul_per_cast
+      && game.player.soul.current >= soul_per_cast
       && past_cooldown game.player.history.cast_vs state.frame.time
       && (not (is_doing game.player (ATTACK RIGHT) state.frame.time))
       && not (is_casting state game)
@@ -2275,12 +2357,10 @@ let tick (game : game) (state : state) =
         start_action state game FOCUS;
         true)
       else if still_focusing () then (
-        (* TODO this only heals once *)
         continue_action state game FOCUS;
         true)
       else (
-        if state.frame_inputs.focus.released then
-          remove_child game.player FOCUS;
+        remove_child game.player FOCUS;
         false)
     in
     { this_frame }

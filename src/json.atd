@@ -228,6 +228,13 @@ type ghost_abilities = {
   descending_dark <ocaml mutable> : bool;
   howling_wraiths <ocaml mutable> : bool;
   abyss_shriek <ocaml mutable> : bool;
+  (* purple pen upgrades *)
+  quick_focus <ocaml mutable> : bool;
+  soul_catcher_bonus <ocaml mutable> : int;
+  dream_wielder <ocaml mutable> : bool;
+  deep_focus <ocaml mutable> : bool;
+  shaman_stone <ocaml mutable> : bool;
+  spell_twister <ocaml mutable> : bool;
 }
 
 type steel_sole_progress = {

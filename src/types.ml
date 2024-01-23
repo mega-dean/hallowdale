@@ -512,7 +512,7 @@ module Interaction = struct
 
   type reward =
     | INCREASE_MAX_SOUL
-    | ABILITY of string
+    | ABILITY of string * string
 
   type ghost_step =
     | FILL_LIFE_VAPOR
@@ -1505,4 +1505,11 @@ let clone_abilities (abilities : Json_t.ghost_abilities) : Json_t.ghost_abilitie
     descending_dark = abilities.descending_dark;
     howling_wraiths = abilities.howling_wraiths;
     abyss_shriek = abilities.abyss_shriek;
+
+    quick_focus = abilities.quick_focus;
+    soul_catcher_bonus = abilities.soul_catcher_bonus;
+    dream_wielder = abilities.dream_wielder;
+    deep_focus = abilities.deep_focus;
+    shaman_stone = abilities.shaman_stone;
+    spell_twister = abilities.spell_twister;
   }

@@ -102,7 +102,13 @@ type ghost_abilities = Json_t.ghost_abilities = {
   mutable desolate_dive: bool;
   mutable descending_dark: bool;
   mutable howling_wraiths: bool;
-  mutable abyss_shriek: bool
+  mutable abyss_shriek: bool;
+  mutable quick_focus: bool;
+  mutable soul_catcher_bonus: int;
+  mutable dream_wielder: bool;
+  mutable deep_focus: bool;
+  mutable shaman_stone: bool;
+  mutable spell_twister: bool
 }
 
 type game_progress = Json_t.game_progress = {

@@ -30,6 +30,13 @@ let empty_save_file () : Json_t.save_file =
         shade_soul = false;
         descending_dark = false;
         abyss_shriek = false;
+
+        quick_focus = false;
+        soul_catcher_bonus = 0;
+        dream_wielder = false;
+        deep_focus = false;
+        shaman_stone = false;
+        spell_twister = false;
       };
     progress =
       {
@@ -156,6 +163,13 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
         shade_soul = false;
         descending_dark = false;
         abyss_shriek = false;
+
+        quick_focus = false;
+        soul_catcher_bonus = 0;
+        dream_wielder = false;
+        deep_focus = false;
+        shaman_stone = false;
+        spell_twister = false;
       };
   }
 
