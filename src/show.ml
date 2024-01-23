@@ -461,6 +461,7 @@ let menu_choice ?(save_slots = []) (game_opt : game option) (choice : menu_choic
     | CHANGE_GHOST -> "Change Ghost"
     | CHANGE_WEAPON -> "Change Weapon"
     | SETTINGS -> "Settings"
+    | SAVE -> "Save"
     | QUIT_TO_MAIN_MENU -> "Save and Quit"
   in
   let settings_menu_choice (choice : settings_menu_choice) =

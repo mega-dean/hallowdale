@@ -391,6 +391,7 @@ type pause_menu_choice =
   | CHANGE_GHOST
   | CHANGE_WEAPON
   | SETTINGS
+  | SAVE
   | QUIT_TO_MAIN_MENU
 
 type change_weapon_menu_choice =

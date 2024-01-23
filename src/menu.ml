@@ -20,6 +20,7 @@ let pause_menu ghost_count : menu =
        (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
        Some (PAUSE_MENU CHANGE_WEAPON);
        Some (PAUSE_MENU SETTINGS);
+       Some (PAUSE_MENU SAVE);
        Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
      ]
     |> List.filter_somes)
@@ -89,6 +90,62 @@ let update_menu_choice (menu : menu) state =
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1))
 
 let update_pause_menu (game : game) (state : state) : state =
+  let handle_pause_menu choice =
+    match choice with
+    | CONTINUE ->
+      state.pause_menu <- None;
+      game.interaction.text <- None
+    | CHANGE_WEAPON ->
+      state.pause_menu <-
+        Some (MENU (change_weapon_menu (game.player.weapons |> String.Map.to_list |> List.map fst)))
+    | CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
+    | SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))
+    | SAVE -> Game.save game state
+    | QUIT_TO_MAIN_MENU ->
+      Audio.reset_music game.music.music;
+      Audio.reset_music state.menu_music;
+      (* TODO unload textures *)
+      state.pause_menu <- None;
+      Game.save game state ~after_fn:(fun state ->
+          state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
+  in
+
+  let go_back () =
+    state.pause_menu <-
+      Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
+  in
+
+  let handle_change_weapon_menu choice =
+    match choice with
+    | EQUIP_WEAPON weapon_name -> Player.equip_weapon game.player weapon_name
+    | BACK -> go_back ()
+  in
+
+  let handle_change_ghost_menu choice =
+    match choice with
+    | USE_GHOST ghost_id ->
+      if game.player.ghost.id <> ghost_id then
+        Player.swap_current_ghost state game ghost_id
+    | BACK -> go_back ()
+  in
+
+  let handle_settings_menu choice =
+    match choice with
+    | MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
+    | SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
+    | BACK -> go_back ()
+  in
+
+  let handle_audio_setting_menu (settings_choice, change_choice) =
+    match (settings_choice, change_choice) with
+    | MUSIC, INCREASE -> Audio.increase_music_volume state game
+    | MUSIC, DECREASE -> Audio.decrease_music_volume state game
+    | SOUND_EFFECTS, INCREASE -> Audio.increase_sound_effects_volume state
+    | SOUND_EFFECTS, DECREASE -> Audio.decrease_sound_effects_volume state
+    | _, BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
+    | BACK, _ -> failwith "invalid change audio menu"
+  in
+
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
     | None ->
@@ -152,40 +209,18 @@ let update_pause_menu (game : game) (state : state) : state =
     if state.frame_inputs.jump.pressed then (
       (* TODO this plays the confirm sound even when selecting "Back" *)
       Audio.play_sound state "confirm";
-      match List.nth menu.choices menu.current_choice_idx with
-      | PAUSE_MENU CONTINUE ->
-        state.pause_menu <- None;
-        game.interaction.text <- None
-      | PAUSE_MENU CHANGE_WEAPON ->
-        state.pause_menu <-
-          Some
-            (MENU (change_weapon_menu (game.player.weapons |> String.Map.to_list |> List.map fst)))
-      | PAUSE_MENU CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
-      | PAUSE_MENU QUIT_TO_MAIN_MENU ->
-        Audio.reset_music game.music.music;
-        Audio.reset_music state.menu_music;
-        (* TODO unload textures *)
-        state.pause_menu <- None;
-        Game.save game state ~after_fn:(fun state ->
-            state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
-      | CHANGE_WEAPON_MENU (EQUIP_WEAPON weapon_name) -> Player.equip_weapon game.player weapon_name
-      | CHANGE_GHOST_MENU (USE_GHOST ghost_id) ->
-        if game.player.ghost.id <> ghost_id then
-          Player.swap_current_ghost state game ghost_id
-      | SETTINGS_MENU BACK
-      | CHANGE_GHOST_MENU BACK
-      | CHANGE_WEAPON_MENU BACK ->
-        state.pause_menu <-
-          Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
-      | PAUSE_MENU SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))
-      | SETTINGS_MENU MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
-      | SETTINGS_MENU SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
-      | CHANGE_AUDIO_SETTING (MUSIC, INCREASE) -> Audio.increase_music_volume state game
-      | CHANGE_AUDIO_SETTING (MUSIC, DECREASE) -> Audio.decrease_music_volume state game
-      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, INCREASE) -> Audio.increase_sound_effects_volume state
-      | CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE) -> Audio.decrease_sound_effects_volume state
-      | CHANGE_AUDIO_SETTING (_, BACK) -> state.pause_menu <- Some (MENU (settings_menu ()))
-      | c -> failwithf "unhandled menu choice: %s" (Show.menu_choice (Some game) c)));
+      let menu_choice = List.nth menu.choices menu.current_choice_idx in
+      match menu_choice with
+      | PAUSE_MENU choice -> handle_pause_menu choice
+      | CHANGE_WEAPON_MENU choice -> handle_change_weapon_menu choice
+      | CHANGE_GHOST_MENU choice -> handle_change_ghost_menu choice
+      | SETTINGS_MENU choice -> handle_settings_menu choice
+      | CHANGE_AUDIO_SETTING choice -> handle_audio_setting_menu choice
+      | MAIN_MENU _
+      | SELECT_GAME_MODE _
+      | SAVE_FILES_MENU _
+      | CONFIRM_DELETE_MENU _ ->
+        failwithf "invalid pause menu: %s" (Show.menu_choice (Some game) menu_choice)));
   state
 
 let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state) : state =
@@ -219,34 +254,58 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
     Game.start state game save_file
   in
 
-  if state.frame_inputs.jump.pressed then (
-    Audio.play_sound state "confirm";
-    match List.nth menu.choices menu.current_choice_idx with
-    | MAIN_MENU START_GAME ->
-      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots)
-    | MAIN_MENU QUIT ->
+  let show_save_files_menu () =
+    state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots)
+  in
+
+  let handle_main_menu choice =
+    match choice with
+    | START_GAME -> show_save_files_menu ()
+    | QUIT ->
       print "exiting";
       exit 0
-    | SAVE_FILES_MENU (START_SLOT n) -> load_file n
-    | SAVE_FILES_MENU (DELETE_SAVE_FILE n) ->
-      state.game_context <- MAIN_MENU (confirm_delete_menu n, save_slots)
-    | SAVE_FILES_MENU BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
-    | CONFIRM_DELETE_MENU (CONFIRM_DELETE n) ->
-      File.delete_save n;
-      let reloaded_save_slots = Game.load_all_save_slots () in
-      state.game_context <- SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots)
-    | SELECT_GAME_MODE (USE_MODE (mode, save_file, save_file_idx)) ->
+  in
+
+  let handle_game_mode_menu choice =
+    match choice with
+    | USE_MODE (mode, save_file, save_file_idx) ->
       let save_file' =
         match mode with
         | CLASSIC -> save_file
-        | DEMO ->
-            Game.initialize_steel_sole ~with_keys:false save_file
-        | STEEL_SOLE ->
-          Game.initialize_steel_sole ~with_keys:true save_file
+        | DEMO -> Game.initialize_steel_sole ~with_keys:false save_file
+        | STEEL_SOLE -> Game.initialize_steel_sole ~with_keys:true save_file
       in
       start_new_game mode save_file' save_file_idx
-    | CONFIRM_DELETE_MENU CANCEL
-    | SELECT_GAME_MODE BACK ->
-      state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots)
-    | _ -> failwith "update_main_menu - needs MAIN_MENU menu.choices");
+    | BACK -> show_save_files_menu ()
+  in
+
+  let handle_save_files_menu choice =
+    match choice with
+    | START_SLOT n -> load_file n
+    | DELETE_SAVE_FILE n -> state.game_context <- MAIN_MENU (confirm_delete_menu n, save_slots)
+    | BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
+  in
+
+  let handle_delete_file_menu choice =
+    match choice with
+    | CONFIRM_DELETE n ->
+      File.delete_save n;
+      let reloaded_save_slots = Game.load_all_save_slots () in
+      state.game_context <- SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots)
+    | CANCEL -> show_save_files_menu ()
+  in
+
+  if state.frame_inputs.jump.pressed then (
+    Audio.play_sound state "confirm";
+    match List.nth menu.choices menu.current_choice_idx with
+    | MAIN_MENU choice -> handle_main_menu choice
+    | SELECT_GAME_MODE choice -> handle_game_mode_menu choice
+    | SAVE_FILES_MENU choice -> handle_save_files_menu choice
+    | CONFIRM_DELETE_MENU choice -> handle_delete_file_menu choice
+    | PAUSE_MENU _
+    | CHANGE_WEAPON_MENU _
+    | CHANGE_GHOST_MENU _
+    | SETTINGS_MENU _
+    | CHANGE_AUDIO_SETTING _ ->
+      failwith "update_main_menu - needs MAIN_MENU menu.choices");
   state
