@@ -205,73 +205,6 @@
          "y":0
         }, 
         {
-         "color":"#658faf",
-         "draworder":"topdown",
-         "id":28,
-         "name":"triggers",
-         "objects":[
-                {
-                 "height":204,
-                 "id":14,
-                 "name":"cutscene:fight-duncan",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":36,
-                 "x":240,
-                 "y":216
-                }, 
-                {
-                 "height":51,
-                 "id":15,
-                 "name":"hidden-enemy:DUNCAN",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":54,
-                 "x":643,
-                 "y":187
-                }, 
-                {
-                 "height":16,
-                 "id":16,
-                 "name":"purple-pen:3.07.1",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":14,
-                 "x":1002,
-                 "y":173
-                }, 
-                {
-                 "height":324,
-                 "id":17,
-                 "name":"boss-area:DUNCAN",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":720,
-                 "x":84,
-                 "y":60
-                }, 
-                {
-                 "height":84,
-                 "id":18,
-                 "name":"arrive-at-shirley-island|warp:computer_f@108,5",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":60,
-                 "x":481,
-                 "y":288
-                }],
-         "opacity":1,
-         "type":"objectgroup",
-         "visible":false,
-         "x":0,
-         "y":0
-        }, 
-        {
          "color":"#6c9e83",
          "draworder":"topdown",
          "id":4,
@@ -408,6 +341,73 @@
                  "width":240,
                  "x":936,
                  "y":0
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "color":"#658faf",
+         "draworder":"topdown",
+         "id":28,
+         "name":"triggers",
+         "objects":[
+                {
+                 "height":204,
+                 "id":14,
+                 "name":"cutscene:fight-duncan",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":36,
+                 "x":240,
+                 "y":216
+                }, 
+                {
+                 "height":51,
+                 "id":15,
+                 "name":"hidden-enemy:DUNCAN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":54,
+                 "x":643,
+                 "y":187
+                }, 
+                {
+                 "height":16,
+                 "id":16,
+                 "name":"purple-pen:3.07.1",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14,
+                 "x":1002,
+                 "y":173
+                }, 
+                {
+                 "height":324,
+                 "id":17,
+                 "name":"boss-area:DUNCAN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":720,
+                 "x":84,
+                 "y":60
+                }, 
+                {
+                 "height":84,
+                 "id":18,
+                 "name":"arrive-at-shirley-island|warp:computer_f@108,5",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60,
+                 "x":481,
+                 "y":288
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1094,7 +1094,7 @@
          "y":0
         }],
  "nextlayerid":38,
- "nextobjectid":19,
+ "nextobjectid":20,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

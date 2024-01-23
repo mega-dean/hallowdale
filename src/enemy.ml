@@ -113,7 +113,7 @@ let spawn_projectile
   let entity =
     Entity.create
       (fmt "%s projectile" (Show.enemy_name enemy))
-      ~scale:(Config.scale.room *. scale) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.)
+      ~scale:(scale *. Config.scale.enemy) ~v:{ x = vx'; y = 0. } ~facing_right:(vx' > 0.)
       ~gravity_multiplier ~collision:(Some DEST) projectile_texture dest
   in
   { entity; despawn; spawned = { at = spawn_time }; pogoable; damage; collide_with_floors }
@@ -651,10 +651,6 @@ module Frog : M = struct
           args.state.camera.shake <- 1.;
           let projectile =
             let explosion_scale = 4. in
-            (* FIXME collision is off by a little bit, not sure why
-               - same thing is happening to electricity shocks
-               - also need to adjust the electricity on the map for new enemy placement
-            *)
             let projectile_duration = TIME_LEFT { seconds = 0.8 } in
             spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
               ~pogoable:true ~projectile_vx_opt:(Some 0.) ~x_alignment:CENTER ~direction:RIGHT
@@ -746,7 +742,6 @@ module Electricity_actions = struct
       match action with
       | SHOCK ->
         let action_name = action |> to_string in
-        (* ELECTRICITY should always have the "idle" pose - starting this action just adds the shock child sprite *)
         let shock_config = List.assoc action_name enemy.json.texture_configs in
         let projectile_duration =
           TIME_LEFT { seconds = (shock_config.count |> Int.to_float) *. shock_config.duration }
@@ -754,9 +749,11 @@ module Electricity_actions = struct
         enemy.spawned_projectiles <-
           [
             spawn_projectile enemy ~projectile_texture_name:action_name ~projectile_vx_opt:(Some 0.)
-              ~scale:1.1 ~pogoable:false ~x_alignment:CENTER ~direction:RIGHT projectile_duration
+              ~scale:1.6 ~pogoable:false ~x_alignment:CENTER ~direction:RIGHT projectile_duration
               current_time;
           ];
+        (* ELECTRICITY should always have the "idle" pose - starting this action just adds
+           the shock child sprite *)
         "idle"
     in
     set_pose enemy pose_name

@@ -39,6 +39,23 @@ let direction (d : direction) : string =
   | LEFT -> "left"
   | RIGHT -> "right"
 
+let x_alignment (x : x_alignment) : string =
+  match x with
+  | IN_FRONT facing_right -> fmt "IN_FRONT (%b)" facing_right
+  | LEFT_INSIDE -> "LEFT_INSIDE"
+  | RIGHT_INSIDE -> "RIGHT_INSIDE"
+  | LEFT_OUTSIDE -> "LEFT_OUTSIDE"
+  | RIGHT_OUTSIDE -> "RIGHT_OUTSIDE"
+  | CENTER -> "CENTER"
+
+let y_alignment (y : y_alignment) : string =
+  match y with
+  | TOP_INSIDE -> "TOP_INSIDE"
+  | BOTTOM_INSIDE -> "BOTTOM_INSIDE"
+  | TOP_OUTSIDE -> "TOP_OUTSIDE"
+  | BOTTOM_OUTSIDE -> "BOTTOM_OUTSIDE"
+  | CENTER -> "CENTER"
+
 let recoil (recoil : recoil) : string =
   fmt "speed: %f, time_left: %f, reset_v: %b" recoil.speed recoil.time_left.seconds recoil.reset_v
 
