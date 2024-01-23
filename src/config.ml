@@ -125,6 +125,8 @@ let platform =
   }
 
 type ghost_config = {
+  starting_max_soul : int;
+  starting_max_health : int;
   width : float;
   height : float;
   vx : float;
@@ -158,6 +160,8 @@ let ghost : ghost_config =
   let jump_vy = -1080. *. window_scale in
   let wall_jump_vy = jump_vy *. 0.8 in
   {
+    starting_max_soul = 99;
+    starting_max_health = 5;
     width;
     height;
     max_vy = 1100. *. window_scale;
@@ -191,7 +195,6 @@ let ghost : ghost_config =
   }
 
 type action_config = {
-  max_soul : int;
   soul_per_cast : int;
   soul_gained_per_nail : int;
   attack_duration : float;
@@ -204,7 +207,6 @@ type action_config = {
 let action : action_config =
   let vengeful_spirit_vx = 1000. *. window_scale in
   {
-    max_soul = 99;
     soul_per_cast = 33;
     soul_gained_per_nail = 11;
     attack_duration = 0.07;

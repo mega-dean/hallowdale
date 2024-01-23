@@ -122,7 +122,8 @@ type save_file = {
   weapons: string list;
   current_weapon: string;
   progress: game_progress;
-  max_health: int
+  max_health: int;
+  max_soul: int
 }
 
 type object_layer = { name: string; objects: coll_rect list }

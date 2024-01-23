@@ -258,4 +258,5 @@ type save_file = {
   current_weapon : string;
   progress : game_progress;
   max_health : int;
+  max_soul : int;
 }

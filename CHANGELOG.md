@@ -5,6 +5,7 @@
 - add keys and locked doors
 - add tram pass
 - add warp from teacher's lounge to cpu wing
+- add soul upgrades
 
 ## [0.0.10] - 2024-01-16
 

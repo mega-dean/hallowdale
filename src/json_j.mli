@@ -125,7 +125,8 @@ type save_file = Json_t.save_file = {
   weapons: string list;
   current_weapon: string;
   progress: game_progress;
-  max_health: int
+  max_health: int;
+  max_soul: int
 }
 
 type object_layer = Json_t.object_layer = {

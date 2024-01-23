@@ -1383,8 +1383,15 @@ let handle_debug_keys (game : game) (state : state) =
         ())
       else if key_pressed DEBUG_2 then (
         (* toggle_ability game.ghost "mantis_claw" *)
-        (* game.ghost.health.current <- game.ghost.health.current - 1 *)
-        game.player.soul.current <- game.player.soul.max;
+        (* game.player.health.current <- game.player.health.current - 1; *)
+        game.player.soul <-
+          {
+            current = game.player.soul.max + 33;
+            max = game.player.soul.max + 33;
+            at_focus_start = 0;
+            health_at_focus_start = 0;
+            last_decremented = { at = 0. };
+          };
         ())
       else if key_pressed DEBUG_3 then (
         (* print "player water is_some: %b" (Option.is_some game.player.current.water) *)
@@ -2678,7 +2685,11 @@ let load_shared_textures (shared_texture_configs : texture_config String.Map.t) 
     downslash = build_slash_texture "downslash";
     shine = build_shared_texture "shine";
     health = build_shared_texture "health";
-    energon_pod = build_shared_texture "energon-pod";
+    energon_pod_base = build_shared_texture "energon-pod-base";
+    energon_pod_1 = build_shared_texture "energon-pod-1";
+    energon_pod_2 = build_shared_texture "energon-pod-2";
+    energon_pod_3 = build_shared_texture "energon-pod-3";
+    energon_pod_4 = build_shared_texture "energon-pod-4";
     vengeful_spirit = build_shared_texture "vengeful-spirit";
     shade_soul = build_shared_texture "shade-soul";
     desolate_dive = build_shared_texture "desolate-dive";
@@ -2768,8 +2779,8 @@ let init
     health = { current = save_file.max_health; max = save_file.max_health };
     soul =
       {
-        current = Config.action.max_soul;
-        max = Config.action.max_soul;
+        current = save_file.max_soul;
+        max = save_file.max_soul;
         at_focus_start = 0;
         health_at_focus_start = 0;
         last_decremented = { at = 0. };

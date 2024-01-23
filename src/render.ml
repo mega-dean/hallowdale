@@ -913,18 +913,28 @@ let tick (state : state) =
 
     let draw_hud () =
       let padding = Config.other.hud_padding in
-      let energon_pod_image = game.player.shared_textures.energon_pod.image in
+      let energon_pod_base_image = game.player.shared_textures.energon_pod_base.image in
+      let energon_pod_image =
+        match game.player.soul.max with
+        | 99 -> game.player.shared_textures.energon_pod_1.image
+        | 132 -> game.player.shared_textures.energon_pod_2.image
+        | 165 -> game.player.shared_textures.energon_pod_3.image
+        | 198 -> game.player.shared_textures.energon_pod_4.image
+        | max -> failwithf "invalid soul.max value: %d" max
+      in
       let pod_src_w, pod_src_h =
         ( Raylib.Texture.width energon_pod_image / 2 |> Int.to_float,
           Raylib.Texture.height energon_pod_image |> Int.to_float )
+      in
+      let pod_base_src_w, pod_base_src_h =
+        ( Raylib.Texture.width energon_pod_base_image |> Int.to_float,
+          Raylib.Texture.height energon_pod_base_image |> Int.to_float )
       in
       let pod_dest_w, pod_dest_h =
         (pod_src_w *. Config.scale.soul, pod_src_h *. Config.scale.soul)
       in
       let draw_soul (soul : soul) : unit =
-        (* draws the complete empty energon pod, then draws the filled portion on top of that
-           TODO the base of the energon pod shouldn't be considered in this height, currently can't see the difference between 0% - 25% soul
-        *)
+        (* draws the complete empty energon pod, then draws the filled portion on top of that *)
         let full_src_h =
           (soul.current |> Int.to_float) /. (soul.max |> Int.to_float) *. pod_src_h
         in
@@ -933,6 +943,7 @@ let tick (state : state) =
         let empty_dest_h = pod_dest_h -. full_dest_h in
         let full_src = Rectangle.create 0. empty_src_h pod_src_w full_src_h in
         let empty_src = Rectangle.create pod_src_w 0. pod_src_w pod_src_h in
+        let base_src = Rectangle.create 0. 0. pod_base_src_w pod_base_src_h in
         let empty_dest =
           {
             pos = { x = camera_x +. padding; y = camera_y +. padding };
@@ -947,10 +958,19 @@ let tick (state : state) =
             w = pod_dest_w;
           }
         in
+        let base_dest =
+          {
+            pos = { x = camera_x +. padding; y = camera_y +. padding +. pod_dest_h };
+            h = pod_base_src_h *. Config.scale.soul;
+            w = pod_base_src_w *. Config.scale.soul;
+          }
+        in
         Draw.image energon_pod_image empty_src (empty_dest |> rect_to_Rect) (Raylib.Vector2.zero ())
           0.0 Color.raywhite;
         Draw.image energon_pod_image full_src (full_dest |> rect_to_Rect) (Raylib.Vector2.zero ())
-          0.0 Color.raywhite
+          0.0 Color.raywhite;
+        Draw.image energon_pod_base_image base_src (base_dest |> rect_to_Rect)
+          (Raylib.Vector2.zero ()) 0.0 Color.raywhite
       in
       let draw_head idx =
         let image = game.player.shared_textures.health.image in
@@ -961,7 +981,7 @@ let tick (state : state) =
         let dest_w, dest_h = (w *. Config.scale.health, h *. Config.scale.health) in
         let dest_x, dest_y =
           if idx < 10 then
-            ( camera_x +. pod_dest_h +. padding +. ((idx |> Int.to_float) *. (dest_w +. padding)),
+            ( camera_x +. pod_dest_w +. padding +. ((idx |> Int.to_float) *. (dest_w +. padding)),
               camera_y +. padding )
           else
             ( camera_x

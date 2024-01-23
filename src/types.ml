@@ -700,16 +700,13 @@ let get_slash_shape (slash : slash) : shape =
 
 type soul = {
   mutable current : int;
-  mutable max : int;
+  max : int;
   mutable at_focus_start : int;
   mutable health_at_focus_start : int;
   mutable last_decremented : time;
 }
 
 type ghost_action_config = {
-  (* TODO add frame_duration
-     - this might be used inconsistently right now, probably need to consolidate usages
-  *)
   duration : duration;
   cooldown : duration;
   input_buffer : duration;
@@ -724,7 +721,6 @@ type ghost_action = {
 }
 
 (* this keeps track of the last time the ghost performed these actions *)
-(* TODO this should also keep track of airborne time (for hardfalls), but it isn't an "action" that has a config *)
 type ghost_action_history = {
   cast_vs : ghost_action;
   (* cast_dive ends when landing on a floor, not based on duration *)
@@ -983,7 +979,11 @@ type ghost_shared_textures = {
   desolate_dive : texture;
   dive_shockwave : texture;
   howling_wraiths : texture;
-  energon_pod : texture;
+  energon_pod_base : texture;
+  energon_pod_1 : texture;
+  energon_pod_2 : texture;
+  energon_pod_3 : texture;
+  energon_pod_4 : texture;
   focus_sparkles : texture;
   c_dash_crystals : texture;
   (* TODO this is temporary, eventually combine it with c_dash_crystals and rotate *)

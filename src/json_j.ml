@@ -125,7 +125,8 @@ type save_file = Json_t.save_file = {
   weapons: string list;
   current_weapon: string;
   progress: game_progress;
-  max_health: int
+  max_health: int;
+  max_soul: int
 }
 
 type object_layer = Json_t.object_layer = {
@@ -5017,6 +5018,15 @@ let write_save_file : _ -> save_file -> _ = (
       Yojson.Safe.write_int
     )
       ob x.max_health;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"max_soul\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.max_soul;
     Buffer.add_char ob '}';
 )
 let string_of_save_file ?(len = 1024) x =
@@ -5040,6 +5050,7 @@ let read_save_file = (
     let field_current_weapon = ref (None) in
     let field_progress = ref (None) in
     let field_max_health = ref (None) in
+    let field_max_soul = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -5085,6 +5096,14 @@ let read_save_file = (
                   | 'g' -> (
                       if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' then (
                         0
+                      )
+                      else (
+                        -1
+                      )
+                    )
+                  | 'm' -> (
+                      if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'x' && String.unsafe_get s (pos+3) = '_' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'o' && String.unsafe_get s (pos+6) = 'u' && String.unsafe_get s (pos+7) = 'l' then (
+                        13
                       )
                       else (
                         -1
@@ -5291,6 +5310,14 @@ let read_save_file = (
                 ) p lb
               )
             );
+          | 13 ->
+            field_max_soul := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -5340,6 +5367,14 @@ let read_save_file = (
                     | 'g' -> (
                         if String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'o' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = '_' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'd' then (
                           0
+                        )
+                        else (
+                          -1
+                        )
+                      )
+                    | 'm' -> (
+                        if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'x' && String.unsafe_get s (pos+3) = '_' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'o' && String.unsafe_get s (pos+6) = 'u' && String.unsafe_get s (pos+7) = 'l' then (
+                          13
                         )
                         else (
                           -1
@@ -5546,6 +5581,14 @@ let read_save_file = (
                   ) p lb
                 )
               );
+            | 13 ->
+              field_max_soul := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -5568,6 +5611,7 @@ let read_save_file = (
             current_weapon = (match !field_current_weapon with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "current_weapon");
             progress = (match !field_progress with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "progress");
             max_health = (match !field_max_health with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "max_health");
+            max_soul = (match !field_max_soul with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "max_soul");
           }
          : save_file)
       )

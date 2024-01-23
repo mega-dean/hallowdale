@@ -38,7 +38,8 @@ let empty_save_file () : Json_t.save_file =
         by_room = [];
         steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0 };
       };
-    max_health = 5;
+    max_health = Config.ghost.starting_max_health;
+    max_soul = Config.ghost.starting_max_soul;
     weapons =
       [
         "Old Nail";
@@ -96,6 +97,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       weapons = game.player.weapons |> String.Map.to_list |> List.map fst;
       current_weapon = game.player.current_weapon.name;
       max_health = game.player.health.max;
+      max_soul = game.player.soul.max;
     }
   in
   save_file.progress.frame_idx <- state.frame.idx;
