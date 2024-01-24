@@ -370,6 +370,8 @@ type other = {
   hud_padding : float;
   save_slots : int;
   phantom_floor_h : float;
+  raindrop_speed : float;
+  raindrop_scale : float;
 }
 
 let other =
@@ -383,6 +385,8 @@ let other =
     hud_padding = 8. *. window_scale;
     save_slots = 4;
     phantom_floor_h = 20. *. window_scale;
+    raindrop_speed = 3. *. window_scale;
+    raindrop_scale = 4. *. window_scale;
   }
 
 let lever_shape =

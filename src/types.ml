@@ -1286,6 +1286,7 @@ type room_params = {
   npc_configs : (npc_id * Json_t.npc_config) list;
   pickup_indicator_texture : texture;
   lever_texture : texture;
+  raindrop_texture : texture;
   respawn_pos : vector;
   platforms : texture String.Map.t;
 }
@@ -1317,6 +1318,8 @@ type room = {
   conveyor_belts : (rect * float) list;
   (* "hazards" are non-pogoable, like thorns in greenpath or crystals in c-dash *)
   hazards : rect list;
+  (* these are only used in City of Chairs *)
+  raindrops : sprite list;
 }
 
 (* these are all in pixels, scaled by Config.scale.room *)
@@ -1347,6 +1350,7 @@ type texture_cache = {
   (* this is the only animated platform for now, maybe want a separate animated_platforms if more are added *)
   rotating_platform : texture;
   skybox : texture;
+  raindrop : texture;
   ghost_bodies : ghost_body_textures;
   world_map : texture;
 }

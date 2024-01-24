@@ -154,29 +154,15 @@
                 "duration": 0.06
             }
         ],
-        [ "skybox",
-          {
-              "count": 1,
-              "duration": 0.0
-          }
-        ],
-        [ "door-lever",
-          {
-              "count": 1,
-              "duration": 0.0
-          }
-        ],
+        [ "skybox", {}],
+        [ "raindrop", {}],
+        [ "door-lever", {}],
         [ "door-lever-struck",
           {
               "count": 3,
               "duration": 0.1
           }
         ],
-        [ "main-menu",
-          {
-              "count": 1,
-              "duration": 0.0
-          }
-        ]
+        [ "main-menu", {}]
     ]
 }

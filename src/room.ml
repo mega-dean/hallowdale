@@ -659,6 +659,35 @@ let init (params : room_params) : room =
     }
   in
 
+  let raindrops =
+    match area.id with
+    | CITY_OF_CHAIRS ->
+      let texture = params.raindrop_texture in
+      let w, h =
+        ( Config.other.raindrop_scale *. (Raylib.Texture.width texture.image |> Int.to_float),
+          Config.other.raindrop_scale *. (Raylib.Texture.height texture.image |> Int.to_float) )
+      in
+      [
+        Sprite.create "raindrop 1" texture { pos = { x = 0.; y = -.h }; w; h };
+        Sprite.create "raindrop 2" texture { pos = { x = w; y = -.h }; w; h };
+        Sprite.create "raindrop 3" texture { pos = { x = 0.; y = 0. }; w; h };
+        Sprite.create "raindrop 4" texture { pos = { x = w; y = 0. }; w; h };
+        Sprite.create "raindrop 5" texture { pos = { x = 0.; y = h }; w; h };
+        Sprite.create "raindrop 6" texture { pos = { x = w; y = h }; w; h };
+      ]
+    | AC_REPAIR_ANNEX
+    | BASEMENT
+    | COMPUTER_WING
+    | FORGOTTEN_CLASSROOMS
+    | INFECTED_CLASSROOMS
+    | MEOW_MEOW_BEENZ
+    | OUTLANDS
+    | TRAMPOLINEPATH
+    | VENTWAYS
+    | LIBRARY ->
+      []
+  in
+
   {
     area;
     id = room_id;
@@ -691,6 +720,7 @@ let init (params : room_params) : room =
     loose_projectiles = [];
     interaction_label = None;
     cache;
+    raindrops;
   }
 
 let reset_tile_groups (room : room) =
@@ -859,6 +889,7 @@ let change_current_room
         npc_configs = state.global.npc_configs;
         pickup_indicator_texture = state.global.textures.pickup_indicator;
         lever_texture = state.global.textures.door_lever;
+        raindrop_texture = state.global.textures.raindrop;
         respawn_pos = ghost_start_pos;
         platforms = state.global.textures.platforms;
       }

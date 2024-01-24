@@ -255,6 +255,7 @@ let create
         npc_configs = global.npc_configs;
         pickup_indicator_texture = global.textures.pickup_indicator;
         lever_texture = global.textures.door_lever;
+        raindrop_texture = global.textures.raindrop;
         respawn_pos =
           {
             x = save_file.respawn_x *. Config.window.scale;

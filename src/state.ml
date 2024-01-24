@@ -48,6 +48,7 @@ let init () : state =
   let pickup_indicator = build_shared_npc_texture "pickup-indicator" in
   let main_menu = build_shared_npc_texture "main-menu" in
   let skybox = build_shared_npc_texture "skybox" in
+  let raindrop = build_shared_npc_texture "raindrop" in
   let world_map =
     (* TODO make a world-map-small.png that doesn't look bad at small window sizes *)
     Sprite.build_static_texture "world-map"
@@ -203,6 +204,7 @@ let init () : state =
           rotating_platform;
           ghost_bodies;
           skybox;
+          raindrop;
           world_map;
         };
       sounds = sounds |> List.to_string_map;

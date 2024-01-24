@@ -98,11 +98,7 @@ let draw_texture
 (* this function should only be used by sprites that don't have an entity
    - when an entity is present, use draw_entity because it corrects the sprite position before rendering
 *)
-let draw_sprite
-    ?(debug = false)
-    ?(tint = Color.create 255 255 255 255)
-    ?(render_offset = None)
-    (sprite : sprite) =
+let draw_sprite ?(debug = false) ?(tint = Color.white) ?(render_offset = None) (sprite : sprite) =
   let dest =
     match render_offset with
     | None -> sprite.dest
@@ -120,6 +116,9 @@ let draw_sprite
           };
       }
   in
+  if debug then (
+    tmp "drawing rect at %s" (Show.rect dest);
+    debug_rect sprite.dest);
   draw_texture sprite.texture ~tint dest (if sprite.facing_right then 0 else 4);
   match sprite.collision with
   | Some (SHAPE shape) ->
@@ -127,7 +126,7 @@ let draw_sprite
       debug_shape_outline sprite shape
   | _ -> ()
 
-let draw_entity ?(debug = false) ?(tint = Color.create 255 255 255 255) (entity : entity) =
+let draw_entity ?(debug = false) ?(tint = Color.white) (entity : entity) =
   Entity.adjust_sprite_dest entity;
   draw_sprite ~debug ~tint entity.sprite
 
@@ -1064,6 +1063,16 @@ let tick (state : state) =
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
+    if game.room.area.id = CITY_OF_CHAIRS then (
+      let draw (sprite : sprite) =
+        let y_offset =
+          Config.other.raindrop_speed
+          *. (state.frame.idx mod (sprite.dest.h /. Config.other.raindrop_speed |> Float.to_int)
+             |> Int.to_float)
+        in
+        draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
+      in
+      List.iter draw game.room.raindrops);
     if Env.development then (
       Raylib.draw_fps
         (camera_x +. Config.window.w -. 100. |> Float.to_int)
