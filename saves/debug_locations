@@ -17,3 +17,8 @@
 "ghost_x": 6216.943919539452,
 "ghost_y": 4252.0,
 "room_name": "ac-repair_d",
+
+# locker boys fight
+"ghost_x": 3727.6010965034366,
+"ghost_y": 1192.0,
+"room_name": "infected_b",
