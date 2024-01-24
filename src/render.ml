@@ -338,6 +338,7 @@ let get_lines ?(_debug = false) (w : float) (words : string list) : line list =
     | "{{darkgreen}}" -> change_color Raylib.Color.darkgreen
     | "{{darkpurple}}" -> change_color Raylib.Color.darkpurple
     | "{{darkpink}}" -> change_color (Raylib.Color.create 146 24 118 255)
+    | "{{gray}}" -> change_color Raylib.Color.gray
     | _ ->
       (* subtracting 25 because archives text  *)
       if word_w +. segment_w +. current_line.w > w -. 25. then

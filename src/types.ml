@@ -664,7 +664,7 @@ type enemy = {
   entity : entity;
   damage : int;
   initial_pos : vector;
-  mutable health : health;
+  health : health;
   mutable history : time Enemy_action.Map.t;
   mutable last_performed : (string * time) option;
   (* keep track of this so they only have to be checked once per frame

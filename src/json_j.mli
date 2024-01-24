@@ -19,6 +19,7 @@ type weapon = Json_t.weapon = {
   damage: int;
   scale_x: float;
   scale_y: float;
+  text_color: string;
   swing_speed: float
 }
 

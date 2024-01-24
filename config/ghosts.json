@@ -1,5 +1,4 @@
 {
-    // FIXME
     // the offsets for these are "distance from top-left corner to neck", and render.ml adjusts the
     // head/body to line up using Config.ghost.body_x/y
     "body_textures": [

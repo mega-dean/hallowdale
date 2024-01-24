@@ -140,7 +140,9 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
               {
                 removed_tile_idxs = [];
                 removed_platform_ids = [];
-                (* add this so the warp from teacher's lounge to cpu wing is always available *)
+                (* add this so the warp from teacher's lounge to cpu wing is always available
+                   - TODO this causes forgotten_a to always show up on the world map for steel sole
+                *)
                 finished_interactions = [ "cutscene:arrive-at-shirley-island" ];
                 revealed_shadow_layers = [];
               } );

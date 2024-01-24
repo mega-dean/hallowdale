@@ -124,6 +124,7 @@ type weapon = {
   damage : int;
   scale_x : float;
   scale_y : float;
+  text_color : string;
   (* - old-nail speed is 1.0, and any lower than that feels too slow (even for eg. very strong weapon)
      - max value with current configs is 1.6, since anything faster than that allows a constant attack
   *)

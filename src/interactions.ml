@@ -326,7 +326,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           [ "Learned"; "Torvin's Flesh of Fire." ]
           [ "Tap (A) while holding DOWN"; "to strike the earth with a burst of white-hot flame." ]
       | "vapors-of-magmarath" ->
-        get_ability_steps "howling_wraiths" 0. 6. ~quote
+        get_ability_steps "abyss_shriek" 0. 6. ~quote
           [ "Consumed the"; "Vapors of Magmarath." ]
           [ "Tap (A) while holding UP"; "to unleash the Vapors." ]
       | _ -> fail ())
@@ -522,6 +522,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       match trigger.name_suffix with
       | "DUNCAN" ->
         [
+          ENEMY (DUNCAN, SET_VX 0.);
           CURRENT_GHOST (PARTY (WALK_TO 52));
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
           ENEMY (DUNCAN, WALK_TO 30);

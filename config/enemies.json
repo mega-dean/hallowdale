@@ -322,7 +322,6 @@
                 ["charging", {
                     "count": 3,
                     "duration": 0.2,
-                    // FIXME
                     "x_offset": 55,
                     "y_offset": 85
                 }],

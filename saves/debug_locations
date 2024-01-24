@@ -13,3 +13,7 @@
 "ghost_y": 1732.0,
 "room_name": "library_b",
 
+# ac repair vent
+"ghost_x": 6216.943919539452,
+"ghost_y": 4252.0,
+"room_name": "ac-repair_d",

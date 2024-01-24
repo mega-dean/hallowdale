@@ -1752,7 +1752,7 @@ let tick (game : game) (state : state) =
           | WEAPON weapon_name ->
             let weapon_config = String.Map.find weapon_name state.global.weapons in
             let text : string list =
-              [ fmt "Acquired the %s" weapon_name; weapon_config.pickup_text ]
+              [ fmt "Acquired the {{%s}} %s" weapon_config.text_color weapon_name; weapon_config.pickup_text ]
             in
             acquire_weapon state game weapon_name;
             game.interaction.speaker_name <- None;

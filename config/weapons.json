@@ -5,6 +5,7 @@
         "scale_x": 1.0,
         "scale_y": 1.0,
         "swing_speed": 1.0,
+        "text_color": "white",
         "tint": {
             "r": 255,
             "g": 255,
@@ -18,6 +19,7 @@
         "scale_x": 1.1,
         "scale_y": 1.1,
         "swing_speed": 1.1,
+        "text_color": "red",
         "tint": {
             "r": 255,
             "g": 100,
@@ -31,6 +33,7 @@
         "scale_x": 0.9,
         "scale_y": 0.9,
         "swing_speed": 1.4,
+        "text_color": "green",
         "tint": {
             "r": 170,
             "g": 190,
@@ -44,6 +47,7 @@
         "scale_x": 1.0,
         "scale_y": 1.0,
         "swing_speed": 1.2,
+        "text_color": "gray",
         "tint": {
             "r": 120,
             "g": 120,
@@ -57,6 +61,7 @@
         "scale_x": 1.5,
         "scale_y": 1.6,
         "swing_speed": 1.3,
+        "text_color": "orange",
         "tint": {
             "r": 255,
             "g": 160,
@@ -70,6 +75,7 @@
         "scale_x": 0.8,
         "scale_y": 0.8,
         "swing_speed": 1.5,
+        "text_color": "green",
         "tint": {
             "r": 100,
             "g": 200,
@@ -83,6 +89,7 @@
         "scale_x": 1.3,
         "scale_y": 1.3,
         "swing_speed": 1.4,
+        "text_color": "gold",
         "tint": {
             "r": 240,
             "g": 210,
@@ -96,6 +103,7 @@
         "scale_x": 1.2,
         "scale_y": 1.2,
         "swing_speed": 1.5,
+        "text_color": "maroon",
         "tint": {
             "r": 100,
             "g": 80,
@@ -109,6 +117,7 @@
         "scale_x": 2.0,
         "scale_y": 1.6,
         "swing_speed": 1.0,
+        "text_color": "blue",
         "tint": {
             "r": 125,
             "g": 165,
