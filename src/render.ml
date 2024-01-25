@@ -1023,6 +1023,17 @@ let tick (state : state) =
     draw_object_trigger_indicators ();
     draw_loose_projectiles ();
     draw_fg_tiles game.room camera_x camera_y state;
+    if game.room.area.id = CITY_OF_CHAIRS then (
+      let draw (sprite : sprite) =
+        let y_offset =
+          Config.other.raindrop_speed
+          *. (state.frame.idx mod (sprite.dest.h /. Config.other.raindrop_speed |> Float.to_int)
+              |> Int.to_float)
+        in
+        draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
+      in
+      List.iter draw game.room.raindrops);
+
     draw_hud ();
     (match state.screen_fade with
     | None -> ()
@@ -1063,16 +1074,6 @@ let tick (state : state) =
      in
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
-    if game.room.area.id = CITY_OF_CHAIRS then (
-      let draw (sprite : sprite) =
-        let y_offset =
-          Config.other.raindrop_speed
-          *. (state.frame.idx mod (sprite.dest.h /. Config.other.raindrop_speed |> Float.to_int)
-             |> Int.to_float)
-        in
-        draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
-      in
-      List.iter draw game.room.raindrops);
     if Env.development then (
       Raylib.draw_fps
         (camera_x +. Config.window.w -. 100. |> Float.to_int)

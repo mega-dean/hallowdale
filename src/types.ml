@@ -351,6 +351,7 @@ type enemy_id =
   | WIRED_ELECTRICITY
   (* | HIPPIE *)
   | FLYING_HIPPIE
+  | FLYING_HIPPIE_2
   | BIRD
   (* bosses *)
   | DUNCAN
@@ -661,6 +662,7 @@ type enemy = {
   id : enemy_id;
   kind : enemy_kind;
   status : enemy_status;
+  level : int;
   entity : entity;
   damage : int;
   initial_pos : vector;

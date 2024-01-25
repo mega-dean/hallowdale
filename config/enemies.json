@@ -196,6 +196,48 @@
             ]
         }],
 
+        [ "FLYING_HIPPIE_2", {
+            "kind": "enemy",
+            "health": 35,
+            "scale": 1.5,
+            "w": 30,
+            "h": 32,
+            "gravity_multiplier": 0.0,
+            "dream_nail": {},
+            "attrs": [
+                ["target_offset", 200.0],
+                ["chase_distance", 600.0],
+                ["max_chase_v", 300.0],
+                ["chase_dv", 3.0],
+                ["max_v", 30.0],
+                ["projectile_vx", 400.0]
+            ],
+            "unscaled_attrs": [
+                ["projectile_cooldown", 1.0],
+                ["direction_change_max_dt", 3.0]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 4,
+                    "duration": 0.4,
+                    "x_offset": 3,
+                    "y_offset": 3
+                }],
+                ["chasing", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 3,
+                    "y_offset": 3
+                }],
+                ["projectile", {
+                }],
+                ["dead", {
+                    "x_offset": 2,
+                    "y_offset": -22
+                }]
+            ]
+        }],
+
         [ "FISH", {
             "kind": "enemy",
             "health": 5,

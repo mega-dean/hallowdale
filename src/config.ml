@@ -165,7 +165,7 @@ let ghost : ghost_config =
     width;
     height;
     max_vy = 1100. *. window_scale;
-    dive_vy = 1600. *. window_scale;
+    dive_vy = 2000. *. window_scale;
     hardfall_duration = 1.25;
     c_dash_whoosh_scale = 6. *. window_scale;
     wraiths_scale = 1.7 *. window_scale;

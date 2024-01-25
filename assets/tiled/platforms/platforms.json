@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":30,
+ "tilecount":32,
  "tiledversion":"1.10.2",
  "tileheight":108,
  "tiles":[
@@ -192,6 +192,18 @@
          "image":"chair4.png",
          "imageheight":21,
          "imagewidth":96
+        }, 
+        {
+         "id":31,
+         "image":"chair2x2.png",
+         "imageheight":42,
+         "imagewidth":48
+        }, 
+        {
+         "id":32,
+         "image":"chair3x2.png",
+         "imageheight":42,
+         "imagewidth":72
         }],
  "tilewidth":264,
  "type":"tileset",

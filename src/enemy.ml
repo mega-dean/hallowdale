@@ -11,6 +11,7 @@ let parse_name context name : enemy_id =
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
+  | "FLYING_HIPPIE_2" -> FLYING_HIPPIE_2
   | "FROG" -> FROG
   | "LOCKER_BOY" -> LOCKER_BOY
   | "PENGUIN" -> PENGUIN
@@ -156,6 +157,7 @@ let maybe_take_damage
       ()
     | PENGUIN
     | FLYING_HIPPIE
+    | FLYING_HIPPIE_2
     | BIRD
     | FISH ->
       set_pose enemy "dead";
@@ -962,13 +964,18 @@ module Flying_hippie_actions = struct
           else
             LEFT
         in
-        enemy.spawned_projectiles <-
-          [
-            spawn_projectile enemy ~scale:0.5 ~x_alignment:CENTER ~direction
-              ~gravity_multiplier:(get_prop "gravity_multiplier" frame_props)
-              ~collide_with_floors:true projectile_duration current_time;
-          ]
-          @ enemy.spawned_projectiles;
+        let projectile scale gravity =
+          spawn_projectile enemy ~scale ~x_alignment:CENTER ~direction
+            ~gravity_multiplier:(get_prop "gravity_multiplier" frame_props *. gravity)
+            ~collide_with_floors:true projectile_duration current_time
+        in
+        let new_projectiles =
+          match enemy.level with
+          | 1 -> [ projectile 0.7 1. ]
+          | 2 -> [ projectile 1. 1.5; projectile 1. 1.; projectile 1. 0.5 ]
+          | _ -> failwithf "invalid FLYING_HIPPIE level %d" enemy.level
+        in
+        enemy.spawned_projectiles <- new_projectiles @ enemy.spawned_projectiles;
         "chasing"
     in
     set_pose enemy pose_name
@@ -1127,7 +1134,9 @@ let get_module (id : enemy_id) : (module M) =
   | ELECTRICITY -> (module Electricity)
   | FISH -> (module Fish)
   | PENGUIN -> (module Penguin)
-  | FLYING_HIPPIE -> (module Flying_hippie)
+  | FLYING_HIPPIE
+  | FLYING_HIPPIE_2 ->
+    (module Flying_hippie)
   | BIRD -> (module Bird)
   | WIRED_ELECTRICITY -> failwithf "enemy %s not implemented yet" (Show.enemy_id id)
 
@@ -1142,9 +1151,24 @@ let create_from_rects
     finished_interactions
     (enemy_configs : (enemy_id * Json_t.enemy_config) list) : enemy list =
   let texture_cache : (enemy_id * (string * texture) ne_list) list ref = ref [] in
-  let build id kind enemy_name (enemy_config : Json_t.enemy_config) entity_dest on_killed : enemy =
+  let build id kind enemy_asset_dir_name (enemy_config : Json_t.enemy_config) entity_dest on_killed
+      : enemy =
+    let level =
+      match id with
+      | FLYING_HIPPIE_2 -> 2
+      | FISH
+      | FROG
+      | ELECTRICITY
+      | PENGUIN
+      | WIRED_ELECTRICITY
+      | FLYING_HIPPIE
+      | BIRD
+      | DUNCAN
+      | LOCKER_BOY ->
+        1
+    in
     let texture_configs : texture_config ne_list =
-      List.map (Entity.to_texture_config ENEMIES enemy_name) enemy_config.texture_configs
+      List.map (Entity.to_texture_config ENEMIES enemy_asset_dir_name) enemy_config.texture_configs
       |> List.to_ne_list
     in
     let entity, textures =
@@ -1180,6 +1204,7 @@ let create_from_rects
       id;
       status;
       kind;
+      level;
       entity;
       damage = json.damage;
       health = { current = enemy_config.health; max = enemy_config.health };
@@ -1197,6 +1222,20 @@ let create_from_rects
   in
   let build_enemy_from_rect ((enemy_id, dest) : enemy_id * rect) : enemy option =
     let enemy_name = Show.enemy_id enemy_id in
+    let enemy_asset_dir_name =
+      match enemy_id with
+      | FLYING_HIPPIE_2 -> "FLYING_HIPPIE"
+      | FLYING_HIPPIE
+      | FISH
+      | FROG
+      | ELECTRICITY
+      | PENGUIN
+      | WIRED_ELECTRICITY
+      | BIRD
+      | DUNCAN
+      | LOCKER_BOY ->
+        enemy_name
+    in
     let enemy_config : Json_t.enemy_config =
       match List.assoc_opt enemy_id enemy_configs with
       | None -> failwithf "missing config in enemies.json for %s" enemy_name
@@ -1225,7 +1264,9 @@ let create_from_rects
           (enemy_config.h |> Int.to_float) *. Config.scale.enemy *. enemy_config.scale )
       in
       let pos = align_to_bottom dest w h in
-      let enemy = build enemy_id enemy_kind enemy_name enemy_config { pos; w; h } on_killed in
+      let enemy =
+        build enemy_id enemy_kind enemy_asset_dir_name enemy_config { pos; w; h } on_killed
+      in
       (* without this, the enemy is unscaled for a single frame after room loads *)
       set_pose enemy "idle";
       Some enemy)

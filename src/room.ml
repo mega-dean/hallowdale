@@ -281,30 +281,30 @@ let init (params : room_params) : room =
       | "talk" -> lore_triggers := get_object_trigger ~label:(Some "Talk") INFO :: !lore_triggers
       | "npc" ->
         npc_rects :=
-          ( Npc.parse_name (fmt "Tiled rect npc_%s" name_suffix) name_suffix,
+          ( Npc.parse_name (fmt "Tiled rect npc:%s" name_suffix) name_suffix,
             get_object_rect coll_rect,
             true )
           :: !npc_rects
       | "mirrored-npc" ->
         npc_rects :=
-          ( Npc.parse_name (fmt "Tiled rect mirrored-npc_%s" name_suffix) name_suffix,
+          ( Npc.parse_name (fmt "Tiled rect mirrored-npc:%s" name_suffix) name_suffix,
             get_object_rect coll_rect,
             false )
           :: !npc_rects
       | "hidden-npc" ->
         npc_rects :=
-          ( Npc.parse_name (fmt "Tiled rect hidden-npc_%s" name_suffix) name_suffix,
+          ( Npc.parse_name (fmt "Tiled rect hidden-npc:%s" name_suffix) name_suffix,
             get_object_rect ~hidden:true coll_rect,
             true )
           :: !npc_rects
       | "enemy" ->
         enemy_rects :=
-          ( Enemy.parse_name (fmt "Tiled rect enemy_%s" name_suffix) name_suffix,
+          ( Enemy.parse_name (fmt "Tiled rect enemy:%s" name_suffix) name_suffix,
             get_object_rect coll_rect )
           :: !enemy_rects
       | "hidden-enemy" ->
         enemy_rects :=
-          ( Enemy.parse_name (fmt "Tiled rect hidden-enemy_%s" name_suffix) name_suffix,
+          ( Enemy.parse_name (fmt "Tiled rect hidden-enemy:%s" name_suffix) name_suffix,
             get_object_rect ~hidden:true coll_rect )
           :: !enemy_rects
       | "boss-area" -> boss_area := Some (get_object_rect coll_rect)
