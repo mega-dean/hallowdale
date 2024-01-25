@@ -338,7 +338,7 @@
          "name":"floors",
          "objects":[
                 {
-                 "height":48,
+                 "height":60,
                  "id":1,
                  "name":"",
                  "rotation":0,
@@ -349,7 +349,7 @@
                  "y":408
                 }, 
                 {
-                 "height":48,
+                 "height":60,
                  "id":2,
                  "name":"",
                  "rotation":0,
@@ -448,7 +448,7 @@
                  "y":264
                 }, 
                 {
-                 "height":48,
+                 "height":60,
                  "id":13,
                  "name":"",
                  "rotation":0,

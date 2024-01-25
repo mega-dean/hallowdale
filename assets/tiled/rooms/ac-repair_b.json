@@ -173,12 +173,13 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",
          "objects":[
                 {
-                 "height":36,
+                 "height":48,
                  "id":1,
                  "name":"",
                  "rotation":0,
@@ -277,7 +278,7 @@
                  "y":132
                 }, 
                 {
-                 "height":36,
+                 "height":48,
                  "id":11,
                  "name":"",
                  "rotation":0,
