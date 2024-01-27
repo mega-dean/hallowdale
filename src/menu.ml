@@ -204,6 +204,10 @@ let update_pause_menu (game : game) (state : state) : state =
     (* the map is closed by unpausing, so there's nothing to do here *)
     ()
   | Some (MENU menu) ->
+    (match game.player.ghost.hardfall_timer with
+    | None -> ()
+    | Some time -> game.player.ghost.hardfall_timer <- Some { at = time.at +. state.frame.dt });
+
     update_menu_choice menu state;
 
     if state.frame_inputs.jump.pressed then (

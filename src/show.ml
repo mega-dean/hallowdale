@@ -357,6 +357,7 @@ let damage_kind (d : damage_kind) : string =
 let enemy_id (e : enemy_id) : string =
   match e with
   | BIRD -> "BIRD"
+  | BAT -> "BAT"
   | DUNCAN -> "DUNCAN"
   | ELECTRICITY -> "ELECTRICITY"
   | FISH -> "FISH"

@@ -353,6 +353,7 @@ type enemy_id =
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2
   | BIRD
+  | BAT
   | MANICORN
   | MANICORN_2
   | MANICORN_3
@@ -599,9 +600,6 @@ module Interaction = struct
   }
 end
 
-(* TODO drop geo
-   - or maybe this should be boss_on_killed, and geo should be handled separately
-*)
 type enemy_on_killed = {
   interaction_name : string option;
   (* this means there are multiple enemies that all need to die before the interaction starts
@@ -1514,7 +1512,6 @@ let clone_abilities (abilities : Json_t.ghost_abilities) : Json_t.ghost_abilitie
     descending_dark = abilities.descending_dark;
     howling_wraiths = abilities.howling_wraiths;
     abyss_shriek = abilities.abyss_shriek;
-
     quick_focus = abilities.quick_focus;
     soul_catcher_bonus = abilities.soul_catcher_bonus;
     dream_wielder = abilities.dream_wielder;

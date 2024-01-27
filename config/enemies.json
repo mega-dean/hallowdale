@@ -573,6 +573,32 @@
             ]
         }],
 
+        [ "BAT", {
+            "kind": "enemy",
+            "health": 15,
+            "scale": 1.5,
+            "w": 17,
+            "h": 18,
+            "gravity_multiplier": 0.0,
+            "dream_nail": {},
+            "attrs": [
+                ["min_v", 100.0],
+                ["max_v", 300.0]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 3,
+                    "duration": 0.2,
+                    "x_offset": 6,
+                    "y_offset": 3
+                }],
+                ["dead", {
+                    "x_offset": 6,
+                    "y_offset": -8
+                }]
+            ]
+        }],
+
         [ "HIPPIE", {
             "kind": "enemy",
             "health": 200,

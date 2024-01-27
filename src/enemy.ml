@@ -7,6 +7,7 @@ let is_alive (enemy : enemy) : bool = not (is_dead enemy)
 let parse_name context name : enemy_id =
   match name with
   | "BIRD" -> BIRD
+  | "BAT" -> BAT
   | "DUNCAN" -> DUNCAN
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
@@ -164,6 +165,7 @@ let maybe_take_damage
     | FLYING_HIPPIE
     | FLYING_HIPPIE_2
     | BIRD
+    | BAT
     | MANICORN
     | MANICORN_2
     | MANICORN_3
@@ -1183,6 +1185,56 @@ module Bird : M = struct
       Action.handle_drifting enemy CHANGE_DIRECTION ~ghost_pos:args.ghost_pos ~frame_time
 end
 
+module Bat_actions = struct
+  type t =
+    | MOVE
+    | CHANGE_DIRECTION
+
+  let to_string (action : t) : string =
+    match action with
+    | MOVE -> "move"
+    | CHANGE_DIRECTION -> "change_direction"
+
+  let from_string (s : string) : t =
+    match s with
+    | "move" -> MOVE
+    | "change_direction" -> CHANGE_DIRECTION
+    | _ -> failwithf "Bird_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    (match action with
+    | MOVE -> ()
+    | CHANGE_DIRECTION ->
+      enemy.entity.v.x <- get_prop "random_vx" frame_props;
+      enemy.entity.v.y <- get_prop "random_vy" frame_props);
+    set_pose enemy "idle"
+end
+
+module Bat : M = struct
+  module Action = Make_loggable (Bat_actions)
+
+  type args = { frame_time : float }
+
+  let get_args state (game : game) : args = { frame_time = state.frame.time }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    (* check if v.x/y = 0. to change direction after recoiling from nail hit *)
+    if
+      enemy.entity.v.x = 0.
+      || enemy.entity.v.y = 0.
+      || List.length enemy.floor_collisions_this_frame > 0
+    then (
+      let v = Random.float_between (get_attr enemy "min_v") (get_attr enemy "max_v") in
+      let angle = Random.float 360. in
+      let vx = sin angle *. v in
+      let vy = cos angle *. v in
+      Action.set enemy CHANGE_DIRECTION ~frame_time
+        ~frame_props:([ ("random_vx", vx); ("random_vy", vy) ] |> List.to_string_map))
+    else
+      Action.set enemy MOVE ~frame_time
+end
+
 module Manicorn_actions = struct
   type t =
     | STANDING
@@ -1393,6 +1445,7 @@ let get_module (id : enemy_id) : (module M) =
   | FLYING_HIPPIE_2 ->
     (module Flying_hippie)
   | BIRD -> (module Bird)
+  | BAT -> (module Bat)
   | MANICORN
   | MANICORN_2
   | MANICORN_3 ->
@@ -1425,6 +1478,7 @@ let create_from_rects
       | HIPPIE
       | FLYING_HIPPIE
       | BIRD
+      | BAT
       | DUNCAN
       | LOCKER_BOY ->
         1
@@ -1499,6 +1553,7 @@ let create_from_rects
       | PENGUIN
       | WIRED_ELECTRICITY
       | BIRD
+      | BAT
       | DUNCAN
       | LOCKER_BOY ->
         enemy_name

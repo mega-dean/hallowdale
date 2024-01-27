@@ -680,6 +680,72 @@
                  "width":17,
                  "x":2848,
                  "y":377
+                }, 
+                {
+                 "height":24,
+                 "id":35,
+                 "name":"enemy:FLYING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2004,
+                 "y":444
+                }, 
+                {
+                 "height":24,
+                 "id":36,
+                 "name":"enemy:FLYING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1080,
+                 "y":252
+                }, 
+                {
+                 "height":24,
+                 "id":37,
+                 "name":"enemy:FLYING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":168,
+                 "y":204
+                }, 
+                {
+                 "height":24,
+                 "id":38,
+                 "name":"enemy:MANICORN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":552,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":39,
+                 "name":"enemy:MANICORN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1656,
+                 "y":360
+                }, 
+                {
+                 "height":24,
+                 "id":40,
+                 "name":"enemy:MANICORN_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2304,
+                 "y":336
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1165,7 +1231,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":35,
+ "nextobjectid":41,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
