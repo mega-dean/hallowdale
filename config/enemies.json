@@ -96,7 +96,7 @@
 
         [ "PENGUIN", {
             "kind": "enemy",
-            "health": 15,
+            "health": 150,
             "scale": 1.5,
             "w": 11,
             "h": 19,
@@ -127,7 +127,7 @@
             "gravity_multiplier": 0.0,
             "dream_nail": {},
             "attrs": [
-                ["chase_distance", 600.0],
+                ["aggro_distance", 600.0],
                 ["max_chase_v", 300.0],
                 ["chase_dv", 3.0],
                 ["max_v", 30.0]
@@ -164,7 +164,7 @@
             "dream_nail": {},
             "attrs": [
                 ["target_offset", 200.0],
-                ["chase_distance", 600.0],
+                ["aggro_distance", 600.0],
                 ["max_chase_v", 300.0],
                 ["chase_dv", 3.0],
                 ["max_v", 30.0],
@@ -206,7 +206,7 @@
             "dream_nail": {},
             "attrs": [
                 ["target_offset", 200.0],
-                ["chase_distance", 600.0],
+                ["aggro_distance", 600.0],
                 ["max_chase_v", 300.0],
                 ["chase_dv", 3.0],
                 ["max_v", 30.0],
@@ -370,6 +370,249 @@
                 ["beam", {
                     "count": 3,
                     "duration": 0.2
+                }]
+            ]
+        }],
+
+        [ "MANICORN", {
+            "kind": "enemy",
+            "health": 70,
+            "scale": 1.5,
+            "w": 22,
+            "h": 45,
+            "dream_nail": {},
+            "attrs": [
+                ["aggro_distance", 700.0],
+                ["jump_vy", -1000.0],
+                ["walk_vx", 200.0],
+                ["punch_vx", 500.0],
+                ["kick_vx", 600.0],
+                ["dash_vx", 700.0]
+            ],
+            "unscaled_attrs": [
+                ["dash_duration", 1.2],
+                ["walk_duration", 1.0],
+                ["charge_duration", 0.5]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["punch", {
+                    "count": 2,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["kick", {
+                    "x_offset": 10,
+                    "y_offset": 0
+                }],
+                ["dash", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 13,
+                    "y_offset": 4
+                }],
+                ["charge-punch", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["charge-kick", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["charge-dash", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["dead", {
+                    "x_offset": 9,
+                    "y_offset": -17
+                }]
+            ]
+        }],
+
+        [ "MANICORN_2", {
+            "kind": "enemy",
+            "health": 120,
+            "scale": 2,
+            "w": 22,
+            "h": 45,
+            "dream_nail": {},
+            "attrs": [
+                ["aggro_distance", 700.0],
+                ["jump_vy", -1100.0],
+                ["walk_vx", 250.0],
+                ["punch_vx", 550.0],
+                ["kick_vx", 650.0],
+                ["dash_vx", 750.0]
+            ],
+            "unscaled_attrs": [
+                ["dash_duration", 1.2],
+                ["walk_duration", 1.0],
+                ["charge_duration", 0.5]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["punch", {
+                    "count": 2,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["kick", {
+                    "x_offset": 10,
+                    "y_offset": 0
+                }],
+                ["dash", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 13,
+                    "y_offset": 4
+                }],
+                ["charge-punch", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["charge-kick", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["charge-dash", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["dead", {
+                    "x_offset": 9,
+                    "y_offset": -17
+                }]
+            ]
+        }],
+
+        [ "MANICORN_3", {
+            "kind": "enemy",
+            "health": 170,
+            "damage": 2,
+            "scale": 2.5,
+            "w": 22,
+            "h": 45,
+            "dream_nail": {},
+            "attrs": [
+                ["aggro_distance", 700.0],
+                ["jump_vy", -1200.0],
+                ["walk_vx", 300.0],
+                ["punch_vx", 600.0],
+                ["kick_vx", 700.0],
+                ["dash_vx", 800.0]
+            ],
+            "unscaled_attrs": [
+                ["dash_duration", 1.2],
+                ["walk_duration", 1.0],
+                ["charge_duration", 0.4]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["punch", {
+                    "count": 2,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["kick", {
+                    "x_offset": 10,
+                    "y_offset": 0
+                }],
+                ["dash", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 13,
+                    "y_offset": 4
+                }],
+                ["charge-punch", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["charge-kick", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["charge-dash", {
+                    "x_offset": 9,
+                    "y_offset": 3
+                }],
+                ["dead", {
+                    "x_offset": 9,
+                    "y_offset": -17
+                }]
+            ]
+        }],
+
+        [ "HIPPIE", {
+            "kind": "enemy",
+            "health": 200,
+            "scale": 1.2,
+            "w": 28,
+            "h": 30,
+            "dream_nail": {},
+            "attrs": [
+                ["aggro_distance", 400.0],
+                ["bite_vy", -400.0],
+                ["walk_vx", 300.0],
+                ["bite_vx", 400.0]
+            ],
+            "unscaled_attrs": [
+                ["walk_duration", 1.2],
+                ["stand_duration", 1.2],
+                ["charge_duration", 0.6]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 7,
+                    "y_offset": -4
+                }],
+                ["walking", {
+                    "count": 2,
+                    "duration": 0.2,
+                    "x_offset": 7,
+                    "y_offset": -4
+                }],
+                ["bite", {
+                    "x_offset": 6,
+                    "y_offset": 6
+                }],
+                ["charge-bite", {
+                    "x_offset": 5,
+                    "y_offset": 2
+                }],
+                ["dead", {
+                    "x_offset": 4,
+                    "y_offset": -20
                 }]
             ]
         }]

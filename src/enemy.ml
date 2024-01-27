@@ -10,10 +10,14 @@ let parse_name context name : enemy_id =
   | "DUNCAN" -> DUNCAN
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
+  | "HIPPIE" -> HIPPIE
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
   | "FLYING_HIPPIE_2" -> FLYING_HIPPIE_2
   | "FROG" -> FROG
   | "LOCKER_BOY" -> LOCKER_BOY
+  | "MANICORN" -> MANICORN
+  | "MANICORN_2" -> MANICORN_2
+  | "MANICORN_3" -> MANICORN_3
   | "PENGUIN" -> PENGUIN
   | "WIRED_ELECTRICITY" -> WIRED_ELECTRICITY
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
@@ -156,9 +160,13 @@ let maybe_take_damage
     | ELECTRICITY ->
       ()
     | PENGUIN
+    | HIPPIE
     | FLYING_HIPPIE
     | FLYING_HIPPIE_2
     | BIRD
+    | MANICORN
+    | MANICORN_2
+    | MANICORN_3
     | FISH ->
       set_pose enemy "dead";
       enemy.entity.v.x <- 0.;
@@ -213,6 +221,11 @@ let maybe_take_damage
   else
     false
 
+let get_boss_area boss_name game =
+  match game.room.boss_area with
+  | None -> failwithf "missing boss-area for %s" boss_name
+  | Some rect -> rect
+
 let chase_to enemy (target : vector) =
   let dv = get_attr enemy "chase_dv" in
   let new_vx =
@@ -230,25 +243,71 @@ let chase_to enemy (target : vector) =
   let max_v = get_attr enemy "max_chase_v" in
   (Float.bound (-.max_v) new_vx max_v, Float.bound (-.max_v) new_vy max_v)
 
-let get_boss_area boss_name game =
-  match game.room.boss_area with
-  | None -> failwithf "missing boss-area for %s" boss_name
-  | Some rect -> rect
+(* turns when reaching the edge of a floor, or when bumping into a wall *)
+let should_turn (enemy : enemy) frame_time =
+  let turned_recently =
+    (* this prevents the enemy from turning every frame when landing on an edge, but it sometimes
+       causes the enemy to walk over the edge *)
+    frame_time -. (action_started_at enemy "turn").at < 0.5
+  in
+  if turned_recently then
+    false
+  else (
+    let at_edge floor =
+      (* TODO this doesn't work for floor seams *)
+      enemy.entity.dest.pos.x < floor.pos.x
+      || enemy.entity.dest.pos.x +. enemy.entity.dest.w > floor.pos.x +. floor.w
+    in
+    match enemy.floor_collisions_this_frame with
+    | [] -> (
+      match enemy.entity.current_floor with
+      | Some (floor, _) when at_edge floor -> true
+      | _ -> false)
+    | [ collision ] ->
+      if collision.collided_from = UP then
+        false
+      else
+        true
+    | multiple_collisions -> true)
+
+let face_ghost (enemy : enemy) ~ghost_pos =
+  enemy.entity.sprite.facing_right <- ghost_pos.x > rect_center_x enemy.entity.dest
+
+let still_airborne enemy ~frame_time ~action_time =
+  (* check frame_time - action_time so the action doesn't cancel on the first frame *)
+  frame_time -. action_time.at < 0.1 || List.length enemy.floor_collisions_this_frame = 0
 
 module type Enemy_actions = sig
   type t
 
   val to_string : t -> string
   val from_string : string -> t
-  val set : enemy -> ?frame_props:float String.Map.t -> t -> current_time:float -> unit
+  val set : enemy -> ?frame_props:float String.Map.t -> t -> frame_time:float -> unit
 end
 
 module type Loggable = sig
   include Enemy_actions
 
   val log : enemy -> string -> float -> unit
-  val start_and_log : enemy -> t -> float -> (string * float) list -> unit
+  val start_and_log : enemy -> frame_time:float -> ?frame_props:(string * float) list -> t -> unit
   val still_doing : enemy -> string -> duration:float -> frame_time:float -> bool
+
+  val handle_charging :
+    enemy ->
+    charge_action:t ->
+    action:t ->
+    ghost_pos:vector ->
+    action_time:time ->
+    frame_time:float ->
+    unit
+
+  val maybe_continue :
+    enemy -> continue_action:t -> stop_action:t -> frame_time:float -> bool -> unit
+
+  val maybe_aggro :
+    enemy -> ghost_pos:vector -> frame_time:float -> t option -> (unit -> unit) -> unit
+
+  val handle_drifting : enemy -> t -> ghost_pos:vector -> frame_time:float -> unit
 end
 
 module Make_loggable (Actions : Enemy_actions) : Loggable with type t = Actions.t = struct
@@ -258,15 +317,55 @@ module Make_loggable (Actions : Enemy_actions) : Loggable with type t = Actions.
     enemy.history <-
       Enemy_action.Map.update (PERFORMED action_name) (fun _ -> Some { at = value }) enemy.history
 
-  let start_and_log enemy (action : Actions.t) current_time props : unit =
+  let start_and_log (enemy : enemy) ~frame_time ?(frame_props = []) (action : Actions.t) : unit =
     let action_name = action |> Actions.to_string in
-    enemy.last_performed <- Some (action_name, { at = current_time });
-    log enemy action_name current_time;
-    Actions.set enemy action ~current_time ~frame_props:(props |> List.to_string_map)
+    enemy.last_performed <- Some (action_name, { at = frame_time });
+    log enemy action_name frame_time;
+    Actions.set enemy action ~frame_time ~frame_props:(frame_props |> List.to_string_map)
 
   let still_doing (enemy : enemy) (action_name : string) ~duration ~frame_time : bool =
     let started = action_started_at enemy action_name in
     frame_time -. started.at < duration
+
+  let handle_charging (enemy : enemy) ~charge_action ~action ~ghost_pos ~action_time ~frame_time =
+    face_ghost enemy ~ghost_pos;
+    if frame_time -. action_time.at < get_attr enemy "charge_duration" then
+      Actions.set enemy charge_action ~frame_time
+    else
+      start_and_log enemy action ~frame_time
+
+  let maybe_continue (enemy : enemy) ~continue_action ~stop_action ~frame_time still_doing_action =
+    if still_doing_action then
+      set enemy continue_action ~frame_time
+    else
+      start_and_log enemy stop_action ~frame_time
+
+  (* required attrs: "aggro_distance" *)
+  let maybe_aggro (enemy : enemy) ~ghost_pos ~frame_time idle_action aggro =
+    let distance = get_distance enemy.entity.dest.pos ghost_pos in
+    if enemy.health.current < enemy.health.max || distance < get_attr enemy "aggro_distance" then
+      aggro ()
+    else (
+      match idle_action with
+      | Some action -> start_and_log enemy action ~frame_time
+      | None -> ())
+
+  (* required attrs: "direction_change_max_dt", "aggro_distance", "max_v"
+     required props: "direction_change_dt"
+     required actions: "change_direction"
+  *)
+  let handle_drifting enemy change_direction_action ~ghost_pos ~frame_time =
+    maybe_aggro enemy ~ghost_pos ~frame_time None (fun () -> set_prop enemy "is_chasing" 1.);
+    let last_direction_change = action_started_at enemy "change_direction" in
+    let direction_change_max_dt = get_attr enemy "direction_change_max_dt" in
+    let direction_change_dt =
+      get_prop ~default:(Some 1.) "direction_change_dt" enemy.status.props
+    in
+    if last_direction_change.at < frame_time -. direction_change_dt then (
+      set_prop enemy "direction_change_dt" (Random.float direction_change_max_dt);
+      let max_v = get_attr enemy "max_v" in
+      start_and_log enemy change_direction_action ~frame_time
+        ~frame_props:[ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
 end
 
 module type M = sig
@@ -297,7 +396,7 @@ module Duncan_actions = struct
     | "walking" -> WALK
     | _ -> failwithf "Duncan_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
     let pose_name =
       match action with
@@ -319,7 +418,7 @@ module Duncan_actions = struct
           get_frame_prop "facing_right" = 1.;
         let spawn x_alignment direction =
           spawn_projectile enemy ~x_alignment ~y_alignment:BOTTOM_INSIDE ~direction
-            projectile_duration current_time
+            projectile_duration frame_time
         in
         enemy.spawned_projectiles <-
           [ spawn LEFT_INSIDE RIGHT; spawn RIGHT_INSIDE LEFT ] @ enemy.spawned_projectiles;
@@ -348,10 +447,11 @@ module Duncan : M = struct
       frame_time = state.frame.time;
       camera_bounds = game.room.camera_bounds;
       boss_area = get_boss_area "DUNCAN" game;
-      ghost_pos = game.player.ghost.entity.dest.pos;
+      ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
   let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
     match enemy.entity.current_floor with
     | None -> ()
     | Some _floor ->
@@ -362,15 +462,16 @@ module Duncan : M = struct
         landed.at -. jumped.at
       in
       if jumped.at > landed.at then
-        Action.start_and_log enemy LANDED args.frame_time
-          [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
-      else if args.frame_time -. landed.at > get_attr enemy "jump_wait_time" then (
+        Action.start_and_log enemy LANDED ~frame_time
+          ~frame_props:
+            [ ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.) ]
+      else if frame_time -. landed.at > get_attr enemy "jump_wait_time" then (
         let target_x = Random.in_rect_x args.boss_area in
         let jump_vx =
           let dx = target_x -. enemy.entity.dest.pos.x in
           dx /. airtime
         in
-        Action.start_and_log enemy JUMP args.frame_time [ ("random_jump_vx", jump_vx) ])
+        Action.start_and_log enemy JUMP ~frame_time ~frame_props:[ ("random_jump_vx", jump_vx) ])
 end
 
 module Locker_boy_actions = struct
@@ -395,7 +496,7 @@ module Locker_boy_actions = struct
     | "dive" -> DIVE
     | _ -> failwithf "Locker_boy_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let get_frame_prop prop_name = get_prop prop_name frame_props in
     let pose_name : string =
       match action with
@@ -448,7 +549,7 @@ module Locker_boy_actions = struct
         enemy.spawned_projectiles <-
           [
             spawn_projectile enemy ~scale:0.5 ~pogoable:true ~x_alignment ~direction
-              projectile_duration current_time;
+              projectile_duration frame_time;
           ];
         "wall-perch"
     in
@@ -467,11 +568,12 @@ module Locker_boy : M = struct
     { frame_time = state.frame.time; boss_area = get_boss_area "LOCKER_BOY" game }
 
   let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
     let continue_action (action : Action.t) (performed : time) =
       let left_boundary = args.boss_area.pos.x in
       let right_boundary = args.boss_area.pos.x +. args.boss_area.w in
       match action with
-      | VANISH -> Action.set enemy action ~current_time:args.frame_time
+      | VANISH -> Action.set enemy action ~frame_time
       | DASH ->
         let check_right () =
           if enemy.entity.dest.pos.x > right_boundary then
@@ -495,9 +597,7 @@ module Locker_boy : M = struct
     let vanished = action_started_at enemy "vanish" in
     let unvanished = action_started_at enemy "unvanish" in
     let vanish_duration = animation_loop_duration (String.Map.find "vanish" enemy.textures) in
-    let still_vanishing =
-      Action.still_doing enemy "vanish" ~duration:vanish_duration ~frame_time:args.frame_time
-    in
+    let still_vanishing = Action.still_doing enemy "vanish" ~duration:vanish_duration ~frame_time in
     let should_unvanish () = (not still_vanishing) && vanished.at > unvanished.at in
     let should_vanish () = get_bool_prop enemy "should_vanish" in
     let unvanish () =
@@ -508,24 +608,26 @@ module Locker_boy : M = struct
       enemy.entity.current_floor <- None;
       match List.sample [ `WALL_PERCH; `DIVE; `DASH ] with
       | `WALL_PERCH ->
-        Action.start_and_log enemy WALL_PERCH args.frame_time
-          [
-            ("random_facing_right", if Random.bool () then 1. else 0.);
-            ("random_wall_perch_y", Random.in_rect_y args.boss_area);
-            ("boss_area_left", args.boss_area.pos.x);
-            ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
-          ]
+        Action.start_and_log enemy WALL_PERCH ~frame_time
+          ~frame_props:
+            [
+              ("random_facing_right", if Random.bool () then 1. else 0.);
+              ("random_wall_perch_y", Random.in_rect_y args.boss_area);
+              ("boss_area_left", args.boss_area.pos.x);
+              ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
+            ]
       | `DIVE ->
-        Action.start_and_log enemy DIVE args.frame_time
-          [ ("random_dive_x", Random.in_rect_x args.boss_area) ]
+        Action.start_and_log enemy DIVE ~frame_time
+          ~frame_props:[ ("random_dive_x", Random.in_rect_x args.boss_area) ]
       | `DASH ->
-        Action.start_and_log enemy DASH args.frame_time
-          [
-            ("random_facing_right", if Random.bool () then 1. else 0.);
-            ("boss_area_left", args.boss_area.pos.x);
-            ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
-            ("boss_area_bottom", args.boss_area.pos.y +. args.boss_area.h);
-          ]
+        Action.start_and_log enemy DASH ~frame_time
+          ~frame_props:
+            [
+              ("random_facing_right", if Random.bool () then 1. else 0.);
+              ("boss_area_left", args.boss_area.pos.x);
+              ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
+              ("boss_area_bottom", args.boss_area.pos.y +. args.boss_area.h);
+            ]
     in
     if still_vanishing then
       ()
@@ -534,7 +636,7 @@ module Locker_boy : M = struct
       unvanish ())
     else if should_vanish () then (
       set_prop enemy "should_vanish" 0.;
-      Action.start_and_log enemy VANISH args.frame_time [])
+      Action.start_and_log enemy VANISH ~frame_time)
     else (
       match enemy.last_performed with
       | None -> ()
@@ -561,7 +663,7 @@ module Frog_actions = struct
     | "dunked" -> DUNKED
     | _ -> failwithf "Frog_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let get_frame_prop s = get_prop s frame_props in
     let pose_name =
       match action with
@@ -620,6 +722,7 @@ module Frog : M = struct
     }
 
   let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
     let dunk_duration = get_attr enemy "dunk_duration" in
     let cooldown_duration = get_attr enemy "cooldown_duration" in
     (* most enemies set `choose_behavior <- false` on death, but not FROG *)
@@ -632,18 +735,18 @@ module Frog : M = struct
         List.length collisions > 0
       in
       if get_bool_prop enemy "dunked" then
-        if Action.still_doing enemy "dunked" ~duration:dunk_duration ~frame_time:args.frame_time
-        then
+        if Action.still_doing enemy "dunked" ~duration:dunk_duration ~frame_time then
           set_pose enemy "struck"
         else
           Entity.hide enemy.entity
       else if get_bool_prop enemy "homing" then (
-        Action.start_and_log enemy HOMING args.frame_time
-          [
-            ("ghost_x", args.ghost_entity.dest.pos.x);
-            ("ghost_y", args.ghost_entity.dest.pos.y);
-            ("random_homing_dv", Random.float_between 5. 15.);
-          ];
+        Action.start_and_log enemy HOMING ~frame_time
+          ~frame_props:
+            [
+              ("ghost_x", args.ghost_entity.dest.pos.x);
+              ("ghost_y", args.ghost_entity.dest.pos.y);
+              ("random_homing_dv", Random.float_between 5. 15.);
+            ];
         let should_explode =
           List.length enemy.floor_collisions_this_frame > 0
           || Collision.between_entities enemy.entity args.ghost_entity
@@ -682,14 +785,11 @@ module Frog : M = struct
           args.room.loose_projectiles <- projectile :: args.room.loose_projectiles;
           Entity.hide enemy.entity)
         else if any_liquid_collisions () then
-          Action.start_and_log enemy DUNKED args.frame_time [])
+          Action.start_and_log enemy DUNKED ~frame_time)
       else if get_bool_prop enemy "struck_cooldown" then (
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
-        if
-          not
-            (Action.still_doing enemy "struck_cooldown" ~duration:cooldown_duration
-               ~frame_time:args.frame_time)
+        if not (Action.still_doing enemy "struck_cooldown" ~duration:cooldown_duration ~frame_time)
         then
           set_prop enemy "homing" 1.)
       else if get_bool_prop enemy "death_recoil" then
@@ -697,7 +797,7 @@ module Frog : M = struct
           Action.log enemy "struck_cooldown" args.frame_time;
           set_prop enemy "struck_cooldown" 1.)
         else if any_liquid_collisions () then (* TODO maybe have a different texture for "dunked" *)
-          Action.start_and_log enemy DUNKED args.frame_time []
+          Action.start_and_log enemy DUNKED ~frame_time
         else
           set_pose enemy "struck")
     else (
@@ -713,13 +813,14 @@ module Frog : M = struct
             -.rand_vx)
         in
         enemy.entity.v.x <- new_vx;
-        Action.start_and_log enemy ASCEND args.frame_time
-          [
-            ( "random_dvy",
-              Random.float_between
-                (-.get_attr enemy "max_ascend_vy")
-                (-.get_attr enemy "min_ascend_vy") );
-          ]);
+        Action.start_and_log enemy ASCEND ~frame_time
+          ~frame_props:
+            [
+              ( "random_dvy",
+                Random.float_between
+                  (-.get_attr enemy "max_ascend_vy")
+                  (-.get_attr enemy "min_ascend_vy") );
+            ]);
       if enemy.entity.v.y > 0. then (
         enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y (get_attr enemy "float_vy");
         set_pose enemy "idle-descending")
@@ -739,7 +840,7 @@ module Electricity_actions = struct
     | "shock" -> SHOCK
     | _ -> failwithf "Electricity_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let pose_name =
       match action with
       | SHOCK ->
@@ -752,7 +853,7 @@ module Electricity_actions = struct
           [
             spawn_projectile enemy ~projectile_texture_name:action_name ~projectile_vx_opt:(Some 0.)
               ~scale:1.6 ~pogoable:false ~x_alignment:CENTER ~direction:RIGHT projectile_duration
-              current_time;
+              frame_time;
           ];
         (* ELECTRICITY should always have the "idle" pose - starting this action just adds
            the shock child sprite *)
@@ -775,7 +876,7 @@ module Electricity : M = struct
       get_attr enemy "shock_duration"
     in
     if last_shock.at < args.frame_time -. shock_duration then
-      Action.start_and_log enemy SHOCK args.frame_time []
+      Action.start_and_log enemy SHOCK ~frame_time:args.frame_time
 end
 
 module Fish_actions = struct
@@ -790,7 +891,7 @@ module Fish_actions = struct
     | "change_direction" -> CHANGE_DIRECTION
     | _ -> failwithf "Fish_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let pose_name =
       match action with
       | CHANGE_DIRECTION ->
@@ -833,8 +934,8 @@ module Fish : M = struct
     if last_direction_change.at < args.frame_time -. direction_change_dt then (
       set_prop enemy "direction_change_dt" (Random.float direction_change_max_dt);
       let max_v = get_attr enemy "max_v" in
-      Action.start_and_log enemy CHANGE_DIRECTION args.frame_time
-        [ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
+      Action.start_and_log enemy CHANGE_DIRECTION ~frame_time:args.frame_time
+        ~frame_props:[ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
 end
 
 module Penguin_actions = struct
@@ -853,7 +954,7 @@ module Penguin_actions = struct
     | "turn" -> TURN
     | _ -> failwithf "Penguin_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let move_enemy () =
       let walk_vx = get_attr enemy "walk_vx" in
       if enemy.entity.sprite.facing_right then
@@ -886,25 +987,8 @@ module Penguin : M = struct
   let get_args state (game : game) : args = { frame_time = state.frame.time; room = game.room }
 
   let choose_behavior (enemy : enemy) args =
-    let (action : Action.t) =
-      let at_edge floor =
-        (* TODO this won't work for floor seams *)
-        enemy.entity.dest.pos.x < floor.pos.x
-        || enemy.entity.dest.pos.x +. enemy.entity.dest.w > floor.pos.x +. floor.w
-      in
-      match enemy.floor_collisions_this_frame with
-      | [] -> (
-        match enemy.entity.current_floor with
-        | Some (floor, _) when at_edge floor -> TURN
-        | _ -> WALK)
-      | [ collision ] ->
-        if collision.collided_from = UP then
-          WALK
-        else
-          TURN
-      | multiple_collisions -> TURN
-    in
-    Action.start_and_log enemy action args.frame_time []
+    let (action : Action.t) = if should_turn enemy args.frame_time then TURN else WALK in
+    Action.start_and_log enemy action ~frame_time:args.frame_time
 end
 
 module Flying_hippie_actions = struct
@@ -925,7 +1009,7 @@ module Flying_hippie_actions = struct
     | "chase" -> CHASE
     | _ -> failwithf "Flying_hippie_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let pose_name =
       match action with
       | CHANGE_DIRECTION ->
@@ -967,7 +1051,7 @@ module Flying_hippie_actions = struct
         let projectile scale gravity =
           spawn_projectile enemy ~scale ~x_alignment:CENTER ~direction
             ~gravity_multiplier:(get_prop "gravity_multiplier" frame_props *. gravity)
-            ~collide_with_floors:true projectile_duration current_time
+            ~collide_with_floors:true projectile_duration frame_time
         in
         let new_projectiles =
           match enemy.level with
@@ -990,9 +1074,10 @@ module Flying_hippie : M = struct
   }
 
   let get_args state (game : game) : args =
-    { frame_time = state.frame.time; ghost_pos = game.player.ghost.entity.dest.pos }
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
 
   let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
     let handle_chasing () =
       let offset = get_attr enemy "target_offset" in
       let target_pos_x, new_facing_right =
@@ -1006,36 +1091,22 @@ module Flying_hippie : M = struct
       let shot = action_started_at enemy "shoot_projectile" in
       let cooldown = get_attr enemy "projectile_cooldown" in
       if args.frame_time > shot.at +. cooldown then
-        Action.start_and_log enemy SHOOT_PROJECTILE args.frame_time
-          [
-            ("projectile_direction_right", new_facing_right);
-            ("gravity_multiplier", Random.float_between 0.02 0.25);
-          ]
+        Action.start_and_log enemy SHOOT_PROJECTILE ~frame_time
+          ~frame_props:
+            [
+              ("projectile_direction_right", new_facing_right);
+              ("gravity_multiplier", Random.float_between 0.02 0.25);
+            ]
       else
-        Action.set enemy CHASE ~current_time:args.frame_time
+        Action.set enemy CHASE ~frame_time
           ~frame_props:
             ([ ("new_vx", new_vx); ("new_vy", new_vy); ("new_facing_right", new_facing_right) ]
             |> List.to_string_map)
     in
-    let handle_drifting () =
-      let distance = get_distance enemy.entity.dest.pos args.ghost_pos in
-      if distance < get_attr enemy "chase_distance" then
-        set_prop enemy "is_chasing" 1.;
-      let last_direction_change = action_started_at enemy "change_direction" in
-      let direction_change_max_dt = get_attr enemy "direction_change_max_dt" in
-      let direction_change_dt =
-        get_prop ~default:(Some 1.) "direction_change_dt" enemy.status.props
-      in
-      if last_direction_change.at < args.frame_time -. direction_change_dt then (
-        set_prop enemy "direction_change_dt" (Random.float direction_change_max_dt);
-        let max_v = get_attr enemy "max_v" in
-        Action.start_and_log enemy CHANGE_DIRECTION args.frame_time
-          [ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
-    in
     if get_bool_prop enemy "is_chasing" then
       handle_chasing ()
     else
-      handle_drifting ()
+      Action.handle_drifting enemy CHANGE_DIRECTION ~ghost_pos:args.ghost_pos ~frame_time
 end
 
 module Bird_actions = struct
@@ -1052,9 +1123,9 @@ module Bird_actions = struct
     match s with
     | "change_direction" -> CHANGE_DIRECTION
     | "chase" -> CHASE
-    | _ -> failwithf "bird_actions.from_string: %s" s
+    | _ -> failwithf "Bird_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~current_time =
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let pose_name =
       match action with
       | CHANGE_DIRECTION ->
@@ -1097,33 +1168,216 @@ module Bird : M = struct
   }
 
   let get_args state (game : game) : args =
-    { frame_time = state.frame.time; ghost_pos = game.player.ghost.entity.dest.pos }
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
 
   let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
     let handle_chasing () =
       let new_vx, new_vy = chase_to enemy args.ghost_pos in
-      Action.set enemy CHASE ~current_time:args.frame_time
+      Action.set enemy CHASE ~frame_time
         ~frame_props:([ ("new_vx", new_vx); ("new_vy", new_vy) ] |> List.to_string_map)
-    in
-    let handle_drifting () =
-      let distance = get_distance enemy.entity.dest.pos args.ghost_pos in
-      if distance < get_attr enemy "chase_distance" then
-        set_prop enemy "is_chasing" 1.;
-      let last_direction_change = action_started_at enemy "change_direction" in
-      let direction_change_max_dt = get_attr enemy "direction_change_max_dt" in
-      let direction_change_dt =
-        get_prop ~default:(Some 1.) "direction_change_dt" enemy.status.props
-      in
-      if last_direction_change.at < args.frame_time -. direction_change_dt then (
-        set_prop enemy "direction_change_dt" (Random.float direction_change_max_dt);
-        let max_v = get_attr enemy "max_v" in
-        Action.start_and_log enemy CHANGE_DIRECTION args.frame_time
-          [ ("random_vx", Random.float max_v); ("random_vy", Random.float max_v) ])
     in
     if get_bool_prop enemy "is_chasing" then
       handle_chasing ()
     else
-      handle_drifting ()
+      Action.handle_drifting enemy CHANGE_DIRECTION ~ghost_pos:args.ghost_pos ~frame_time
+end
+
+module Manicorn_actions = struct
+  type t =
+    | STANDING
+    | WALK
+    | CHARGE_PUNCH
+    | PUNCH
+    | CHARGE_KICK
+    | KICK
+    | CHARGE_DASH
+    | DASH
+
+  let to_string (action : t) : string =
+    match action with
+    | STANDING -> "standing"
+    | WALK -> "walking"
+    | CHARGE_PUNCH -> "charge-punch"
+    | PUNCH -> "punch"
+    | CHARGE_KICK -> "charge-kick"
+    | KICK -> "kick"
+    | CHARGE_DASH -> "charge-dash"
+    | DASH -> "dash"
+
+  let from_string (s : string) : t =
+    match s with
+    | "standing" -> STANDING
+    | "walking" -> WALK
+    | "charge-punch" -> CHARGE_PUNCH
+    | "punch" -> PUNCH
+    | "charge-kick" -> CHARGE_KICK
+    | "kick" -> KICK
+    | "charge-dash" -> CHARGE_DASH
+    | "dash" -> DASH
+    | _ -> failwithf "Manicorn_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let pose_name =
+      let forward attr =
+        let vx = get_attr enemy attr in
+        if enemy.entity.sprite.facing_right then vx else -.vx
+      in
+      match action with
+      | STANDING ->
+        enemy.entity.v.x <- 0.;
+        "idle"
+      | WALK ->
+        enemy.entity.v.x <- forward "walk_vx";
+        "walking"
+      | CHARGE_PUNCH ->
+        enemy.entity.v.x <- 0.;
+        "charge-punch"
+      | PUNCH ->
+        enemy.entity.v.x <- forward "punch_vx";
+        "punch"
+      | CHARGE_KICK ->
+        enemy.entity.v.x <- 0.;
+        "charge-kick"
+      | KICK ->
+        enemy.entity.v.x <- forward "kick_vx";
+        if Option.is_some enemy.entity.current_floor then
+          enemy.entity.v.y <- get_attr enemy "jump_vy";
+        "kick"
+      | CHARGE_DASH ->
+        enemy.entity.v.x <- 0.;
+        "charge-dash"
+      | DASH ->
+        enemy.entity.v.x <- forward "dash_vx";
+        "dash"
+    in
+    set_pose enemy pose_name
+end
+
+module Manicorn : M = struct
+  module Action = Make_loggable (Manicorn_actions)
+
+  type args = {
+    frame_time : float;
+    ghost_pos : vector;
+  }
+
+  let get_args state (game : game) : args =
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+    let maybe_start_action () =
+      Action.maybe_aggro enemy ~ghost_pos ~frame_time (Some STANDING) (fun () ->
+          match List.sample [ `PUNCH; `KICK; `DASH ] with
+          | `PUNCH -> Action.start_and_log enemy CHARGE_PUNCH ~frame_time
+          | `KICK -> Action.start_and_log enemy CHARGE_KICK ~frame_time
+          | `DASH -> Action.start_and_log enemy CHARGE_DASH ~frame_time)
+    in
+    let handle_charge action_time charge_action action =
+      Action.handle_charging enemy ~ghost_pos ~action_time ~charge_action ~action ~frame_time
+    in
+    match enemy.last_performed with
+    | Some ("charge-punch", action_time) -> handle_charge action_time CHARGE_PUNCH PUNCH
+    | Some ("punch", action_time) ->
+      let punch_duration = animation_loop_duration (String.Map.find "punch" enemy.textures) in
+      let still_punching = Action.still_doing enemy "punch" ~duration:punch_duration ~frame_time in
+      Action.maybe_continue enemy ~continue_action:PUNCH ~stop_action:WALK ~frame_time
+        still_punching
+    | Some ("charge-kick", action_time) -> handle_charge action_time CHARGE_KICK KICK
+    | Some ("kick", action_time) ->
+      let still_kicking = still_airborne enemy ~frame_time ~action_time in
+      Action.maybe_continue enemy ~continue_action:KICK ~stop_action:WALK ~frame_time still_kicking
+    | Some ("charge-dash", action_time) -> handle_charge action_time CHARGE_DASH DASH
+    | Some ("dash", action_time) ->
+      let still_dashing =
+        Action.still_doing enemy "dash" ~duration:(get_attr enemy "dash_duration") ~frame_time
+      in
+      Action.maybe_continue enemy ~continue_action:DASH ~stop_action:WALK ~frame_time still_dashing
+    | Some ("walking", action_time) ->
+      if args.frame_time -. action_time.at > get_attr enemy "walk_duration" then
+        maybe_start_action ()
+      else (
+        face_ghost enemy ~ghost_pos;
+        Action.set enemy WALK ~frame_time)
+    | Some (_, _)
+    | None ->
+      maybe_start_action ()
+end
+
+module Hippie_actions = struct
+  type t =
+    | CHARGE_BITE
+    | BITE
+    | TURN
+    | WALK
+
+  let to_string (action : t) : string =
+    match action with
+    | CHARGE_BITE -> "charge-bite"
+    | BITE -> "bite"
+    | TURN -> "turn"
+    | WALK -> "walk"
+
+  let from_string (s : string) : t =
+    match s with
+    | "charge-bite" -> CHARGE_BITE
+    | "bite" -> BITE
+    | "turn" -> TURN
+    | "walk" -> WALK
+    | _ -> failwithf "Hippie_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let move_forward vx =
+      enemy.entity.v.x <- (if enemy.entity.sprite.facing_right then vx else -.vx)
+    in
+    let pose_name =
+      match action with
+      | CHARGE_BITE ->
+        enemy.entity.v.x <- 0.;
+        "charge-bite"
+      | BITE ->
+        move_forward (get_attr enemy "bite_vx");
+        if Option.is_some enemy.entity.current_floor then
+          enemy.entity.v.y <- get_attr enemy "bite_vy";
+        "bite"
+      | TURN ->
+        enemy.entity.sprite.facing_right <- not enemy.entity.sprite.facing_right;
+        move_forward (get_attr enemy "walk_vx");
+        "idle"
+      | WALK ->
+        move_forward (get_attr enemy "walk_vx");
+        "walking"
+    in
+    set_pose enemy pose_name
+end
+
+module Hippie : M = struct
+  module Action = Make_loggable (Hippie_actions)
+
+  type args = {
+    frame_time : float;
+    ghost_pos : vector;
+  }
+
+  let get_args state (game : game) : args =
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+    match enemy.last_performed with
+    | Some ("charge-bite", action_time) ->
+      Action.handle_charging enemy ~ghost_pos ~action_time ~charge_action:CHARGE_BITE ~action:BITE
+        ~frame_time
+    | Some ("bite", action_time) ->
+      let still_biting = still_airborne enemy ~frame_time ~action_time in
+      Action.maybe_continue enemy ~continue_action:BITE ~stop_action:WALK ~frame_time still_biting
+    | _ ->
+      Action.maybe_aggro enemy ~ghost_pos ~frame_time
+        (Some (if should_turn enemy args.frame_time then TURN else WALK))
+        (fun () -> Action.start_and_log enemy CHARGE_BITE ~frame_time)
 end
 
 let get_module (id : enemy_id) : (module M) =
@@ -1134,14 +1388,18 @@ let get_module (id : enemy_id) : (module M) =
   | ELECTRICITY -> (module Electricity)
   | FISH -> (module Fish)
   | PENGUIN -> (module Penguin)
+  | HIPPIE -> (module Hippie)
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2 ->
     (module Flying_hippie)
   | BIRD -> (module Bird)
+  | MANICORN
+  | MANICORN_2
+  | MANICORN_3 ->
+    (module Manicorn)
   | WIRED_ELECTRICITY -> failwithf "enemy %s not implemented yet" (Show.enemy_id id)
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
-  let ghost_pos = game.player.ghost.entity.dest.pos in
   let (module M : M) = get_module enemy.id in
   M.choose_behavior enemy (M.get_args state game)
 
@@ -1156,11 +1414,15 @@ let create_from_rects
     let level =
       match id with
       | FLYING_HIPPIE_2 -> 2
+      | MANICORN_2 -> 2
+      | MANICORN_3 -> 3
+      | MANICORN
       | FISH
       | FROG
       | ELECTRICITY
       | PENGUIN
       | WIRED_ELECTRICITY
+      | HIPPIE
       | FLYING_HIPPIE
       | BIRD
       | DUNCAN
@@ -1225,6 +1487,11 @@ let create_from_rects
     let enemy_asset_dir_name =
       match enemy_id with
       | FLYING_HIPPIE_2 -> "FLYING_HIPPIE"
+      | MANICORN_2
+      | MANICORN_3 ->
+        "MANICORN"
+      | MANICORN
+      | HIPPIE
       | FLYING_HIPPIE
       | FISH
       | FROG

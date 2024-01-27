@@ -349,10 +349,13 @@ type enemy_id =
   | ELECTRICITY
   | PENGUIN
   | WIRED_ELECTRICITY
-  (* | HIPPIE *)
+  | HIPPIE
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2
   | BIRD
+  | MANICORN
+  | MANICORN_2
+  | MANICORN_3
   (* bosses *)
   | DUNCAN
   | LOCKER_BOY

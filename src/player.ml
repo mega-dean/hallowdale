@@ -456,7 +456,7 @@ let add_phantom_floor (game : game) (target : vector) =
 
 let resolve_slash_collisions (state : state) (game : game) =
   match get_current_slash game.player with
-  | None -> check_dream_nail_collisions state game
+  | None -> ()
   | Some slash ->
     let resolve_enemy (enemy : enemy) =
       if enemy.json.can_take_damage && enemy.status.check_damage_collisions then (
@@ -1216,7 +1216,8 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
     then (
       let alignment = (IN_FRONT game.player.ghost.entity.sprite.facing_right, CENTER) in
       spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash
-        ~scale:Config.scale.dream_nail)
+        ~scale:Config.scale.dream_nail;
+      check_dream_nail_collisions state game)
   | DIE ->
     state.screen_fade <-
       (match state.screen_fade with
@@ -1752,7 +1753,10 @@ let tick (game : game) (state : state) =
           | WEAPON weapon_name ->
             let weapon_config = String.Map.find weapon_name state.global.weapons in
             let text : string list =
-              [ fmt "Acquired the {{%s}} %s" weapon_config.text_color weapon_name; weapon_config.pickup_text ]
+              [
+                fmt "Acquired the {{%s}} %s" weapon_config.text_color weapon_name;
+                weapon_config.pickup_text;
+              ]
             in
             acquire_weapon state game weapon_name;
             game.interaction.speaker_name <- None;
@@ -1878,7 +1882,7 @@ let tick (game : game) (state : state) =
             if List.length enemies <> 1 then
               failwithf "can't use %s when there are multiple enemies" step_name
             else
-              fn (List.nth enemies 0)
+              fn (List.hd enemies)
           in
           match enemy_step with
           | WALK_TO target_tile_x ->
@@ -1892,10 +1896,10 @@ let tick (game : game) (state : state) =
                   Enemy.set_pose enemy "idle")
                 else if dist > 0. then (
                   enemy.entity.sprite.facing_right <- true;
-                  M.Action.set enemy (M.Action.from_string "walking") ~current_time:state.frame.time)
+                  M.Action.set enemy (M.Action.from_string "walking") ~frame_time:state.frame.time)
                 else (
                   enemy.entity.sprite.facing_right <- false;
-                  M.Action.set enemy (M.Action.from_string "walking") ~current_time:state.frame.time))
+                  M.Action.set enemy (M.Action.from_string "walking") ~frame_time:state.frame.time))
           | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
           | SET_POSE pose_name ->
             apply_to_all (fun (enemy : enemy) ->
@@ -1906,7 +1910,7 @@ let tick (game : game) (state : state) =
             apply_to_all (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
                 M.Action.log enemy action_name state.frame.time;
-                M.Action.set enemy (M.Action.from_string action_name) ~current_time:state.frame.time)
+                M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time)
           | ENTITY entity_step ->
             let active =
               match entity_step with

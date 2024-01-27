@@ -22,3 +22,8 @@
 "ghost_x": 3727.6010965034366,
 "ghost_y": 1192.0,
 "room_name": "infected_b",
+
+# shirley island
+"ghost_x": 5018.048309579492,
+"ghost_y": 3424.0,
+"room_name": "forgotten_a",

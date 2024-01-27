@@ -14,6 +14,9 @@
   - Deep Focus
   - Shaman Stone
   - Spell Twister
+- add new enemies:
+  - HIPPIE
+  - MANICORN
 
 ## [0.0.10] - 2024-01-16
 
