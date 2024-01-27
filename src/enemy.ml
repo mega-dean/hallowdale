@@ -823,7 +823,7 @@ module Frog : M = struct
                   (-.get_attr enemy "max_ascend_vy")
                   (-.get_attr enemy "min_ascend_vy") );
             ]);
-      if enemy.entity.v.y > 0. then (
+      if Entity.descending enemy.entity then (
         enemy.entity.v.y <- Float.bound 0. enemy.entity.v.y (get_attr enemy "float_vy");
         set_pose enemy "idle-descending")
       else

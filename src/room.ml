@@ -912,6 +912,24 @@ let change_current_room
     Audio.reset_music target_area_music.music;
     game.music <- target_area_music);
 
+  if game.room.area.id <> new_room.area.id then (
+    let visited_areas =
+      let get_area_id (room_name, _) = String.maybe_trim_after '_' room_name in
+      List.map get_area_id game.progress.by_room |> List.uniq
+    in
+    let first_visit_to_area = not (List.mem (Show.area_id new_room.area.id) visited_areas) in
+    let text : Interaction.non_blocking_text =
+      {
+        content = Show.area_id_corner_text new_room.area.id;
+        visible = Interaction.make_UNTIL 3.5 state.frame.time;
+        scale = 1.;
+      }
+    in
+    if first_visit_to_area then
+      game.interaction.floating_text <- Some { text with scale = 3. }
+    else
+      game.interaction.corner_text <- Some text);
+
   game.room_changed_last_frame <- true;
   game.player.ghost.entity.current_floor <- None;
   game.player.current.wall <- None;

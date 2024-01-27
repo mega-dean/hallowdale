@@ -6,8 +6,10 @@ module Rectangle = Raylib.Rectangle
 type text_config = Interaction.text_config
 
 let font_size = Config.scale.font_size
-let line_height = font_size |> Int.to_float
-let measure_text s = Raylib.measure_text s font_size
+let line_height ?(font_scale = 1.) () = (font_size |> Int.to_float) *. font_scale
+
+let measure_text ?(font_scale = 1.) s =
+  Raylib.measure_text s ((font_size |> Int.to_float) *. font_scale |> Float.to_int)
 
 module Draw = struct
   open Raylib
@@ -23,10 +25,11 @@ module Draw = struct
   let image = draw_texture_pro
   let line_ex = draw_line_ex
 
-  let text ?(color = Color.white) (content : string) (pos : vector) =
+  let text ?(color = Color.white) ?(font_scale = 1.) (content : string) (pos : vector) =
     draw_text_ex (get_font_default ()) content
       (Raylib.Vector2.create pos.x pos.y)
-      (font_size |> Int.to_float) Config.text.spacing color
+      ((font_size |> Int.to_float) *. font_scale)
+      Config.text.spacing color
 end
 
 let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
@@ -117,7 +120,6 @@ let draw_sprite ?(debug = false) ?(tint = Color.white) ?(render_offset = None) (
       }
   in
   if debug then (
-    tmp "drawing rect at %s" (Show.rect dest);
     debug_rect sprite.dest);
   draw_texture sprite.texture ~tint dest (if sprite.facing_right then 0 else 4);
   match sprite.collision with
@@ -277,10 +279,14 @@ let show_line (line : line) : string = String.concat " | " (List.map show_segmen
 
    using several long lines sets the vertical spacing incorrectly so lines overlap each other
 *)
-let get_lines ?(_debug = false) (w : float) (words : string list) : line list =
-  let measure s : float = measure_text s |> Int.to_float in
+let get_lines ?(_debug = false) ?(font_scale = 1.) (w : float) (words : string list) : line list =
+  let measure s : float = measure_text ~font_scale s |> Int.to_float in
   let new_segment ?(color = Color.raywhite) content content_w line_w =
-    { content; dest = { pos = { x = line_w; y = 0. }; w = content_w; h = line_height }; color }
+    {
+      content;
+      dest = { pos = { x = line_w; y = 0. }; w = content_w; h = line_height ~font_scale () };
+      color;
+    }
   in
   let empty_line () = { segments = []; w = 0. } in
 
@@ -392,7 +398,7 @@ let tick (state : state) =
 
   let draw_cursor (config : text_config) (choice_idx : int) =
     let choice_offset = choice_idx * Config.scale.paragraph_spacing |> Int.to_float in
-    let line_spacing = line_height *. (choice_idx |> Int.to_float) in
+    let line_spacing = line_height () *. (choice_idx |> Int.to_float) in
     let left_x = camera_x +. config.margin_x +. config.cursor_padding in
     let right_x = camera_x +. Config.window.w -. config.margin_x -. config.cursor_padding in
     let y = camera_y +. config.margin_y_top +. config.padding.y +. choice_offset in
@@ -404,6 +410,7 @@ let tick (state : state) =
   let display_paragraph
       ?(force_spaces = false)
       ?(y_offset = 0.)
+      ?(font_scale = 1.)
       (config : text_config)
       (paragraph_idx : int)
       (paragraph : string) =
@@ -434,7 +441,7 @@ let tick (state : state) =
           else
             config.padding.x
         in
-        let line_spacing = line_height *. (line_idx |> Int.to_float) in
+        let line_spacing = line_height ~font_scale () *. (line_idx |> Int.to_float) in
         let dest_y = line_spacing +. camera_y +. y_offset in
         let content =
           match word_separator with
@@ -451,11 +458,11 @@ let tick (state : state) =
         let pos =
           {
             x = segment.dest.pos.x +. camera_x +. config.margin_x +. padding_x;
-            y = dest_y +. (line_idx * font_size |> Int.to_float);
+            y = dest_y +. ((line_idx * font_size |> Int.to_float) *. font_scale);
           }
         in
 
-        Draw.text ~color content pos
+        Draw.text ~font_scale ~color content pos
       in
       List.iter display_segment line.segments
     in
@@ -464,7 +471,7 @@ let tick (state : state) =
     let y_offset' = paragraph_offset +. config.margin_y_top +. config.padding.y +. y_offset in
     let lines =
       let w = text_box_width config -. (2. *. config.padding.x) in
-      get_lines w (String.split_on_char word_separator paragraph)
+      get_lines ~font_scale w (String.split_on_char word_separator paragraph)
     in
     List.iteri (display_line config y_offset') lines
   in
@@ -577,24 +584,19 @@ let tick (state : state) =
       in
       let alpha =
         match tt.visible with
-        | PAUSE_MENU -> 255
-        | TIME end_time ->
-          256. -. ((state.frame.time -. end_time.at) *. (255. /. 1.5)) |> Float.to_int
+        | PAUSE_MENU_OPEN -> 255
+        | UNTIL (duration, end_time) ->
+          255. *. ((end_time.at -. state.frame.time) /. duration) |> Float.to_int
       in
-      Raylib.draw_text tt.content (dest.x |> Float.to_int) (dest.y |> Float.to_int) font_size
-        (Raylib.Color.create 255 255 255 alpha));
+      Draw.text ~color:(Color.create 255 255 255 alpha) tt.content dest);
 
     match game.interaction.floating_text with
     | None -> ()
-    | Some tt ->
-      if String.length tt.content > 160 then
-        failwithf "dream nail text is too long: %s" tt.content;
-
+    | Some text ->
       (* this config works pretty well for text that is one or two lines long *)
       let config : text_config = Config.text.floating_config in
-
       draw_text_bg_box ~color:(Color.create 0 0 0 100) config;
-      display_paragraph ~force_spaces:true config ~y_offset:0. 0 tt.content
+      display_paragraph ~force_spaces:true ~font_scale:text.scale config ~y_offset:0. 0 text.content
   in
 
   let show_main_menu menu save_slots =
@@ -640,7 +642,7 @@ let tick (state : state) =
       | None -> ()
       | Some (label, dest) ->
         let w = measure_text label in
-        let pos = align (CENTER, TOP_INSIDE) dest (w |> Int.to_float) line_height in
+        let pos = align (CENTER, TOP_INSIDE) dest (w |> Int.to_float) (line_height ()) in
         Raylib.draw_text label (pos.x |> Float.to_int) (pos.y |> Float.to_int) font_size
           Color.raywhite
     in
@@ -986,7 +988,7 @@ let tick (state : state) =
               camera_y +. padding )
           else
             ( camera_x
-              +. pod_dest_h
+              +. pod_dest_w
               +. padding
               +. ((idx - 10 |> Int.to_float) *. (dest_w +. padding)),
               camera_y +. (2. *. padding) +. dest_h )
@@ -1028,7 +1030,7 @@ let tick (state : state) =
         let y_offset =
           Config.other.raindrop_speed
           *. (state.frame.idx mod (sprite.dest.h /. Config.other.raindrop_speed |> Float.to_int)
-              |> Int.to_float)
+             |> Int.to_float)
         in
         draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
       in

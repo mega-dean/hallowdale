@@ -575,16 +575,21 @@ module Interaction = struct
     | DIALOGUE of string * string
     | MENU of menu * save_slot list option
 
-  type transient_text_visible =
-    | TIME of time
-    | PAUSE_MENU
+  type non_blocking_text_visible =
+    (* duration, end_time *)
+    | UNTIL of float * time
+    | PAUSE_MENU_OPEN
+
+  let make_UNTIL duration time = UNTIL (duration, { at = time +. duration })
 
   (* this is text that only shows temporarily and doesn't start an interaction, like
      corner_text and floating_text
   *)
-  type transient_text = {
+  type non_blocking_text = {
     content : string;
-    visible : transient_text_visible;
+    visible : non_blocking_text_visible;
+    (* scale should always be 1.0 for corner text *)
+    scale : float;
   }
 
   type t = {
@@ -593,10 +598,10 @@ module Interaction = struct
     mutable speaker_name : string option;
     mutable use_dashes_in_archives : bool option;
     (* this is used for "Game Saved" when sitting on benches *)
-    mutable corner_text : transient_text option;
+    mutable corner_text : non_blocking_text option;
     (* this is for text boxes that should show up on the screen without blocking gameplay,
        like dream-nail thoughts and some interactions *)
-    mutable floating_text : transient_text option;
+    mutable floating_text : non_blocking_text option;
   }
 end
 

@@ -402,9 +402,14 @@ let check_dream_nail_collisions (state : state) (game : game) =
             (* TODO add dream nail sound *)
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
               let text = List.sample state.global.honda_quotes in
-              let end_time = state.frame.time +. Config.text.long_floating_duration in
               game.interaction.floating_text <-
-                Some { content = text; visible = TIME { at = end_time } };
+                Some
+                  {
+                    content = text;
+                    visible =
+                      Interaction.make_UNTIL Config.text.long_floating_duration state.frame.time;
+                    scale = 1.;
+                  };
               (* TODO make a new fn Ghost.add/deduct_soul that bounds between [0, soul max] *)
               let increase =
                 if game.player.abilities.dream_wielder then
@@ -479,7 +484,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                   reset_v = true;
                 }
             | UP ->
-              if game.player.ghost.entity.v.y < 0. then
+              if Entity.ascending game.player.ghost.entity then
                 game.player.ghost.entity.v.y <- Config.ghost.upslash_vy);
             game.player.soul.current <-
               Int.bound 0
@@ -1663,7 +1668,12 @@ let tick (game : game) (state : state) =
                 (Show.trigger_kind trigger_kind))
           | FLOATING_TEXT (text, duration) ->
             game.interaction.floating_text <-
-              Some { content = text; visible = TIME { at = state.frame.time +. duration } }
+              Some
+                {
+                  content = text;
+                  visible = Interaction.make_UNTIL duration state.frame.time;
+                  scale = 1.;
+                }
           | TEXT paragraphs ->
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN paragraphs)
@@ -2561,11 +2571,10 @@ let tick (game : game) (state : state) =
       | STEEL_SOLE -> (
         let up_floor_collision' : collision option =
           (* safe to walk on the ground in the vents *)
-          if state.debug.safe_ss || game.room.area.id = VENTWAYS then
-            None
-          else if
-            (* TODO add Entity.ascending/descending functions *)
-            game.player.ghost.entity.v.y < 0.
+          if
+            state.debug.safe_ss
+            || game.room.area.id = VENTWAYS
+            || Entity.ascending game.player.ghost.entity
           then
             None
           else (
@@ -2600,7 +2609,12 @@ let tick (game : game) (state : state) =
       match coll.collided_from with
       | UP ->
         game.interaction.corner_text <-
-          Some { content = "Game saved."; visible = TIME { at = state.frame.time +. 1.5 } };
+          Some
+            {
+              content = "Game saved.";
+              visible = Interaction.make_UNTIL 1.5 state.frame.time;
+              scale = 1.;
+            };
         state.should_save <- true;
         game.player.health.current <- game.player.health.max
       | _ -> ()));

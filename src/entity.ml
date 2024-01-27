@@ -35,6 +35,9 @@ let recoil (entity : entity) (direction : direction) =
     entity.current_floor <- None;
     entity.y_recoil <- Some (recoil' (-1.))
 
+let ascending (entity : entity) = entity.v.y < 0.
+let descending (entity : entity) = entity.v.y > 0.
+
 let freeze (entity : entity) =
   entity.v <- Zero.vector ();
   entity.frozen <- true
@@ -204,7 +207,7 @@ let apply_collisions
         (* the floor shouldn't be set for fragments (because it forces the new_vy to be 0.) *)
         if entity.config.bounce < 0.01 then (
           entity.current_floor <- Some (floor, floor_v);
-          if entity.v.y > 0. then
+          if descending entity then
             entity.v.y <- 0.));
       if entity.config.inanimate then
         if abs_float entity.v.x < 10. then (
@@ -214,7 +217,7 @@ let apply_collisions
           entity.v.x <- entity.v.x *. 0.3;
           entity.v.y <- entity.v.y *. -1. *. entity.config.bounce)
     | DOWN ->
-      if entity.v.y < 0. || Option.is_some entity.y_recoil then (
+      if ascending entity || Option.is_some entity.y_recoil then (
         entity.v.y <- 0.;
         entity.dest.pos.y <- bottom_of floor)
     | LEFT -> entity.dest.pos.x <- left_of floor -. entity.dest.w
@@ -294,7 +297,7 @@ let maybe_unset_current_floor (entity : entity) (room : room) =
       else
         false
     in
-    let jumping_over_edge = entity.v.y < 0. in
+    let jumping_over_edge = ascending entity in
     if walked_over_edge || jumping_over_edge then
       entity.current_floor <- None
 
@@ -302,7 +305,6 @@ let get_child_pos (parent : entity) (relative_pos : relative_position) child_w c
   align relative_pos parent.dest child_w child_h
 
 let on_ground (e : entity) = e.current_floor <> None
-let descending (e : entity) = e.v.y > 0.
 let is_on_screen' (r : rect) = not (r.pos.x < 0. && r.pos.y < 0.)
 let is_on_screen (e : entity) = is_on_screen' e.dest
 let is_off_screen (e : entity) = not (is_on_screen e)

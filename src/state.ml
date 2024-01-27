@@ -333,7 +333,8 @@ let update_environment (game : game) (state : state) =
           Some
             {
               content = "This door is locked.";
-              visible = TIME { at = state.frame.time +. Config.text.short_floating_duration };
+              visible = Interaction.make_UNTIL Config.text.short_floating_duration state.frame.time;
+              scale = 1.;
             }
     | None
     | Some (TEMPORARY _)
@@ -463,13 +464,13 @@ let update_interaction_text (game : game) (state : state) =
   let maybe_unset text unset =
     match text with
     | None -> ()
-    | Some (tt : Interaction.transient_text) -> (
-      match tt.visible with
-      | PAUSE_MENU -> (
+    | Some (text : Interaction.non_blocking_text) -> (
+      match text.visible with
+      | PAUSE_MENU_OPEN -> (
         match state.pause_menu with
         | Some _ -> ()
         | None -> unset ())
-      | TIME end_time ->
+      | UNTIL (duration, end_time) ->
         if state.frame.time > end_time.at then
           unset ())
   in
@@ -748,7 +749,8 @@ let tick (state : state) =
                     (List.length game.progress.steel_sole.purple_pens_found)
                     total_purple_pen_count time game.progress.steel_sole.dunks
                     game.progress.steel_sole.c_dashes current_time;
-                visible = PAUSE_MENU;
+                visible = PAUSE_MENU_OPEN;
+                scale = 1.;
               });
         state'
       | None ->
@@ -795,8 +797,6 @@ let tick (state : state) =
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors
         *)
-        if state.frame.idx mod 50 = 0 then
-          itmp "------------------------ %d" state.frame.idx;
         if game.room_changed_last_frame then (
           game.room_changed_last_frame <- false;
           state')

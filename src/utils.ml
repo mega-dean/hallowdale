@@ -80,6 +80,11 @@ module String = struct
     | Some prefix, rest -> rest
     | None, _ -> str
 
+  let maybe_trim_after c str : string =
+    match split_at_first_opt c str with
+    | Some prefix, rest -> prefix
+    | None, _ -> str
+
   let join strs = String.concat ", " strs
   let join_lines strs = String.concat "\n" strs
   let to_int s = int_of_string s

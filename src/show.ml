@@ -190,6 +190,20 @@ let area_id id =
   | LIBRARY -> "library"
   | VENTWAYS -> "ventways"
 
+let area_id_corner_text id =
+  match id with
+  | AC_REPAIR_ANNEX -> "Air Conditioning Repair Annex"
+  | BASEMENT -> "Basement"
+  | CITY_OF_CHAIRS -> "City of Chairs"
+  | COMPUTER_WING -> "Computer Wing"
+  | FORGOTTEN_CLASSROOMS -> "Forgotten Classrooms"
+  | INFECTED_CLASSROOMS -> "Infected Classrooms"
+  | MEOW_MEOW_BEENZ -> "MeowMeowBeenz Beta Test"
+  | OUTLANDS -> "The Outlands"
+  | TRAMPOLINEPATH -> "Trampolinepath"
+  | LIBRARY -> "Library"
+  | VENTWAYS -> "Ventways"
+
 let room_id id =
   match id with
   | AC_B -> "AC_b"
