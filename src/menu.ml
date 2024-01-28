@@ -100,7 +100,10 @@ let update_pause_menu (game : game) (state : state) : state =
         Some (MENU (change_weapon_menu (game.player.weapons |> String.Map.to_list |> List.map fst)))
     | CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
     | SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))
-    | SAVE -> Game.save game state
+    | SAVE ->
+      game.interaction.corner_text <-
+        Some { content = "Game saved."; visible = PAUSE_MENU_OPEN; scale = 1. };
+      Game.save game state
     | QUIT_TO_MAIN_MENU ->
       Audio.reset_music game.music.music;
       Audio.reset_music state.menu_music;
@@ -198,16 +201,20 @@ let update_pause_menu (game : game) (state : state) : state =
       Audio.play_sound state "menu-close";
       state.pause_menu <- None);
 
+  (* pause menu / world map should have no effect on hardfall timer *)
+  let pause_hardfall_timer () =
+    match game.player.ghost.hardfall_timer with
+    | None -> ()
+    | Some time -> game.player.ghost.hardfall_timer <- Some { at = time.at +. state.frame.dt }
+  in
+
   (match state.pause_menu with
   | None -> ()
   | Some (WORLD_MAP rects) ->
     (* the map is closed by unpausing, so there's nothing to do here *)
-    ()
+    pause_hardfall_timer ()
   | Some (MENU menu) ->
-    (match game.player.ghost.hardfall_timer with
-    | None -> ()
-    | Some time -> game.player.ghost.hardfall_timer <- Some { at = time.at +. state.frame.dt });
-
+    pause_hardfall_timer ();
     update_menu_choice menu state;
 
     if state.frame_inputs.jump.pressed then (

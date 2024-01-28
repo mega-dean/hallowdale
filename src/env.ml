@@ -62,9 +62,9 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * int 
     Float.min w_ratio h_ratio
   in
   let window_scale =
-    0.5
+    (* 0.5 *)
     (* 0.8 *)
-    (* 1. *)
+    1.
     (* if window_ratio < 0.5 then
      *   failwith "monitor too small :("
      * else if window_ratio > 1. then

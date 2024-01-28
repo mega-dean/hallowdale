@@ -1,29 +1,29 @@
 # study room
-"ghost_x": 879.4006835073233,
-"ghost_y": 1300.0,
-"room_name": "library_d",
+  "ghost_x": 879.4006835073233,
+  "ghost_y": 1300.0,
+  "room_name": "library_d",
 
 # soul master room
-"ghost_x": 3170.310712426901,
-"ghost_y": 976.0,
-"room_name": "trampoline_f",
+  "ghost_x": 3170.310712426901,
+  "ghost_y": 976.0,
+  "room_name": "trampoline_f",
 
 # archives
-"ghost_x": 2756.9766868799925,
-"ghost_y": 1732.0,
-"room_name": "library_b",
+  "ghost_x": 2756.9766868799925,
+  "ghost_y": 1732.0,
+  "room_name": "library_b",
 
 # ac repair vent
-"ghost_x": 6216.943919539452,
-"ghost_y": 4252.0,
-"room_name": "ac-repair_d",
+  "ghost_x": 6216.943919539452,
+  "ghost_y": 4252.0,
+  "room_name": "ac-repair_d",
 
 # locker boys fight
-"ghost_x": 3727.6010965034366,
-"ghost_y": 1192.0,
-"room_name": "infected_b",
+  "ghost_x": 3727.6010965034366,
+  "ghost_y": 1192.0,
+  "room_name": "infected_b",
 
 # shirley island
-"ghost_x": 5018.048309579492,
-"ghost_y": 3424.0,
-"room_name": "forgotten_a",
+  "ghost_x": 5018.048309579492,
+  "ghost_y": 3424.0,
+  "room_name": "forgotten_a",

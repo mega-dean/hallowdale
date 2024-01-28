@@ -800,7 +800,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -884,7 +884,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1355,
+                 "x":1329,
                  "y":652
                 }, 
                 {
@@ -895,7 +895,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1460,
+                 "x":1464,
                  "y":652
                 }, 
                 {
@@ -906,7 +906,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1554,
+                 "x":1566,
                  "y":652
                 }, 
                 {
@@ -917,7 +917,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1603,
+                 "x":1639,
                  "y":652
                 }, 
                 {
@@ -928,7 +928,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1656,
+                 "x":1677,
                  "y":532
                 }, 
                 {
@@ -939,7 +939,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":1410,
+                 "x":1393,
                  "y":652
                 }, 
                 {
@@ -974,10 +974,54 @@
                  "width":70,
                  "x":1561,
                  "y":1117
+                }, 
+                {
+                 "height":47,
+                 "id":71,
+                 "name":"talk:Professor Holly",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":1657,
+                 "y":530
+                }, 
+                {
+                 "height":50,
+                 "id":72,
+                 "name":"talk:Jerry",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":1309,
+                 "y":646
+                }, 
+                {
+                 "height":48,
+                 "id":73,
+                 "name":"talk:Frankie",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":1446,
+                 "y":648
+                }, 
+                {
+                 "height":47,
+                 "id":74,
+                 "name":"talk:Hilda",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":72,
+                 "x":1621,
+                 "y":649
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -2257,7 +2301,7 @@
          "y":0
         }],
  "nextlayerid":20,
- "nextobjectid":71,
+ "nextobjectid":75,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

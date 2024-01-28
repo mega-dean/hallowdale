@@ -176,6 +176,12 @@
     ["honda", "... use a light press of your foot to engage the highly responsive anti-lock breaks of this incredible vehicle..."],
     ["honda", "... when I influence people to buy Honda products, I feel God's pleasure..."],
 
+    // npc dialogue
+    ["Professor Holly", "Hello my precious {{blue}} blueberries."],
+    ["Hilda", "I live in the village. I love {{orange}} Abed."],
+    ["Frankie", "In terms of hierarchy, I'm a big believer in it. Someone needs to say \"I'm in charge\" and that person is me. That's my decision."],
+    ["Jerry", "Yeah, right, \"learning\". Learn everything. Learn until you're dead."],
+
     // keys
     ["Laybourne's Breathprint", "No more {{green}} palm fronds, {{white}} Troy. Now we are the pharaohs."],
     ["Song 127", "Because the song title is {{purple}} Open the Door {{white}} by {{purple}} The Secret Doors."],

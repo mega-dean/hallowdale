@@ -197,7 +197,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                      fmt "Come back when you have {{purple}} %d {{white}} purple pens."
                        next_upgrade_amount ));
             ])
-      | _ -> fail ())
+      | name -> [ STEP (DIALOGUE (name, get_lore ())) ])
     | "info" -> (
       match trigger.name_suffix with
       | "focus" ->

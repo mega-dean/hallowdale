@@ -1465,7 +1465,8 @@ let handle_debug_keys (game : game) (state : state) =
       else if key_pressed DEBUG_2 then (
         (* toggle_ability game.ghost "mantis_claw" *)
         (* game.player.health.current <- game.player.health.current - 1; *)
-        toggle_ability game.player "Dream Wielder";
+        (* toggle_ability game.player "Dream Wielder"; *)
+        game.player.soul.current <- game.player.soul.max;
         (* game.player.soul <-
          *   {
          *     current = game.player.soul.max + 33;

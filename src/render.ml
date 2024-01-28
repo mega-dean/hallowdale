@@ -522,14 +522,18 @@ let tick (state : state) =
       let color_str =
         match speaker_name with
         | "Britta" -> "{{gold}}"
-        | "Annie" -> "{{orange}}"
+        | "Annie" -> "{{darkpurple}}"
         | "Jeff" -> "{{darkblue}}"
         | "Shirley" -> "{{darkpink}}"
         | "Troy" -> "{{darkgreen}}"
-        | "Abed" -> "{{darkpurple}}"
-        | "Neil" -> "{{purple}}"
-        | "Garrett" -> "{{green}}"
-        | "Annie's Boobs" -> "{{darkpurple}}"
+        | "Abed" -> "{{orange}}"
+        | "Neil"
+        | "Annie's Boobs"
+        | "Jerry"
+        | "Professor Holly"
+        | "Hilda"
+        | "Frankie"
+        | "Garrett" -> "{{purple}}"
         | "Chang"
         | "Hickey"
         | "Duncan" ->

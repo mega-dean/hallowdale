@@ -39,6 +39,8 @@
             "h": 45,
             "texture_configs": [
                 ["idle", {
+                    "count": 4,
+                    "duration": 0.3
                 }]
             ]
         }],
