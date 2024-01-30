@@ -52,8 +52,8 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     in
 
     let get_lore () : string =
-      match String.Map.find_opt trigger.name_suffix state.global.lore with
-      | None -> failwithf "lore name '%s' not found in lore.json" trigger.name_suffix
+      match String.Map.find_opt trigger.full_name state.global.lore with
+      | None -> failwithf "lore name '%s' not found in lore.json" trigger.full_name
       | Some lore -> lore
     in
 
@@ -177,7 +177,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             (120, ABILITY ("Spell Twister", "reduces the LIFE VAPOR cost of casting spells."));
           ]
         in
-        let purple_pens_found = List.length game.progress.steel_sole.purple_pens_found in
+        let purple_pens_found = List.length game.progress.purple_pens_found in
         let last_upgrade = game.progress.last_upgrade_claimed in
         match List.find_opt (fun (amount, reward) -> amount > last_upgrade) rewards with
         | None -> [ STEP (DIALOGUE ("Annie's Boobs", "I have no more rewards for you.")) ]

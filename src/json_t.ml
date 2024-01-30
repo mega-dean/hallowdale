@@ -74,11 +74,7 @@ type texture_config = {
 
 type texture_configs = (string * texture_config) list
 
-type steel_sole_progress = {
-  mutable purple_pens_found: (int * string) list;
-  mutable dunks: int;
-  mutable c_dashes: int
-}
+type steel_sole_progress = { mutable dunks: int; mutable c_dashes: int }
 
 type room_progress = {
   mutable removed_tile_idxs: int list;
@@ -113,7 +109,9 @@ type game_progress = {
   mutable frame_idx: int;
   steel_sole: steel_sole_progress;
   mutable by_room: (string * room_progress) list;
+  mutable purple_pens_found: (int * string) list;
   mutable keys_found: string list;
+  mutable dreamer_items_found: int;
   mutable last_upgrade_claimed: int
 }
 

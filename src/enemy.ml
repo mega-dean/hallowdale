@@ -1226,7 +1226,7 @@ module Bat : M = struct
       || List.length enemy.floor_collisions_this_frame > 0
     then (
       let v = Random.float_between (get_attr enemy "min_v") (get_attr enemy "max_v") in
-      let angle = Random.float 360. in
+      let angle = Random.float (2. *. Float.pi) in
       let vx = sin angle *. v in
       let vy = cos angle *. v in
       Action.set enemy CHANGE_DIRECTION ~frame_time

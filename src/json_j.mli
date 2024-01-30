@@ -78,7 +78,6 @@ type texture_config = Json_t.texture_config = {
 type texture_configs = Json_t.texture_configs
 
 type steel_sole_progress = Json_t.steel_sole_progress = {
-  mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
   mutable c_dashes: int
 }
@@ -116,7 +115,9 @@ type game_progress = Json_t.game_progress = {
   mutable frame_idx: int;
   steel_sole: steel_sole_progress;
   mutable by_room: (string * room_progress) list;
+  mutable purple_pens_found: (int * string) list;
   mutable keys_found: string list;
+  mutable dreamer_items_found: int;
   mutable last_upgrade_claimed: int
 }
 

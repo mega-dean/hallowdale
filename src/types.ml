@@ -395,6 +395,7 @@ type pause_menu_choice =
   | CONTINUE
   | CHANGE_GHOST
   | CHANGE_WEAPON
+  | PROGRESS
   | SETTINGS
   | SAVE
   | QUIT_TO_MAIN_MENU
@@ -1443,6 +1444,7 @@ type world_map = {
 type pause_menu =
   | MENU of menu
   | WORLD_MAP of world_map
+  | PROGRESS
 
 type state = {
   mutable game_context : game_context;
@@ -1490,13 +1492,11 @@ let clone_game_progress (game_progress : Json_t.game_progress) : Json_t.game_pro
   {
     by_room = clone_progress_by_room game_progress.by_room;
     keys_found = game_progress.keys_found;
+    purple_pens_found = game_progress.purple_pens_found;
+    dreamer_items_found = game_progress.dreamer_items_found;
     frame_idx = game_progress.frame_idx;
     steel_sole =
-      {
-        purple_pens_found = game_progress.steel_sole.purple_pens_found;
-        dunks = game_progress.steel_sole.dunks;
-        c_dashes = game_progress.steel_sole.c_dashes;
-      };
+      { dunks = game_progress.steel_sole.dunks; c_dashes = game_progress.steel_sole.c_dashes };
     last_upgrade_claimed = game_progress.last_upgrade_claimed;
   }
 

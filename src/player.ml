@@ -354,16 +354,18 @@ let animate_and_despawn_children frame_time ghost : unit =
   in
   Ghost_child_kind.Map.iter advance ghost.children
 
+let get_nail_damage (player : player) =
+  player.weapons
+  |> String.Map.to_list
+  |> List.map snd
+  |> List.map (fun (w : Json_t.weapon) -> w.damage)
+  |> List.fold_left ( + ) 0
+
 let get_damage (player : player) (damage_kind : damage_kind) =
   (* TODO check ghost.abilities.descending_dark/shade_soul *)
   match damage_kind with
   | DREAM_NAIL -> 0
-  | NAIL ->
-    player.weapons
-    |> String.Map.to_list
-    |> List.map snd
-    |> List.map (fun (w : Json_t.weapon) -> w.damage)
-    |> List.fold_left ( + ) 0
+  | NAIL -> get_nail_damage player
   | VENGEFUL_SPIRIT -> (
     match (player.abilities.shade_soul, player.abilities.shaman_stone) with
     | false, false -> 15
@@ -608,8 +610,8 @@ let resolve_slash_collisions (state : state) (game : game) =
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
           | Some (PURPLE_PEN (name, followup_trigger')) ->
-            game.progress.steel_sole.purple_pens_found <-
-              (state.frame.idx, name) :: game.progress.steel_sole.purple_pens_found;
+            game.progress.purple_pens_found <-
+              (state.frame.idx, name) :: game.progress.purple_pens_found;
             let followup_trigger =
               match game.mode with
               | STEEL_SOLE -> None
@@ -1323,32 +1325,35 @@ let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) targ
        hiding old_ghost *)
     Entity.hide target_ghost.ghost.entity
 
-let change_ability ?(debug = false) ?(only_enable = false) ghost ability_name =
+let change_ability ?(debug = false) ?(only_enable = false) player ability_name =
   let new_val v =
     if debug then
       print "toggling %s -> %b" ability_name (not v);
     if only_enable then true else not v
   in
   match ability_name with
-  | "vengeful_spirit" -> ghost.abilities.vengeful_spirit <- new_val ghost.abilities.vengeful_spirit
-  | "desolate_dive" -> ghost.abilities.desolate_dive <- new_val ghost.abilities.desolate_dive
-  | "howling_wraiths" -> ghost.abilities.howling_wraiths <- new_val ghost.abilities.howling_wraiths
-  | "shade_soul" -> ghost.abilities.shade_soul <- new_val ghost.abilities.shade_soul
-  | "descending_dark" -> ghost.abilities.descending_dark <- new_val ghost.abilities.descending_dark
-  | "abyss_shriek" -> ghost.abilities.abyss_shriek <- new_val ghost.abilities.abyss_shriek
-  | "mothwing_cloak" -> ghost.abilities.mothwing_cloak <- new_val ghost.abilities.mothwing_cloak
-  | "shade_cloak" -> ghost.abilities.shade_cloak <- new_val ghost.abilities.shade_cloak
-  | "mantis_claw" -> ghost.abilities.mantis_claw <- new_val ghost.abilities.mantis_claw
-  | "crystal_heart" -> ghost.abilities.crystal_heart <- new_val ghost.abilities.crystal_heart
-  | "monarch_wings" -> ghost.abilities.monarch_wings <- new_val ghost.abilities.monarch_wings
-  | "ismas_tear" -> ghost.abilities.ismas_tear <- new_val ghost.abilities.ismas_tear
-  | "dream_nail" -> ghost.abilities.dream_nail <- new_val ghost.abilities.dream_nail
-  | "Quick Focus" -> ghost.abilities.quick_focus <- new_val ghost.abilities.quick_focus
-  | "Soul Catcher" -> ghost.abilities.soul_catcher_bonus <- ghost.abilities.soul_catcher_bonus + 4
-  | "Dream Wielder" -> ghost.abilities.dream_wielder <- new_val ghost.abilities.dream_wielder
-  | "Deep Focus" -> ghost.abilities.deep_focus <- new_val ghost.abilities.deep_focus
-  | "Shaman Stone" -> ghost.abilities.shaman_stone <- new_val ghost.abilities.shaman_stone
-  | "Spell Twister" -> ghost.abilities.spell_twister <- new_val ghost.abilities.spell_twister
+  | "vengeful_spirit" ->
+    player.abilities.vengeful_spirit <- new_val player.abilities.vengeful_spirit
+  | "desolate_dive" -> player.abilities.desolate_dive <- new_val player.abilities.desolate_dive
+  | "howling_wraiths" ->
+    player.abilities.howling_wraiths <- new_val player.abilities.howling_wraiths
+  | "shade_soul" -> player.abilities.shade_soul <- new_val player.abilities.shade_soul
+  | "descending_dark" ->
+    player.abilities.descending_dark <- new_val player.abilities.descending_dark
+  | "abyss_shriek" -> player.abilities.abyss_shriek <- new_val player.abilities.abyss_shriek
+  | "mothwing_cloak" -> player.abilities.mothwing_cloak <- new_val player.abilities.mothwing_cloak
+  | "shade_cloak" -> player.abilities.shade_cloak <- new_val player.abilities.shade_cloak
+  | "mantis_claw" -> player.abilities.mantis_claw <- new_val player.abilities.mantis_claw
+  | "crystal_heart" -> player.abilities.crystal_heart <- new_val player.abilities.crystal_heart
+  | "monarch_wings" -> player.abilities.monarch_wings <- new_val player.abilities.monarch_wings
+  | "ismas_tear" -> player.abilities.ismas_tear <- new_val player.abilities.ismas_tear
+  | "dream_nail" -> player.abilities.dream_nail <- new_val player.abilities.dream_nail
+  | "Quick Focus" -> player.abilities.quick_focus <- new_val player.abilities.quick_focus
+  | "Soul Catcher" -> player.abilities.soul_catcher_bonus <- player.abilities.soul_catcher_bonus + 4
+  | "Dream Wielder" -> player.abilities.dream_wielder <- new_val player.abilities.dream_wielder
+  | "Deep Focus" -> player.abilities.deep_focus <- new_val player.abilities.deep_focus
+  | "Shaman Stone" -> player.abilities.shaman_stone <- new_val player.abilities.shaman_stone
+  | "Spell Twister" -> player.abilities.spell_twister <- new_val player.abilities.spell_twister
   | _ -> failwithf "change_ability bad ability name: %s" ability_name
 
 let enable_ability ghost ability_name = change_ability ~only_enable:true ghost ability_name
@@ -1719,8 +1724,8 @@ let tick (game : game) (state : state) =
               in
               let content_without_prefix = [ line ] in
               match game.mode with
-              | CLASSIC -> content_with_prefix
               | STEEL_SOLE -> content_without_prefix
+              | CLASSIC
               | DEMO ->
                 if Room.in_teachers_archives game.room then
                   content_without_prefix
@@ -1756,8 +1761,9 @@ let tick (game : game) (state : state) =
           | KEY key_name -> game.progress.keys_found <- key_name :: game.progress.keys_found
           | DREAMER (item_name, dreamer_item_text) ->
             let text : string list =
-              [ fmt "Found a dreamer item: %s" item_name; ""; dreamer_item_text ]
+              [ fmt "Found a dreamer item: {{blue}} %s" item_name; ""; dreamer_item_text ]
             in
+            game.progress.dreamer_items_found <- game.progress.dreamer_items_found + 1;
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;
             game.interaction.text <- Some (PLAIN text)

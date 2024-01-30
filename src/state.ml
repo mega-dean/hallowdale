@@ -723,30 +723,32 @@ let tick (state : state) =
               let hours = hours' mod 60 in
               fmt "%02d:%02d:%02d%s" hours minutes seconds ms
             in
-            if List.length game.progress.steel_sole.purple_pens_found = 0 then
+            if List.length game.progress.purple_pens_found = 0 then
               ("", get_time current_time_frames)
             else (
               let frames' =
                 (* take the first because newest entries are pushed to the front *)
-                List.hd game.progress.steel_sole.purple_pens_found |> fst
+                List.hd game.progress.purple_pens_found |> fst
               in
               (fmt " in %s" (get_time frames'), get_time current_time_frames))
           in
           let pen_lore =
-            (* TODO this is a pretty naive way to check for pen lore, maybe the json file should
-               be an object instead of a list
-            *)
             List.filter
               (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0)
               (state.global.lore |> String.Map.to_list)
           in
-          let total_purple_pen_count = List.length pen_lore in
+          let total_purple_pen_count =
+            state.global.lore
+            |> String.Map.to_list
+            |> List.filter (fun (name, _) -> String.starts_with ~prefix:"purple-pen:" name)
+            |> List.length
+          in
           game.interaction.corner_text <-
             Some
               {
                 content =
                   fmt "%d / %d purple pens found%s, %d dunks, %d c-dashes --- %s"
-                    (List.length game.progress.steel_sole.purple_pens_found)
+                    (List.length game.progress.purple_pens_found)
                     total_purple_pen_count time game.progress.steel_sole.dunks
                     game.progress.steel_sole.c_dashes current_time;
                 visible = PAUSE_MENU_OPEN;

@@ -78,7 +78,6 @@ type texture_config = Json_t.texture_config = {
 type texture_configs = Json_t.texture_configs
 
 type steel_sole_progress = Json_t.steel_sole_progress = {
-  mutable purple_pens_found: (int * string) list;
   mutable dunks: int;
   mutable c_dashes: int
 }
@@ -116,7 +115,9 @@ type game_progress = Json_t.game_progress = {
   mutable frame_idx: int;
   steel_sole: steel_sole_progress;
   mutable by_room: (string * room_progress) list;
+  mutable purple_pens_found: (int * string) list;
   mutable keys_found: string list;
+  mutable dreamer_items_found: int;
   mutable last_upgrade_claimed: int
 }
 
@@ -3432,89 +3433,10 @@ let read_texture_configs = (
 )
 let texture_configs_of_string s =
   read_texture_configs (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__int_string_list = (
-  Atdgen_runtime.Oj_run.write_list (
-    fun ob x ->
-      Buffer.add_char ob '(';
-      (let x, _ = x in
-      (
-        Yojson.Safe.write_int
-      ) ob x
-      );
-      Buffer.add_char ob ',';
-      (let _, x = x in
-      (
-        Yojson.Safe.write_string
-      ) ob x
-      );
-      Buffer.add_char ob ')';
-  )
-)
-let string_of__int_string_list ?(len = 1024) x =
-  let ob = Buffer.create len in
-  write__int_string_list ob x;
-  Buffer.contents ob
-let read__int_string_list = (
-  Atdgen_runtime.Oj_run.read_list (
-    fun p lb ->
-      Yojson.Safe.read_space p lb;
-      let std_tuple = Yojson.Safe.start_any_tuple p lb in
-      let len = ref 0 in
-      let end_of_tuple = ref false in
-      (try
-        let x0 =
-          let x =
-            (
-              Atdgen_runtime.Oj_run.read_int
-            ) p lb
-          in
-          incr len;
-          Yojson.Safe.read_space p lb;
-          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
-          x
-        in
-        let x1 =
-          let x =
-            (
-              Atdgen_runtime.Oj_run.read_string
-            ) p lb
-          in
-          incr len;
-          (try
-            Yojson.Safe.read_space p lb;
-            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
-          with Yojson.End_of_tuple -> end_of_tuple := true);
-          x
-        in
-        if not !end_of_tuple then (
-          try
-            while true do
-              Yojson.Safe.skip_json p lb;
-              Yojson.Safe.read_space p lb;
-              Yojson.Safe.read_tuple_sep2 p std_tuple lb;
-            done
-          with Yojson.End_of_tuple -> ()
-        );
-        (x0, x1)
-      with Yojson.End_of_tuple ->
-        Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
-  )
-)
-let _int_string_list_of_string s =
-  read__int_string_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_steel_sole_progress : _ -> steel_sole_progress -> _ = (
   fun ob (x : steel_sole_progress) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
-    if !is_first then
-      is_first := false
-    else
-      Buffer.add_char ob ',';
-      Buffer.add_string ob "\"purple_pens_found\":";
-    (
-      write__int_string_list
-    )
-      ob x.purple_pens_found;
     if !is_first then
       is_first := false
     else
@@ -3543,7 +3465,6 @@ let read_steel_sole_progress = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_purple_pens_found = ref (None) in
     let field_dunks = ref (None) in
     let field_c_dashes = ref (None) in
     try
@@ -3557,7 +3478,7 @@ let read_steel_sole_progress = (
           match len with
             | 5 -> (
                 if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 's' then (
-                  1
+                  0
                 )
                 else (
                   -1
@@ -3565,15 +3486,7 @@ let read_steel_sole_progress = (
               )
             | 8 -> (
                 if String.unsafe_get s pos = 'c' && String.unsafe_get s (pos+1) = '_' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 's' then (
-                  2
-                )
-                else (
-                  -1
-                )
-              )
-            | 17 -> (
-                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
-                  0
+                  1
                 )
                 else (
                   -1
@@ -3588,14 +3501,6 @@ let read_steel_sole_progress = (
       (
         match i with
           | 0 ->
-            field_purple_pens_found := (
-              Some (
-                (
-                  read__int_string_list
-                ) p lb
-              )
-            );
-          | 1 ->
             field_dunks := (
               Some (
                 (
@@ -3603,7 +3508,7 @@ let read_steel_sole_progress = (
                 ) p lb
               )
             );
-          | 2 ->
+          | 1 ->
             field_c_dashes := (
               Some (
                 (
@@ -3626,7 +3531,7 @@ let read_steel_sole_progress = (
             match len with
               | 5 -> (
                   if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'n' && String.unsafe_get s (pos+3) = 'k' && String.unsafe_get s (pos+4) = 's' then (
-                    1
+                    0
                   )
                   else (
                     -1
@@ -3634,15 +3539,7 @@ let read_steel_sole_progress = (
                 )
               | 8 -> (
                   if String.unsafe_get s pos = 'c' && String.unsafe_get s (pos+1) = '_' && String.unsafe_get s (pos+2) = 'd' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 's' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'e' && String.unsafe_get s (pos+7) = 's' then (
-                    2
-                  )
-                  else (
-                    -1
-                  )
-                )
-              | 17 -> (
-                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
-                    0
+                    1
                   )
                   else (
                     -1
@@ -3657,14 +3554,6 @@ let read_steel_sole_progress = (
         (
           match i with
             | 0 ->
-              field_purple_pens_found := (
-                Some (
-                  (
-                    read__int_string_list
-                  ) p lb
-                )
-              );
-            | 1 ->
               field_dunks := (
                 Some (
                   (
@@ -3672,7 +3561,7 @@ let read_steel_sole_progress = (
                   ) p lb
                 )
               );
-            | 2 ->
+            | 1 ->
               field_c_dashes := (
                 Some (
                   (
@@ -3689,7 +3578,6 @@ let read_steel_sole_progress = (
     with Yojson.End_of_object -> (
         (
           {
-            purple_pens_found = (match !field_purple_pens_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "purple_pens_found");
             dunks = (match !field_dunks with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "dunks");
             c_dashes = (match !field_c_dashes with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "c_dashes");
           }
@@ -4991,6 +4879,76 @@ let read__string_room_progress_list = (
 )
 let _string_room_progress_list_of_string s =
   read__string_room_progress_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__int_string_list = (
+  Atdgen_runtime.Oj_run.write_list (
+    fun ob x ->
+      Buffer.add_char ob '(';
+      (let x, _ = x in
+      (
+        Yojson.Safe.write_int
+      ) ob x
+      );
+      Buffer.add_char ob ',';
+      (let _, x = x in
+      (
+        Yojson.Safe.write_string
+      ) ob x
+      );
+      Buffer.add_char ob ')';
+  )
+)
+let string_of__int_string_list ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__int_string_list ob x;
+  Buffer.contents ob
+let read__int_string_list = (
+  Atdgen_runtime.Oj_run.read_list (
+    fun p lb ->
+      Yojson.Safe.read_space p lb;
+      let std_tuple = Yojson.Safe.start_any_tuple p lb in
+      let len = ref 0 in
+      let end_of_tuple = ref false in
+      (try
+        let x0 =
+          let x =
+            (
+              Atdgen_runtime.Oj_run.read_int
+            ) p lb
+          in
+          incr len;
+          Yojson.Safe.read_space p lb;
+          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+          x
+        in
+        let x1 =
+          let x =
+            (
+              Atdgen_runtime.Oj_run.read_string
+            ) p lb
+          in
+          incr len;
+          (try
+            Yojson.Safe.read_space p lb;
+            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+          with Yojson.End_of_tuple -> end_of_tuple := true);
+          x
+        in
+        if not !end_of_tuple then (
+          try
+            while true do
+              Yojson.Safe.skip_json p lb;
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+            done
+          with Yojson.End_of_tuple -> ()
+        );
+        (x0, x1)
+      with Yojson.End_of_tuple ->
+        Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+  )
+)
+let _int_string_list_of_string s =
+  read__int_string_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_game_progress : _ -> game_progress -> _ = (
   fun ob (x : game_progress) ->
     Buffer.add_char ob '{';
@@ -5026,11 +4984,29 @@ let write_game_progress : _ -> game_progress -> _ = (
       is_first := false
     else
       Buffer.add_char ob ',';
+      Buffer.add_string ob "\"purple_pens_found\":";
+    (
+      write__int_string_list
+    )
+      ob x.purple_pens_found;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
       Buffer.add_string ob "\"keys_found\":";
     (
       write__string_list
     )
       ob x.keys_found;
+    if !is_first then
+      is_first := false
+    else
+      Buffer.add_char ob ',';
+      Buffer.add_string ob "\"dreamer_items_found\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.dreamer_items_found;
     if !is_first then
       is_first := false
     else
@@ -5053,7 +5029,9 @@ let read_game_progress = (
     let field_frame_idx = ref (None) in
     let field_steel_sole = ref (None) in
     let field_by_room = ref (None) in
+    let field_purple_pens_found = ref (None) in
     let field_keys_found = ref (None) in
+    let field_dreamer_items_found = ref (None) in
     let field_last_upgrade_claimed = ref (None) in
     try
       Yojson.Safe.read_space p lb;
@@ -5084,7 +5062,7 @@ let read_game_progress = (
                 match String.unsafe_get s pos with
                   | 'k' -> (
                       if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'y' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'o' && String.unsafe_get s (pos+7) = 'u' && String.unsafe_get s (pos+8) = 'n' && String.unsafe_get s (pos+9) = 'd' then (
-                        3
+                        4
                       )
                       else (
                         -1
@@ -5102,9 +5080,25 @@ let read_game_progress = (
                       -1
                     )
               )
+            | 17 -> (
+                if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
+                  3
+                )
+                else (
+                  -1
+                )
+              )
+            | 19 -> (
+                if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'm' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'r' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 't' && String.unsafe_get s (pos+10) = 'e' && String.unsafe_get s (pos+11) = 'm' && String.unsafe_get s (pos+12) = 's' && String.unsafe_get s (pos+13) = '_' && String.unsafe_get s (pos+14) = 'f' && String.unsafe_get s (pos+15) = 'o' && String.unsafe_get s (pos+16) = 'u' && String.unsafe_get s (pos+17) = 'n' && String.unsafe_get s (pos+18) = 'd' then (
+                  5
+                )
+                else (
+                  -1
+                )
+              )
             | 20 -> (
                 if String.unsafe_get s pos = 'l' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'u' && String.unsafe_get s (pos+6) = 'p' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = 'r' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'd' && String.unsafe_get s (pos+11) = 'e' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'c' && String.unsafe_get s (pos+14) = 'l' && String.unsafe_get s (pos+15) = 'a' && String.unsafe_get s (pos+16) = 'i' && String.unsafe_get s (pos+17) = 'm' && String.unsafe_get s (pos+18) = 'e' && String.unsafe_get s (pos+19) = 'd' then (
-                  4
+                  6
                 )
                 else (
                   -1
@@ -5143,6 +5137,14 @@ let read_game_progress = (
               )
             );
           | 3 ->
+            field_purple_pens_found := (
+              Some (
+                (
+                  read__int_string_list
+                ) p lb
+              )
+            );
+          | 4 ->
             field_keys_found := (
               Some (
                 (
@@ -5150,7 +5152,15 @@ let read_game_progress = (
                 ) p lb
               )
             );
-          | 4 ->
+          | 5 ->
+            field_dreamer_items_found := (
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
+            );
+          | 6 ->
             field_last_upgrade_claimed := (
               Some (
                 (
@@ -5191,7 +5201,7 @@ let read_game_progress = (
                   match String.unsafe_get s pos with
                     | 'k' -> (
                         if String.unsafe_get s (pos+1) = 'e' && String.unsafe_get s (pos+2) = 'y' && String.unsafe_get s (pos+3) = 's' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'o' && String.unsafe_get s (pos+7) = 'u' && String.unsafe_get s (pos+8) = 'n' && String.unsafe_get s (pos+9) = 'd' then (
-                          3
+                          4
                         )
                         else (
                           -1
@@ -5209,9 +5219,25 @@ let read_game_progress = (
                         -1
                       )
                 )
+              | 17 -> (
+                  if String.unsafe_get s pos = 'p' && String.unsafe_get s (pos+1) = 'u' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'p' && String.unsafe_get s (pos+4) = 'l' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = '_' && String.unsafe_get s (pos+7) = 'p' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = 'n' && String.unsafe_get s (pos+10) = 's' && String.unsafe_get s (pos+11) = '_' && String.unsafe_get s (pos+12) = 'f' && String.unsafe_get s (pos+13) = 'o' && String.unsafe_get s (pos+14) = 'u' && String.unsafe_get s (pos+15) = 'n' && String.unsafe_get s (pos+16) = 'd' then (
+                    3
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 19 -> (
+                  if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'r' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'a' && String.unsafe_get s (pos+4) = 'm' && String.unsafe_get s (pos+5) = 'e' && String.unsafe_get s (pos+6) = 'r' && String.unsafe_get s (pos+7) = '_' && String.unsafe_get s (pos+8) = 'i' && String.unsafe_get s (pos+9) = 't' && String.unsafe_get s (pos+10) = 'e' && String.unsafe_get s (pos+11) = 'm' && String.unsafe_get s (pos+12) = 's' && String.unsafe_get s (pos+13) = '_' && String.unsafe_get s (pos+14) = 'f' && String.unsafe_get s (pos+15) = 'o' && String.unsafe_get s (pos+16) = 'u' && String.unsafe_get s (pos+17) = 'n' && String.unsafe_get s (pos+18) = 'd' then (
+                    5
+                  )
+                  else (
+                    -1
+                  )
+                )
               | 20 -> (
                   if String.unsafe_get s pos = 'l' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 's' && String.unsafe_get s (pos+3) = 't' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'u' && String.unsafe_get s (pos+6) = 'p' && String.unsafe_get s (pos+7) = 'g' && String.unsafe_get s (pos+8) = 'r' && String.unsafe_get s (pos+9) = 'a' && String.unsafe_get s (pos+10) = 'd' && String.unsafe_get s (pos+11) = 'e' && String.unsafe_get s (pos+12) = '_' && String.unsafe_get s (pos+13) = 'c' && String.unsafe_get s (pos+14) = 'l' && String.unsafe_get s (pos+15) = 'a' && String.unsafe_get s (pos+16) = 'i' && String.unsafe_get s (pos+17) = 'm' && String.unsafe_get s (pos+18) = 'e' && String.unsafe_get s (pos+19) = 'd' then (
-                    4
+                    6
                   )
                   else (
                     -1
@@ -5250,6 +5276,14 @@ let read_game_progress = (
                 )
               );
             | 3 ->
+              field_purple_pens_found := (
+                Some (
+                  (
+                    read__int_string_list
+                  ) p lb
+                )
+              );
+            | 4 ->
               field_keys_found := (
                 Some (
                   (
@@ -5257,7 +5291,15 @@ let read_game_progress = (
                   ) p lb
                 )
               );
-            | 4 ->
+            | 5 ->
+              field_dreamer_items_found := (
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
+              );
+            | 6 ->
               field_last_upgrade_claimed := (
                 Some (
                   (
@@ -5277,7 +5319,9 @@ let read_game_progress = (
             frame_idx = (match !field_frame_idx with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "frame_idx");
             steel_sole = (match !field_steel_sole with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "steel_sole");
             by_room = (match !field_by_room with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "by_room");
+            purple_pens_found = (match !field_purple_pens_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "purple_pens_found");
             keys_found = (match !field_keys_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "keys_found");
+            dreamer_items_found = (match !field_dreamer_items_found with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "dreamer_items_found");
             last_upgrade_claimed = (match !field_last_upgrade_claimed with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "last_upgrade_claimed");
           }
          : game_progress)

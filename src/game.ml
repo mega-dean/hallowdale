@@ -24,13 +24,12 @@ let empty_save_file () : Json_t.save_file =
         mothwing_cloak = false;
         shade_cloak = false;
         (* spells *)
-        vengeful_spirit = true;
+        vengeful_spirit = false;
         desolate_dive = false;
         howling_wraiths = false;
         shade_soul = false;
         descending_dark = false;
         abyss_shriek = false;
-
         quick_focus = false;
         soul_catcher_bonus = 0;
         dream_wielder = false;
@@ -42,8 +41,10 @@ let empty_save_file () : Json_t.save_file =
       {
         frame_idx = 0;
         keys_found = [];
+        purple_pens_found = [];
+        dreamer_items_found = 0;
         by_room = [];
-        steel_sole = { purple_pens_found = []; dunks = 0; c_dashes = 0 };
+        steel_sole = { dunks = 0; c_dashes = 0 };
         last_upgrade_claimed = 0;
       };
     max_health = Config.ghost.starting_max_health;
@@ -165,7 +166,6 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
         shade_soul = false;
         descending_dark = false;
         abyss_shriek = false;
-
         quick_focus = false;
         soul_catcher_bonus = 0;
         dream_wielder = false;

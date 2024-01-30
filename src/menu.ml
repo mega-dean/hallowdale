@@ -19,6 +19,7 @@ let pause_menu ghost_count : menu =
        Some (PAUSE_MENU CONTINUE);
        (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
        Some (PAUSE_MENU CHANGE_WEAPON);
+       Some (PAUSE_MENU PROGRESS);
        Some (PAUSE_MENU SETTINGS);
        Some (PAUSE_MENU SAVE);
        Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
@@ -99,6 +100,7 @@ let update_pause_menu (game : game) (state : state) : state =
       state.pause_menu <-
         Some (MENU (change_weapon_menu (game.player.weapons |> String.Map.to_list |> List.map fst)))
     | CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
+    | PROGRESS -> state.pause_menu <- Some PROGRESS
     | SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))
     | SAVE ->
       game.interaction.corner_text <-
@@ -139,6 +141,13 @@ let update_pause_menu (game : game) (state : state) : state =
     | BACK -> go_back ()
   in
 
+  let handle_progress_menu choice =
+    match choice with
+    | MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
+    | SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
+    | BACK -> go_back ()
+  in
+
   let handle_audio_setting_menu (settings_choice, change_choice) =
     match (settings_choice, change_choice) with
     | MUSIC, INCREASE -> Audio.increase_music_volume state game
@@ -152,10 +161,12 @@ let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
     | None ->
+      tmp "pressed pause with None";
       Audio.play_sound state "menu-expand";
       state.pause_menu <-
         Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
     | Some _ ->
+      tmp "pressed pause with Some";
       Audio.play_sound state "menu-close";
       state.pause_menu <- None)
   else if state.frame_inputs.open_map.pressed then (
@@ -210,7 +221,8 @@ let update_pause_menu (game : game) (state : state) : state =
 
   (match state.pause_menu with
   | None -> ()
-  | Some (WORLD_MAP rects) ->
+  | Some PROGRESS
+  | Some (WORLD_MAP _) ->
     (* the map is closed by unpausing, so there's nothing to do here *)
     pause_hardfall_timer ()
   | Some (MENU menu) ->

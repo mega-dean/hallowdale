@@ -264,6 +264,7 @@ type text = {
   base_config : Interaction.text_config;
   dialogue_config : Interaction.text_config;
   floating_config : Interaction.text_config;
+  progress_config : Interaction.text_config;
   short_floating_duration : float;
   long_floating_duration : float;
 }
@@ -327,6 +328,15 @@ let text =
         cursor_padding = 0.;
         centered = true;
       };
+    progress_config =
+      {
+        margin_x = 50. *. window_scale;
+        margin_y_top = 50. *. window_scale;
+        margin_y_bottom = 50. *. window_scale;
+        padding = { x = 50. *. window_scale; y = 50. *. window_scale };
+        cursor_padding = 0.;
+        centered = true;
+      };
     short_floating_duration = 2.;
     long_floating_duration = 3.;
   }
@@ -368,6 +378,8 @@ type other = {
   ss_warp_y_offset : float;
   main_menu_y_offset : float;
   hud_padding : float;
+  progress_x_padding : float;
+  progress_y_padding : float;
   save_slots : int;
   phantom_floor_h : float;
   raindrop_speed : float;
@@ -383,6 +395,8 @@ let other =
     ss_warp_y_offset = 80. *. window_scale;
     main_menu_y_offset = 50. *. window_scale;
     hud_padding = 8. *. window_scale;
+    progress_x_padding = 600. *. window_scale;
+    progress_y_padding = 100. *. window_scale;
     save_slots = 4;
     phantom_floor_h = 20. *. window_scale;
     raindrop_speed = 3. *. window_scale;

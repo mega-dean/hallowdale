@@ -239,7 +239,6 @@ type ghost_abilities = {
 }
 
 type steel_sole_progress = {
-  purple_pens_found <ocaml mutable> : (int * string) list;
   dunks <ocaml mutable> : int;
   c_dashes <ocaml mutable> : int;
 }
@@ -249,7 +248,9 @@ type game_progress = {
   steel_sole : steel_sole_progress;
   (* TODO deaths : int *)
   by_room <ocaml mutable> : (string * room_progress) list;
+  purple_pens_found <ocaml mutable> : (int * string) list;
   keys_found <ocaml mutable> : string list;
+  dreamer_items_found <ocaml mutable> : int;
   last_upgrade_claimed <ocaml mutable> : int;
 }
 

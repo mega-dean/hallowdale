@@ -119,8 +119,8 @@ let draw_sprite ?(debug = false) ?(tint = Color.white) ?(render_offset = None) (
           };
       }
   in
-  if debug then (
-    debug_rect sprite.dest);
+  if debug then
+    debug_rect sprite.dest;
   draw_texture sprite.texture ~tint dest (if sprite.facing_right then 0 else 4);
   match sprite.collision with
   | Some (SHAPE shape) ->
@@ -533,7 +533,8 @@ let tick (state : state) =
         | "Professor Holly"
         | "Hilda"
         | "Frankie"
-        | "Garrett" -> "{{purple}}"
+        | "Garrett" ->
+          "{{purple}}"
         | "Chang"
         | "Hickey"
         | "Duncan" ->
@@ -563,15 +564,13 @@ let tick (state : state) =
         | None -> false
       in
       List.iteri (display_paragraph ~force_spaces config) lines
-    | Some (MENU (menu, save_slots)) ->
+    | Some (MENU (menu, save_slots')) ->
       let config' : text_config = Config.get_menu_text_config (List.nth menu.choices 0) in
       let menu_choices, config =
-        match save_slots with
+        match save_slots' with
         | None -> (List.map (Show.menu_choice game_opt) menu.choices, config')
-        | Some save_slots' ->
-          ( List.map
-              (Show.menu_choice ~save_slots:save_slots' game_opt)
-              (Menu.get_save_file_choices save_slots'),
+        | Some save_slots ->
+          ( List.map (Show.menu_choice ~save_slots game_opt) (Menu.get_save_file_choices save_slots),
             { config' with centered = false } )
       in
       draw_text_bg_box config;
@@ -634,11 +633,36 @@ let tick (state : state) =
       let dest = { pos = { x = camera_x; y = camera_y }; w = src.w; h = src.h } in
       draw_texture ~tint state.global.textures.skybox dest 0
     in
-    let draw_world_map () =
+    let draw_world_map world_map =
       let dest =
         { pos = { x = camera_x; y = camera_y }; w = Config.window.w; h = Config.window.h }
       in
-      draw_texture state.global.textures.world_map dest 0
+      let draw_black_rect rect =
+        Draw.rect
+          { rect with pos = { x = rect.pos.x +. camera_x; y = rect.pos.y +. camera_y } }
+          Raylib.Color.black
+      in
+      let draw_ghost_circle radius r g b speed =
+        let ghost_color r g b a = Raylib.Color.create r g b a in
+        Raylib.draw_circle
+          (world_map.ghost_pos.x +. camera_x |> Float.to_int)
+          (world_map.ghost_pos.y +. camera_y |> Float.to_int)
+          radius (ghost_color r g b speed)
+      in
+      let alpha =
+        let n = Config.window.fps * 3 in
+        let m = state.frame.idx * 5 mod n in
+        if m > n / 2 then
+          -m + n
+        else
+          m
+      in
+
+      draw_texture state.global.textures.world_map dest 0;
+      List.iter draw_black_rect world_map.black_rects;
+      if Room.show_ghost_on_map game.room then (
+        draw_ghost_circle 7. 0 0 0 alpha;
+        draw_ghost_circle 5. 255 255 255 alpha);
     in
 
     let draw_object_trigger_indicators () =
@@ -1014,6 +1038,82 @@ let tick (state : state) =
       | STEEL_SOLE -> ()
     in
 
+    let draw_progress () =
+      let config = Config.text.progress_config in
+      let lore = state.global.lore |> String.Map.to_list in
+      let count_lore prefix =
+        List.filter (fun (name, _) -> String.starts_with ~prefix:(fmt "%s:" prefix) name) lore
+        |> List.length
+      in
+      draw_text_bg_box config;
+      let row n =
+        camera_y +. Config.other.progress_y_padding +. (n *. line_height ~font_scale:2. ())
+      in
+      let draw_progress' idx (label, found, count) =
+        Draw.text
+          (fmt "%s: %d / %d" label found count)
+          { x = camera_x +. Config.other.progress_x_padding; y = row (idx |> Int.to_float) }
+      in
+      let abilities =
+        [
+          game.player.abilities.vengeful_spirit;
+          game.player.abilities.desolate_dive;
+          game.player.abilities.howling_wraiths;
+          game.player.abilities.shade_soul;
+          game.player.abilities.descending_dark;
+          game.player.abilities.abyss_shriek;
+          game.player.abilities.mothwing_cloak;
+          game.player.abilities.shade_cloak;
+          game.player.abilities.mantis_claw;
+          game.player.abilities.crystal_heart;
+          game.player.abilities.monarch_wings;
+          game.player.abilities.ismas_tear;
+          game.player.abilities.dream_nail;
+        ]
+        |> List.filter (fun a -> a)
+        |> List.length
+      in
+      let total_abilities = count_lore "ability" in
+      let weapons = game.player.weapons |> String.Map.to_list |> List.length in
+      let keys = List.length game.progress.keys_found in
+      let pens = List.length game.progress.purple_pens_found in
+      let dreamer_items = game.progress.dreamer_items_found in
+      let total_weapons = state.global.weapons |> String.Map.to_list |> List.length in
+      let total_keys = count_lore "key" in
+      let total_pens = count_lore "purple-pen" in
+      let total_dreamer_items = count_lore "dreamer" in
+      let rows =
+        [
+          ("Weapons", weapons, total_weapons);
+          ("Abilities", abilities, total_abilities);
+          ("Keys", keys, total_keys);
+          ("Purple Pens", pens, total_pens);
+          ("Dreamer Items", dreamer_items, total_dreamer_items);
+        ]
+      in
+      List.iteri draw_progress' rows;
+      let weapon_percent = 18. in
+      let dreamer_item_percent = 24. in
+      let key_percent = 15. in
+      let ability_percent = 20. in
+      let purple_pen_percent =
+        100. -. (weapon_percent +. dreamer_item_percent +. key_percent +. ability_percent)
+      in
+      let total_percent =
+        ((weapons |> Int.to_float) /. (total_weapons |> Int.to_float) *. weapon_percent)
+        +. ((keys |> Int.to_float) /. (total_keys |> Int.to_float) *. key_percent)
+        +. ((abilities |> Int.to_float) /. (total_abilities |> Int.to_float) *. ability_percent)
+        +. (dreamer_items |> Int.to_float)
+           /. (total_dreamer_items |> Int.to_float)
+           *. dreamer_item_percent
+        +. ((pens |> Int.to_float) /. (total_pens |> Int.to_float) *. purple_pen_percent)
+      in
+      Draw.text
+        (fmt "Total: %0.2f%s" total_percent "%")
+        { x = camera_x +. Config.other.progress_x_padding; y = row 8. };
+      ()
+    in
+
     Raylib.begin_drawing ();
     Raylib.clear_background game.room.area.bg_color;
     Raylib.begin_mode_2d state.camera.raylib;
@@ -1039,42 +1139,18 @@ let tick (state : state) =
         draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
       in
       List.iter draw game.room.raindrops);
-
     draw_hud ();
     (match state.screen_fade with
     | None -> ()
     | Some alpha -> draw_screen_fade alpha);
-
     (let interaction_text =
        match state.pause_menu with
        | None -> game.interaction.text
+       | Some PROGRESS ->
+         draw_progress ();
+         None
        | Some (WORLD_MAP world_map) ->
-         draw_world_map ();
-         let draw_black_rect rect =
-           Draw.rect
-             { rect with pos = { x = rect.pos.x +. camera_x; y = rect.pos.y +. camera_y } }
-             Raylib.Color.black
-         in
-
-         List.iter draw_black_rect world_map.black_rects;
-         let draw_ghost_circle radius r g b speed =
-           let ghost_color r g b a = Raylib.Color.create r g b a in
-           Raylib.draw_circle
-             (world_map.ghost_pos.x +. camera_x |> Float.to_int)
-             (world_map.ghost_pos.y +. camera_y |> Float.to_int)
-             radius (ghost_color r g b speed)
-         in
-         let alpha =
-           let n = Config.window.fps * 3 in
-           let m = state.frame.idx * 5 mod n in
-           if m > n / 2 then
-             -m + n
-           else
-             m
-         in
-         if Room.show_ghost_on_map game.room then (
-           draw_ghost_circle 7. 0 0 0 alpha;
-           draw_ghost_circle 5. 255 255 255 alpha);
+         draw_world_map world_map;
          None
        | Some (MENU pause_menu) -> Some (MENU (pause_menu, None))
      in
