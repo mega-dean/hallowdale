@@ -341,6 +341,21 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             STEP (SHAKE_SCREEN 1.5);
             STEP (WAIT 2.5);
           ]
+      | "fight-joshua" ->
+        [
+          ENEMY (JOSHUA, ENTITY UNHIDE);
+          ENEMY (JOSHUA, ENTITY FREEZE);
+          ENEMY (JOSHUA, SET_POSE "clipping");
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (SET_FIXED_CAMERA (20, 44));
+          STEP (WAIT 2.7);
+          ENEMY (JOSHUA, SET_POSE "idle");
+          STEP (WAIT 1.);
+          ENEMY (JOSHUA, SET_POSE "shoot");
+          STEP (WAIT 1.);
+          STEP (UNHIDE_LAYER "boss-doors");
+          ENEMY (JOSHUA, ENTITY UNFREEZE);
+        ]
       | "fight-duncan" ->
         [
           ENEMY (DUNCAN, ENTITY UNHIDE);
@@ -375,7 +390,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (DIALOGUE ("Britta", "They're setting a terrible example for today's young women."));
           STEP
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
-          STEP UNHIDE_BOSS_DOORS;
+          STEP (UNHIDE_LAYER "boss-doors");
           ENEMY (DUNCAN, START_ACTION "jumping");
           ENEMY (DUNCAN, SET_VX Config.interactions.duncan_initial_jump_vx);
           ENEMY (DUNCAN, ENTITY UNFREEZE);
@@ -412,7 +427,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE READING);
           STEP (WAIT 0.7);
-          STEP UNHIDE_BOSS_DOORS;
+          STEP (UNHIDE_LAYER "boss-doors");
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "bg-iso2");
           STEP (UNHIDE_LAYER "bg-iso3");
@@ -520,6 +535,21 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "boss-killed" -> (
       remove_nail := false;
       match trigger.name_suffix with
+      | "JOSHUA" ->
+        let current_ghost_name =
+          match game.player.ghost.id with
+          | TROY -> "Troy"
+          | ABED -> "Abed"
+          | JEFF -> "Jeff"
+          | ANNIE -> "Annie"
+          | BRITTA -> "Britta"
+        in
+        [
+          STEP (DIALOGUE (current_ghost_name, "Oh my god! Joshua was {{red}} racist!"));
+          STEP (HIDE_LAYER "boss-doors");
+          STEP (HIDE_LAYER "boss-doors2");
+          CURRENT_GHOST UNSET_FLOOR;
+        ]
       | "DUNCAN" ->
         [
           ENEMY (DUNCAN, SET_VX 0.);
@@ -598,7 +628,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             STEP SET_GHOST_CAMERA;
             STEP (WAIT 1.4);
             ENEMY (DUNCAN, ENTITY HIDE);
-            STEP HIDE_BOSS_DOORS;
+            STEP (HIDE_LAYER "boss-doors");
             PARTY_GHOST (JEFF, ENTITY HIDE);
             PARTY_GHOST (ANNIE, ENTITY HIDE);
           ]
@@ -606,7 +636,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         [
           PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (157, 31, 0., 0.)));
           PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (156, 33, 0., 0.)));
-          STEP HIDE_BOSS_DOORS;
+          STEP (HIDE_LAYER "boss-doors");
           STEP (WAIT 0.5);
           CURRENT_GHOST (SET_POSE IDLE);
           (* PARTY_GHOST (JEFF, WALK_TO 153);

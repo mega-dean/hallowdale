@@ -6,21 +6,26 @@ let is_alive (enemy : enemy) : bool = not (is_dead enemy)
 
 let parse_name context name : enemy_id =
   match name with
-  | "BIRD" -> BIRD
   | "BAT" -> BAT
+  | "BIRD" -> BIRD
   | "DUNCAN" -> DUNCAN
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
-  | "HIPPIE" -> HIPPIE
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
   | "FLYING_HIPPIE_2" -> FLYING_HIPPIE_2
   | "FROG" -> FROG
+  | "HIPPIE" -> HIPPIE
   | "LOCKER_BOY" -> LOCKER_BOY
   | "MANICORN" -> MANICORN
   | "MANICORN_2" -> MANICORN_2
   | "MANICORN_3" -> MANICORN_3
   | "PENGUIN" -> PENGUIN
-  | "WIRED_ELECTRICITY" -> WIRED_ELECTRICITY
+  | "JOSHUA" -> JOSHUA
+  | "VICE_DEAN_LAYBOURNE" -> VICE_DEAN_LAYBOURNE
+  | "LUIS_GUZMAN" -> LUIS_GUZMAN
+  | "BORCHERT" -> BORCHERT
+  | "DEAN" -> DEAN
+  | "BUDDY" -> BUDDY
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
@@ -142,6 +147,7 @@ let maybe_take_damage
     enemy.status.active <- false;
     enemy.status.check_damage_collisions <- false;
     match enemy.id with
+    | JOSHUA
     | LOCKER_BOY -> Entity.hide enemy.entity
     | FROG ->
       let v =
@@ -157,7 +163,11 @@ let maybe_take_damage
       enemy.status.active <- true;
       set_prop enemy "death_recoil" 1.
     | DUNCAN
-    | WIRED_ELECTRICITY
+    | VICE_DEAN_LAYBOURNE
+    | LUIS_GUZMAN
+    | BORCHERT
+    | DEAN
+    | BUDDY
     | ELECTRICITY ->
       ()
     | PENGUIN
@@ -275,6 +285,9 @@ let should_turn (enemy : enemy) frame_time =
 let face_ghost (enemy : enemy) ~ghost_pos =
   enemy.entity.sprite.facing_right <- ghost_pos.x > rect_center_x enemy.entity.dest
 
+let towards_ghost (enemy : enemy) ~ghost_pos n =
+  if ghost_pos.x > rect_center_x enemy.entity.dest then n else -.n
+
 let still_airborne enemy ~frame_time ~action_time =
   (* check frame_time - action_time so the action doesn't cancel on the first frame *)
   frame_time -. action_time.at < 0.1 || List.length enemy.floor_collisions_this_frame = 0
@@ -295,6 +308,7 @@ module type Loggable = sig
   val still_doing : enemy -> string -> duration:float -> frame_time:float -> bool
 
   val handle_charging :
+    ?frame_props:(string * float) list ->
     enemy ->
     charge_action:t ->
     action:t ->
@@ -329,12 +343,19 @@ module Make_loggable (Actions : Enemy_actions) : Loggable with type t = Actions.
     let started = action_started_at enemy action_name in
     frame_time -. started.at < duration
 
-  let handle_charging (enemy : enemy) ~charge_action ~action ~ghost_pos ~action_time ~frame_time =
+  let handle_charging
+      ?(frame_props = [])
+      (enemy : enemy)
+      ~charge_action
+      ~action
+      ~ghost_pos
+      ~action_time
+      ~frame_time =
     face_ghost enemy ~ghost_pos;
     if frame_time -. action_time.at < get_attr enemy "charge_duration" then
-      Actions.set enemy charge_action ~frame_time
+      Actions.set enemy charge_action ~frame_time ~frame_props:(frame_props |> List.to_string_map)
     else
-      start_and_log enemy action ~frame_time
+      start_and_log enemy action ~frame_time ~frame_props
 
   let maybe_continue (enemy : enemy) ~continue_action ~stop_action ~frame_time still_doing_action =
     if still_doing_action then
@@ -419,7 +440,7 @@ module Duncan_actions = struct
           (* TODO might help to use a prefix like is_ or bool_ for these props that are used as booleans *)
           get_frame_prop "facing_right" = 1.;
         let spawn x_alignment direction =
-          spawn_projectile enemy ~x_alignment ~y_alignment:BOTTOM_INSIDE ~direction
+          spawn_projectile ~scale:1.5 enemy ~x_alignment ~y_alignment:BOTTOM_INSIDE ~direction
             projectile_duration frame_time
         in
         enemy.spawned_projectiles <-
@@ -439,7 +460,6 @@ module Duncan : M = struct
 
   type args = {
     frame_time : float;
-    camera_bounds : bounds;
     boss_area : rect;
     ghost_pos : vector;
   }
@@ -447,7 +467,6 @@ module Duncan : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      camera_bounds = game.room.camera_bounds;
       boss_area = get_boss_area "DUNCAN" game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
@@ -474,6 +493,168 @@ module Duncan : M = struct
           dx /. airtime
         in
         Action.start_and_log enemy JUMP ~frame_time ~frame_props:[ ("random_jump_vx", jump_vx) ])
+end
+
+module Joshua_actions = struct
+  type t =
+    | IDLE
+    | JUMP
+    | CHARGE_SHOOT
+    | SHOOT
+    | CHARGE_DASH
+    | DASH
+
+  let to_string (action : t) : string =
+    match action with
+    | IDLE -> "idle"
+    | JUMP -> "jump"
+    | CHARGE_SHOOT -> "charge-shoot"
+    | SHOOT -> "shoot"
+    | CHARGE_DASH -> "charge-dash"
+    | DASH -> "dash"
+
+  let from_string (s : string) : t =
+    match s with
+    | "idle" -> IDLE
+    | "jump" -> JUMP
+    | "charge-shoot" -> CHARGE_SHOOT
+    | "shoot" -> SHOOT
+    | "charge-dash" -> CHARGE_DASH
+    | "dash" -> DASH
+    | _ -> failwithf "Joshua_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
+    let move_forward vx =
+      enemy.entity.v.x <- (if enemy.entity.sprite.facing_right then vx else -.vx)
+    in
+    let pose_name =
+      match action with
+      | IDLE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "idle"
+      | DASH ->
+        let dash_vx = get_attr enemy "dash_vx" in
+        if enemy.entity.sprite.facing_right then
+          enemy.entity.v.x <- dash_vx
+        else
+          enemy.entity.v.x <- -1. *. dash_vx;
+        "dash"
+      | CHARGE_DASH ->
+        enemy.entity.v.x <- 0.;
+        "charge-dash"
+      | CHARGE_SHOOT ->
+        enemy.entity.v.x <- 0.;
+        "shoot"
+      | SHOOT ->
+        let projectile scale direction vx_scale =
+          let p =
+            spawn_projectile enemy ~scale ~x_alignment:CENTER ~direction ~gravity_multiplier:0.3
+              ~collide_with_floors:true UNTIL_FLOOR_COLLISION frame_time
+          in
+          let is_first = vx_scale = 1. in
+          p.entity.v.x <- p.entity.v.x *. vx_scale;
+          p.entity.v.y <-
+            get_frame_prop (if is_first then "first_projectile_vy" else "second_projectile_vy");
+          p
+        in
+        let new_projectiles =
+          [
+            projectile 2.7 RIGHT 1.;
+            projectile 2.7 RIGHT 2.;
+            projectile 2.7 LEFT 1.;
+            projectile 2.7 LEFT 2.;
+          ]
+        in
+        enemy.spawned_projectiles <- new_projectiles @ enemy.spawned_projectiles;
+        "shoot"
+      | JUMP ->
+        let vx = get_frame_prop ~default:(Some enemy.entity.v.x) "random_jump_vx" in
+        move_forward vx;
+        enemy.entity.v.y <- get_attr enemy "jump_vy";
+        enemy.entity.current_floor <- None;
+        "jump"
+    in
+    set_pose enemy pose_name
+end
+
+module Joshua : M = struct
+  module Action = Make_loggable (Joshua_actions)
+
+  type args = {
+    frame_time : float;
+    boss_area : rect;
+    ghost_pos : vector;
+  }
+
+  let get_args state game : args =
+    {
+      frame_time = state.frame.time;
+      boss_area = get_boss_area "JOSHUA" game;
+      ghost_pos = get_rect_center game.player.ghost.entity.dest;
+    }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+
+    let maybe_start_action () =
+      let actions =
+        if ghost_pos.y < enemy.entity.dest.pos.y then
+          [ (1., `DASH); (1., `SHOOT); (3., `JUMP) ]
+        else if abs_float (ghost_pos.x -. enemy.entity.dest.pos.x) > get_attr enemy "dash_dx" then
+          [ (3., `DASH); (1., `SHOOT); (1., `JUMP) ]
+        else
+          [ (1., `DASH); (1., `SHOOT); (1., `JUMP) ]
+      in
+      match Random.weighted actions with
+      | `DASH -> Action.start_and_log enemy CHARGE_DASH ~frame_time
+      | `SHOOT -> Action.start_and_log enemy CHARGE_SHOOT ~frame_time
+      | `JUMP ->
+        face_ghost enemy ~ghost_pos;
+        Action.start_and_log enemy JUMP ~frame_time
+          ~frame_props:
+            [
+              ( "random_jump_vx",
+                Random.float_between (get_attr enemy "min_jump_vx") (get_attr enemy "max_jump_vx")
+              );
+            ]
+    in
+    let handle_charge ?(frame_props = []) action_time charge_action action =
+      Action.handle_charging enemy ~ghost_pos ~action_time ~charge_action ~action ~frame_time
+        ~frame_props
+    in
+    match enemy.last_performed with
+    | Some ("charge-dash", action_time) -> handle_charge action_time CHARGE_DASH DASH
+    | Some ("dash", action_time) ->
+      let dash_duration = get_attr enemy "dash_duration" in
+      let still_dashing = Action.still_doing enemy "dash" ~duration:dash_duration ~frame_time in
+      Action.maybe_continue enemy ~continue_action:DASH ~stop_action:IDLE ~frame_time still_dashing
+    | Some ("charge-shoot", action_time) ->
+      handle_charge action_time CHARGE_SHOOT SHOOT
+        ~frame_props:
+          [
+            ("first_projectile_vy", Random.float_between (get_attr enemy "min_projectile_vy") 0.);
+            ("second_projectile_vy", Random.float_between (get_attr enemy "min_projectile_vy") 0.);
+          ]
+    | Some ("shoot", action_time) ->
+      let shoot_duration = get_attr enemy "shoot_duration" in
+      let still_shooting = frame_time -. action_time.at < shoot_duration in
+      if still_shooting && Random.bool () then
+        Action.start_and_log enemy CHARGE_SHOOT ~frame_time
+      else
+        Action.start_and_log enemy IDLE ~frame_time
+    | Some ("idle", action_time) ->
+      let idle_duration = get_attr enemy "idle_duration" in
+      let still_idling = Action.still_doing enemy "idle" ~duration:idle_duration ~frame_time in
+      if not still_idling then
+        maybe_start_action ()
+    | Some ("jump", action_time) ->
+      let still_jumping = still_airborne enemy ~frame_time ~action_time in
+      if not still_jumping then
+        maybe_start_action ()
+    | _ -> Action.start_and_log enemy CHARGE_DASH ~frame_time
 end
 
 module Locker_boy_actions = struct
@@ -1450,7 +1631,13 @@ let get_module (id : enemy_id) : (module M) =
   | MANICORN_2
   | MANICORN_3 ->
     (module Manicorn)
-  | WIRED_ELECTRICITY -> failwithf "enemy %s not implemented yet" (Show.enemy_id id)
+  | JOSHUA -> (module Joshua)
+  | LUIS_GUZMAN
+  | BORCHERT
+  | DEAN
+  | BUDDY
+  | VICE_DEAN_LAYBOURNE ->
+    failwithf "enemy %s not implemented yet" (Show.enemy_id id)
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let (module M : M) = get_module enemy.id in
@@ -1474,8 +1661,13 @@ let create_from_rects
       | FROG
       | ELECTRICITY
       | PENGUIN
-      | WIRED_ELECTRICITY
+      | VICE_DEAN_LAYBOURNE
+      | LUIS_GUZMAN
+      | BORCHERT
+      | DEAN
+      | BUDDY
       | HIPPIE
+      | JOSHUA
       | FLYING_HIPPIE
       | BIRD
       | BAT
@@ -1546,12 +1738,17 @@ let create_from_rects
         "MANICORN"
       | MANICORN
       | HIPPIE
+      | JOSHUA
       | FLYING_HIPPIE
       | FISH
       | FROG
       | ELECTRICITY
       | PENGUIN
-      | WIRED_ELECTRICITY
+      | VICE_DEAN_LAYBOURNE
+      | LUIS_GUZMAN
+      | BORCHERT
+      | DEAN
+      | BUDDY
       | BIRD
       | BAT
       | DUNCAN

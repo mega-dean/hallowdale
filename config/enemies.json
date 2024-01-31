@@ -1,5 +1,6 @@
 {
     "enemies": [
+        // bosses
         [ "DUNCAN", {
             "kind": "boss",
             "health": 65,
@@ -94,6 +95,63 @@
             ]
         }],
 
+        [ "JOSHUA", {
+            "kind": "boss",
+            "health": 6,
+            "scale": 3.5,
+            "w": 19,
+            "h": 38,
+            "dream_nail": {},
+            "attrs": [
+                ["dash_vx", 900],
+                ["dash_dx", 500],
+                ["projectile_vx", 400],
+                ["min_projectile_vy", -900],
+                ["min_jump_vx", 200],
+                ["max_jump_vx", 800],
+                ["jump_vy", -1200]
+            ],
+            "unscaled_attrs": [
+                ["dash_duration", 1.2],
+                ["shoot_duration", 1.5],
+                ["idle_duration", 0.8],
+                ["charge_duration", 0.4]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 3,
+                    "y_offset": 6
+                }],
+                ["shoot", {
+                    "x_offset": 7,
+                    "y_offset": 5
+                }],
+                ["jump", {
+                    "x_offset": 9,
+                    "y_offset": 5
+                }],
+                ["charge-dash", {
+                    "x_offset": 8,
+                    "y_offset": 1
+                }],
+                ["dash", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 6
+                }],
+                ["projectile", {
+                }],
+                ["clipping", {
+                    "count": 6,
+                    "duration": 0.2,
+                    "x_offset": 4,
+                    "y_offset": 18
+                }]
+            ]
+        }],
+
+        // enemies
         [ "PENGUIN", {
             "kind": "enemy",
             "health": 150,
@@ -342,34 +400,6 @@
                 ["shock", {
                     "count": 11,
                     "duration": 0.1
-                }]
-            ]
-        }],
-
-        [ "WIRED_ELECTRICITY", {
-            "kind": "enemy",
-            "health": 1,
-            "w": 0,
-            "h": 0,
-            "gravity_multiplier": 0.0,
-            "can_take_damage": false,
-            "dream_nail": {
-                "vulnerable": false
-            },
-            "texture_configs": [
-                ["idle", {
-                    "count": 1,
-                    "duration": 0.2
-                }],
-                ["charging", {
-                    "count": 3,
-                    "duration": 0.2,
-                    "x_offset": 55,
-                    "y_offset": 85
-                }],
-                ["beam", {
-                    "count": 3,
-                    "duration": 0.2
                 }]
             ]
         }],

@@ -548,11 +548,14 @@ let resolve_slash_collisions (state : state) (game : game) =
             (tile_group : tile_group)
             (collision : collision)
             ~(broken : bool)
+            idx
             (entity : entity) =
           let new_fragment = Entity.clone entity in
           let new_pos, new_v =
+            let pos = align (CENTER, TOP_INSIDE) tile_group.dest entity.dest.w entity.dest.h in
+            let pos' = { pos with y = pos.y +. Random.float (tile_group.dest.h /. 2.) } in
             if broken then
-              ( align (CENTER, TOP_INSIDE) tile_group.dest entity.dest.w entity.dest.h,
+              ( pos',
                 { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () } )
             else (
               let door_is_vertical = tile_group.dest.h > tile_group.dest.w in
@@ -605,7 +608,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             Audio.play_sound state "alarmswitch";
             Audio.play_sound state "punch");
           layer.spawned_fragments <-
-            List.map (spawn_fragment tile_group collision ~broken:true) tile_group.fragments
+            List.mapi (spawn_fragment tile_group collision ~broken:true) tile_group.fragments
             @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
@@ -652,7 +655,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                   let make_random_fragment _n = List.sample tile_group.fragments in
                   let random_fragments = List.init (Random.int_between 2 4) make_random_fragment in
                   layer.spawned_fragments <-
-                    List.map (spawn_fragment tile_group coll ~broken:false) random_fragments
+                    List.mapi (spawn_fragment tile_group coll ~broken:false) random_fragments
                     @ layer.spawned_fragments;
                   door_health.hits <- door_health.hits - 1;
                   Audio.play_sound state "alarmswitch";
@@ -1698,8 +1701,6 @@ let tick (game : game) (state : state) =
           | SET_CAMERA_MOTION motion -> state.camera.motion <- motion
           | SET_GHOST_CAMERA -> set_ghost_camera ()
           | WAIT time -> new_wait := time -. state.frame.dt
-          | HIDE_BOSS_DOORS -> set_layer_hidden "boss-doors" true
-          | UNHIDE_BOSS_DOORS -> set_layer_hidden "boss-doors" false
           | HIDE_LAYER layer_name -> set_layer_hidden layer_name true
           | UNHIDE_LAYER layer_name -> set_layer_hidden layer_name false
           | SPAWN_VENGEFUL_SPIRIT (direction, end_tile_x, end_tile_y) ->

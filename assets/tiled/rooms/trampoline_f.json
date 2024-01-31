@@ -581,7 +581,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -807,10 +807,43 @@
                  "width":17,
                  "x":327,
                  "y":687
+                }, 
+                {
+                 "height":79,
+                 "id":51,
+                 "name":"cutscene:fight-joshua",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":54,
+                 "x":569,
+                 "y":504
+                }, 
+                {
+                 "height":51,
+                 "id":54,
+                 "name":"hidden-enemy:JOSHUA",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":54,
+                 "x":63,
+                 "y":525
+                }, 
+                {
+                 "height":222,
+                 "id":55,
+                 "name":"boss-area:JOSHUA",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":591,
+                 "x":52,
+                 "y":350
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1100,7 +1133,7 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
          "height":62,
          "id":21,
-         "name":"boss-doors",
+         "name":"boss-doors2",
          "opacity":1,
          "type":"tilelayer",
          "visible":false,
@@ -1471,7 +1504,7 @@
          "parallaxx":0,
          "parallaxy":0,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":104,
          "x":0,
          "y":0
@@ -1550,7 +1583,7 @@
          "y":0
         }],
  "nextlayerid":23,
- "nextobjectid":50,
+ "nextobjectid":56,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

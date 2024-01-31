@@ -348,7 +348,6 @@ type enemy_id =
   | FROG
   | ELECTRICITY
   | PENGUIN
-  | WIRED_ELECTRICITY
   | HIPPIE
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2
@@ -360,6 +359,12 @@ type enemy_id =
   (* bosses *)
   | DUNCAN
   | LOCKER_BOY
+  | JOSHUA
+  | VICE_DEAN_LAYBOURNE
+  | LUIS_GUZMAN
+  | BORCHERT
+  | DEAN
+  | BUDDY
 
 type weapon = {
   name : string;
@@ -488,8 +493,6 @@ module Interaction = struct
     (* layers *)
     | HIDE_LAYER of string
     | UNHIDE_LAYER of string
-    | HIDE_BOSS_DOORS
-    | UNHIDE_BOSS_DOORS
 
   type entity_step =
     | SET_FACING of direction

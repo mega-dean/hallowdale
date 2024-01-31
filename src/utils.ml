@@ -111,6 +111,19 @@ module Random = struct
     else
       int (upper - lower) + lower
 
+  let weighted (xs : (float * 'a) list) : 'a =
+    let total = xs |> List.map fst |> List.fold_left ( +. ) 0. in
+    let rand = float total in
+    let sum', res' = List.hd xs in
+    let sum, res = (ref sum', ref res') in
+    let check (weight, x) =
+      if rand > !sum then
+        res := x;
+      sum := !sum +. weight
+    in
+    List.iter check (List.tl xs);
+    !res
+
   let in_rect_x (rect : rect) = float_between rect.pos.x (rect.pos.x +. rect.w)
   let in_rect_y (rect : rect) = float_between rect.pos.y (rect.pos.y +. rect.h)
 end

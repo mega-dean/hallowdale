@@ -370,21 +370,26 @@ let damage_kind (d : damage_kind) : string =
 
 let enemy_id (e : enemy_id) : string =
   match e with
-  | BIRD -> "BIRD"
   | BAT -> "BAT"
+  | BIRD -> "BIRD"
+  | BORCHERT -> "BORCHERT"
+  | BUDDY -> "BUDDY"
+  | DEAN -> "DEAN"
   | DUNCAN -> "DUNCAN"
   | ELECTRICITY -> "ELECTRICITY"
   | FISH -> "FISH"
-  | HIPPIE -> "HIPPIE"
   | FLYING_HIPPIE -> "FLYING_HIPPIE"
   | FLYING_HIPPIE_2 -> "FLYING_HIPPIE_2"
   | FROG -> "FROG"
+  | HIPPIE -> "HIPPIE"
+  | JOSHUA -> "JOSHUA"
+  | LUIS_GUZMAN -> "LUIS_GUZMAN"
   | LOCKER_BOY -> "LOCKER_BOY"
   | MANICORN -> "MANICORN"
   | MANICORN_2 -> "MANICORN_2"
   | MANICORN_3 -> "MANICORN_3"
   | PENGUIN -> "PENGUIN"
-  | WIRED_ELECTRICITY -> "WIRED_ELECTRICITY"
+  | VICE_DEAN_LAYBOURNE -> "VICE_DEAN_LAYBOURNE"
 
 let enemy_name (enemy : enemy) = fmt "enemy(%s)" (entity enemy.entity)
 let enemy (enemy : enemy) = fmt "%s %s" (enemy_id enemy.id) (enemy_name enemy)
@@ -548,8 +553,6 @@ let interaction_step (step : Interaction.step) : string =
   | STEP (SET_CAMERA_MOTION _) -> "(SET_CAMERA_MOTION _)"
   | STEP (HIDE_LAYER _) -> "(HIDE_LAYER _)"
   | STEP (UNHIDE_LAYER _) -> "(UNHIDE_LAYER _)"
-  | STEP HIDE_BOSS_DOORS -> "HIDE_BOSS_DOORS"
-  | STEP UNHIDE_BOSS_DOORS -> "UNHIDE_BOSS_DOORS ->"
   | CURRENT_GHOST FILL_LIFE_VAPOR -> "GHOST FILL_LIFE_VAPOR"
   | CURRENT_GHOST (CLAIM_REWARD _) -> "GHOST CLAIM_REWARD"
   | CURRENT_GHOST (INCREASE_HEALTH_TEXT _) -> "GHOST (INCREASE_HEALTH_TEXT _)"
