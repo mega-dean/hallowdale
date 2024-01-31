@@ -280,23 +280,35 @@ let init () : state =
 
 (* return value is "keep spawned" *)
 let update_projectile (projectile : projectile) (room : room) (state : state) : bool =
-  let collisions =
-    Entity.update_pos ~apply_floor_collisions:projectile.collide_with_floors room state.frame.dt
-      projectile.entity
-  in
-  let despawn_projectile =
-    match projectile.despawn with
-    | X_BOUNDS (min_x, max_x) ->
-      projectile.entity.dest.pos.x < min_x -. Config.window.center.x
-      || projectile.entity.dest.pos.x > max_x +. Config.window.center.x
-    | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
-    | UNTIL_FLOOR_COLLISION -> List.length collisions > 0
-  in
-  if despawn_projectile then
-    false
-  else (
-    Sprite.advance_animation state.frame.time projectile.entity.sprite;
+  if projectile.entity.frozen then (
+    if projectile.despawn <> UNTIL_FLOOR_COLLISION then
+      failwithf "frozen projectiles need despawn UNTIL_FLOOR_COLLISION, but %s has despawn %s"
+        (Show.entity projectile.entity)
+        (Show.projectile_despawn projectile.despawn);
     true)
+  else (
+    let collisions =
+      Entity.update_pos ~_debug:true ~apply_floor_collisions:projectile.collide_with_floors room
+        state.frame.dt projectile.entity
+    in
+    let despawn_projectile =
+      match projectile.despawn with
+      | X_BOUNDS (min_x, max_x) ->
+        projectile.entity.dest.pos.x < min_x -. Config.window.center.x
+        || projectile.entity.dest.pos.x > max_x +. Config.window.center.x
+      | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
+      | DETONATE (d, new_projectiles) ->
+        let despawn = state.frame.time -. projectile.spawned.at > d.seconds in
+        if despawn then
+          List.iter (fun (p : projectile) -> Entity.unfreeze p.entity) new_projectiles;
+        despawn
+      | UNTIL_FLOOR_COLLISION -> List.length collisions > 0
+    in
+    if despawn_projectile then
+      false
+    else (
+      Sprite.advance_animation state.frame.time projectile.entity.sprite;
+      true))
 
 (* this is for inanimate objects like jug fragments or door levers *)
 let update_environment (game : game) (state : state) =
@@ -497,7 +509,7 @@ let update_enemies (game : game) (state : state) =
     List.iter update_projectile' enemy.spawned_projectiles;
     enemy.spawned_projectiles <- !unremoved_projectiles;
     enemy.floor_collisions_this_frame <-
-      Entity.update_pos ~_debug:true
+      Entity.update_pos
         ~gravity_multiplier_override:
           (if Enemy.is_dead enemy then
              Some enemy.json.death_gravity_multiplier

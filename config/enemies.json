@@ -3,7 +3,7 @@
         // bosses
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 65,
+            "health": 5,
             "scale": 2.5,
             "w": 19,
             "h": 45,
@@ -19,8 +19,9 @@
             ],
             "texture_configs": [
                 ["idle", {
-                    "count": 1,
-                    "duration": 0.0,
+                    "x_offset": 2
+                }],
+                ["idle-dead", {
                     "x_offset": 2
                 }],
                 ["jumping", {
@@ -34,6 +35,12 @@
                     "x_offset": 6,
                     "y_offset": 1
                 }],
+                ["walking-dead", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 6,
+                    "y_offset": 1
+                }],
                 ["projectile", {
                     "count": 1,
                     "duration": 0.0
@@ -41,6 +48,9 @@
                 ["scavenging", {
                     "count": 4,
                     "duration": 0.2,
+                    "x_offset": 20
+                }],
+                ["scavenging-dead", {
                     "x_offset": 20
                 }]
             ]
@@ -91,13 +101,17 @@
                     "duration": 0.05,
                     "x_offset": 2,
                     "y_offset": 4
+                }],
+                ["dead", {
+                    "x_offset": 8,
+                    "y_offset": -22
                 }]
             ]
         }],
 
         [ "JOSHUA", {
             "kind": "boss",
-            "health": 6,
+            "health": 680,
             "scale": 3.5,
             "w": 19,
             "h": 38,
@@ -123,7 +137,9 @@
                     "y_offset": 6
                 }],
                 ["shoot", {
-                    "x_offset": 7,
+                    "count": 4,
+                    "duration": 0.01,
+                    "x_offset": 8,
                     "y_offset": 5
                 }],
                 ["jump", {
@@ -147,9 +163,96 @@
                     "duration": 0.2,
                     "x_offset": 4,
                     "y_offset": 18
+                }],
+                ["dead", {
+                    "x_offset": 5,
+                    "y_offset": -17
                 }]
             ]
         }],
+
+        [ "DEAN", {
+            "kind": "boss",
+            "health": 800,
+            "scale": 2.5,
+            "w": 17,
+            "h": 35,
+            "dream_nail": {},
+            "attrs": [
+                ["swarm_padding", 200],
+                ["spike_core_offset_x", 20],
+                ["spike_core_offset_y", 60],
+                ["spike_w", 15],
+                ["spike_vx", 500],
+                ["spike_min_y", 100],
+                ["spike_max_y", 300],
+                ["lunge_dx", 400],
+                ["lunge_vx", 1000],
+                ["max_swarm_projectile_vx", 300],
+                ["swarm_projectile_vy", 800],
+                ["swarm_projectile_y_spacing", 200],
+                ["min_jump_vx", 200],
+                ["max_jump_vx", 1400],
+                ["jump_vy", -1200],
+                ["walk_vx", 400]
+            ],
+            "unscaled_attrs": [
+                ["swarm_projectile_duration", 4],
+                ["idle_duration", 1.0],
+                ["lunge_duration", 0.5],
+                ["spikes_duration", 1.0],
+                ["swarm_duration", 1.4],
+                ["charge_duration", 0.4]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 2,
+                    "y_offset": 2
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 7,
+                    "y_offset": 3
+                }],
+                ["charge-lunge", {
+                    "x_offset": 9,
+                    "y_offset": -2
+                }],
+                ["lunge", {
+                    "count": 2,
+                    "duration": 0.1,
+                    "x_offset": 11,
+                    "y_offset": 2
+                }],
+                ["swarm", {
+                    "count": 4,
+                    "duration": 0.01,
+                    "x_offset": 4,
+                    "y_offset": 2
+                }],
+                ["swarm-projectile", {}],
+                ["spike-projectile", {}],
+                ["spikes", {
+                    "x_offset": 7,
+                    "y_offset": 2
+                }],
+                ["dead", {
+                    "x_offset": 6,
+                    "y_offset": -16
+                }],
+                ["jump", {
+                    "x_offset": 7,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
+        // FIXME
+        // BUDDY
+        // LUIS_GUZMAN
+        // BORCHERT
+        // VICE_DEAN_LAYBOURNE
 
         // enemies
         [ "PENGUIN", {

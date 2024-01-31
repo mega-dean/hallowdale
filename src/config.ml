@@ -208,7 +208,7 @@ type action_config = {
 }
 
 let action : action_config =
-  let vengeful_spirit_vx = 1000. *. window_scale in
+  let vengeful_spirit_vx = 1200. *. window_scale in
   {
     soul_per_cast = 33;
     spell_twister_soul_per_cast = 24;

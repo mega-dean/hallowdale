@@ -343,18 +343,34 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           ]
       | "fight-joshua" ->
         [
+          CURRENT_GHOST (PARTY (WALK_TO 49));
+          CURRENT_GHOST (SET_POSE IDLE);
           ENEMY (JOSHUA, ENTITY UNHIDE);
           ENEMY (JOSHUA, ENTITY FREEZE);
           ENEMY (JOSHUA, SET_POSE "clipping");
-          CURRENT_GHOST (SET_POSE IDLE);
           STEP (SET_FIXED_CAMERA (20, 44));
           STEP (WAIT 2.7);
           ENEMY (JOSHUA, SET_POSE "idle");
           STEP (WAIT 1.);
           ENEMY (JOSHUA, SET_POSE "shoot");
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          ENEMY (JOSHUA, ENTITY UNFREEZE);
+        ]
+      | "fight-dean" ->
+        [
+          CURRENT_GHOST (PARTY (WALK_TO 43));
+          CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (DEAN, ENTITY UNHIDE);
+          ENEMY (DEAN, ENTITY UNFREEZE);
+          ENEMY (DEAN, SET_POSE "idle");
+          ENEMY (DEAN, ENTITY (SET_FACING LEFT));
+          ENEMY (DEAN, WALK_TO 70);
+          STEP (WAIT 0.7);
+          ENEMY (DEAN, SET_POSE "spikes");
           STEP (WAIT 1.);
           STEP (UNHIDE_LAYER "boss-doors");
-          ENEMY (JOSHUA, ENTITY UNFREEZE);
+          ENEMY (DEAN, ENTITY UNFREEZE);
         ]
       | "fight-duncan" ->
         [
@@ -535,6 +551,18 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "boss-killed" -> (
       remove_nail := false;
       match trigger.name_suffix with
+      | "DEAN" ->
+        [
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.7);
+          STEP
+            (DIALOGUE
+               ( "Dean",
+                 "So after all my work, how will I be remembered? The bald dean with glasses, I \
+                  guess." ));
+          STEP (HIDE_LAYER "boss-doors");
+        ]
       | "JOSHUA" ->
         let current_ghost_name =
           match game.player.ghost.id with
@@ -545,10 +573,13 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           | BRITTA -> "Britta"
         in
         [
-          STEP (DIALOGUE (current_ghost_name, "Oh my god! Joshua was {{red}} racist!"));
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.7);
+          STEP (DIALOGUE (current_ghost_name, "Oh my god! Joshua was {{red}} racist! {{white}} That came out of nowhere!"));
           STEP (HIDE_LAYER "boss-doors");
-          STEP (HIDE_LAYER "boss-doors2");
-          CURRENT_GHOST UNSET_FLOOR;
+          CURRENT_GHOST (ENTITY UNSET_FLOOR);
+          ENEMY (JOSHUA, ENTITY UNSET_FLOOR);
         ]
       | "DUNCAN" ->
         [
@@ -564,7 +595,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           ENEMY (DUNCAN, SET_VX Config.interactions.duncan_chair_jump_vx);
           ENEMY (DUNCAN, START_ACTION "jumping");
           STEP (WAIT 1.2);
-          ENEMY (DUNCAN, SET_POSE "scavenging");
+          ENEMY (DUNCAN, SET_POSE "scavenging-dead");
           ENEMY (DUNCAN, ENTITY FREEZE);
           STEP (HIDE_LAYER "bg-iso4");
           STEP (UNHIDE_LAYER "bg-iso5");
@@ -575,7 +606,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.5);
           STEP (SET_FIXED_CAMERA (33, 33));
           STEP (WAIT 0.5);
-          ENEMY (DUNCAN, SET_POSE "idle");
+          ENEMY (DUNCAN, SET_POSE "idle-dead");
           ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
         ]
         @ get_ability_steps "vengeful_spirit" 0. 1.
@@ -596,7 +627,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                  ( "Duncan",
                    "This is why the English never win any sports - because everyone else cheats!" ));
             ENEMY (DUNCAN, ENTITY UNFREEZE);
-            ENEMY (DUNCAN, WALK_TO 7);
+            ENEMY (DUNCAN, DEAD_WALK_TO 7);
             STEP (WAIT 0.2);
             STEP (DIALOGUE ("Annie", "Britta, there you are."));
             PARTY_GHOST (JEFF, SET_POSE CRAWLING);

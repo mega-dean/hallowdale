@@ -1,29 +1,65 @@
-# study room
-  "ghost_x": 879.4006835073233,
-  "ghost_y": 1300.0,
-  "room_name": "library_d",
+# shirley island
+  "ghost_x": 5018.048309579492,
+  "ghost_y": 3424.0,
+  "room_name": "forgotten_a",
 
-# soul master room
-  "ghost_x": 3170.310712426901,
-  "ghost_y": 976.0,
-  "room_name": "trampoline_f",
+## vents
+# forgotten classrooms
+  "ghost_x": 8156.79625954479,
+  "ghost_y": 364.0,
+  "room_name": "forgotten_g",
 
-# archives
-  "ghost_x": 2756.9766868799925,
-  "ghost_y": 1732.0,
-  "room_name": "library_b",
+# trampolinepath
+  "ghost_x": 2568.411524966359,
+  "ghost_y": 3460.0,
+  "room_name": "trampoline_e",
 
 # ac repair vent
   "ghost_x": 6216.943919539452,
   "ghost_y": 4252.0,
   "room_name": "ac-repair_d",
 
-# locker boys fight
+# outlands
+  "ghost_x": 3949.1969349086285,
+  "ghost_y": 3028.0,
+  "room_name": "outlands_d",
+
+# basement
+
+# cpu wing
+  "ghost_x": 1464.7114586755633,
+  "ghost_y": 868.0,
+  "room_name": "computer_c",
+
+## abilities
+# double bouncies
+  "ghost_x": 1465.354634359479,
+  "ghost_y": 1372.0,
+  "room_name": "trampoline_d",
+
+## boss fights
+# joshua
+  "ghost_x": 3170.310712426901,
+  "ghost_y": 976.0,
+  "room_name": "trampoline_f",
+
+# locker boys
   "ghost_x": 3727.6010965034366,
   "ghost_y": 1192.0,
   "room_name": "infected_b",
 
-# shirley island
-  "ghost_x": 5018.048309579492,
-  "ghost_y": 3424.0,
-  "room_name": "forgotten_a",
+# dean
+  "ghost_x": 1240.0320297256112,
+  "ghost_y": 2380.0,
+  "room_name": "forgotten_h",
+
+# buddy
+  "ghost_x": 879.4006835073233,
+  "ghost_y": 1300.0,
+  "room_name": "library_d",
+
+# luis guzman (archives)
+  "ghost_x": 2756.9766868799925,
+  "ghost_y": 1732.0,
+  "room_name": "library_b",
+

@@ -495,6 +495,7 @@ module Interaction = struct
     | UNHIDE_LAYER of string
 
   type entity_step =
+    | UNSET_FLOOR
     | SET_FACING of direction
     | WAIT_UNTIL_LANDED
     | HIDE
@@ -532,12 +533,13 @@ module Interaction = struct
       *)
       SET_POSE of ghost_pose
     | ADD_ITEM of item_kind
-    | UNSET_FLOOR
     | ENTITY of entity_step
     | PARTY of party_ghost_step
 
   type enemy_step =
     | WALK_TO of int
+    (* this is only used for DUNCAN *)
+    | DEAD_WALK_TO of int
     | SET_VX of float
     | SET_POSE of string
     | START_ACTION of string
@@ -641,15 +643,16 @@ module Enemy_action = struct
   module Map = Map.Make (Enemy_action')
 end
 
-type projectile_duration =
+type projectile_despawn =
   | TIME_LEFT of duration
+  | DETONATE of duration * projectile list
   | X_BOUNDS of float * float
   | UNTIL_FLOOR_COLLISION
 
-type projectile = {
+and projectile = {
   entity : entity;
-  (* TODO maybe make this a list of projectile_durations *)
-  mutable despawn : projectile_duration;
+  (* TODO maybe make this a list of projectile_despawns *)
+  mutable despawn : projectile_despawn;
   spawned : time;
   pogoable : bool;
   collide_with_floors : bool;

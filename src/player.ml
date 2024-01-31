@@ -555,8 +555,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             let pos = align (CENTER, TOP_INSIDE) tile_group.dest entity.dest.w entity.dest.h in
             let pos' = { pos with y = pos.y +. Random.float (tile_group.dest.h /. 2.) } in
             if broken then
-              ( pos',
-                { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () } )
+              (pos', { x = Config.random_fragment_vx (); y = Config.random_fragment_vy () })
             else (
               let door_is_vertical = tile_group.dest.h > tile_group.dest.w in
               let randomize pos half = pos +. Random.float_between (-.half) half in
@@ -1739,6 +1738,7 @@ let tick (game : game) (state : state) =
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =
           match entity_step with
+          | UNSET_FLOOR -> entity.current_floor <- None
           | SET_FACING direction -> Entity.set_facing_right entity direction
           | WAIT_UNTIL_LANDED ->
             if Option.is_none entity.current_floor then
@@ -1885,7 +1885,6 @@ let tick (game : game) (state : state) =
             game.interaction.use_dashes_in_archives <- Some false;
             game.interaction.text <- Some (PLAIN [ str ])
           | ADD_ITEM item_kind -> add_item item_kind
-          | UNSET_FLOOR -> game.player.ghost.entity.current_floor <- None
           | ENTITY entity_step -> handle_entity_step player.ghost.entity entity_step
           | PARTY party_step ->
             handle_party_ghost_step player.ghost.id (as_party_ghost player) party_step
@@ -1902,22 +1901,26 @@ let tick (game : game) (state : state) =
             else
               fn (List.hd enemies)
           in
-          match enemy_step with
-          | WALK_TO target_tile_x ->
+          let walk_to target_tile_x dead =
             apply_to_only "WALK_TO" (fun (enemy : enemy) ->
                 let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
                 let dist = (tile.x *. Config.scale.room) -. enemy.entity.dest.pos.x in
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
                 still_walking := abs_float dist > 10.;
+                let action_name = if dead then "walking-dead" else "walking" in
                 if not !still_walking then (
                   enemy.entity.v.x <- 0.;
                   Enemy.set_pose enemy "idle")
                 else if dist > 0. then (
                   enemy.entity.sprite.facing_right <- true;
-                  M.Action.set enemy (M.Action.from_string "walking") ~frame_time:state.frame.time)
+                  M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time)
                 else (
                   enemy.entity.sprite.facing_right <- false;
-                  M.Action.set enemy (M.Action.from_string "walking") ~frame_time:state.frame.time))
+                  M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time))
+          in
+          match enemy_step with
+          | DEAD_WALK_TO target_tile_x -> walk_to target_tile_x true
+          | WALK_TO target_tile_x -> walk_to target_tile_x false
           | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
           | SET_POSE pose_name ->
             apply_to_all (fun (enemy : enemy) ->
@@ -2511,7 +2514,7 @@ let tick (game : game) (state : state) =
       in
       let still_wall_sliding = Option.is_some game.player.current.wall in
       if game.player.abilities.mantis_claw then
-        if !stop_wall_sliding then
+        if !stop_wall_sliding || Option.is_some game.player.ghost.entity.current_floor then
           game.player.current.wall <- None
         else if still_wall_sliding then (
           let wall = Option.get game.player.current.wall in
@@ -2523,10 +2526,7 @@ let tick (game : game) (state : state) =
           else (
             let dx =
               (* can't check sprite.facing_right because it gets updated for the frame based on input, so it depends on whether a direction is being held *)
-              if Entity.get_center game.player.ghost.entity > get_rect_center wall then
-                -1.
-              else
-                1.
+              if Entity.get_center game.player.ghost.entity > get_rect_center wall then -1. else 1.
             in
             game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x +. dx;
             match

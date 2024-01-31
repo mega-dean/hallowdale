@@ -558,7 +558,7 @@ let interaction_step (step : Interaction.step) : string =
   | CURRENT_GHOST (INCREASE_HEALTH_TEXT _) -> "GHOST (INCREASE_HEALTH_TEXT _)"
   | CURRENT_GHOST (SET_POSE _) -> "GHOST (SET_POSE _)"
   | CURRENT_GHOST (ADD_ITEM _) -> "GHOST (ADD_ITEM _)"
-  | CURRENT_GHOST UNSET_FLOOR -> "GHOST UNSET_FLOOR"
+  (* | CURRENT_GHOST UNSET_FLOOR -> "GHOST UNSET_FLOOR" *)
   | CURRENT_GHOST (ENTITY _) -> "GHOST (ENTITY _)"
   | CURRENT_GHOST (PARTY _) -> "GHOST (PARTY _) ->"
   | PARTY_GHOST (_, _)
@@ -570,3 +570,10 @@ let reward (reward : Interaction.reward) : string =
   match reward with
   | Interaction.INCREASE_MAX_SOUL -> "increased maximum {{blue}} LIFE VAPOR."
   | Interaction.ABILITY (name, desc) -> fmt "{{blue}} %s: {{white}} %s" name desc
+
+let projectile_despawn (despawn : projectile_despawn) : string =
+  match despawn with
+  | TIME_LEFT _ -> "TIME_LEFT"
+  | DETONATE (_, _) -> "DETONATE"
+  | X_BOUNDS (_, _) -> "X_BOUNDS"
+  | UNTIL_FLOOR_COLLISION -> "UNTIL_FLOOR_COLLISION"

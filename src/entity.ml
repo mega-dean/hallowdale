@@ -38,10 +38,7 @@ let recoil (entity : entity) (direction : direction) =
 let ascending (entity : entity) = entity.v.y < 0.
 let descending (entity : entity) = entity.v.y > 0.
 
-let freeze (entity : entity) =
-  entity.v <- Zero.vector ();
-  entity.frozen <- true
-
+let freeze (entity : entity) = entity.frozen <- true
 let unfreeze (entity : entity) = entity.frozen <- false
 
 let move_offscreen (entity : entity) =
@@ -66,26 +63,27 @@ let unhide_at (entity : entity) (pos : vector) =
 let hidden (entity : entity) : bool = entity.dest.pos.x < 0. && entity.dest.pos.y < 0.
 
 let apply_v ?(debug = None) dt (entity : entity) =
-  (match entity.y_recoil with
-  | None -> entity.dest.pos.y <- entity.dest.pos.y +. (entity.v.y *. dt)
-  | Some recoil ->
-    if recoil.reset_v then
-      entity.v.y <- 0.;
-    entity.dest.pos.y <- entity.dest.pos.y +. (recoil.speed *. dt);
-    if recoil.time_left.seconds > 0. then
-      recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
-    else
-      entity.y_recoil <- None);
-  match entity.x_recoil with
-  | None -> entity.dest.pos.x <- entity.dest.pos.x +. (entity.v.x *. dt)
-  | Some recoil ->
-    if recoil.reset_v then
-      entity.v.x <- 0.;
-    entity.dest.pos.x <- entity.dest.pos.x +. (recoil.speed *. dt);
-    if recoil.time_left.seconds > 0. then
-      recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
-    else
-      entity.x_recoil <- None
+  if entity.frozen then () else (
+    (match entity.y_recoil with
+     | None -> entity.dest.pos.y <- entity.dest.pos.y +. (entity.v.y *. dt)
+     | Some recoil ->
+       if recoil.reset_v then
+         entity.v.y <- 0.;
+       entity.dest.pos.y <- entity.dest.pos.y +. (recoil.speed *. dt);
+       if recoil.time_left.seconds > 0. then
+         recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
+       else
+         entity.y_recoil <- None);
+    match entity.x_recoil with
+    | None -> entity.dest.pos.x <- entity.dest.pos.x +. (entity.v.x *. dt)
+    | Some recoil ->
+      if recoil.reset_v then
+        entity.v.x <- 0.;
+      entity.dest.pos.x <- entity.dest.pos.x +. (recoil.speed *. dt);
+      if recoil.time_left.seconds > 0. then
+        recoil.time_left <- { seconds = recoil.time_left.seconds -. dt }
+      else
+        entity.x_recoil <- None)
 
 let get_rect_collisions (entity : entity) (rects : rect list) : collision list =
   let collisions : collision list ref = ref [] in

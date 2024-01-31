@@ -161,12 +161,10 @@ let update_pause_menu (game : game) (state : state) : state =
   if state.frame_inputs.pause.pressed then (
     match state.pause_menu with
     | None ->
-      tmp "pressed pause with None";
       Audio.play_sound state "menu-expand";
       state.pause_menu <-
         Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
     | Some _ ->
-      tmp "pressed pause with Some";
       Audio.play_sound state "menu-close";
       state.pause_menu <- None)
   else if state.frame_inputs.open_map.pressed then (
