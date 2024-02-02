@@ -357,6 +357,20 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.);
           ENEMY (JOSHUA, ENTITY UNFREEZE);
         ]
+      | "fight-vice-dean-laybourne" ->
+        [
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNHIDE);
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
+          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "idle");
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY (SET_FACING LEFT));
+          CURRENT_GHOST (PARTY (WALK_TO 87));
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.7);
+          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "lunge");
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
+        ]
       | "fight-dean" ->
         [
           CURRENT_GHOST (PARTY (WALK_TO 43));
@@ -551,6 +565,25 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "boss-killed" -> (
       remove_nail := false;
       match trigger.name_suffix with
+      | "VICE_DEAN_LAYBOURNE" ->
+        let facing =
+          let boss = List.hd game.room.enemies in
+          if rect_center_x boss.entity.dest < rect_center_x game.player.ghost.entity.dest then
+            RIGHT
+          else
+            LEFT
+        in
+        [
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY (SET_FACING facing));
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 1.5);
+          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "dead-head-up");
+          STEP (WAIT 1.5);
+          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "dead");
+          STEP (WAIT 1.);
+          STEP (HIDE_LAYER "boss-doors");
+        ]
       | "DEAN" ->
         [
           STEP (WAIT 0.7);
@@ -576,7 +609,10 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE IDLE);
           STEP (WAIT 0.7);
-          STEP (DIALOGUE (current_ghost_name, "Oh my god! Joshua was {{red}} racist! {{white}} That came out of nowhere!"));
+          STEP
+            (DIALOGUE
+               ( current_ghost_name,
+                 "Oh my god! Joshua was {{red}} racist! {{white}} That came out of nowhere!" ));
           STEP (HIDE_LAYER "boss-doors");
           CURRENT_GHOST (ENTITY UNSET_FLOOR);
           ENEMY (JOSHUA, ENTITY UNSET_FLOOR);

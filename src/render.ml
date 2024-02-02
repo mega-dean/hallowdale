@@ -663,7 +663,7 @@ let tick (state : state) =
       List.iter draw_black_rect world_map.black_rects;
       if Room.show_ghost_on_map game.room then (
         draw_ghost_circle 7. 0 0 0 alpha;
-        draw_ghost_circle 5. 255 255 255 alpha);
+        draw_ghost_circle 5. 255 255 255 alpha)
     in
 
     let draw_object_trigger_indicators () =
@@ -830,6 +830,7 @@ let tick (state : state) =
     let get_flashing_tint d = 25 * (((d *. 100. |> Float.to_int) mod 8) + 2) in
 
     let draw_enemies (enemies : enemy list) =
+      let projectiles_on_top = ref [] in
       List.iter
         (fun (e : enemy) ->
           if state.debug.enabled then (
@@ -846,9 +847,16 @@ let tick (state : state) =
                 Color.white
             in
             draw_entity ~tint e.entity;
-            List.iter draw_projectile e.spawned_projectiles;
+            let maybe_draw projectile =
+              if projectile.draw_on_top then
+                projectiles_on_top := [ projectile ] @ !projectiles_on_top
+              else
+                draw_projectile projectile
+            in
+            List.iter maybe_draw e.spawned_projectiles;
             List.iter draw_sprite e.damage_sprites))
-        enemies
+        enemies;
+      !projectiles_on_top
     in
 
     let draw_npcs (npcs : npc list) =
@@ -1050,9 +1058,9 @@ let tick (state : state) =
       let row n =
         camera_y +. Config.other.progress_y_padding +. (n *. line_height ~font_scale:2. ())
       in
-      let draw_progress' idx (label, found, count) =
+      let draw_progress' idx (label, found, count, suffix) =
         Draw.text
-          (fmt "%s: %d / %d" label found count)
+          (fmt "%s: %d / %d  %s" label found count suffix)
           { x = camera_x +. Config.other.progress_x_padding; y = row (idx |> Int.to_float) }
       in
       let abilities =
@@ -1085,11 +1093,14 @@ let tick (state : state) =
       let total_dreamer_items = count_lore "dreamer" in
       let rows =
         [
-          ("Weapons", weapons, total_weapons);
-          ("Abilities", abilities, total_abilities);
-          ("Keys", keys, total_keys);
-          ("Purple Pens", pens, total_pens);
-          ("Dreamer Items", dreamer_items, total_dreamer_items);
+          ( "Weapons",
+            weapons,
+            total_weapons,
+            fmt "  (damage: %d)" (Player.get_nail_damage game.player) );
+          ("Abilities", abilities, total_abilities, "");
+          ("Keys", keys, total_keys, "");
+          ("Purple Pens", pens, total_pens, "");
+          ("Dreamer Items", dreamer_items, total_dreamer_items, "");
         ]
       in
       List.iteri draw_progress' rows;
@@ -1125,11 +1136,12 @@ let tick (state : state) =
     draw_solid_tiles game.room camera_x camera_y state;
     draw_party_ghosts game.party;
     draw_player game.player;
-    draw_enemies game.room.enemies;
+    let enemy_projectiles = draw_enemies game.room.enemies in
     draw_floating_platforms game.room state.frame.idx;
     draw_object_trigger_indicators ();
     draw_loose_projectiles ();
     draw_fg_tiles game.room camera_x camera_y state;
+    List.iter draw_projectile enemy_projectiles;
     if game.room.area.id = CITY_OF_CHAIRS then (
       let draw (sprite : sprite) =
         let y_offset =

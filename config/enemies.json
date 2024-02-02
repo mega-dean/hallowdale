@@ -3,7 +3,7 @@
         // bosses
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 5,
+            "health": 65,
             "scale": 2.5,
             "w": 19,
             "h": 45,
@@ -248,11 +248,79 @@
             ]
         }],
 
+        [ "VICE_DEAN_LAYBOURNE", {
+            "kind": "boss",
+            "health": 525,
+            "scale": 2.5,
+            "w": 24,
+            "h": 44,
+            "gravity_multiplier": 2.0,
+            "dream_nail": {},
+            "attrs": [
+                ["projectile_vx", 400],
+                ["projectile_vy", 400],
+                ["lunge_vx", 1400],
+                ["dive_vy", 800],
+                ["min_jump_vx", 100],
+                ["max_jump_vx", 800],
+                ["jump_vy", -1800]
+            ],
+            "unscaled_attrs": [
+                ["lunge_duration", 0.7],
+                ["land_duration", 1],
+                ["idle_duration", 0.7],
+                ["cascade_duration", 1.5],
+                ["cascade_shot_duration", 0.6],
+                ["charge_duration", 0.6]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 5,
+                    "y_offset": 1
+                }],
+                ["idle-moving", {
+                    "count": 2,
+                    "duration": 0.3,
+                    "x_offset": 4,
+                    "y_offset": 2
+                }],
+                ["lunge", {
+                    "x_offset": 7,
+                    "y_offset": 1
+                }],
+                ["projectile", {
+                    "count": 2,
+                    "duration": 0.2
+                }],
+                ["cascade", {
+                    "count": 4,
+                    "duration": 0.2,
+                    "x_offset": 9,
+                    "y_offset": 2
+                }],
+                ["dive", {
+                    "x_offset": 7,
+                    "y_offset": -6
+                }],
+                ["dead", {
+                    "x_offset": 10,
+                    "y_offset": -20
+                }],
+                ["dead-head-up", {
+                    "x_offset": 9,
+                    "y_offset": -14
+                }],
+                ["jump", {
+                    "x_offset": 4,
+                    "y_offset": 1
+                }]
+            ]
+        }],
+
         // FIXME
         // BUDDY
         // LUIS_GUZMAN
         // BORCHERT
-        // VICE_DEAN_LAYBOURNE
 
         // enemies
         [ "PENGUIN", {
@@ -374,7 +442,7 @@
                 ["projectile_vx", 400.0]
             ],
             "unscaled_attrs": [
-                ["projectile_cooldown", 1.0],
+                ["projectile_cooldown", 1.6],
                 ["direction_change_max_dt", 3.0]
             ],
             "texture_configs": [

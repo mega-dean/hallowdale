@@ -657,6 +657,8 @@ and projectile = {
   pogoable : bool;
   collide_with_floors : bool;
   damage : int;
+  (* this is only true for VICE_DEAN_LAYBOURNE's projectiles *)
+  draw_on_top : bool;
 }
 
 type enemy_status = {

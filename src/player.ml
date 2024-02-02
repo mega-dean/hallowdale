@@ -942,6 +942,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
       damage = get_damage game.player VENGEFUL_SPIRIT;
       (* TODO this should be based on shade soul *)
       collide_with_floors = false;
+      draw_on_top = false;
     }
   in
   game.player.spawned_vengeful_spirits <- projectile :: game.player.spawned_vengeful_spirits
@@ -2481,6 +2482,7 @@ let tick (game : game) (state : state) =
             ()
           | STEEL_SOLE -> add_phantom_floor game game.room.respawn.target);
           Entity.unfreeze game.player.ghost.entity;
+          game.player.ghost.hardfall_timer <- None;
           state.camera.update_instantly <- true;
           respawn_ghost game
         in

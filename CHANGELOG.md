@@ -18,6 +18,10 @@
   - HIPPIE
   - MANICORN
   - BAT
+- add new bosses:
+  - Joshua
+  - Dean
+  - Vice Dean Laybourne
 
 ## [0.0.10] - 2024-01-16
 
