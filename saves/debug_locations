@@ -54,8 +54,8 @@
   "room_name": "forgotten_h",
 
 # buddy
-  "ghost_x": 879.4006835073233,
-  "ghost_y": 1300.0,
+  "ghost_x": 2409.0421950668097,
+  "ghost_y": 904.0,
   "room_name": "library_d",
 
 # luis guzman (archives)
@@ -67,4 +67,3 @@
   "ghost_x": 2436.01799685508,
   "ghost_y": 1048.0,
   "room_name": "ac-repair_f",
-

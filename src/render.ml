@@ -537,6 +537,7 @@ let tick (state : state) =
           "{{purple}}"
         | "Chang"
         | "Dean"
+        | "Buddy"
         | "Hickey"
         | "Duncan" ->
           "{{maroon}}"
@@ -853,7 +854,7 @@ let tick (state : state) =
               else
                 draw_projectile projectile
             in
-            List.iter maybe_draw e.spawned_projectiles;
+            List.iter maybe_draw e.projectiles;
             List.iter draw_sprite e.damage_sprites))
         enemies;
       !projectiles_on_top

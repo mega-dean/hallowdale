@@ -506,8 +506,8 @@ let update_enemies (game : game) (state : state) =
             if Collision.between_entities game.player.ghost.entity projectile.entity then
               Player.start_action state game (TAKE_DAMAGE (projectile.damage, c.collided_from))))
     in
-    List.iter update_projectile' enemy.spawned_projectiles;
-    enemy.spawned_projectiles <- !unremoved_projectiles;
+    List.iter update_projectile' enemy.projectiles;
+    enemy.projectiles <- !unremoved_projectiles;
     enemy.floor_collisions_this_frame <-
       Entity.update_pos
         ~gravity_multiplier_override:

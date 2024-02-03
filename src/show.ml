@@ -56,6 +56,9 @@ let y_alignment (y : y_alignment) : string =
   | BOTTOM_OUTSIDE -> "BOTTOM_OUTSIDE"
   | CENTER -> "CENTER"
 
+let relative_pos ((x, y) : relative_position) : string =
+  fmt "(%s, %s)" (x_alignment x) (y_alignment y)
+
 let recoil (recoil : recoil) : string =
   fmt "speed: %f, time_left: %f, reset_v: %b" recoil.speed recoil.time_left.seconds recoil.reset_v
 

@@ -22,6 +22,7 @@
   - Joshua
   - Dean
   - Vice Dean Laybourne
+  - Buddy
 
 ## [0.0.10] - 2024-01-16
 

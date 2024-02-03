@@ -371,6 +371,22 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.);
           ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
         ]
+      | "fight-buddy" ->
+        [
+          ENEMY (BUDDY, ENTITY UNHIDE);
+          ENEMY (BUDDY, ENTITY UNFREEZE);
+          ENEMY (BUDDY, SET_POSE "idle");
+          ENEMY (BUDDY, ENTITY (SET_FACING RIGHT));
+          CURRENT_GHOST (PARTY (WALK_TO 54));
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.7);
+          STEP
+            (DIALOGUE
+               ("Buddy", "I put myself out there for you! I laid my {{blue}} soul {{white}} bare!"));
+          STEP (WAIT 1.);
+          STEP (UNHIDE_LAYER "boss-doors");
+          ENEMY (BUDDY, ENTITY UNFREEZE);
+        ]
       | "fight-dean" ->
         [
           CURRENT_GHOST (PARTY (WALK_TO 43));
@@ -565,6 +581,20 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "boss-killed" -> (
       remove_nail := false;
       match trigger.name_suffix with
+      | "BUDDY" ->
+        [
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 1.5);
+          STEP
+            (DIALOGUE
+               ( "Buddy",
+                 "Hola, mi amigo. Donde estas la biblioteca? Yo tengo hambre. Hola, mi amigo. \
+                  Donde estas el restaurante? Lunes, martes, miercoles, vierno, no, no, no, no, \
+                  no..." ));
+          STEP (WAIT 1.);
+          STEP (HIDE_LAYER "boss-doors");
+        ]
       | "VICE_DEAN_LAYBOURNE" ->
         let facing =
           let boss = List.hd game.room.enemies in

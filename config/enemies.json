@@ -251,7 +251,7 @@
         [ "VICE_DEAN_LAYBOURNE", {
             "kind": "boss",
             "health": 525,
-            "scale": 2.5,
+            "scale": 1.5,
             "w": 24,
             "h": 44,
             "gravity_multiplier": 2.0,
@@ -260,6 +260,8 @@
                 ["projectile_vx", 400],
                 ["projectile_vy", 400],
                 ["lunge_vx", 1400],
+                ["idle_moving_vx", -100],
+                ["hop_lunge_vy", -200],
                 ["dive_vy", 800],
                 ["min_jump_vx", 100],
                 ["max_jump_vx", 800],
@@ -317,8 +319,90 @@
             ]
         }],
 
+        [ "BUDDY", {
+            "kind": "boss",
+            "health": 950,
+            "scale": 3.5,
+            "w": 17,
+            "h": 36,
+            "gravity_multiplier": 0.8,
+            "dream_nail": {},
+            "attrs": [
+                ["yellow_projectile_vx", 1600],
+                ["yellow_projectile_vy", 100],
+                ["red_projectile_vx_near", 400],
+                ["red_projectile_vx_far", 800],
+                ["blue_projectile_vx_0", 400],
+                ["blue_projectile_vy_0", -400],
+                ["blue_projectile_vx_1", 500],
+                ["blue_projectile_vy_1", -800],
+                ["blue_projectile_vx_2", 600],
+                ["blue_projectile_vy_2", -1200],
+                ["purple_projectile_up_vy", -1600],
+                ["backdash_vx", 1400],
+                ["min_jump_vx", 300],
+                ["max_jump_vx", 800],
+                ["jump_vy", -1200]
+            ],
+            "unscaled_attrs": [
+                ["backdash_duration", 0.7],
+                ["yellow_shot_duration", 0.4],
+                ["yellow_duration", 1.8],
+                ["purple_shot_duration", 0.3],
+                ["purple_duration", 1.8],
+                ["blue_duration", 1],
+                ["idle_duration", 0.8],
+                ["charge_duration", 0.8]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 4,
+                    "y_offset": 1
+                }],
+                ["red", {
+                    "x_offset": 5,
+                    "y_offset": 1
+                }],
+                ["yellow", {
+                    "x_offset": 6,
+                    "y_offset": -2
+                }],
+                ["purple", {
+                    "x_offset": 6,
+                    "y_offset": 8
+                }],
+                ["blue", {
+                    "x_offset": 6,
+                    "y_offset": 1
+                }],
+                ["blue-projectile", {
+                    "count": 12,
+                    "duration": 0.1
+                }],
+                ["yellow-projectile", {
+                    "count": 12,
+                    "duration": 0.1
+                }],
+                ["red-projectile", {
+                    "count": 12,
+                    "duration": 0.1
+                }],
+                ["purple-projectile", {
+                    "count": 12,
+                    "duration": 0.1
+                }],
+                ["jump", {
+                    "x_offset": 6,
+                    "y_offset": 1
+                }],
+                ["dead", {
+                    "x_offset": 14,
+                    "y_offset": -19
+                }]
+            ]
+        }],
+
         // FIXME
-        // BUDDY
         // LUIS_GUZMAN
         // BORCHERT
 

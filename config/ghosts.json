@@ -220,7 +220,7 @@
         }],
         ["cast-dive", {
             "duration": 1.0,
-            "cooldown": 1.7,
+            "cooldown": 0.7,
             "input_buffer": 0.2
         }],
         ["dive-cooldown", {

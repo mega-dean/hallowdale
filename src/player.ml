@@ -362,7 +362,6 @@ let get_nail_damage (player : player) =
   |> List.fold_left ( + ) 0
 
 let get_damage (player : player) (damage_kind : damage_kind) =
-  (* TODO check ghost.abilities.descending_dark/shade_soul *)
   match damage_kind with
   | DREAM_NAIL -> 0
   | NAIL -> get_nail_damage player
@@ -502,7 +501,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                 | None -> ()
                 | Some _ -> pogo game.player)
             in
-            List.iter check_projectile_pogo enemy.spawned_projectiles))
+            List.iter check_projectile_pogo enemy.projectiles))
     in
 
     let destroy_tile_group layer tile_group =

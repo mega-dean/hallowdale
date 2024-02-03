@@ -683,11 +683,15 @@ type enemy = {
   initial_pos : vector;
   health : health;
   mutable history : time Enemy_action.Map.t;
+  (* TODO maybe keep track of last_non_idle_performed, so enemies are less likely to
+     repeat the same attack several times
+     - probably can get this from history already though
+  *)
   mutable last_performed : (string * time) option;
   (* keep track of this so they only have to be checked once per frame
      (during State.update_enemies, and reused in Enemy.choose_behavior) *)
   mutable floor_collisions_this_frame : collision list;
-  mutable spawned_projectiles : projectile list;
+  mutable projectiles : projectile list;
   mutable damage_sprites : sprite list;
   textures : texture String.Map.t;
   (* TODO maybe move these into global_cache since they will be the same for every enemy of
