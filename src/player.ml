@@ -572,7 +572,6 @@ let resolve_slash_collisions (state : state) (game : game) =
                     y = Config.random_fragment_vy ~direction:(Some vy_direction) ();
                   } )
               in
-
               let adjust_x () =
                 let x_alignment, vx_direction =
                   if collision.center.x < rect_center_x game.player.ghost.entity.dest then
@@ -587,7 +586,6 @@ let resolve_slash_collisions (state : state) (game : game) =
                     y = Config.random_fragment_vy ();
                   } )
               in
-
               if door_is_vertical then
                 adjust_x ()
               else
@@ -937,6 +935,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
         Entity.create_for_sprite ~v:{ x = vx; y = 0. } ~gravity_multiplier:0. vengeful_spirit dest;
       despawn = TIME_LEFT { seconds = Config.action.vengeful_spirit_duration };
       spawned = { at = state.frame.time };
+      update_vy = None;
       pogoable = true;
       damage = get_damage game.player VENGEFUL_SPIRIT;
       (* TODO this should be based on shade soul *)
@@ -2212,7 +2211,7 @@ let tick (game : game) (state : state) =
         in
 
         if can_shade_dash () then (
-          spawn_child game.player SHADE_DASH_SPARKLES ~in_front:true ~scale:6. (CENTER, CENTER)
+          spawn_child game.player SHADE_DASH_SPARKLES ~in_front:true ~scale:Config.ghost.shade_dash_sparkles_scale (CENTER, CENTER)
             game.player.shared_textures.shade_cloak_sparkles;
           start_action state game SHADE_DASH);
         start_action state game DASH;

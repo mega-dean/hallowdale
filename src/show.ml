@@ -47,6 +47,7 @@ let x_alignment (x : x_alignment) : string =
   | LEFT_OUTSIDE -> "LEFT_OUTSIDE"
   | RIGHT_OUTSIDE -> "RIGHT_OUTSIDE"
   | CENTER -> "CENTER"
+  | RANDOM -> "RANDOM"
 
 let y_alignment (y : y_alignment) : string =
   match y with
@@ -55,6 +56,7 @@ let y_alignment (y : y_alignment) : string =
   | TOP_OUTSIDE -> "TOP_OUTSIDE"
   | BOTTOM_OUTSIDE -> "BOTTOM_OUTSIDE"
   | CENTER -> "CENTER"
+  | RANDOM -> "RANDOM"
 
 let relative_pos ((x, y) : relative_position) : string =
   fmt "(%s, %s)" (x_alignment x) (y_alignment y)
@@ -578,5 +580,7 @@ let projectile_despawn (despawn : projectile_despawn) : string =
   match despawn with
   | TIME_LEFT _ -> "TIME_LEFT"
   | DETONATE (_, _) -> "DETONATE"
-  | X_BOUNDS (_, _) -> "X_BOUNDS"
+  | BOSS_AREA_X (_, _) -> "BOSS_AREA_X"
+  | BOSS_AREA_Y (_, _) -> "BOSS_AREA_Y"
   | UNTIL_FLOOR_COLLISION -> "UNTIL_FLOOR_COLLISION"
+  | UNTIL_ENEMY_DEATH -> "UNTIL_ENEMY_DEATH"

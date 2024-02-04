@@ -67,8 +67,8 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * int 
         [
           0.5;
           (* 0.6; *)
-          (* 0.7; *)
-          0.8;
+          0.7;
+          (* 0.8; *)
           (* 0.9; *)
           1.;
         ]

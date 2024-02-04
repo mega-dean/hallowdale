@@ -122,6 +122,7 @@ let get_src (texture : texture) : rect =
   | LOOPED animation ->
     (get_frame animation).src
 
+(* scale arg needs to be something that is scaled by window size *)
 let get_scaled_texture_size scale (texture : texture) =
   let src = get_src texture in
   (src.w *. scale, src.h *. scale)
@@ -646,18 +647,20 @@ end
 type projectile_despawn =
   | TIME_LEFT of duration
   | DETONATE of duration * projectile list
-  | X_BOUNDS of float * float
+  | BOSS_AREA_X of float * float
+  | BOSS_AREA_Y of float * float
   | UNTIL_FLOOR_COLLISION
+  | UNTIL_ENEMY_DEATH
 
 and projectile = {
   entity : entity;
   (* TODO maybe make this a list of projectile_despawns *)
   mutable despawn : projectile_despawn;
+  update_vy : (vy:float -> time:float -> float) option;
   spawned : time;
   pogoable : bool;
   collide_with_floors : bool;
   damage : int;
-  (* this is only true for VICE_DEAN_LAYBOURNE's projectiles *)
   draw_on_top : bool;
 }
 
@@ -865,6 +868,7 @@ type x_alignment =
   | LEFT_OUTSIDE
   | RIGHT_OUTSIDE
   | CENTER
+  | RANDOM
 
 type y_alignment =
   | TOP_INSIDE
@@ -872,32 +876,42 @@ type y_alignment =
   | TOP_OUTSIDE
   | BOTTOM_OUTSIDE
   | CENTER
+  | RANDOM
 
 type relative_position = x_alignment * y_alignment
 
+let align_x (x_alignment : x_alignment) parent_dest child_w child_h : float =
+  let left_inside = parent_dest.pos.x in
+  let right_inside = parent_dest.pos.x +. parent_dest.w -. child_w in
+  match x_alignment with
+  | IN_FRONT facing_right ->
+    if facing_right then
+      rect_center_x parent_dest
+    else
+      rect_center_x parent_dest -. child_w
+  | LEFT_INSIDE -> left_inside
+  | RIGHT_INSIDE -> right_inside
+  | LEFT_OUTSIDE -> parent_dest.pos.x -. child_w
+  | RIGHT_OUTSIDE -> parent_dest.pos.x +. parent_dest.w
+  | CENTER -> parent_dest.pos.x +. ((parent_dest.w -. child_w) /. 2.)
+  | RANDOM -> left_inside +. Random.float right_inside
+
+let align_y (y_alignment : y_alignment) parent_dest child_w child_h : float =
+  let top_inside = parent_dest.pos.y in
+  let bottom_inside = parent_dest.pos.y +. parent_dest.h -. child_h in
+  match y_alignment with
+  | TOP_INSIDE -> top_inside
+  | BOTTOM_INSIDE -> bottom_inside
+  | TOP_OUTSIDE -> parent_dest.pos.y -. child_h
+  | BOTTOM_OUTSIDE -> parent_dest.pos.y +. parent_dest.h
+  | CENTER -> parent_dest.pos.y +. ((parent_dest.h -. child_h) /. 2.)
+  | RANDOM -> top_inside +. Random.float bottom_inside
+
 let align ((x_alignment, y_alignment) : relative_position) parent_dest child_w child_h : vector =
-  let x =
-    match x_alignment with
-    | IN_FRONT facing_right ->
-      if facing_right then
-        rect_center_x parent_dest
-      else
-        rect_center_x parent_dest -. child_w
-    | LEFT_INSIDE -> parent_dest.pos.x
-    | RIGHT_INSIDE -> parent_dest.pos.x +. parent_dest.w -. child_w
-    | LEFT_OUTSIDE -> parent_dest.pos.x -. child_w
-    | RIGHT_OUTSIDE -> parent_dest.pos.x +. parent_dest.w
-    | CENTER -> parent_dest.pos.x +. ((parent_dest.w -. child_w) /. 2.)
-  in
-  let y =
-    match y_alignment with
-    | TOP_INSIDE -> parent_dest.pos.y
-    | BOTTOM_INSIDE -> parent_dest.pos.y +. parent_dest.h -. child_h
-    | TOP_OUTSIDE -> parent_dest.pos.y -. child_h
-    | BOTTOM_OUTSIDE -> parent_dest.pos.y +. parent_dest.h
-    | CENTER -> parent_dest.pos.y +. ((parent_dest.h -. child_h) /. 2.)
-  in
-  { x; y }
+  {
+    x = align_x x_alignment parent_dest child_w child_h;
+    y = align_y y_alignment parent_dest child_w child_h;
+  }
 
 (* this aligns enemy/npc to (CENTER, BOTTOM_INSIDE), and handles hidden entities *)
 let align_to_bottom parent_dest child_w child_h =

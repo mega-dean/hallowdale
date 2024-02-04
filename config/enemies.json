@@ -7,12 +7,12 @@
             "scale": 2.5,
             "w": 19,
             "h": 45,
+            "can_recoil": false,
             "dream_nail": {},
             "attrs": [
                 ["jump_vy", -1200.0],
                 ["walk_vx", 400.0],
-                ["projectile_vx", 600.0],
-                ["projectile_range", 1500.0]
+                ["projectile_vx", 600.0]
             ],
             "unscaled_attrs": [
                 ["jump_wait_time", 1.0]
@@ -62,6 +62,7 @@
             "scale": 1.5,
             "w": 22,
             "h": 40,
+            "can_recoil": false,
             "dream_nail": {},
             "attrs": [
                 ["wall_perch_left_x", 4032.0],
@@ -115,6 +116,7 @@
             "scale": 3.5,
             "w": 19,
             "h": 38,
+            "can_recoil": false,
             "dream_nail": {},
             "attrs": [
                 ["dash_vx", 900],
@@ -177,6 +179,7 @@
             "scale": 2.5,
             "w": 17,
             "h": 35,
+            "can_recoil": false,
             "dream_nail": {},
             "attrs": [
                 ["swarm_padding", 200],
@@ -325,6 +328,7 @@
             "scale": 3.5,
             "w": 17,
             "h": 36,
+            "can_recoil": false,
             "gravity_multiplier": 0.8,
             "dream_nail": {},
             "attrs": [
@@ -402,8 +406,73 @@
             ]
         }],
 
+        [ "LUIS_GUZMAN", {
+            "kind": "boss",
+            "health": 500,
+            "scale": 2.0,
+            "w": 25,
+            "h": 41,
+            "gravity_multiplier": 0,
+            "dream_nail": {},
+            "attrs": [
+                ["max_chase_v", 200.0],
+                ["chase_dv", 2.0],
+                ["pancake_width_scale", 8],
+                ["xero_projectile_v", 800],
+                ["shield_radius", 200],
+                ["no_eyes_projectile_vx", 300]
+            ],
+            "unscaled_attrs": [
+                ["idle_duration", 1.2],
+                ["xero_projectile_duration", 10],
+                ["no_eyes_shoot_duration", 1.5],
+                ["shoot_duration", 1.2],
+                ["charge_duration", 0.8]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 3,
+                    "y_offset": 2
+                }],
+                ["charge-shoot", {
+                    "count": 2,
+                    "duration": 0.02,
+                    "x_offset": 10,
+                    "y_offset": 1
+                }],
+                ["hu-projectile", {}],
+                ["xero-projectile-horizontal", {}],
+                ["xero-projectile-vertical-up", {}],
+                ["xero-projectile-vertical-down", {}],
+                ["markoth-projectile", {}],
+                ["no-eyes-projectile", {
+                    "count": 4,
+                    "duration": 0.1
+                }],
+                ["shoot", {
+                    "x_offset": 10,
+                    "y_offset": 1
+                }],
+                ["dead", {
+                    "x_offset": 10,
+                    "y_offset": -24
+                }]
+            ]
+        }],
+
         // FIXME
         // LUIS_GUZMAN
+        // - elder hu pancakes
+        // - gorb spikes (with circular projectiles)
+        // - markoth/xero homing projectile
+        // - markoth shield (PERMANENT projectile_duration)
+        // - no-eyes projectiles (probably not an action though)
+        // movement:
+        // - float around the boss_area with small direction changes
+        // -- probably unrelated to ghost_pos?
+        // - change direction when bumping into wall (same as bat)
+        // - maybe try to give him recoil, unlike the other bosses
+        // -- but then also do that for laybourne
         // BORCHERT
 
         // enemies
@@ -798,6 +867,7 @@
             "scale": 2.5,
             "w": 22,
             "h": 45,
+            "can_recoil": false,
             "dream_nail": {},
             "attrs": [
                 ["aggro_distance", 700.0],

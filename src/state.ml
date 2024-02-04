@@ -287,15 +287,25 @@ let update_projectile (projectile : projectile) (room : room) (state : state) : 
         (Show.projectile_despawn projectile.despawn);
     true)
   else (
+    (match projectile.update_vy with
+    | None -> ()
+    | Some update ->
+      projectile.entity.v.y <-
+        update ~vy:projectile.entity.v.y ~time:(state.frame.time -. projectile.spawned.at));
     let collisions =
       Entity.update_pos ~_debug:true ~apply_floor_collisions:projectile.collide_with_floors room
         state.frame.dt projectile.entity
     in
     let despawn_projectile =
       match projectile.despawn with
-      | X_BOUNDS (min_x, max_x) ->
-        projectile.entity.dest.pos.x < min_x -. Config.window.center.x
-        || projectile.entity.dest.pos.x > max_x +. Config.window.center.x
+      (* these adjust by Config.window.center.x/y as a buffer so the projectiles don't
+         despawn on-screen *)
+      | BOSS_AREA_Y (min_y, max_y) ->
+        let y = rect_center_y projectile.entity.dest in
+        y < min_y -. Config.window.center.y || y > max_y +. Config.window.center.y
+      | BOSS_AREA_X (min_x, max_x) ->
+        let x = rect_center_x projectile.entity.dest in
+        x < min_x -. Config.window.center.x || x > max_x +. Config.window.center.x
       | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
       | DETONATE (d, new_projectiles) ->
         let despawn = state.frame.time -. projectile.spawned.at > d.seconds in
@@ -303,6 +313,7 @@ let update_projectile (projectile : projectile) (room : room) (state : state) : 
           List.iter (fun (p : projectile) -> Entity.unfreeze p.entity) new_projectiles;
         despawn
       | UNTIL_FLOOR_COLLISION -> List.length collisions > 0
+      | UNTIL_ENEMY_DEATH -> false
     in
     if despawn_projectile then
       false

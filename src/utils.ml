@@ -168,11 +168,16 @@ module List = struct
     List.iter add_x xs;
     !res
 
-  let last xs =
+  let last_opt xs =
     if List.length xs = 0 then
-      failwith "List.last on empty list"
+      None
     else
-      List.nth xs (List.length xs - 1)
+      Some (List.nth xs (List.length xs - 1))
+
+  let last xs =
+    match last_opt xs with
+    | None -> failwith "List.last on empty list"
+    | Some x -> x
 
   let to_array xs = Array.of_list xs
   let to_string_map xs = String.Map.of_list xs

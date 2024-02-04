@@ -341,6 +341,20 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             STEP (SHAKE_SCREEN 1.5);
             STEP (WAIT 2.5);
           ]
+      | "fight-luis-guzman" ->
+        [
+          CURRENT_GHOST (PARTY (WALK_TO 78));
+          CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (LUIS_GUZMAN, ENTITY UNHIDE);
+          ENEMY (LUIS_GUZMAN, ENTITY FREEZE);
+          ENEMY (LUIS_GUZMAN, SET_POSE "idle");
+          STEP (SET_FIXED_CAMERA (77, 120));
+          STEP (WAIT 2.);
+          ENEMY (LUIS_GUZMAN, SET_POSE "charge-shoot");
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          ENEMY (LUIS_GUZMAN, ENTITY UNFREEZE);
+        ]
       | "fight-joshua" ->
         [
           CURRENT_GHOST (PARTY (WALK_TO 49));
@@ -581,6 +595,22 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "boss-killed" -> (
       remove_nail := false;
       match trigger.name_suffix with
+      | "LUIS_GUZMAN" ->
+        game.interaction.use_dashes_in_archives <- Some false;
+        [
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 1.5);
+          STEP
+            (DIALOGUE
+               ( "Luis Guzman",
+                 "Don't worship the people leaving Hallowdale. Worship the people who are here. \
+                  Worship this place. It changes people's lives. Look, I loved my time here. I got \
+                  laid like crazy. That's way before {{blue}} Boogie Nights {{white}} too. Look, \
+                  this is a special school." ));
+          STEP (WAIT 1.);
+          STEP (HIDE_LAYER "boss-doors");
+        ]
       | "BUDDY" ->
         [
           STEP (WAIT 0.7);

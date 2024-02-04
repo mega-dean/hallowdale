@@ -161,7 +161,6 @@ type enemy_config = {
       an enemy dies and only update based on that
    *)
   ~death_gravity_multiplier <ocaml default="1.0"> : float;
-  ~can_take_damage <ocaml default="true"> : bool;
   dream_nail : enemy_dream_nail_config;
   (* attrs are scaled by Config.window.scale, so this should be used for attrs that are
      based on position (including velocity attrs) *)
@@ -169,6 +168,8 @@ type enemy_config = {
   (* unscaled_attrs ignore Config.window.scale, so this should be used for time/duration attrs *)
   ~unscaled_attrs <ocaml default="[]"> : (string * float) list;
   texture_configs : texture_configs;
+  ~can_take_damage <ocaml default="true"> : bool;
+  ~can_recoil <ocaml default="true"> : bool;
 }
 
 type enemies_file =

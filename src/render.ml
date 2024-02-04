@@ -538,12 +538,22 @@ let tick (state : state) =
         | "Chang"
         | "Dean"
         | "Buddy"
+        | "Luis Guzman"
         | "Hickey"
         | "Duncan" ->
           "{{maroon}}"
         | _ -> failwithf "unknown speaker: %s" speaker_name
       in
-      display_paragraph config 0 (fmt "%s %s:  {{white}} %s" color_str speaker_name text')
+      let force_spaces =
+        match game_opt with
+        | Some game -> (
+          match game.interaction.use_dashes_in_archives with
+          | Some false -> true
+          | _ -> false)
+        | None -> false
+      in
+      display_paragraph ~force_spaces config 0
+        (fmt "%s %s:  {{white}} %s" color_str speaker_name text')
     | Some (PLAIN lines) ->
       let margin_y_bottom =
         let tall_text =

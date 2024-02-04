@@ -207,11 +207,12 @@ type enemy_config = Json_t.enemy_config = {
   damage: int;
   gravity_multiplier: float;
   death_gravity_multiplier: float;
-  can_take_damage: bool;
   dream_nail: enemy_dream_nail_config;
   attrs: (string * float) list;
   unscaled_attrs: (string * float) list;
-  texture_configs: texture_configs
+  texture_configs: texture_configs;
+  can_take_damage: bool;
+  can_recoil: bool
 }
 
 type enemies_file = Json_t.enemies_file = {
