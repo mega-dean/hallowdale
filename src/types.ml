@@ -209,7 +209,7 @@ let align_shape_with_parent (dest : rect) (facing_right : bool) (shape : shape) 
 let align_shape_with_parent_sprite (sprite : sprite) (shape : shape) : shape =
   align_shape_with_parent sprite.dest sprite.facing_right shape
 
-let get_collision_shape (sprite : sprite) =
+let get_sprite_collision_shape (sprite : sprite) =
   match sprite.collision with
   | None -> failwith "get_collision_shape for a shape with no collision"
   | Some DEST -> shape_of_rect sprite.dest
@@ -265,6 +265,11 @@ type entity = {
   mutable current_floor : (rect * vector) option;
   mutable current_platforms : platform list;
 }
+
+let get_entity_collision_shape (entity : entity) =
+  match entity.sprite.collision with
+  | None -> shape_of_rect entity.dest
+  | Some _ -> get_sprite_collision_shape entity.sprite
 
 type collision = {
   (* .center is roughly where the collision occurred, only used for drawing damage_sprite *)
@@ -542,6 +547,7 @@ module Interaction = struct
     (* this is only used for DUNCAN *)
     | DEAD_WALK_TO of int
     | SET_VX of float
+    | SET_VY of float
     | SET_POSE of string
     | START_ACTION of string
     | ENTITY of entity_step
@@ -644,6 +650,10 @@ module Enemy_action = struct
   module Map = Map.Make (Enemy_action')
 end
 
+type projectile_update_v =
+  | WAVY
+  | HOMING of float
+
 type projectile_despawn =
   | TIME_LEFT of duration
   | DETONATE of duration * projectile list
@@ -652,31 +662,34 @@ type projectile_despawn =
   | UNTIL_FLOOR_COLLISION
   | UNTIL_ENEMY_DEATH
 
+(* TODO add despawn_animation option so projectiles don't just disappear *)
 and projectile = {
   entity : entity;
   (* TODO maybe make this a list of projectile_despawns *)
   mutable despawn : projectile_despawn;
-  update_vy : (vy:float -> time:float -> float) option;
+  update_v : projectile_update_v option;
   spawned : time;
   pogoable : bool;
   collide_with_floors : bool;
   damage : int;
   draw_on_top : bool;
+  (* float is offset in radians, bool is clockwise *)
+  orbiting : (float * bool * enemy) option;
 }
 
-type enemy_status = {
+and enemy_status = {
   mutable check_damage_collisions : bool;
   mutable active : bool;
   (* status.props are values representing the current state of the enemy *)
   mutable props : float String.Map.t;
 }
 
-type enemy_kind =
+and enemy_kind =
   | ENEMY
   | BOSS
   | MULTI_BOSS
 
-type enemy = {
+and enemy = {
   id : enemy_id;
   kind : enemy_kind;
   status : enemy_status;
@@ -880,7 +893,7 @@ type y_alignment =
 
 type relative_position = x_alignment * y_alignment
 
-let align_x (x_alignment : x_alignment) parent_dest child_w child_h : float =
+let align_x (x_alignment : x_alignment) parent_dest child_w : float =
   let left_inside = parent_dest.pos.x in
   let right_inside = parent_dest.pos.x +. parent_dest.w -. child_w in
   match x_alignment with
@@ -896,7 +909,7 @@ let align_x (x_alignment : x_alignment) parent_dest child_w child_h : float =
   | CENTER -> parent_dest.pos.x +. ((parent_dest.w -. child_w) /. 2.)
   | RANDOM -> left_inside +. Random.float right_inside
 
-let align_y (y_alignment : y_alignment) parent_dest child_w child_h : float =
+let align_y (y_alignment : y_alignment) parent_dest child_h : float =
   let top_inside = parent_dest.pos.y in
   let bottom_inside = parent_dest.pos.y +. parent_dest.h -. child_h in
   match y_alignment with
@@ -908,10 +921,7 @@ let align_y (y_alignment : y_alignment) parent_dest child_w child_h : float =
   | RANDOM -> top_inside +. Random.float bottom_inside
 
 let align ((x_alignment, y_alignment) : relative_position) parent_dest child_w child_h : vector =
-  {
-    x = align_x x_alignment parent_dest child_w child_h;
-    y = align_y y_alignment parent_dest child_w child_h;
-  }
+  { x = align_x x_alignment parent_dest child_w; y = align_y y_alignment parent_dest child_h }
 
 (* this aligns enemy/npc to (CENTER, BOTTOM_INSIDE), and handles hidden entities *)
 let align_to_bottom parent_dest child_w child_h =

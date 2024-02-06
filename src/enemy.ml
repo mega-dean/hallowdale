@@ -3,6 +3,13 @@ open Types
 
 let is_dead (enemy : enemy) : bool = enemy.health.current <= 0
 let is_alive (enemy : enemy) : bool = not (is_dead enemy)
+let is_wounded (enemy : enemy) : bool = enemy.health.current < enemy.health.max / 2
+
+let wounded_attr (enemy : enemy) attr : string =
+  if is_wounded enemy then
+    fmt "wounded_%s" attr
+  else
+    fmt "healthy_%s" attr
 
 let parse_name context name : enemy_id =
   match name with
@@ -86,12 +93,13 @@ let get_projectile_texture ?(reset_texture = true) (enemy : enemy) name =
   match String.Map.find_opt name enemy.textures with
   | Some t ->
     if reset_texture then
-      Sprite.reset_texture t;
-    t
+      Sprite.reset_animation t
+    else
+      t
   | None -> failwithf "could not find projectile '%s' for %s" name (Show.enemy_name enemy)
 
 type projectile_pos =
-  | POS of vector
+  | ABSOLUTE of vector
   | RELATIVE of relative_position
 
 let spawn_projectile
@@ -103,18 +111,21 @@ let spawn_projectile
     ?(gravity_multiplier = 0.)
     ?(collide_with_floors = false)
     ?(draw_on_top = false)
-    ?(update_vy = None)
+    ?(orbiting = None)
+    ?(update_v = None)
     ~(projectile_pos : projectile_pos)
     ~(v : vector)
     (enemy : enemy)
     (despawn : projectile_despawn)
     spawn_time : projectile =
+  if Option.is_some orbiting && collide_with_floors then
+    failwith "orbiting projectiles cannot collide with floors";
   let projectile_texture = get_projectile_texture ~reset_texture enemy projectile_texture_name in
   let src = get_src projectile_texture in
   let w, h = (src.w *. Config.scale.enemy *. scale, src.h *. Config.scale.enemy *. scale) in
   let spawn_pos =
     match projectile_pos with
-    | POS pos -> pos
+    | ABSOLUTE pos -> pos
     | RELATIVE (x_alignment, y_alignment) ->
       Entity.get_child_pos enemy.entity (x_alignment, y_alignment) w h
   in
@@ -127,11 +138,12 @@ let spawn_projectile
     entity;
     despawn;
     spawned = { at = spawn_time };
-    update_vy;
+    update_v;
     pogoable;
     damage;
     collide_with_floors;
     draw_on_top;
+    orbiting;
   }
 
 let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
@@ -233,9 +245,9 @@ let maybe_take_damage
   else
     false
 
-let get_boss_area boss_name game =
+let get_boss_area game =
   match game.room.boss_area with
-  | None -> failwithf "missing boss-area for %s" boss_name
+  | None -> failwithf "missing boss-area for room %s" (Show.room_id game.room.id)
   | Some rect -> rect
 
 let chase_to enemy target_x target_y =
@@ -492,18 +504,18 @@ module Duncan_actions = struct
         walk ();
         "walking"
       | LANDED ->
-        let projectile_duration =
-          BOSS_AREA_X (get_frame_prop "boss_area_left", get_frame_prop "boss_area_right")
-        in
         enemy.entity.v.x <- 0.;
         enemy.entity.sprite.facing_right <-
           (* TODO might help to use a prefix like is_ or bool_ for these props that are used as booleans *)
           get_frame_prop "facing_right" = 1.;
+        let projectile_duration =
+          BOSS_AREA_X (get_frame_prop "boss_area_left", get_frame_prop "boss_area_right")
+        in
         let projectile_vx = get_attr enemy "projectile_vx" in
         let spawn x_alignment vx_mult =
           let vx = projectile_vx *. vx_mult in
           let v = { x = vx; y = 0. } in
-          spawn_projectile ~scale:1.5 enemy
+          spawn_projectile ~scale:3.5 enemy
             ~projectile_pos:(RELATIVE (x_alignment, BOTTOM_INSIDE))
             ~v projectile_duration frame_time
         in
@@ -530,7 +542,7 @@ module Duncan : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      boss_area = get_boss_area "DUNCAN" game;
+      boss_area = get_boss_area game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
@@ -554,7 +566,7 @@ module Duncan : M = struct
               ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
             ]
       else if frame_time -. landed.at > get_attr enemy "jump_wait_time" then (
-        let target_x = Random.in_rect_x args.boss_area in
+        let target_x = Random.x_in args.boss_area in
         let jump_vx =
           let dx = target_x -. enemy.entity.dest.pos.x in
           dx /. airtime
@@ -612,7 +624,7 @@ module Luis_guzman_actions = struct
                   (spawn_projectile enemy ~projectile_texture_name:"hu-projectile" ~draw_on_top:true
                      ~gravity_multiplier:0.5 ~scale:3.
                      ~projectile_pos:
-                       (POS
+                       (ABSOLUTE
                           {
                             x = get_frame_prop "boss_area_x" +. (w *. (idx |> Int.to_float));
                             y = get_frame_prop "boss_area_y";
@@ -642,7 +654,7 @@ module Luis_guzman_actions = struct
           let new_projectile =
             spawn_projectile enemy ~scale:2.
               ~projectile_texture_name:(fmt "xero-projectile-%s" name) ~draw_on_top:true
-              ~projectile_pos:(POS pos) ~v
+              ~projectile_pos:(ABSOLUTE pos) ~v
               (TIME_LEFT { seconds = get_attr enemy "xero_projectile_duration" })
               frame_time
           in
@@ -664,39 +676,9 @@ module Luis_guzman : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      boss_area = get_boss_area "JOSHUA" game;
+      boss_area = get_boss_area game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
-
-  let update_shield_projectile enemy ~frame_time =
-    let get_shield_pos () =
-      let shield_w, shield_h =
-        get_scaled_texture_size 1. (get_projectile_texture enemy "markoth-projectile")
-      in
-      let radius = get_attr enemy "shield_radius" in
-      let speed =
-        if enemy.health.current < enemy.health.max / 2 then
-          3.
-        else
-          2.
-      in
-      {
-        x = rect_center_x enemy.entity.dest +. (radius *. sin (frame_time *. speed)) -. shield_w;
-        y = rect_center_y enemy.entity.dest +. (radius *. cos (frame_time *. speed)) -. shield_h;
-      }
-    in
-    let is_markoth (projectile : projectile) =
-      projectile.entity.sprite.ident = "Sprite[markoth-projectile]"
-    in
-    match List.find_opt is_markoth enemy.projectiles with
-    | None ->
-      enemy.projectiles <-
-        [
-          spawn_projectile enemy ~projectile_texture_name:"markoth-projectile" ~draw_on_top:true
-            ~projectile_pos:(POS (get_shield_pos ()))
-            ~v:{ x = 0.; y = 0. } UNTIL_ENEMY_DEATH frame_time;
-        ]
-    | Some projectile -> projectile.entity.dest.pos <- get_shield_pos ()
 
   let spawn_no_eyes_projectiles enemy ~frame_time ~boss_area =
     let last_shot = action_started_at enemy "shot_no_eyes" in
@@ -712,9 +694,8 @@ module Luis_guzman : M = struct
             (-1., boss_area.pos.x +. boss_area.w +. Config.window.center.x)
         in
         spawn_projectile enemy ~scale:3. ~projectile_texture_name:"no-eyes-projectile"
-          ~update_vy:(Some (fun ~vy ~time -> vy +. cos time))
-          ~draw_on_top:true
-          ~projectile_pos:(POS { x = spawn_x; y = boss_area.pos.y +. Random.float boss_area.h })
+          ~update_v:(Some WAVY) ~draw_on_top:true
+          ~projectile_pos:(ABSOLUTE { x = spawn_x; y = Random.y_in boss_area })
           ~v:{ x = get_attr enemy "no_eyes_projectile_vx" *. vx_mult; y = 0. }
           (BOSS_AREA_X (boss_area.pos.x, boss_area.pos.x +. boss_area.w))
           frame_time
@@ -726,20 +707,12 @@ module Luis_guzman : M = struct
     let boss_area = args.boss_area in
     let ghost_pos = args.ghost_pos in
     let set_chase_target () =
-      set_prop enemy "chase_x"
-        (Random.float_between boss_area.pos.x (boss_area.pos.x +. boss_area.w));
-      set_prop enemy "chase_y"
-        (Random.float_between boss_area.pos.y (boss_area.pos.y +. boss_area.h))
+      set_prop enemy "chase_x" (Random.x_in boss_area);
+      set_prop enemy "chase_y" (Random.y_in boss_area)
     in
-    update_shield_projectile enemy ~frame_time;
     spawn_no_eyes_projectiles enemy ~frame_time ~boss_area;
     let shoot () =
-      let min_time, max_time =
-        if enemy.health.current < enemy.health.max / 2 then
-          (1., 3.)
-        else
-          (2., 4.)
-      in
+      let min_time, max_time = if is_wounded enemy then (1., 3.) else (2., 4.) in
       set_prop enemy "idle_duration" (Random.float_between min_time max_time);
       set_chase_target ();
       let hu_shot, frame_prop_name =
@@ -770,6 +743,13 @@ module Luis_guzman : M = struct
     | None ->
       set_prop enemy "idle_duration" 3.;
       set_chase_target ();
+      enemy.projectiles <-
+        [
+          spawn_projectile enemy ~projectile_texture_name:"markoth-projectile" ~draw_on_top:true
+            ~orbiting:(Some (0., true, enemy))
+            ~projectile_pos:(ABSOLUTE (Zero.vector ()))
+            ~v:{ x = 0.; y = 0. } UNTIL_ENEMY_DEATH frame_time;
+        ];
       idle ()
     | Some (action_name, action_time) -> (
       match Action.from_string action_name with
@@ -887,7 +867,7 @@ module Joshua_actions = struct
             UNTIL_FLOOR_COLLISION frame_time
         in
         let new_projectiles =
-          if enemy.health.current < enemy.health.max / 2 then
+          if is_wounded enemy then
             [ projectile true true; projectile false true ]
           else
             [
@@ -921,7 +901,7 @@ module Joshua : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      boss_area = get_boss_area "JOSHUA" game;
+      boss_area = get_boss_area game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
@@ -1050,7 +1030,7 @@ module Dean_actions = struct
         in
         let spawn idx =
           let projectile_pos =
-            POS
+            ABSOLUTE
               {
                 x = get_frame_prop (fmt "x_%d" (idx + 1));
                 y = get_frame_prop "boss_area_y" -. ((idx + 1 |> Int.to_float) *. y_spacing);
@@ -1061,7 +1041,7 @@ module Dean_actions = struct
             (TIME_LEFT { seconds = get_attr enemy "swarm_projectile_duration" })
             frame_time
         in
-        let projectile_count = if enemy.health.current < enemy.health.max / 2 then 9 else 5 in
+        let projectile_count = if is_wounded enemy then 9 else 5 in
         let new_ps = List.map spawn (Int.range projectile_count) in
         enemy.projectiles <- new_ps @ enemy.projectiles;
         "swarm"
@@ -1082,7 +1062,7 @@ module Dean_actions = struct
             }
           in
           let make_spike vx dx =
-            let projectile_pos = POS { spawn_pos with x = spawn_pos.x +. dx } in
+            let projectile_pos = ABSOLUTE { spawn_pos with x = spawn_pos.x +. dx } in
             spawn_projectile enemy ~projectile_texture_name:"spike-projectile"
               ~gravity_multiplier:0.7 ~collide_with_floors:true ~projectile_pos
               ~v:{ x = vx; y = 0. } UNTIL_FLOOR_COLLISION frame_time
@@ -1095,7 +1075,7 @@ module Dean_actions = struct
           in
           let core_projectile =
             let projectile_pos =
-              POS { x = spawn_pos.x -. core_offset_x; y = spawn_pos.y -. core_offset_y }
+              ABSOLUTE { x = spawn_pos.x -. core_offset_x; y = spawn_pos.y -. core_offset_y }
             in
             spawn_projectile enemy ~projectile_texture_name:"swarm-projectile"
               ~collide_with_floors:true ~projectile_pos ~v:(Zero.vector ())
@@ -1124,7 +1104,7 @@ module Dean : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      boss_area = get_boss_area "JOSHUA" game;
+      boss_area = get_boss_area game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
@@ -1135,10 +1115,10 @@ module Dean : M = struct
       let actions =
         if ghost_pos.y < enemy.entity.dest.pos.y then
           [ (1., `LUNGE); (3., `SPIKES); (5., `JUMP); (1., `SWARM) ]
-        else if abs_float (ghost_pos.x -. enemy.entity.dest.pos.x) > get_attr enemy "lunge_dx" then
+        else if abs_float (ghost_pos.x -. enemy.entity.dest.pos.x) < get_attr enemy "lunge_dx" then
           [ (5., `LUNGE); (1., `SPIKES); (1., `JUMP); (1., `SWARM) ]
         else
-          [ (1., `LUNGE); (1., `SPIKES); (2., `JUMP); (1., `SWARM) ]
+          [ (2., `SPIKES); (5., `JUMP); (2., `SWARM) ]
       in
       match Random.weighted actions with
       | `LUNGE -> Action.start_and_log enemy CHARGE_LUNGE ~frame_time
@@ -1184,8 +1164,8 @@ module Dean : M = struct
       | CHARGE_SWARM ->
         handle_charge action_time CHARGE_SWARM SWARM ~get_frame_props:(fun () ->
             let padding = get_attr enemy "swarm_padding" in
-            let get_x () = Random.float_between padding (args.boss_area.w -. (padding *. 2.)) in
-            let make_x_prop idx = (fmt "x_%d" (idx + 1), args.boss_area.pos.x +. get_x ()) in
+            let get_x () = Random.x_in ~padding args.boss_area in
+            let make_x_prop idx = (fmt "x_%d" (idx + 1), get_x ()) in
             let vx = get_attr enemy "max_swarm_projectile_vx" in
             let make_v_prop idx = (fmt "v_%d" (idx + 1), Random.float_between (-.vx) vx) in
             [ ("boss_area_y", args.boss_area.pos.y) ]
@@ -1204,6 +1184,239 @@ module Dean : M = struct
       | WALKING ->
         (* only used in interaction *)
         ())
+end
+
+module Borchert_actions = struct
+  type t =
+    | CHARGE_DIVE
+    | CHARGE_DASH
+    | CHARGE_SHOOT
+    | LAND
+    | DIVE
+    | DASH
+    | SHOOT
+    | VANISH
+
+  let to_string (action : t) : string =
+    match action with
+    | CHARGE_DIVE -> "charge-dive"
+    | CHARGE_DASH -> "charge-dash"
+    | CHARGE_SHOOT -> "charge-shoot"
+    | LAND -> "land"
+    | DIVE -> "dive"
+    | DASH -> "dash"
+    | SHOOT -> "shoot"
+    | VANISH -> "vanish"
+
+  let from_string (s : string) : t =
+    match s with
+    | "charge-dive" -> CHARGE_DIVE
+    | "charge-dash" -> CHARGE_DASH
+    | "charge-shoot" -> CHARGE_SHOOT
+    | "land" -> LAND
+    | "dive" -> DIVE
+    | "dash" -> DASH
+    | "shoot" -> SHOOT
+    | "vanish" -> VANISH
+    | _ -> failwithf "Borchert_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
+    let teleport () =
+      match String.Map.find_opt "new_x" frame_props with
+      | None -> ()
+      | Some new_x ->
+        enemy.entity.dest.pos.x <- new_x;
+        enemy.entity.dest.pos.y <- String.Map.find "new_y" frame_props
+    in
+    let pose_name =
+      match action with
+      | CHARGE_DIVE ->
+        teleport ();
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- get_attr enemy "charge_dive_vy";
+        "dive"
+      | LAND ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        let projectile_duration =
+          BOSS_AREA_X (get_frame_prop "boss_area_left", get_frame_prop "boss_area_right")
+        in
+        let projectile_vx = get_attr enemy "wires_projectile_vx" in
+        let spawn x_alignment vx_mult =
+          let vx = projectile_vx *. vx_mult in
+          let v = { x = vx; y = 0. } in
+          spawn_projectile ~scale:3.5 ~projectile_texture_name:"wires-projectile"
+            ~projectile_pos:(RELATIVE (x_alignment, BOTTOM_INSIDE))
+            ~v enemy projectile_duration frame_time
+        in
+        enemy.projectiles <- [ spawn LEFT_INSIDE 1.; spawn RIGHT_INSIDE (-1.) ] @ enemy.projectiles;
+        "land"
+      | DIVE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- get_attr enemy "dive_vy";
+        "dive"
+      | CHARGE_DASH ->
+        teleport ();
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "charge-shoot"
+      | DASH ->
+        let duration =
+          (* these are manually despawned when dash ends *)
+          UNTIL_ENEMY_DEATH
+        in
+        let enemy_vx = get_frame_prop "vx" in
+        let spawn mult idx =
+          spawn_projectile enemy ~projectile_texture_name:"computer-projectile" ~draw_on_top:true
+            ~orbiting:(Some (idx *. mult, enemy_vx > 0., enemy))
+            ~projectile_pos:(ABSOLUTE (Zero.vector ()))
+            ~v:{ x = 0.; y = 0. } duration frame_time
+        in
+        let projectile_count = if is_wounded enemy then 6 else 4 in
+        enemy.projectiles <-
+          List.map
+            (spawn (Float.pi /. (projectile_count / 2 |> Int.to_float)))
+            (Float.range projectile_count);
+        enemy.entity.v.x <- enemy_vx;
+        enemy.entity.v.y <- 0.;
+        "dash"
+      | VANISH ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        enemy.entity.current_floor <- None;
+        "vanish"
+      | CHARGE_SHOOT ->
+        teleport ();
+        "charge-shoot"
+      | SHOOT ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        let projectile_v = get_attr enemy "computer_projectile_v" in
+        let x_alignment, vx =
+          if (get_rect_center enemy.entity.dest).x > get_frame_prop "ghost_x" then
+            (LEFT_OUTSIDE, -500.)
+          else
+            (RIGHT_OUTSIDE, 500.)
+        in
+        enemy.projectiles <-
+          spawn_projectile ~projectile_texture_name:"computer-projectile"
+            ~update_v:(Some (HOMING 8.))
+            ~projectile_pos:(RELATIVE (x_alignment, CENTER))
+            ~draw_on_top:true ~v:{ x = vx; y = 0. } enemy
+            (TIME_LEFT { seconds = 2. })
+            frame_time
+          :: enemy.projectiles;
+        "shoot"
+    in
+    set_pose enemy pose_name
+end
+
+module Borchert : M = struct
+  module Action = Make_loggable (Borchert_actions)
+
+  type args = {
+    frame_time : float;
+    boss_area : rect;
+    ghost_pos : vector;
+  }
+
+  let get_args state game : args =
+    {
+      frame_time = state.frame.time;
+      boss_area = get_boss_area game;
+      ghost_pos = get_rect_center game.player.ghost.entity.dest;
+    }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+    let boss_area = args.boss_area in
+    match enemy.last_performed with
+    | None -> Action.start_and_log enemy VANISH ~frame_time
+    | Some (action_name, action_time) -> (
+      let action = Action.from_string action_name in
+      let handle_charge ?attr ?(get_frame_props = fun () -> []) action_time done_charging_action =
+        face_ghost enemy ~ghost_pos;
+        let charge_attr =
+          match attr with
+          | Some a -> a
+          | None -> wounded_attr enemy "charge_duration"
+        in
+        Action.handle_charging enemy ~charge_attr ~ghost_pos ~action_time ~charge_action:action
+          ~action:done_charging_action ~frame_time ~get_frame_props
+      in
+      let start_new_action () =
+        face_ghost enemy ~ghost_pos;
+        let actions = [ (1., `DIVE); (1., `DASH); (2., `SHOOT) ] in
+        match Random.weighted actions with
+        | `DIVE ->
+          Action.start_and_log enemy CHARGE_DIVE ~frame_time
+            ~frame_props:
+              [ ("new_x", ghost_pos.x -. (enemy.entity.dest.w /. 2.)); ("new_y", boss_area.pos.y) ]
+        | `SHOOT ->
+          Action.start_and_log enemy CHARGE_SHOOT ~frame_time
+            ~frame_props:
+              [
+                ("new_x", Random.x_in boss_area);
+                ( "new_y",
+                  if Random.bool () then
+                    boss_area.pos.y
+                  else
+                    boss_area.pos.y +. boss_area.h -. enemy.entity.dest.h );
+              ]
+        | `DASH ->
+          Action.start_and_log enemy CHARGE_DASH ~frame_time
+            ~frame_props:
+              [
+                ("new_x", if Random.bool () then boss_area.pos.x else boss_area.pos.x +. boss_area.w);
+                ("new_y", boss_area.pos.y);
+              ]
+      in
+      match action with
+      | CHARGE_DASH ->
+        let vx = get_attr enemy "dash_vx" in
+        handle_charge action_time DASH ~get_frame_props:(fun () ->
+            [
+              ("vx", if enemy.entity.dest.pos.x < rect_center_x boss_area then vx else -.vx);
+              ("boss_area_left", boss_area.pos.x);
+              ("boss_area_right", boss_area.pos.x +. boss_area.w);
+            ])
+      | CHARGE_DIVE -> handle_charge ~attr:"dive_charge_duration" action_time DIVE
+      | CHARGE_SHOOT ->
+        handle_charge action_time SHOOT ~get_frame_props:(fun () ->
+            [ ("ghost_x", ghost_pos.x); ("spawn", 1.) ])
+      | LAND ->
+        let duration = get_attr enemy "land_duration" in
+        let still_landing = Action.still_doing enemy "land" ~duration ~frame_time in
+        if not still_landing then
+          Action.start_and_log enemy VANISH ~frame_time
+      | DASH ->
+        if not (still_within_boss_area enemy args.boss_area) then (
+          enemy.projectiles <- [];
+          Action.start_and_log enemy VANISH ~frame_time)
+      | VANISH ->
+        let duration = animation_loop_duration (String.Map.find "vanish" enemy.textures) in
+        let still_vanishing = Action.still_doing enemy "vanish" ~duration ~frame_time in
+        if not still_vanishing then
+          start_new_action ()
+      | DIVE ->
+        let still_diving = still_airborne enemy ~frame_time ~action_time in
+        if not still_diving then
+          Action.start_and_log enemy LAND ~frame_time
+            ~frame_props:
+              [
+                ("boss_area_left", boss_area.pos.x);
+                ("boss_area_right", boss_area.pos.x +. boss_area.w);
+              ]
+      | SHOOT ->
+        let duration =
+          let d = get_attr enemy "shoot_duration" in
+          if is_wounded enemy then d /. 2. else d
+        in
+        let still_shooting = Action.still_doing enemy "shoot" ~duration ~frame_time in
+        if not still_shooting then
+          Action.start_and_log enemy VANISH ~frame_time)
 end
 
 module Buddy_actions = struct
@@ -1339,7 +1552,7 @@ module Buddy_actions = struct
           let new_projectile =
             make_paintball
               ~projectile_pos:
-                (POS { x = get_frame_prop "random_x"; y = get_frame_prop "boss_area_y" })
+                (ABSOLUTE { x = get_frame_prop "random_x"; y = get_frame_prop "boss_area_y" })
               ~v:(Zero.vector ()) "purple"
           in
           enemy.projectiles <- new_projectile :: enemy.projectiles);
@@ -1376,23 +1589,22 @@ module Buddy : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      boss_area = get_boss_area "JOSHUA" game;
+      boss_area = get_boss_area game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
   let choose_behavior (enemy : enemy) args =
     let frame_time = args.frame_time in
     let ghost_pos = args.ghost_pos in
+    let boss_area = args.boss_area in
     face_ghost enemy ~ghost_pos;
     let start_new_action () =
       let actions =
         let in_half side =
           let left_boundary, right_boundary =
             match side with
-            | `LEFT -> (args.boss_area.pos.x, args.boss_area.pos.x +. (args.boss_area.w /. 2.))
-            | `RIGHT ->
-              ( args.boss_area.pos.x +. (args.boss_area.w /. 2.),
-                args.boss_area.pos.x +. args.boss_area.w )
+            | `LEFT -> (boss_area.pos.x, boss_area.pos.x +. (boss_area.w /. 2.))
+            | `RIGHT -> (boss_area.pos.x +. (boss_area.w /. 2.), boss_area.pos.x +. boss_area.w)
           in
           let enemy_center = rect_center_x enemy.entity.dest in
           left_boundary < enemy_center && enemy_center < right_boundary
@@ -1452,10 +1664,7 @@ module Buddy : M = struct
               let shot_duration =
                 let attr = get_attr enemy (fmt "%s_shot_duration" color_name) in
                 (* shoot faster at low health *)
-                if enemy.health.current < enemy.health.max / 2 then
-                  attr /. 2.
-                else
-                  attr
+                if is_wounded enemy then attr /. 2. else attr
               in
               frame_time -. last_shot.at > shot_duration
             in
@@ -1463,12 +1672,12 @@ module Buddy : M = struct
               match color with
               | `PURPLE ->
                 [
-                  ("boss_area_y", args.boss_area.pos.y);
+                  ("boss_area_y", boss_area.pos.y);
                   ( "random_x",
                     if Random.percent 30 then
                       ghost_pos.x
                     else
-                      args.boss_area.pos.x +. Random.float args.boss_area.w );
+                      Random.x_in boss_area );
                 ]
               | `YELLOW ->
                 let vx = get_attr enemy "yellow_projectile_vx" in
@@ -1503,7 +1712,7 @@ module Buddy : M = struct
         let duration = get_attr enemy "backdash_duration" in
         let still_backdashing =
           Action.still_doing enemy "backdash" ~duration ~frame_time
-          && still_within_boss_area enemy args.boss_area
+          && still_within_boss_area enemy boss_area
         in
         if not still_backdashing then
           Action.start_and_log enemy IDLE ~frame_time
@@ -1631,7 +1840,7 @@ module Vice_dean_laybourne : M = struct
   let get_args state game : args =
     {
       frame_time = state.frame.time;
-      boss_area = get_boss_area "JOSHUA" game;
+      boss_area = get_boss_area game;
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
@@ -1674,7 +1883,7 @@ module Vice_dean_laybourne : M = struct
     in
     let get_vx_frame_props () =
       let make_vx idx =
-        let projectile_x = 300. in
+        let projectile_x = get_attr enemy "projectile_x_spacing" in
         let x_offset = (idx - 2 |> Int.to_float) *. projectile_x in
         [ (fmt "vx_%d" idx, x_offset +. Random.float projectile_x) ]
       in
@@ -1835,8 +2044,7 @@ module Locker_boy : M = struct
     boss_area : rect;
   }
 
-  let get_args state game : args =
-    { frame_time = state.frame.time; boss_area = get_boss_area "LOCKER_BOY" game }
+  let get_args state game : args = { frame_time = state.frame.time; boss_area = get_boss_area game }
 
   let choose_behavior (enemy : enemy) args =
     let frame_time = args.frame_time in
@@ -1874,13 +2082,13 @@ module Locker_boy : M = struct
           ~frame_props:
             [
               ("random_facing_right", if Random.bool () then 1. else 0.);
-              ("random_wall_perch_y", Random.in_rect_y args.boss_area);
+              ("random_wall_perch_y", Random.y_in args.boss_area);
               ("boss_area_left", args.boss_area.pos.x);
               ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
             ]
       | `DIVE ->
         Action.start_and_log enemy DIVE ~frame_time
-          ~frame_props:[ ("random_dive_x", Random.in_rect_x args.boss_area) ]
+          ~frame_props:[ ("random_dive_x", Random.x_in args.boss_area) ]
       | `DASH ->
         Action.start_and_log enemy DASH ~frame_time
           ~frame_props:
@@ -2459,7 +2667,7 @@ module Bat_actions = struct
     match s with
     | "move" -> MOVE
     | "change_direction" -> CHANGE_DIRECTION
-    | _ -> failwithf "Bird_actions.from_string: %s" s
+    | _ -> failwithf "Bat_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     (match action with
@@ -2713,7 +2921,7 @@ let get_module (id : enemy_id) : (module M) =
   | VICE_DEAN_LAYBOURNE -> (module Vice_dean_laybourne)
   | BUDDY -> (module Buddy)
   | LUIS_GUZMAN -> (module Luis_guzman)
-  | BORCHERT -> failwithf "enemy %s not implemented yet" (Show.enemy_id id)
+  | BORCHERT -> (module Borchert)
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let (module M : M) = get_module enemy.id in
@@ -2758,13 +2966,12 @@ let create_from_rects
     let entity, textures =
       match List.assoc_opt id !texture_cache with
       | None ->
-        Entity.create_from_texture_configs ~collision:(Some DEST)
-          ~gravity_multiplier:enemy_config.gravity_multiplier
+        Entity.create_from_texture_configs ~gravity_multiplier:enemy_config.gravity_multiplier
           (Entity.scale_texture_configs (Config.scale.enemy *. enemy_config.scale) texture_configs)
           entity_dest
       | Some textures ->
-        Entity.create_from_textures ~collision:(Some DEST)
-          ~gravity_multiplier:enemy_config.gravity_multiplier texture_configs textures entity_dest
+        Entity.create_from_textures ~gravity_multiplier:enemy_config.gravity_multiplier
+          texture_configs textures entity_dest
     in
 
     texture_cache := List.replace_assoc id textures !texture_cache;

@@ -42,8 +42,8 @@
                     "y_offset": 1
                 }],
                 ["projectile", {
-                    "count": 1,
-                    "duration": 0.0
+                    "count": 6,
+                    "duration": 0.1
                 }],
                 ["scavenging", {
                     "count": 4,
@@ -190,7 +190,7 @@
                 ["spike_min_y", 100],
                 ["spike_max_y", 300],
                 ["lunge_dx", 400],
-                ["lunge_vx", 1000],
+                ["lunge_vx", 1400],
                 ["max_swarm_projectile_vx", 300],
                 ["swarm_projectile_vy", 800],
                 ["swarm_projectile_y_spacing", 200],
@@ -201,10 +201,10 @@
             ],
             "unscaled_attrs": [
                 ["swarm_projectile_duration", 4],
-                ["idle_duration", 1.0],
-                ["lunge_duration", 0.5],
-                ["spikes_duration", 1.0],
-                ["swarm_duration", 1.4],
+                ["idle_duration", 0.7],
+                ["lunge_duration", 0.35],
+                ["spikes_duration", 0.9],
+                ["swarm_duration", 1.2],
                 ["charge_duration", 0.4]
             ],
             "texture_configs": [
@@ -260,6 +260,7 @@
             "gravity_multiplier": 2.0,
             "dream_nail": {},
             "attrs": [
+                ["projectile_x_spacing", 300],
                 ["projectile_vx", 400],
                 ["projectile_vy", 400],
                 ["lunge_vx", 1400],
@@ -419,10 +420,12 @@
                 ["chase_dv", 2.0],
                 ["pancake_width_scale", 8],
                 ["xero_projectile_v", 800],
-                ["shield_radius", 200],
+                ["orbit_radius", 200],
                 ["no_eyes_projectile_vx", 300]
             ],
             "unscaled_attrs": [
+                ["orbit_speed_healthy", 2],
+                ["orbit_speed_wounded", 3],
                 ["idle_duration", 1.2],
                 ["xero_projectile_duration", 10],
                 ["no_eyes_shoot_duration", 1.5],
@@ -460,20 +463,79 @@
             ]
         }],
 
-        // FIXME
-        // LUIS_GUZMAN
-        // - elder hu pancakes
-        // - gorb spikes (with circular projectiles)
-        // - markoth/xero homing projectile
-        // - markoth shield (PERMANENT projectile_duration)
-        // - no-eyes projectiles (probably not an action though)
-        // movement:
-        // - float around the boss_area with small direction changes
-        // -- probably unrelated to ghost_pos?
-        // - change direction when bumping into wall (same as bat)
-        // - maybe try to give him recoil, unlike the other bosses
-        // -- but then also do that for laybourne
-        // BORCHERT
+        [ "BORCHERT", {
+            "kind": "boss",
+            "health": 950,
+            "scale": 3.0,
+            "w": 23,
+            "h": 45,
+            "can_recoil": false,
+            "gravity_multiplier": 0,
+            "dream_nail": {},
+            "attrs": [
+                ["wires_projectile_vx", 800],
+                ["computer_projectile_v", 800],
+                ["orbit_radius", 400],
+                ["charge_dive_vy", -100],
+                ["dash_vx", 700],
+                ["dive_vy", 1400]
+            ],
+            "unscaled_attrs": [
+                ["orbit_speed_healthy", 1.5],
+                ["orbit_speed_wounded", 2.5],
+                ["land_duration", 0.4],
+                ["shoot_duration", 1.2],
+                ["dive_charge_duration", 0.3],
+                ["healthy_charge_duration", 0.4],
+                ["wounded_charge_duration", 0.2]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 0,
+                    "y_offset": 3
+                }],
+                ["dive", {
+                    "x_offset": 5,
+                    "y_offset": 3
+                }],
+                ["land", {
+                    "x_offset": 2,
+                    "y_offset": 1
+                }],
+                ["shoot", {
+                    "x_offset": 11,
+                    "y_offset": 1
+                }],
+                ["charge-shoot", {
+                    "count": 2,
+                    "duration": 0.02,
+                    "x_offset": 11,
+                    "y_offset": 1
+                }],
+                ["dash", {
+                    "x_offset": 11,
+                    "y_offset": 2
+                }],
+                ["vanish", {
+                    "count": 6,
+                    "duration": 0.1,
+                    "x_offset": 11,
+                    "y_offset": 2
+                }],
+                ["wires-projectile", {
+                    "count": 4,
+                    "duration": 0.05
+                }],
+                ["computer-projectile", {
+                    "count": 4,
+                    "duration": 0.1
+                }],
+                ["dead", {
+                    "x_offset": 12,
+                    "y_offset": -26
+                }]
+            ]
+        }],
 
         // enemies
         [ "PENGUIN", {

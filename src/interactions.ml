@@ -341,6 +341,25 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             STEP (SHAKE_SCREEN 1.5);
             STEP (WAIT 2.5);
           ]
+      | "fight-borchert" ->
+        [
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.5);
+          STEP (WAIT 0.5);
+          CURRENT_GHOST (PARTY (WALK_TO 55));
+          (* CURRENT_GHOST (ENTITY (SET_FACING RIGHT)); *)
+          ENEMY (BORCHERT, ENTITY UNHIDE);
+          ENEMY (BORCHERT, ENTITY (SET_FACING LEFT));
+          ENEMY (BORCHERT, ENTITY UNFREEZE);
+          ENEMY (BORCHERT, SET_POSE "dive");
+          ENEMY (BORCHERT, SET_VY 300.);
+          STEP (WAIT 1.7);
+          ENEMY (BORCHERT, SET_VY 0.);
+          STEP (WAIT 2.);
+          STEP (UNHIDE_LAYER "boss-doors");
+          ENEMY (BORCHERT, SET_POSE "charge-shoot");
+          STEP (WAIT 1.);
+        ]
       | "fight-luis-guzman" ->
         [
           CURRENT_GHOST (PARTY (WALK_TO 78));
@@ -595,6 +614,20 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
     | "boss-killed" -> (
       remove_nail := false;
       match trigger.name_suffix with
+      | "BORCHERT" ->
+        [
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 1.5);
+          STEP
+            (DIALOGUE
+               ( "Borchert",
+                 "When I started Hallowdale, it was for ordinary people to access technology." ));
+          STEP (SET_FIXED_CAMERA (20, 23));
+          STEP (WAIT 1.);
+          STEP (HIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+        ]
       | "LUIS_GUZMAN" ->
         game.interaction.use_dashes_in_archives <- Some false;
         [

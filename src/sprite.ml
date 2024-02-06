@@ -22,13 +22,17 @@ let get_current_frame_idx (animation_src : animation_src) : int =
   | LOOPED animation ->
     animation.frame_idx
 
-let reset_texture (texture : texture) : unit =
+let reset_animation_ (texture : texture) : unit =
   match texture.animation_src with
   | STILL _ -> ()
   | ONCE animation
   | PARTICLE animation
   | LOOPED animation ->
     animation.frame_idx <- 0
+
+let reset_animation (texture : texture) : texture =
+  reset_animation_ texture;
+  texture
 
 let advance_animation (current_clock : float) (sprite : sprite) =
   match sprite.texture.animation_src with

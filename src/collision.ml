@@ -167,8 +167,8 @@ let between_entities (entity1 : entity) (entity2 : entity) : bool =
     let get_aligned_shape (entity : entity) =
       match entity.sprite.collision with
       | Some (SHAPE shape) -> align_shape_with_parent_sprite entity.sprite shape
-      | Some DEST -> shape_of_rect entity.dest
-      | None -> failwith "can't get collision for entity.sprite without collision_shape"
+      | Some DEST -> shape_of_rect entity.sprite.dest
+      | None -> shape_of_rect entity.dest
     in
     let shape1 = get_aligned_shape entity1 in
     let shape2 = get_aligned_shape entity2 in
@@ -190,4 +190,7 @@ let between_slash_and_rect (slash : slash) (rect : rect) : collision option =
   between_slash_and_shape slash (shape_of_rect rect) rect
 
 let between_slash_and_sprite (slash : slash) (sprite : sprite) : collision option =
-  between_slash_and_shape slash (get_collision_shape sprite) sprite.dest
+  between_slash_and_shape slash (get_sprite_collision_shape sprite) sprite.dest
+
+let between_slash_and_entity (slash : slash) (entity : entity) : collision option =
+  between_slash_and_shape slash (get_entity_collision_shape entity) entity.dest

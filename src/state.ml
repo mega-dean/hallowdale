@@ -279,7 +279,7 @@ let init () : state =
   }
 
 (* return value is "keep spawned" *)
-let update_projectile (projectile : projectile) (room : room) (state : state) : bool =
+let update_projectile (projectile : projectile) (game : game) (state : state) : bool =
   if projectile.entity.frozen then (
     if projectile.despawn <> UNTIL_FLOOR_COLLISION then
       failwithf "frozen projectiles need despawn UNTIL_FLOOR_COLLISION, but %s has despawn %s"
@@ -287,14 +287,60 @@ let update_projectile (projectile : projectile) (room : room) (state : state) : 
         (Show.projectile_despawn projectile.despawn);
     true)
   else (
-    (match projectile.update_vy with
+    (match projectile.update_v with
     | None -> ()
-    | Some update ->
-      projectile.entity.v.y <-
-        update ~vy:projectile.entity.v.y ~time:(state.frame.time -. projectile.spawned.at));
+    | Some WAVY ->
+      projectile.entity.v <-
+        {
+          x = projectile.entity.v.x;
+          y = projectile.entity.v.y +. cos (state.frame.time -. projectile.spawned.at);
+        }
+    | Some (HOMING dv) ->
+      projectile.entity.v <-
+        {
+          x =
+            (if rect_center_x projectile.entity.dest < rect_center_x game.player.ghost.entity.dest
+             then
+               projectile.entity.v.x +. dv
+             else
+               projectile.entity.v.x -. dv);
+          y =
+            (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y
+             then
+               projectile.entity.v.y +. dv
+             else
+               projectile.entity.v.y -. dv);
+        });
     let collisions =
-      Entity.update_pos ~_debug:true ~apply_floor_collisions:projectile.collide_with_floors room
-        state.frame.dt projectile.entity
+      match projectile.orbiting with
+      | None ->
+        Entity.update_pos ~_debug:true ~apply_floor_collisions:projectile.collide_with_floors
+          game.room state.frame.dt projectile.entity
+      | Some (offset, clockwise, enemy) ->
+        let new_pos =
+          let w, h = get_scaled_texture_size 1. projectile.entity.sprite.texture in
+          (* TODO radius is slightly different based on window_scale *)
+          let radius = Enemy.get_attr enemy "orbit_radius" in
+          let speed =
+            if enemy.health.current < enemy.health.max / 2 then
+              Enemy.get_attr enemy "orbit_speed_wounded"
+            else
+              Enemy.get_attr enemy "orbit_speed_healthy"
+          in
+          let mult = if clockwise then -1. else 1. in
+          {
+            x =
+              rect_center_x enemy.entity.dest
+              +. (radius *. sin (mult *. (offset +. (state.frame.time *. speed))))
+              -. w;
+            y =
+              rect_center_y enemy.entity.dest
+              +. (radius *. cos (mult *. (offset +. (state.frame.time *. speed))))
+              -. h;
+          }
+        in
+        projectile.entity.dest.pos <- new_pos;
+        []
     in
     let despawn_projectile =
       match projectile.despawn with
@@ -334,7 +380,7 @@ let update_environment (game : game) (state : state) =
     | Some lever_sprite -> ()
   in
   let update_projectile' projectile =
-    let keep_spawned = update_projectile projectile game.room state in
+    let keep_spawned = update_projectile projectile game state in
     if keep_spawned then
       loose_projectiles := projectile :: !loose_projectiles
   in
@@ -506,7 +552,7 @@ let update_enemies (game : game) (state : state) =
   let update_enemy (enemy : enemy) =
     let unremoved_projectiles = ref [] in
     let update_projectile' (projectile : projectile) =
-      let keep_spawned = update_projectile projectile game.room state in
+      let keep_spawned = update_projectile projectile game state in
       if keep_spawned then (
         unremoved_projectiles := projectile :: !unremoved_projectiles;
         if Player.is_vulnerable state game then (
@@ -626,7 +672,7 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
     List.iter maybe_damage_enemy game.room.enemies
   in
   let update_vengeful_spirit (projectile : projectile) =
-    let keep_spawned = update_projectile projectile game.room state in
+    let keep_spawned = update_projectile projectile game state in
     if keep_spawned then
       damage_enemies projectile.spawned projectile
     else

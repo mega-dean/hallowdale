@@ -539,6 +539,7 @@ let tick (state : state) =
         | "Dean"
         | "Buddy"
         | "Luis Guzman"
+        | "Borchert"
         | "Hickey"
         | "Duncan" ->
           "{{maroon}}"

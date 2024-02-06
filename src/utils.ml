@@ -130,8 +130,11 @@ module Random = struct
     else
       Random.int 100 < n
 
-  let in_rect_x (rect : rect) = float_between rect.pos.x (rect.pos.x +. rect.w)
-  let in_rect_y (rect : rect) = float_between rect.pos.y (rect.pos.y +. rect.h)
+  let x_in ?(padding = 0.) (rect : rect) =
+    float_between (rect.pos.x +. padding) (rect.pos.x +. rect.w -. padding)
+
+  let y_in ?(padding = 0.) (rect : rect) =
+    float_between (rect.pos.y +. padding) (rect.pos.y +. rect.h -. padding)
 end
 
 module List = struct

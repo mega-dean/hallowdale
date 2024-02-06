@@ -23,6 +23,10 @@
   - Dean
   - Vice Dean Laybourne
   - Buddy
+  - Luis Guzman
+  - Russell Borchert
+- add orbiting projectiles
+- add homing projectiles
 
 ## [0.0.10] - 2024-01-16
 

@@ -65,6 +65,7 @@ let ghost_ids_in_party ghosts : ghost_id list =
 
 let maybe_begin_interactions (state : state) (game : game) (triggers : trigger ne_list) =
   let begin_interactions ?(increase_health = false) () =
+    game.interaction.floating_text <- None;
     game.interaction.steps <-
       Interactions.get_steps ~increase_health state game (triggers |> List.Non_empty.to_list)
   in
@@ -309,7 +310,7 @@ let spawn_child
     texture =
   let child =
     let w, h = get_scaled_texture_size scale texture in
-    make_ghost_child player ~in_front child_kind alignment texture w h
+    make_ghost_child player ~in_front child_kind alignment (Sprite.reset_animation texture) w h
   in
   add_child player child_kind child
 
@@ -332,7 +333,7 @@ let make_c_dash_child ?(full = false) (player : player) : unit =
     | None -> C_DASH_CHARGE_CRYSTALS
     | Some _ -> C_DASH_WALL_CHARGE_CRYSTALS
   in
-  Sprite.reset_texture texture;
+  Sprite.reset_animation_ texture;
   spawn_child player child_kind alignment ~scale:Config.scale.ghost texture
 
 let animate_and_despawn_children frame_time ghost : unit =
@@ -466,7 +467,7 @@ let resolve_slash_collisions (state : state) (game : game) =
   | Some slash ->
     let resolve_enemy (enemy : enemy) =
       if enemy.json.can_take_damage && enemy.status.check_damage_collisions then (
-        match Collision.between_slash_and_sprite slash enemy.entity.sprite with
+        match Collision.between_slash_and_entity slash enemy.entity with
         | None -> ()
         | Some collision ->
           Audio.play_sound state "punch";
@@ -935,12 +936,13 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
         Entity.create_for_sprite ~v:{ x = vx; y = 0. } ~gravity_multiplier:0. vengeful_spirit dest;
       despawn = TIME_LEFT { seconds = Config.action.vengeful_spirit_duration };
       spawned = { at = state.frame.time };
-      update_vy = None;
+      update_v = None;
       pogoable = true;
       damage = get_damage game.player VENGEFUL_SPIRIT;
       (* TODO this should be based on shade soul *)
       collide_with_floors = false;
       draw_on_top = false;
+      orbiting = None;
     }
   in
   game.player.spawned_vengeful_spirits <- projectile :: game.player.spawned_vengeful_spirits
@@ -1921,6 +1923,7 @@ let tick (game : game) (state : state) =
           | DEAD_WALK_TO target_tile_x -> walk_to target_tile_x true
           | WALK_TO target_tile_x -> walk_to target_tile_x false
           | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
+          | SET_VY new_vy -> apply_to_only "SET_VY" (fun (e : enemy) -> e.entity.v.y <- new_vy)
           | SET_POSE pose_name ->
             apply_to_all (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
@@ -2211,7 +2214,8 @@ let tick (game : game) (state : state) =
         in
 
         if can_shade_dash () then (
-          spawn_child game.player SHADE_DASH_SPARKLES ~in_front:true ~scale:Config.ghost.shade_dash_sparkles_scale (CENTER, CENTER)
+          spawn_child game.player SHADE_DASH_SPARKLES ~in_front:true
+            ~scale:Config.ghost.shade_dash_sparkles_scale (CENTER, CENTER)
             game.player.shared_textures.shade_cloak_sparkles;
           start_action state game SHADE_DASH);
         start_action state game DASH;
@@ -2862,9 +2866,7 @@ let init
         head_textures;
         entity =
           Entity.create_for_sprite
-            (Sprite.create
-               (fmt "ghost-%s" (Show.ghost_id ghost_id))
-               ~collision:(Some DEST) idle_texture dest)
+            (Sprite.create (fmt "ghost-%s" (Show.ghost_id ghost_id)) idle_texture dest)
             {
               pos = clone_vector dest.pos;
               w = Config.ghost.width *. Config.scale.ghost;
