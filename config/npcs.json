@@ -158,7 +158,10 @@
         ],
         [ "skybox", {}],
         [ "raindrop", {}],
-        [ "door-lever", {}],
+        [ "door-lever", {
+            "count": 12,
+            "duration": 0.1
+        }],
         [ "door-lever-struck",
           {
               "count": 3,

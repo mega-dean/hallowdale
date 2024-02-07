@@ -67,10 +67,11 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
       particle_animation =
     match sprite.texture.animation_src with
     | STILL _ -> { should_despawn = false }
-    | LOOPED animation -> failwith "can't despawn a LOOPED animation"
+    | LOOPED animation ->
+      advance_animation current_clock sprite;
+      { should_despawn = false }
     | ONCE animation
     | PARTICLE animation ->
-      let start_idx = get_current_frame_idx sprite.texture.animation_src in
       advance_animation current_clock sprite;
       let should_despawn = animation.frame_idx = List.length animation.frames in
       { should_despawn }
