@@ -177,7 +177,13 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
 
 let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
   if is_new_game then (
-    state.screen_fade <- Some 255;
+    state.screen_fade <-
+      Some
+        {
+          target_alpha = 255;
+          timer = None;
+          show_ghost = false;
+        };
     let interaction_name =
       match game.mode with
       | STEEL_SOLE -> "ss-opening-poem"

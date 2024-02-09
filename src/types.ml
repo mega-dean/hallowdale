@@ -472,12 +472,25 @@ type camera_motion =
   | LINEAR of float
   | SMOOTH of float * float
 
+type timer = {
+  mutable left : duration;
+  total : duration;
+}
+
+let make_timer seconds = { left = { seconds }; total = { seconds } }
+
+type screen_fade = {
+  target_alpha : int;
+  mutable timer : timer option;
+  show_ghost : bool;
+}
+
 module Interaction = struct
   type general_step =
     | INITIALIZE_INTERACTIONS of bool
     | CONCLUDE_INTERACTIONS
-    | FADE_SCREEN_OUT
-    | FADE_SCREEN_IN
+    | SET_SCREEN_FADE of screen_fade
+    | CLEAR_SCREEN_FADE
     | SHAKE_SCREEN of float
     | DEBUG
     | WAIT of float
@@ -1485,7 +1498,7 @@ type pause_menu =
 type state = {
   mutable game_context : game_context;
   world : world;
-  mutable screen_fade : int option; (* out of 255 *)
+  mutable screen_fade : screen_fade option;
   mutable camera : camera;
   mutable frame : frame_info;
   mutable should_save : bool;

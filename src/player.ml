@@ -1228,23 +1228,21 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       spawn_child game.player DREAM_NAIL alignment game.player.shared_textures.slash
         ~scale:Config.scale.dream_nail;
       check_dream_nail_collisions state game)
-  | DIE ->
-    state.screen_fade <-
-      (match state.screen_fade with
-      | None -> Some 1
-      | Some fade ->
-        if fade > 300 then (
+  | DIE -> (
+    match state.screen_fade with
+    | None ->
+      state.screen_fade <-
+        Some { target_alpha = 255; timer = Some (make_timer 3.); show_ghost = false }
+    | Some fade -> (
+      match fade.timer with
+      | None -> failwith "unreachable"
+      | Some timer ->
+        if timer.left.seconds < -1.5 then (
           Audio.stop_sound state "spray";
           respawn_ghost game;
           game.player.health.current <- game.player.health.max;
           state.game_context <- DIED game;
-          None)
-        else (
-          let new_fade =
-            (state.frame.time -. game.player.history.die.started.at) *. 100. |> Float.to_int
-          in
-          Some (1 + new_fade)));
-    ()
+          state.screen_fade <- None)))
   | C_DASH
   | C_DASH_CHARGE
   | SHADE_DASH
@@ -1649,8 +1647,8 @@ let tick (game : game) (state : state) =
             set_ghost_camera ();
             zero_vy := true;
             game.interaction.use_dashes_in_archives <- None
-          | FADE_SCREEN_OUT -> state.screen_fade <- Some 160
-          | FADE_SCREEN_IN -> state.screen_fade <- None
+          | SET_SCREEN_FADE fade -> state.screen_fade <- Some fade
+          | CLEAR_SCREEN_FADE -> state.screen_fade <- None
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
             match trigger_kind with

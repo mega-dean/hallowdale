@@ -21,17 +21,18 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
   let remove_nail = ref true in
 
   let get_interaction_steps (trigger : trigger) : step list =
-    let fade_screen_with_dramatic_pause steps =
+    let fade_screen =
       [
-        STEP (WAIT 0.5);
-        CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-        STEP (WAIT 1.);
-        (* TODO gradually fade screen out to black *)
-        STEP FADE_SCREEN_OUT;
-        STEP (WAIT 0.8);
+        STEP
+          (SET_SCREEN_FADE { target_alpha = 160; timer = Some (make_timer 1.5); show_ghost = false });
+        STEP (WAIT 1.5);
       ]
+    in
+    let fade_screen_with_dramatic_pause steps =
+      [ STEP (WAIT 0.5); CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); STEP (WAIT 1.) ]
+      @ fade_screen
       @ steps
-      @ [ STEP FADE_SCREEN_IN; STEP (WAIT 0.2); CURRENT_GHOST (SET_POSE IDLE) ]
+      @ [ STEP CLEAR_SCREEN_FADE; STEP (WAIT 0.2); CURRENT_GHOST (SET_POSE IDLE) ]
     in
 
     (* quote is optional because abilities gained during cutscenes don't have quotes *)
@@ -83,6 +84,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
         CURRENT_GHOST (ENTITY FREEZE);
         (* TODO center this text box *)
+        STEP (WAIT 1.);
         STEP (TEXT [ "Give me some rope, tie me to dream." ]);
         STEP
           (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
@@ -112,7 +114,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
              ]);
         STEP (WAIT 1.);
         CURRENT_GHOST (ENTITY UNFREEZE);
-        STEP FADE_SCREEN_IN;
+        STEP CLEAR_SCREEN_FADE;
       ]
     in
 
@@ -194,16 +196,18 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
               STEP
                 (DIALOGUE
                    ( "Annie's Boobs",
-                     fmt "Come back when you have {{purple}} %d {{white}} purple pens."
-                       next_upgrade_amount ));
+                     fmt
+                       "You have {{purple}} %d purple pens {{white}} - come back when you have \
+                        {{purple}} %d."
+                       purple_pens_found next_upgrade_amount ));
             ])
       | name -> [ STEP (DIALOGUE (name, get_lore ())) ])
     | "info" -> (
       match trigger.name_suffix with
       | "focus" ->
         read_sign
+        @ fade_screen
         @ [
-            STEP FADE_SCREEN_OUT;
             STEP
               (FOCUS_ABILITY_TEXT
                  ( [
@@ -220,7 +224,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                      "Hold (A)";
                      "to focus LIFE VAPOR and HEAL.";
                    ] ));
-            STEP FADE_SCREEN_IN;
+            STEP CLEAR_SCREEN_FADE;
           ]
       | "true-form" ->
         read_sign
@@ -639,7 +643,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                ( "Luis Guzman",
                  "Don't worship the people leaving Hallowdale. Worship the people who are here. \
                   Worship this place. It changes people's lives. Look, I loved my time here. I got \
-                  laid like crazy. That's way before {{blue}} Boogie Nights {{white}} too. Look, \
+                  laid like crazy. That's way before {{orange}} Boogie Nights {{white}} too. Look, \
                   this is a special school." ));
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
@@ -971,8 +975,5 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       | _ -> fail ())
     | _ -> failwithf "unknown interaction prefix: %s" trigger.name_prefix
   in
-
   let steps = List.concat_map get_interaction_steps triggers in
-
-  (* SET_GHOST_CAMERA to reset the camera if it changed *)
   [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ] @ steps @ [ STEP CONCLUDE_INTERACTIONS ]

@@ -496,7 +496,6 @@ let tick (state : state) =
     match interaction_text with
     | None -> ()
     | Some (ABILITY ability_text) ->
-      draw_screen_fade 160;
       draw_text_bg_box ability_config;
       draw_outline ~offset_y:Config.text.outline_offset_y ability_text;
 
@@ -506,7 +505,6 @@ let tick (state : state) =
            ability_config)
         ability_text.bottom_paragraphs
     | Some (FOCUS_ABILITY ability_text) ->
-      draw_screen_fade 160;
       draw_text_bg_box ability_config;
       draw_outline ~offset_y:Config.text.focus_outline_offset_y ability_text;
 
@@ -1123,19 +1121,41 @@ let tick (state : state) =
       let purple_pen_percent =
         100. -. (weapon_percent +. dreamer_item_percent +. key_percent +. ability_percent)
       in
+      let percentage a b p = (a |> Int.to_float) /. (b |> Int.to_float) *. p in
       let total_percent =
-        ((weapons |> Int.to_float) /. (total_weapons |> Int.to_float) *. weapon_percent)
-        +. ((keys |> Int.to_float) /. (total_keys |> Int.to_float) *. key_percent)
-        +. ((abilities |> Int.to_float) /. (total_abilities |> Int.to_float) *. ability_percent)
-        +. (dreamer_items |> Int.to_float)
-           /. (total_dreamer_items |> Int.to_float)
-           *. dreamer_item_percent
-        +. ((pens |> Int.to_float) /. (total_pens |> Int.to_float) *. purple_pen_percent)
+        percentage weapons total_weapons weapon_percent
+        +. percentage keys total_keys key_percent
+        +. percentage abilities total_abilities ability_percent
+        +. percentage dreamer_items total_dreamer_items dreamer_item_percent
+        +. percentage pens total_pens purple_pen_percent
       in
       Draw.text
         (fmt "Total: %0.2f%s" total_percent "%")
         { x = camera_x +. Config.other.progress_x_padding; y = row 8. };
       ()
+    in
+
+    let maybe_show_screen_fade ~under_ghost : bool =
+      match state.screen_fade with
+      | None -> false
+      | Some fade ->
+        if under_ghost = fade.show_ghost then (
+          let target =
+            match fade.timer with
+            | None -> 255
+            | Some timer ->
+              timer.left <- { seconds = timer.left.seconds -. state.frame.dt };
+              let target' =
+                (fade.target_alpha |> Int.to_float)
+                *. (1. -. (timer.left.seconds /. timer.total.seconds))
+                |> Float.to_int
+              in
+              Int.min target' fade.target_alpha
+          in
+          draw_screen_fade target;
+          true)
+        else
+          false
     in
 
     Raylib.begin_drawing ();
@@ -1147,27 +1167,27 @@ let tick (state : state) =
     draw_npcs game.room.npcs;
     draw_solid_tiles game.room camera_x camera_y state;
     draw_party_ghosts game.party;
+    let screen_faded = maybe_show_screen_fade ~under_ghost:true in
     draw_player game.player;
-    let enemy_projectiles = draw_enemies game.room.enemies in
-    draw_floating_platforms game.room state.frame.idx;
-    draw_object_trigger_indicators ();
-    draw_loose_projectiles ();
-    draw_fg_tiles game.room camera_x camera_y state;
-    List.iter draw_projectile enemy_projectiles;
-    if game.room.area.id = CITY_OF_CHAIRS then (
-      let draw (sprite : sprite) =
-        let y_offset =
-          Config.other.raindrop_speed
-          *. (state.frame.idx mod (sprite.dest.h /. Config.other.raindrop_speed |> Float.to_int)
-             |> Int.to_float)
+    if not screen_faded then (
+      let enemy_projectiles = draw_enemies game.room.enemies in
+      draw_floating_platforms game.room state.frame.idx;
+      draw_object_trigger_indicators ();
+      draw_loose_projectiles ();
+      draw_fg_tiles game.room camera_x camera_y state;
+      List.iter draw_projectile enemy_projectiles;
+      if game.room.area.id = CITY_OF_CHAIRS then (
+        let draw (sprite : sprite) =
+          let y_offset =
+            Config.other.raindrop_speed
+            *. (state.frame.idx mod (sprite.dest.h /. Config.other.raindrop_speed |> Float.to_int)
+               |> Int.to_float)
+          in
+          draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
         in
-        draw_sprite ~render_offset:(Some { x = camera_x; y = camera_y +. y_offset }) sprite
-      in
-      List.iter draw game.room.raindrops);
-    draw_hud ();
-    (match state.screen_fade with
-    | None -> ()
-    | Some alpha -> draw_screen_fade alpha);
+        List.iter draw game.room.raindrops);
+      draw_hud ();
+      ignore (maybe_show_screen_fade ~under_ghost:false));
     (let interaction_text =
        match state.pause_menu with
        | None -> game.interaction.text
