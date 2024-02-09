@@ -24,11 +24,6 @@ let rect_center_x (rect : rect) = rect.pos.x +. (rect.w /. 2.)
 let rect_center_y (rect : rect) = rect.pos.y +. (rect.h /. 2.)
 let get_rect_center (rect : rect) = { x = rect_center_x rect; y = rect_center_y rect }
 
-let raylib_Rect_to_rect (r : Raylib.Rectangle.t) : rect =
-  Raylib.Rectangle.{ w = width r; h = height r; pos = { x = x r; y = y r } }
-
-let rect_to_Rect (r : rect) : Raylib.Rectangle.t = Raylib.Rectangle.create r.pos.x r.pos.y r.w r.h
-
 let scale_rect scale rect =
   {
     pos = { x = rect.pos.x *. scale; y = rect.pos.y *. scale };

@@ -573,6 +573,7 @@ let interaction_step (step : Interaction.step) : string =
   | CURRENT_GHOST (PARTY _) -> "GHOST (PARTY _) ->"
   | PARTY_GHOST (_, _)
   | ENEMY (_, _)
+  | NTH_ENEMY (_, _, _)
   | NPC (_, _) ->
     ""
 

@@ -531,6 +531,8 @@ let tick (state : state) =
         | "Professor Holly"
         | "Hilda"
         | "Frankie"
+        | "Vicki"
+        | "Leonard"
         | "Garrett" ->
           "{{purple}}"
         | "Chang"

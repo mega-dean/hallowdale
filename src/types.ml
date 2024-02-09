@@ -1,5 +1,10 @@
 open Utils
 
+let raylib_Rect_to_rect (r : Raylib.Rectangle.t) : rect =
+  Raylib.Rectangle.{ w = width r; h = height r; pos = { x = x r; y = y r } }
+
+let rect_to_Rect (r : rect) : Raylib.Rectangle.t = Raylib.Rectangle.create r.pos.x r.pos.y r.w r.h
+
 type direction =
   | UP
   | DOWN
@@ -371,6 +376,8 @@ type enemy_id =
   | BORCHERT
   | DEAN
   | BUDDY
+  | LAVA_BRITTA
+  | LAVA_BRITTA_2
 
 type weapon = {
   name : string;
@@ -517,13 +524,16 @@ module Interaction = struct
   type entity_step =
     | UNSET_FLOOR
     | SET_FACING of direction
-    | WAIT_UNTIL_LANDED
+    | WAIT_UNTIL_LANDED of bool
     | HIDE
     | UNHIDE
     | (* TODO add another param facing_right : bool *)
       UNHIDE_AT of int * int * float * float
     | FREEZE
     | UNFREEZE
+    | MOVE_TO of (int * int)
+    | SET_VX of float
+    | SET_VY of float
 
   type item_kind =
     | WEAPON of string
@@ -560,8 +570,6 @@ module Interaction = struct
     | WALK_TO of int
     (* this is only used for DUNCAN *)
     | DEAD_WALK_TO of int
-    | SET_VX of float
-    | SET_VY of float
     | SET_POSE of string
     | START_ACTION of string
     | ENTITY of entity_step
@@ -576,6 +584,7 @@ module Interaction = struct
     | CURRENT_GHOST of ghost_step
     | PARTY_GHOST of ghost_id * party_ghost_step
     | ENEMY of enemy_id * enemy_step
+    | NTH_ENEMY of int * enemy_id * enemy_step
     | NPC of npc_id * npc_step
 
   type text_config = {
@@ -1196,6 +1205,7 @@ type room_id =
   | BASE_C
   | BASE_D
   | BASE_E
+  | BASE_F
   (* CITY_OF_CHAIRS *)
   | CITY_A
   | CITY_B

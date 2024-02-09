@@ -1741,9 +1741,13 @@ let tick (game : game) (state : state) =
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =
           match entity_step with
+          | SET_VX new_vx -> entity.v.x <- new_vx
+          | SET_VY new_vy -> entity.v.y <- new_vy
           | UNSET_FLOOR -> entity.current_floor <- None
           | SET_FACING direction -> Entity.set_facing_right entity direction
-          | WAIT_UNTIL_LANDED ->
+          | WAIT_UNTIL_LANDED can_hardfall ->
+            if not can_hardfall then
+              (game.player.ghost.hardfall_timer <- None);
             if Option.is_none entity.current_floor then
               still_waiting_for_floor := true
           | UNHIDE -> Entity.unhide entity
@@ -1757,6 +1761,10 @@ let tick (game : game) (state : state) =
           | HIDE -> Entity.hide entity
           | FREEZE -> Entity.freeze entity
           | UNFREEZE -> Entity.unfreeze entity
+          | MOVE_TO (target_tile_x, target_tile_y) ->
+            let target_pos = (target_tile_x, target_tile_y) |> Tiled.Tile.coords_to_pos in
+            entity.dest.pos <-
+              { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
         in
 
         let add_item (item_kind : Interaction.item_kind) =
@@ -1893,16 +1901,23 @@ let tick (game : game) (state : state) =
             handle_party_ghost_step player.ghost.id (as_party_ghost player) party_step
         in
 
-        let handle_enemy_step enemy_id (enemy_step : Interaction.enemy_step) =
+        let handle_enemy_step ?(idx = None) enemy_id (enemy_step : Interaction.enemy_step) =
           let enemies : enemy list =
             List.filter (fun (e : enemy) -> e.id = enemy_id) game.room.enemies
           in
-          let apply_to_all fn = List.iter fn enemies in
+          let apply_to_all fn =
+            match idx with
+            | None -> List.iter fn enemies
+            | Some idx' -> List.nth enemies idx' |> fn
+          in
           let apply_to_only step_name fn =
-            if List.length enemies <> 1 then
-              failwithf "can't use %s when there are multiple enemies" step_name
-            else
-              fn (List.hd enemies)
+            match idx with
+            | None ->
+              if List.length enemies <> 1 then
+                failwithf "can't use %s when there are multiple enemies" step_name
+              else
+                fn (List.hd enemies)
+            | Some idx' -> List.nth enemies idx' |> fn
           in
           let walk_to target_tile_x dead =
             apply_to_only "WALK_TO" (fun (enemy : enemy) ->
@@ -1924,8 +1939,6 @@ let tick (game : game) (state : state) =
           match enemy_step with
           | DEAD_WALK_TO target_tile_x -> walk_to target_tile_x true
           | WALK_TO target_tile_x -> walk_to target_tile_x false
-          | SET_VX new_vx -> apply_to_only "SET_VX" (fun (e : enemy) -> e.entity.v.x <- new_vx)
-          | SET_VY new_vy -> apply_to_only "SET_VY" (fun (e : enemy) -> e.entity.v.y <- new_vy)
           | SET_POSE pose_name ->
             apply_to_all (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
@@ -1999,7 +2012,9 @@ let tick (game : game) (state : state) =
             | Some npc -> npc
           in
           handle_npc_step (find_existing_npc ()) npc_step
-        | ENEMY (enemy_id, enemy_step) -> handle_enemy_step enemy_id enemy_step);
+        | ENEMY (enemy_id, enemy_step) -> handle_enemy_step enemy_id enemy_step
+        | NTH_ENEMY (idx, enemy_id, enemy_step) ->
+          handle_enemy_step ~idx:(Some idx) enemy_id enemy_step);
 
         if !still_walking || !still_waiting_for_floor then
           ( (* leave the current step on top of the stack *) )
