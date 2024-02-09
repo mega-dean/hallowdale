@@ -58,7 +58,7 @@
 
         [ "LOCKER_BOY", {
             "kind": "multi-boss",
-            "health": 80,
+            "health": 5,
             "scale": 1.5,
             "w": 22,
             "h": 40,
@@ -537,6 +537,122 @@
             ]
         }],
 
+        [ "LAVA_BRITTA", {
+            "kind": "boss",
+            "health": 50,
+            "w": 20,
+            "h": 36,
+            "can_recoil": true,
+            "dream_nail": {},
+            "attrs": [
+                ["walk_vx", 400.0]
+            ],
+            "unscaled_attrs": [
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 4,
+                    "y_offset": 5
+                }],
+                ["megaphone", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }],
+                ["jump", {
+                    "x_offset": 7,
+                    "y_offset": 1
+                }],
+                ["lunge", {
+                    "x_offset": 18,
+                    "y_offset": 3
+                }],
+                ["storm", {
+                    "x_offset": 7,
+                    "y_offset": 4
+                }],
+                ["throw", {
+                    "x_offset": 5,
+                    "y_offset": 3
+                }],
+                ["charge-lunge", {
+                    "x_offset": 9,
+                    "y_offset": 0
+                }],
+                ["charge-storm", {
+                    "x_offset": 7,
+                    "y_offset": 4
+                }],
+                ["charge-throw", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }]
+            ]
+        }],
+
+        [ "LAVA_BRITTA_2", {
+            "kind": "boss",
+            "health": 25,
+            "w": 20,
+            "h": 36,
+            "can_recoil": true,
+            "dream_nail": {},
+            "attrs": [
+                ["walk_vx", 400.0]
+            ],
+            "unscaled_attrs": [
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }],
+                ["walking", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 4,
+                    "y_offset": 5
+                }],
+                ["megaphone", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }],
+                ["jump", {
+                    "x_offset": 7,
+                    "y_offset": 1
+                }],
+                ["lunge", {
+                    "x_offset": 18,
+                    "y_offset": 3
+                }],
+                ["storm", {
+                    "x_offset": 7,
+                    "y_offset": 4
+                }],
+                ["throw", {
+                    "x_offset": 5,
+                    "y_offset": 3
+                }],
+                ["charge-lunge", {
+                    "x_offset": 9,
+                    "y_offset": 0
+                }],
+                ["charge-storm", {
+                    "x_offset": 7,
+                    "y_offset": 4
+                }],
+                ["charge-throw", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }]
+            ]
+        }],
+
         // enemies
         [ "PENGUIN", {
             "kind": "enemy",
@@ -923,21 +1039,21 @@
         }],
 
         [ "MANICORN_3", {
-            "kind": "enemy",
-            "health": 170,
-            "damage": 2,
+            "kind": "multi-boss",
+            "health": 5,
+            "damage": 1,
             "scale": 2.5,
             "w": 22,
             "h": 45,
             "can_recoil": false,
             "dream_nail": {},
             "attrs": [
-                ["aggro_distance", 700.0],
+                ["aggro_distance", 1700.0],
                 ["jump_vy", -1200.0],
-                ["walk_vx", 300.0],
-                ["punch_vx", 600.0],
-                ["kick_vx", 700.0],
-                ["dash_vx", 800.0]
+                ["walk_vx", 400.0],
+                ["punch_vx", 700.0],
+                ["kick_vx", 800.0],
+                ["dash_vx", 900.0]
             ],
             "unscaled_attrs": [
                 ["dash_duration", 1.2],

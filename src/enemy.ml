@@ -33,6 +33,8 @@ let parse_name context name : enemy_id =
   | "BORCHERT" -> BORCHERT
   | "DEAN" -> DEAN
   | "BUDDY" -> BUDDY
+  | "LAVA_BRITTA" -> LAVA_BRITTA
+  | "LAVA_BRITTA_2" -> LAVA_BRITTA_2
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
@@ -178,6 +180,8 @@ let maybe_take_damage
       enemy.status.active <- true;
       set_prop enemy "death_recoil" 1.
     | DUNCAN
+    | LAVA_BRITTA
+    | LAVA_BRITTA_2
     | ELECTRICITY ->
       ()
     | BORCHERT
@@ -1417,6 +1421,86 @@ module Borchert : M = struct
         let still_shooting = Action.still_doing enemy "shoot" ~duration ~frame_time in
         if not still_shooting then
           Action.start_and_log enemy VANISH ~frame_time)
+end
+
+module Lava_britta_actions = struct
+  type t =
+    | CHARGE_LUNGE
+    | CHARGE_STORM
+    | CHARGE_THROW
+    | JUMP
+    | LUNGE
+    | STORM
+    | THROW
+    | WALK
+
+  let to_string (action : t) : string =
+    match action with
+    | CHARGE_LUNGE -> "charge-lunge"
+    | CHARGE_STORM -> "charge-storm"
+    | CHARGE_THROW -> "charge-throw"
+    | JUMP -> "jump"
+    | LUNGE -> "lunge"
+    | STORM -> "storm"
+    | THROW -> "throw"
+    | WALK -> "walking"
+
+  let from_string (s : string) : t =
+    match s with
+    | "charge-lunge" -> CHARGE_LUNGE
+    | "charge-storm" -> CHARGE_STORM
+    | "charge-throw" -> CHARGE_THROW
+    | "jump" -> JUMP
+    | "lunge" -> LUNGE
+    | "storm" -> STORM
+    | "throw" -> THROW
+    | "walking" -> WALK
+    | _ -> failwithf "Lava_britta_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
+    let pose_name =
+      let walk () =
+        let walk_vx = get_attr enemy "walk_vx" in
+        if enemy.entity.sprite.facing_right then
+          enemy.entity.v.x <- walk_vx
+        else
+          enemy.entity.v.x <- -1. *. walk_vx
+      in
+      match action with
+      | WALK ->
+        walk ();
+        "walking"
+      | CHARGE_LUNGE
+      | CHARGE_STORM
+      | CHARGE_THROW
+      | JUMP
+      | LUNGE
+      | STORM
+      | THROW ->
+        "idle"
+    in
+    set_pose enemy pose_name
+end
+
+module Lava_britta : M = struct
+  module Action = Make_loggable (Lava_britta_actions)
+
+  type args = {
+    frame_time : float;
+    boss_area : rect;
+    ghost_pos : vector;
+  }
+
+  let get_args state game : args =
+    {
+      frame_time = state.frame.time;
+      boss_area = get_boss_area game;
+      ghost_pos = get_rect_center game.player.ghost.entity.dest;
+    }
+
+  let choose_behavior (enemy : enemy) args =
+    ()
 end
 
 module Buddy_actions = struct
@@ -2922,6 +3006,9 @@ let get_module (id : enemy_id) : (module M) =
   | BUDDY -> (module Buddy)
   | LUIS_GUZMAN -> (module Luis_guzman)
   | BORCHERT -> (module Borchert)
+  | LAVA_BRITTA
+  | LAVA_BRITTA_2 ->
+    (module Lava_britta)
 
 let choose_behavior (enemy : enemy) (state : state) (game : game) =
   let (module M : M) = get_module enemy.id in
@@ -2937,9 +3024,6 @@ let create_from_rects
       : enemy =
     let level =
       match id with
-      | FLYING_HIPPIE_2 -> 2
-      | MANICORN_2 -> 2
-      | MANICORN_3 -> 3
       | MANICORN
       | FISH
       | FROG
@@ -2956,9 +3040,16 @@ let create_from_rects
       | BIRD
       | BAT
       | DUNCAN
+      | LAVA_BRITTA
       | LOCKER_BOY ->
         1
+      | LAVA_BRITTA_2
+      | FLYING_HIPPIE_2
+      | MANICORN_2 ->
+        2
+      | MANICORN_3 -> 3
     in
+
     let texture_configs : texture_config ne_list =
       List.map (Entity.to_texture_config ENEMIES enemy_asset_dir_name) enemy_config.texture_configs
       |> List.to_ne_list
@@ -3016,6 +3107,7 @@ let create_from_rects
     let enemy_asset_dir_name =
       match enemy_id with
       | FLYING_HIPPIE_2 -> "FLYING_HIPPIE"
+      | LAVA_BRITTA_2 -> "LAVA_BRITTA"
       | MANICORN_2
       | MANICORN_3 ->
         "MANICORN"
@@ -3032,6 +3124,7 @@ let create_from_rects
       | BORCHERT
       | DEAN
       | BUDDY
+      | LAVA_BRITTA
       | BIRD
       | BAT
       | DUNCAN
