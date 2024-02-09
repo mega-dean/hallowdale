@@ -102,6 +102,7 @@ let trigger_kind (kind : trigger_kind) =
   | PURPLE_PEN -> "PURPLE_PEN"
   | BOSS_KILLED -> "BOSS_KILLED"
   | D_NAIL -> "D_NAIL"
+  | REFLECT -> "REFLECT"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
@@ -221,6 +222,7 @@ let room_id id =
   | BASE_C -> "BASE_c"
   | BASE_D -> "BASE_d"
   | BASE_E -> "BASE_e"
+  | BASE_F -> "BASE_f"
   | CITY_A -> "CITY_a"
   | CITY_B -> "CITY_b"
   | CITY_D -> "CITY_d"
@@ -285,6 +287,7 @@ let room_id_filename id =
   | BASE_C -> "c"
   | BASE_D -> "d"
   | BASE_E -> "e"
+  | BASE_F -> "f"
   | CITY_A -> "a"
   | CITY_B -> "b"
   | CITY_D -> "d"
@@ -388,6 +391,8 @@ let enemy_id (e : enemy_id) : string =
   | FROG -> "FROG"
   | HIPPIE -> "HIPPIE"
   | JOSHUA -> "JOSHUA"
+  | LAVA_BRITTA -> "LAVA_BRITTA"
+  | LAVA_BRITTA_2 -> "LAVA_BRITTA_2"
   | LUIS_GUZMAN -> "LUIS_GUZMAN"
   | LOCKER_BOY -> "LOCKER_BOY"
   | MANICORN -> "MANICORN"

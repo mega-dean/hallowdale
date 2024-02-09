@@ -53,6 +53,7 @@ let init (params : room_params) : room =
   let camera_triggers : trigger list ref = ref [] in
   let lever_triggers : lever list ref = ref [] in
   let shadow_triggers : trigger list ref = ref [] in
+  let reflect_triggers : trigger list ref = ref [] in
   let lore_triggers : trigger list ref = ref [] in
   let d_nail_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
@@ -325,6 +326,8 @@ let init (params : room_params) : room =
       | "target" ->
         (* targets were already processed in collect_targets *)
         ()
+      | "reflect" -> reflect_triggers := get_object_trigger REFLECT :: !reflect_triggers
+      | "dream-nail" -> d_nail_triggers := get_object_trigger D_NAIL :: !d_nail_triggers
       | "door-warp" ->
         let target = parse_warp_target name_suffix in
         cutscene_triggers := get_object_trigger (WARP target) :: !cutscene_triggers
@@ -708,6 +711,7 @@ let init (params : room_params) : room =
         lore = !lore_triggers;
         respawns = !respawn_triggers;
         shadows = !shadow_triggers;
+        reflect = !reflect_triggers;
       };
     spikes = !spikes;
     platform_spikes = !platform_spikes |> List.to_string_map;

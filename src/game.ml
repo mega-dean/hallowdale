@@ -288,6 +288,7 @@ let create
     party;
     room;
     room_changed_last_frame = false;
+    reflection_x = None;
     music;
     interaction =
       {

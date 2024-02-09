@@ -1174,6 +1174,19 @@ let tick (state : state) =
       draw_floating_platforms game.room state.frame.idx;
       draw_object_trigger_indicators ();
       draw_loose_projectiles ();
+      (match game.reflection_x with
+      | None -> ()
+      | Some reflection_x ->
+        let original_pos = game.player.ghost.entity.dest.pos in
+        game.player.ghost.entity.dest.pos <-
+          { original_pos with x = reflection_x -. (original_pos.x -. reflection_x) };
+        game.player.ghost.entity.sprite.facing_right <-
+          not game.player.ghost.entity.sprite.facing_right;
+        draw_entity ~tint:Color.white game.player.ghost.entity;
+        draw_ghost_head ~tint:Color.white game.player.ghost;
+        game.player.ghost.entity.dest.pos <- original_pos;
+        game.player.ghost.entity.sprite.facing_right <-
+          not game.player.ghost.entity.sprite.facing_right);
       draw_fg_tiles game.room camera_x camera_y state;
       List.iter draw_projectile enemy_projectiles;
       if game.room.area.id = CITY_OF_CHAIRS then (

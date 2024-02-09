@@ -81,6 +81,7 @@ let maybe_begin_interactions (state : state) (game : game) (triggers : trigger n
   let first_trigger = List.Non_empty.hd triggers in
   let name = strip_blocking_interaction first_trigger.full_name in
   match first_trigger.kind with
+  | REFLECT -> game.reflection_x <- Some first_trigger.dest.pos.x
   | WARP _
   | PURPLE_PEN
   | INFO ->
@@ -1555,7 +1556,10 @@ let tick (game : game) (state : state) =
           if interaction_blocked then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
-      (match find_trigger_collision game.player game.room.triggers.cutscene with
+      (match
+         find_trigger_collision game.player
+           (game.room.triggers.cutscene @ game.room.triggers.reflect)
+       with
       | None -> ()
       | Some trigger -> maybe_begin_interaction state game trigger);
       let respawn_trigger_collision =

@@ -305,8 +305,7 @@ let update_projectile (projectile : projectile) (game : game) (state : state) : 
              else
                projectile.entity.v.x -. dv);
           y =
-            (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y
-             then
+            (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y then
                projectile.entity.v.y +. dv
              else
                projectile.entity.v.y -. dv);
@@ -864,6 +863,8 @@ let tick (state : state) =
                (game.room.spikes
                @ game.room.hazards
                @ (game.room.platform_spikes |> String.Map.to_list |> List.map snd))));
+
+        game.reflection_x <- None;
 
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors

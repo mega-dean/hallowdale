@@ -467,6 +467,7 @@ type trigger_kind =
   | PURPLE_PEN
   | BOSS_KILLED
   | D_NAIL
+  | REFLECT
 
 type camera_motion =
   | LINEAR of float
@@ -1324,6 +1325,7 @@ type triggers = {
   lore : trigger list;
   respawns : respawn_trigger list;
   shadows : trigger list;
+  reflect : trigger list;
 }
 
 type camera_state = {
@@ -1443,6 +1445,8 @@ type game = {
   mutable party : party_ghost list;
   mutable room : room;
   mutable room_changed_last_frame : bool;
+  (* this is only used for the orb reflection *)
+  mutable reflection_x : float option;
   mutable music : area_music;
   interaction : Interaction.t;
   (* - game.progress keeps track of the the current progress, and gets saved to save_file.progress
