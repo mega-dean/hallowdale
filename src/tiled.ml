@@ -14,6 +14,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "basement_c" -> (BASEMENT, BASE_C)
   | "basement_d" -> (BASEMENT, BASE_D)
   | "basement_e" -> (BASEMENT, BASE_E)
+  | "basement_f" -> (BASEMENT, BASE_F)
   | "beenz_a" -> (MEOW_MEOW_BEENZ, MMB_A)
   | "city_a" -> (CITY_OF_CHAIRS, CITY_A)
   | "city_b" -> (CITY_OF_CHAIRS, CITY_B)

@@ -419,6 +419,13 @@
             "width": 960,
             "x": -1512,
             "y": -1932
+        },
+        {
+            "fileName": "basement_f.json",
+            "height": 600,
+            "width": 1440,
+            "x": 3864,
+            "y": 2712
         }
     ],
     "onlyShowAdjacentMaps": false,

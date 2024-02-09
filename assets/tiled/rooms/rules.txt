@@ -13,9 +13,9 @@ automapping/floors-draw-top-corners.tmj
 # these were applied manually when creating the auto:iso layers in each room, but
 # they are not idempotent so they should only be used for new rooms
 
-# automapping/draw-auto-iso.tmj
-# automapping/draw-auto-iso-corners.tmj
-# automapping/extend-auto-iso-corners.tmj
+automapping/draw-auto-iso.tmj
+automapping/draw-auto-iso-corners.tmj
+automapping/extend-auto-iso-corners.tmj
 
 
 ############ draw auto:iso to bg-iso-walls ############

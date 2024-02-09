@@ -22,7 +22,9 @@
             "w": 28,
             "h": 38,
             "texture_configs": [
-                ["idle", {
+                ["idle", {}],
+                ["take-damage", {
+                    "x_offset": 8
                 }]
             ]
         }],
@@ -30,7 +32,8 @@
             "w": 27,
             "h": 36,
             "texture_configs": [
-                ["idle", {
+                ["idle", {}],
+                ["take-damage", {
                 }]
             ]
         }],
@@ -40,7 +43,10 @@
             "texture_configs": [
                 ["idle", {
                     "count": 4,
-                    "duration": 0.3
+                    "duration": 0.3,
+                    "x_offset": 4
+                }],
+                ["take-damage", {
                 }]
             ]
         }],
@@ -89,7 +95,8 @@
             "w": 27,
             "h": 36,
             "texture_configs": [
-                ["idle", {
+                ["idle", {}],
+                ["take-damage", {
                 }]
             ]
         }],
