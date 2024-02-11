@@ -12,7 +12,14 @@ let cutscene_finished
   in
   List.mem (fmt "cutscene:%s" cutscene_name) all_finished_interactions
 
-let get_steps ?(increase_health = false) state game (triggers : trigger list) : step list =
+let trigger_name trigger : string = String.maybe_trim_before '|' trigger.full_name
+
+let get_steps
+    state
+    game
+    ?(autosave_pos = None)
+    ?(followup : trigger option = None)
+    (trigger : trigger) : step list =
   let ability_text_outline x y =
     (* TODO move these to config *)
     let w, h = (150., 60.) in
@@ -334,111 +341,9 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           [ "Consumed the"; "Vapors of Magmarath." ]
           [ "Tap (A) while holding UP"; "to unleash the Vapors." ]
       | _ -> fail ())
-    | "cutscene" -> (
-      match trigger.name_suffix with
-      | "ss-opening-poem" -> opening_poem
-      | "opening-poem" ->
-        opening_poem
-        @ [
-            CURRENT_GHOST (ENTITY (WAIT_UNTIL_LANDED true));
-            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-            STEP (SHAKE_SCREEN 1.5);
-            STEP (WAIT 2.5);
-          ]
-      | "fight-borchert" ->
-        [
-          CURRENT_GHOST (SET_POSE IDLE);
-          STEP (WAIT 0.5);
-          STEP (WAIT 0.5);
-          CURRENT_GHOST (PARTY (WALK_TO 55));
-          ENEMY (BORCHERT, ENTITY UNHIDE);
-          ENEMY (BORCHERT, ENTITY (SET_FACING LEFT));
-          ENEMY (BORCHERT, ENTITY UNFREEZE);
-          ENEMY (BORCHERT, SET_POSE "dive");
-          ENEMY (BORCHERT, ENTITY (SET_VY 300.));
-          STEP (WAIT 1.7);
-          ENEMY (BORCHERT, ENTITY (SET_VY 0.));
-          STEP (WAIT 2.);
-          STEP (UNHIDE_LAYER "boss-doors");
-          ENEMY (BORCHERT, SET_POSE "charge-shoot");
-          STEP (WAIT 1.);
-        ]
-      | "fight-luis-guzman" ->
-        [
-          CURRENT_GHOST (PARTY (WALK_TO 78));
-          CURRENT_GHOST (SET_POSE IDLE);
-          ENEMY (LUIS_GUZMAN, ENTITY UNHIDE);
-          ENEMY (LUIS_GUZMAN, ENTITY FREEZE);
-          ENEMY (LUIS_GUZMAN, SET_POSE "idle");
-          STEP (SET_FIXED_CAMERA (77, 120));
-          STEP (WAIT 2.);
-          ENEMY (LUIS_GUZMAN, SET_POSE "charge-shoot");
-          STEP (UNHIDE_LAYER "boss-doors");
-          STEP (WAIT 1.);
-          ENEMY (LUIS_GUZMAN, ENTITY UNFREEZE);
-        ]
-      | "fight-joshua" ->
-        [
-          CURRENT_GHOST (PARTY (WALK_TO 49));
-          CURRENT_GHOST (SET_POSE IDLE);
-          ENEMY (JOSHUA, ENTITY UNHIDE);
-          ENEMY (JOSHUA, ENTITY FREEZE);
-          ENEMY (JOSHUA, SET_POSE "clipping");
-          STEP (SET_FIXED_CAMERA (20, 44));
-          STEP (WAIT 2.7);
-          ENEMY (JOSHUA, SET_POSE "idle");
-          STEP (WAIT 1.);
-          ENEMY (JOSHUA, SET_POSE "shoot");
-          STEP (UNHIDE_LAYER "boss-doors");
-          STEP (WAIT 1.);
-          ENEMY (JOSHUA, ENTITY UNFREEZE);
-        ]
-      | "fight-vice-dean-laybourne" ->
-        [
-          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNHIDE);
-          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
-          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "idle");
-          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY (SET_FACING LEFT));
-          CURRENT_GHOST (PARTY (WALK_TO 87));
-          CURRENT_GHOST (SET_POSE IDLE);
-          STEP (WAIT 0.7);
-          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "lunge");
-          STEP (UNHIDE_LAYER "boss-doors");
-          STEP (WAIT 1.);
-          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
-        ]
-      | "fight-buddy" ->
-        [
-          ENEMY (BUDDY, ENTITY UNHIDE);
-          ENEMY (BUDDY, ENTITY UNFREEZE);
-          ENEMY (BUDDY, SET_POSE "idle");
-          ENEMY (BUDDY, ENTITY (SET_FACING RIGHT));
-          CURRENT_GHOST (PARTY (WALK_TO 54));
-          CURRENT_GHOST (SET_POSE IDLE);
-          STEP (WAIT 0.7);
-          STEP
-            (DIALOGUE
-               ("Buddy", "I put myself out there for you! I laid my {{blue}} soul {{white}} bare!"));
-          STEP (WAIT 1.);
-          STEP (UNHIDE_LAYER "boss-doors");
-          ENEMY (BUDDY, ENTITY UNFREEZE);
-        ]
-      | "fight-dean" ->
-        [
-          CURRENT_GHOST (PARTY (WALK_TO 43));
-          CURRENT_GHOST (SET_POSE IDLE);
-          ENEMY (DEAN, ENTITY UNHIDE);
-          ENEMY (DEAN, ENTITY UNFREEZE);
-          ENEMY (DEAN, SET_POSE "idle");
-          ENEMY (DEAN, ENTITY (SET_FACING LEFT));
-          ENEMY (DEAN, WALK_TO 70);
-          STEP (WAIT 0.7);
-          ENEMY (DEAN, SET_POSE "spikes");
-          STEP (WAIT 1.);
-          STEP (UNHIDE_LAYER "boss-doors");
-          ENEMY (DEAN, ENTITY UNFREEZE);
-        ]
-      | "fight-duncan" ->
+    | "boss-fight" -> (
+      match Enemy.parse_name "boss-fight interaction" trigger.name_suffix with
+      | DUNCAN ->
         [
           ENEMY (DUNCAN, ENTITY UNHIDE);
           ENEMY (DUNCAN, ENTITY FREEZE);
@@ -478,6 +383,129 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           ENEMY (DUNCAN, ENTITY UNFREEZE);
           STEP (WAIT 0.7);
         ]
+      | LOCKER_BOY ->
+        [
+          ENEMY (LOCKER_BOY, ENTITY HIDE);
+          CURRENT_GHOST (PARTY (WALK_TO 131));
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (SET_POSE READING);
+          STEP (WAIT 0.7);
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          STEP (HIDE_LAYER "bg-iso2");
+          STEP (UNHIDE_LAYER "bg-iso3");
+          ENEMY (LOCKER_BOY, ENTITY UNHIDE);
+          ENEMY (LOCKER_BOY, ENTITY FREEZE);
+          STEP (WAIT 0.5);
+          ENEMY (LOCKER_BOY, SET_POSE "vanish");
+          STEP (WAIT 0.5);
+          ENEMY (LOCKER_BOY, ENTITY UNFREEZE);
+        ]
+      | JOSHUA ->
+        [
+          CURRENT_GHOST (PARTY (WALK_TO 49));
+          CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (JOSHUA, ENTITY UNHIDE);
+          ENEMY (JOSHUA, ENTITY FREEZE);
+          ENEMY (JOSHUA, SET_POSE "clipping");
+          STEP (SET_FIXED_CAMERA (20, 44));
+          STEP (WAIT 2.7);
+          ENEMY (JOSHUA, SET_POSE "idle");
+          STEP (WAIT 1.);
+          ENEMY (JOSHUA, SET_POSE "shoot");
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          ENEMY (JOSHUA, ENTITY UNFREEZE);
+        ]
+      | VICE_DEAN_LAYBOURNE ->
+        [
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNHIDE);
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
+          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "idle");
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY (SET_FACING LEFT));
+          CURRENT_GHOST (PARTY (WALK_TO 87));
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.7);
+          ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "lunge");
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          ENEMY (VICE_DEAN_LAYBOURNE, ENTITY UNFREEZE);
+        ]
+      | LUIS_GUZMAN ->
+        [
+          CURRENT_GHOST (PARTY (WALK_TO 78));
+          CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (LUIS_GUZMAN, ENTITY UNHIDE);
+          ENEMY (LUIS_GUZMAN, ENTITY FREEZE);
+          ENEMY (LUIS_GUZMAN, SET_POSE "idle");
+          STEP (SET_FIXED_CAMERA (77, 120));
+          STEP (WAIT 2.);
+          ENEMY (LUIS_GUZMAN, SET_POSE "charge-shoot");
+          STEP (UNHIDE_LAYER "boss-doors");
+          STEP (WAIT 1.);
+          ENEMY (LUIS_GUZMAN, ENTITY UNFREEZE);
+        ]
+      | BUDDY ->
+        [
+          ENEMY (BUDDY, ENTITY UNHIDE);
+          ENEMY (BUDDY, ENTITY UNFREEZE);
+          ENEMY (BUDDY, SET_POSE "idle");
+          ENEMY (BUDDY, ENTITY (SET_FACING RIGHT));
+          CURRENT_GHOST (PARTY (WALK_TO 54));
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.7);
+          STEP
+            (DIALOGUE
+               ("Buddy", "I put myself out there for you! I laid my {{blue}} soul {{white}} bare!"));
+          STEP (WAIT 1.);
+          STEP (UNHIDE_LAYER "boss-doors");
+          ENEMY (BUDDY, ENTITY UNFREEZE);
+        ]
+      | BORCHERT ->
+        [
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 0.5);
+          STEP (WAIT 0.5);
+          CURRENT_GHOST (PARTY (WALK_TO 55));
+          ENEMY (BORCHERT, ENTITY UNHIDE);
+          ENEMY (BORCHERT, ENTITY (SET_FACING LEFT));
+          ENEMY (BORCHERT, ENTITY UNFREEZE);
+          ENEMY (BORCHERT, SET_POSE "dive");
+          ENEMY (BORCHERT, ENTITY (SET_VY 300.));
+          STEP (WAIT 1.7);
+          ENEMY (BORCHERT, ENTITY (SET_VY 0.));
+          STEP (WAIT 2.);
+          STEP (UNHIDE_LAYER "boss-doors");
+          ENEMY (BORCHERT, SET_POSE "charge-shoot");
+          STEP (WAIT 1.);
+        ]
+      | DEAN ->
+        [
+          CURRENT_GHOST (PARTY (WALK_TO 43));
+          CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (DEAN, ENTITY UNHIDE);
+          ENEMY (DEAN, ENTITY UNFREEZE);
+          ENEMY (DEAN, SET_POSE "idle");
+          ENEMY (DEAN, ENTITY (SET_FACING LEFT));
+          ENEMY (DEAN, WALK_TO 70);
+          STEP (WAIT 0.7);
+          ENEMY (DEAN, SET_POSE "spikes");
+          STEP (WAIT 1.);
+          STEP (UNHIDE_LAYER "boss-doors");
+          ENEMY (DEAN, ENTITY UNFREEZE);
+        ]
+      | _ -> fail ())
+    | "cutscene" -> (
+      match trigger.name_suffix with
+      | "ss-opening-poem" -> opening_poem
+      | "opening-poem" ->
+        opening_poem
+        @ [
+            CURRENT_GHOST (ENTITY (WAIT_UNTIL_LANDED true));
+            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+            STEP (SHAKE_SCREEN 1.5);
+            STEP (WAIT 2.5);
+          ]
       | "mama-mahogany" ->
         [
           PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (29, 36, 0., 0.)));
@@ -502,24 +530,6 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       | "lockers" -> [ STEP (FLOATING_TEXT ("... lockers ...", 1.)) ]
       | "lockers-lockers-lockers" ->
         [ STEP (FLOATING_TEXT ("... lockers, lockers, lockers ...", 1.)) ]
-      | "fight-locker-boys" ->
-        [
-          ENEMY (LOCKER_BOY, ENTITY HIDE);
-          CURRENT_GHOST (PARTY (WALK_TO 131));
-          STEP (WAIT 0.7);
-          CURRENT_GHOST (SET_POSE READING);
-          STEP (WAIT 0.7);
-          STEP (UNHIDE_LAYER "boss-doors");
-          STEP (WAIT 1.);
-          STEP (HIDE_LAYER "bg-iso2");
-          STEP (UNHIDE_LAYER "bg-iso3");
-          ENEMY (LOCKER_BOY, ENTITY UNHIDE);
-          ENEMY (LOCKER_BOY, ENTITY FREEZE);
-          STEP (WAIT 0.5);
-          ENEMY (LOCKER_BOY, SET_POSE "vanish");
-          STEP (WAIT 0.5);
-          ENEMY (LOCKER_BOY, ENTITY UNFREEZE);
-        ]
       | "arrive-at-shirley-island" ->
         [
           CURRENT_GHOST (SET_POSE IDLE);
@@ -616,8 +626,8 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       | _ -> fail ())
     | "boss-killed" -> (
       remove_nail := false;
-      match trigger.name_suffix with
-      | "LAVA_BRITTA" ->
+      match Enemy.parse_name "boss-killed interaction" trigger.name_suffix with
+      | LAVA_BRITTA ->
         [
           STEP (WAIT 1.);
           NPC (SHIRLEY, ENTITY (MOVE_TO (195, 68)));
@@ -674,7 +684,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (DIALOGUE ("Britta", "Knock, knock!"));
           ENEMY (LAVA_BRITTA_2, ENTITY UNFREEZE);
         ]
-      | "LAVA_BRITTA_2" ->
+      | LAVA_BRITTA_2 ->
         [
           STEP (WAIT 1.);
           ENEMY (LAVA_BRITTA_2, WALK_TO 46);
@@ -703,7 +713,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (DIALOGUE ("Britta", "Floooooooooor!"));
           PARTY_GHOST (JEFF, ENTITY HIDE);
         ]
-      | "MANICORN_3" ->
+      | MANICORN_3 ->
         [
           STEP (WAIT 1.);
           ENEMY (MANICORN_3, ENTITY HIDE);
@@ -759,7 +769,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (DIALOGUE ("Britta", "That's who's there!"));
           STEP (DIALOGUE ("Jeff", "Yeah, but it's {{red}} for you!"));
         ]
-      | "BORCHERT" ->
+      | BORCHERT ->
         [
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE IDLE);
@@ -773,7 +783,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (HIDE_LAYER "boss-doors");
           STEP (WAIT 1.);
         ]
-      | "LUIS_GUZMAN" ->
+      | LUIS_GUZMAN ->
         game.interaction.use_dashes_in_archives <- Some false;
         [
           STEP (WAIT 0.7);
@@ -789,7 +799,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
         ]
-      | "BUDDY" ->
+      | BUDDY ->
         [
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE IDLE);
@@ -803,7 +813,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
         ]
-      | "VICE_DEAN_LAYBOURNE" ->
+      | VICE_DEAN_LAYBOURNE ->
         let facing =
           let boss = List.hd game.room.enemies in
           if rect_center_x boss.entity.dest < rect_center_x game.player.ghost.entity.dest then
@@ -822,7 +832,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
         ]
-      | "DEAN" ->
+      | DEAN ->
         [
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE IDLE);
@@ -834,7 +844,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                   guess." ));
           STEP (HIDE_LAYER "boss-doors");
         ]
-      | "JOSHUA" ->
+      | JOSHUA ->
         let current_ghost_name =
           match game.player.ghost.id with
           | TROY -> "Troy"
@@ -855,7 +865,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
           CURRENT_GHOST (ENTITY UNSET_FLOOR);
           ENEMY (JOSHUA, ENTITY UNSET_FLOOR);
         ]
-      | "DUNCAN" ->
+      | DUNCAN ->
         [
           ENEMY (DUNCAN, ENTITY (SET_VX 0.));
           CURRENT_GHOST (PARTY (WALK_TO 52));
@@ -937,7 +947,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
             PARTY_GHOST (JEFF, ENTITY HIDE);
             PARTY_GHOST (ANNIE, ENTITY HIDE);
           ]
-      | "LOCKER_BOY" ->
+      | LOCKER_BOY ->
         [
           PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (157, 31, 0., 0.)));
           PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (156, 33, 0., 0.)));
@@ -1116,7 +1126,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       | _ -> fail ())
     | "dream-nail" -> (
       match trigger.name_suffix with
-      | "aaa" ->
+      | "final-sequence" ->
         let other_ghosts =
           List.filter_map
             (fun (p : party_ghost) ->
@@ -1146,10 +1156,7 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
         (* switch current ghost
 
         *)
-        @ (if game.player.ghost.id <> ABED then
-             [ PARTY_GHOST (ABED, MAKE_CURRENT_GHOST) ]
-           else
-             [])
+        @ (if game.player.ghost.id <> ABED then [ PARTY_GHOST (ABED, MAKE_CURRENT_GHOST) ] else [])
         @ [
             CURRENT_GHOST (ENTITY (MOVE_TO (194, 69)));
             CURRENT_GHOST (SET_POSE IDLE);
@@ -1202,6 +1209,9 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
                6 - big center
                7 - big right
             *)
+            (* Death of Neil
+
+          *)
             NPC (NEIL, ENTITY (SET_FACING LEFT));
             NPC (NEIL, ENTITY UNFREEZE);
             STEP (SET_CAMERA_MOTION (LINEAR 16.));
@@ -1333,5 +1343,13 @@ let get_steps ?(increase_health = false) state game (triggers : trigger list) : 
       | _ -> fail ())
     | _ -> failwithf "unknown interaction prefix: %s" trigger.name_prefix
   in
-  let steps = List.concat_map get_interaction_steps triggers in
-  [ STEP (INITIALIZE_INTERACTIONS !remove_nail) ] @ steps @ [ STEP CONCLUDE_INTERACTIONS ]
+
+  let steps' = get_interaction_steps trigger in
+  let steps =
+    match followup with
+    | None -> steps'
+    | Some followup' -> steps' @ get_interaction_steps followup'
+  in
+  [ STEP (INITIALIZE_INTERACTIONS { remove_nail = !remove_nail; autosave_pos }) ]
+  @ steps
+  @ [ STEP (CONCLUDE_INTERACTIONS trigger) ]

@@ -692,7 +692,13 @@
                 {
                  "height":66,
                  "id":41,
-                 "name":"cutscene:fight-vice-dean-laybourne",
+                 "name":"boss-fight:VICE_DEAN_LAYBOURNE",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":44
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -721,6 +727,17 @@
                  "width":397,
                  "x":1025,
                  "y":94
+                }, 
+                {
+                 "height":24,
+                 "id":44,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":876,
+                 "y":348
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1470,7 +1487,7 @@
          "y":0
         }],
  "nextlayerid":22,
- "nextobjectid":44,
+ "nextobjectid":45,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

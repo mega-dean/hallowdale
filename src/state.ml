@@ -243,7 +243,7 @@ let init () : state =
     area_musics;
     game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
-    should_save = false;
+    save_pos = None;
     world;
     camera =
       {
@@ -709,9 +709,14 @@ let update_frame_inputs (state : state) : state =
   state
 
 let maybe_save_game game state =
-  if state.should_save then (
+  (match state.save_pos with
+  | None -> ()
+  | Some pos ->
+    let original_pos = game.player.ghost.entity.dest.pos in
+    game.player.ghost.entity.dest.pos <- pos;
     Game.save game state;
-    state.should_save <- false);
+    game.player.ghost.entity.dest.pos <- original_pos;
+    state.save_pos <- None);
   state
 
 let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
@@ -825,8 +830,8 @@ let tick (state : state) =
         state'
       | None ->
         if state.debug.enabled && Env.development then (
-          let show_triggers ?(color = Raylib.Color.blue) triggers =
-            add_debug_rects state (List.map (fun r -> (color, r.dest)) triggers)
+          let show_triggers ?(color = Raylib.Color.blue) (triggers : trigger list) =
+            add_debug_rects state (List.map (fun (r : trigger) -> (color, r.dest)) triggers)
           in
           let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
             add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)

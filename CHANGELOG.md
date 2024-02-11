@@ -27,6 +27,7 @@
   - Russell Borchert
 - add orbiting projectiles
 - add homing projectiles
+- add autosaving before boss fights
 
 ## [0.0.10] - 2024-01-16
 

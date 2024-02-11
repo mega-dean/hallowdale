@@ -359,7 +359,13 @@
                 {
                  "height":73,
                  "id":44,
-                 "name":"cutscene:fight-locker-boys",
+                 "name":"boss-fight:LOCKER_BOY",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":81
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -454,6 +460,17 @@
                  "width":84,
                  "x":1128,
                  "y":444
+                }, 
+                {
+                 "height":24,
+                 "id":81,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1236,
+                 "y":396
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1993,7 +2010,7 @@
          "y":0
         }],
  "nextlayerid":25,
- "nextobjectid":81,
+ "nextobjectid":82,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

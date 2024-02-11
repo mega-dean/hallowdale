@@ -97,6 +97,7 @@ let trigger_kind (kind : trigger_kind) =
   | FOLLOWUP -> "FOLLOWUP"
   | SHADOW -> "SHADOW"
   | WARP warp -> fmt "WARP to %s at (%0.2f, %0.2f)" warp.room_name warp.target.x warp.target.y
+  | BOSS_FIGHT autosave_pos -> fmt "BOSS_FIGHT (%s)" (vector autosave_pos)
   | CUTSCENE -> "CUTSCENE"
   | RESPAWN -> "RESPAWN"
   | PURPLE_PEN -> "PURPLE_PEN"
@@ -543,7 +544,7 @@ let interaction_step (step : Interaction.step) : string =
   let open Interaction in
   match step with
   | STEP (INITIALIZE_INTERACTIONS _) -> "(INITIALIZE_INTERACTIONS _)"
-  | STEP CONCLUDE_INTERACTIONS -> "(CONCLUDE_INTERACTIONS)"
+  | STEP (CONCLUDE_INTERACTIONS _) -> "(CONCLUDE_INTERACTIONS)"
   | STEP (SET_SCREEN_FADE _) -> "SET_SCREEN_FADE"
   | STEP CLEAR_SCREEN_FADE -> "CLEAR_SCREEN_FADE"
   | STEP (SHAKE_SCREEN _) -> "(SHAKE_SCREEN _)"
@@ -576,6 +577,9 @@ let interaction_step (step : Interaction.step) : string =
   | NTH_ENEMY (_, _, _)
   | NPC (_, _) ->
     ""
+
+let interaction_options (options : Interaction.options) : string =
+  fmt "remove_nail: %b, autosave_pos: %s" options.remove_nail (option vector options.autosave_pos)
 
 let reward (reward : Interaction.reward) : string =
   match reward with

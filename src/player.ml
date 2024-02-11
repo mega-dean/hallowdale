@@ -63,49 +63,57 @@ let read_config () : ghosts_file =
 let ghost_ids_in_party ghosts : ghost_id list =
   ghosts |> List.filter_map (fun g -> if g.in_party then Some g.ghost.id else None)
 
-let maybe_begin_interactions (state : state) (game : game) (triggers : trigger ne_list) =
-  let begin_interactions ?(increase_health = false) () =
-    game.interaction.floating_text <- None;
-    game.interaction.steps <-
-      Interactions.get_steps ~increase_health state game (triggers |> List.Non_empty.to_list)
-  in
-  let begin_cutscene_interaction name =
-    (* these are only viewable once *)
-    if not (List.mem name game.room.progress.finished_interactions) then (
-      game.room.progress.finished_interactions <- name :: game.room.progress.finished_interactions;
-      begin_interactions ())
-  in
-  let strip_blocking_interaction (full_name : string) : string =
-    String.maybe_trim_before '|' full_name
-  in
-  let first_trigger = List.Non_empty.hd triggers in
-  let name = strip_blocking_interaction first_trigger.full_name in
-  match first_trigger.kind with
-  | REFLECT -> game.reflection_x <- Some first_trigger.dest.pos.x
-  | WARP _
-  | PURPLE_PEN
-  | INFO ->
-    (* these have no side effects and can be repeated
-       - purple pens aren't repeatable because destroying them removes the trigger
-    *)
-    begin_interactions ()
-  | D_NAIL
-  | BOSS_KILLED
-  | CUTSCENE -> (
-    match game.mode with
-    | DEMO
-    | STEEL_SOLE ->
-      ()
-    | CLASSIC -> begin_cutscene_interaction name)
-  | CAMERA _
-  | FOLLOWUP
-  | LEVER
-  | SHADOW
-  | RESPAWN ->
-    failwithf "cannot begin interaction with kind %s" (Show.trigger_kind first_trigger.kind)
+let maybe_begin_interactions
+    (state : state)
+    (game : game)
+    ?(followup : trigger option = None)
+    (trigger : trigger) =
+  if List.length game.interaction.steps = 0 then (
+    let begin_interactions ?(autosave_pos = None) () =
+      game.interaction.floating_text <- None;
+      game.interaction.steps <- Interactions.get_steps state game ~autosave_pos ~followup trigger
+    in
+    let begin_cutscene_interaction ?(autosave_pos = None) name =
+      (* these are only viewable once *)
+      if not (List.mem name game.room.progress.finished_interactions) then
+        begin_interactions ~autosave_pos ()
+    in
+    let strip_blocking_interaction (full_name : string) : string =
+      String.maybe_trim_before '|' full_name
+    in
+    let name = strip_blocking_interaction trigger.full_name in
+    match trigger.kind with
+    | REFLECT -> game.reflection_x <- Some trigger.dest.pos.x
+    | WARP _
+    | PURPLE_PEN
+    | INFO ->
+      (* these have no side effects and can be repeated
+         - purple pens aren't repeatable because destroying them removes the trigger
+      *)
+      begin_interactions ()
+    | BOSS_FIGHT autosave_pos -> (
+      match game.mode with
+      | DEMO
+      | STEEL_SOLE ->
+        ()
+      | CLASSIC -> begin_cutscene_interaction ~autosave_pos:(Some autosave_pos) name)
+    | D_NAIL
+    | BOSS_KILLED
+    | CUTSCENE -> (
+      match game.mode with
+      | DEMO
+      | STEEL_SOLE ->
+        ()
+      | CLASSIC -> begin_cutscene_interaction name)
+    | CAMERA _
+    | FOLLOWUP
+    | LEVER
+    | SHADOW
+    | RESPAWN ->
+      failwithf "cannot begin interaction with kind %s" (Show.trigger_kind trigger.kind))
 
 let maybe_begin_interaction (state : state) (game : game) trigger =
-  maybe_begin_interactions state game (trigger, [])
+  maybe_begin_interactions state game trigger
 
 let find_trigger_collision' player (xs : 'a list) get_trigger_dest : 'a option =
   let colliding x =
@@ -613,16 +621,15 @@ let resolve_slash_collisions (state : state) (game : game) =
           | Some (PURPLE_PEN (name, followup_trigger')) ->
             game.progress.purple_pens_found <-
               (state.frame.idx, name) :: game.progress.purple_pens_found;
-            let followup_trigger =
+            let followup =
               match game.mode with
               | STEEL_SOLE -> None
               | CLASSIC
               | DEMO ->
                 followup_trigger'
             in
-            maybe_begin_interactions state game
-              ( make_stub_trigger PURPLE_PEN "purple-pen" name,
-                [ followup_trigger ] |> List.filter_somes )
+            maybe_begin_interactions state game ~followup
+              (make_stub_trigger PURPLE_PEN "purple-pen" name)
           | _ -> ());
           destroy_tile_group layer tile_group;
           (match game.mode with
@@ -1556,10 +1563,10 @@ let tick (game : game) (state : state) =
           if interaction_blocked then (
             game.room.interaction_label <- Some (label, trigger.dest);
             check_interact_key ())));
-      (match
-         find_trigger_collision game.player
-           (game.room.triggers.cutscene @ game.room.triggers.reflect)
-       with
+      let triggers =
+        game.room.triggers.cutscene @ game.room.triggers.reflect @ game.room.triggers.boss_fight
+      in
+      (match find_trigger_collision game.player triggers with
       | None -> ()
       | Some trigger -> maybe_begin_interaction state game trigger);
       let respawn_trigger_collision =
@@ -1639,17 +1646,23 @@ let tick (game : game) (state : state) =
           match general_step with
           | SHAKE_SCREEN amount -> state.camera.shake <- amount
           | DEBUG -> ()
-          | INITIALIZE_INTERACTIONS remove_nail ->
+          | INITIALIZE_INTERACTIONS options -> (
             game.player.ghost.entity.v <- Zero.vector ();
-            if remove_nail then (
+            if options.remove_nail then (
               match get_current_slash game.player with
               | Some slash -> game.player.children <- Ghost_child_kind.Map.empty
-              | None -> ())
-          | CONCLUDE_INTERACTIONS ->
+              | None -> ());
+            match options.autosave_pos with
+            | None -> ()
+            | Some autosave_pos ->
+              state.save_pos <- Some autosave_pos)
+          | CONCLUDE_INTERACTIONS trigger ->
             state.camera.motion <-
               SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
             set_ghost_camera ();
             zero_vy := true;
+            game.room.progress.finished_interactions <-
+              Interactions.trigger_name trigger :: game.room.progress.finished_interactions;
             game.interaction.use_dashes_in_archives <- None
           | SET_SCREEN_FADE fade -> state.screen_fade <- Some fade
           | CLEAR_SCREEN_FADE -> state.screen_fade <- None
@@ -1747,7 +1760,7 @@ let tick (game : game) (state : state) =
           | SET_FACING direction -> Entity.set_facing_right entity direction
           | WAIT_UNTIL_LANDED can_hardfall ->
             if not can_hardfall then
-              (game.player.ghost.hardfall_timer <- None);
+              game.player.ghost.hardfall_timer <- None;
             if Option.is_none entity.current_floor then
               still_waiting_for_floor := true
           | UNHIDE -> Entity.unhide entity
@@ -2644,7 +2657,7 @@ let tick (game : game) (state : state) =
               visible = Interaction.make_UNTIL 1.5 state.frame.time;
               scale = 1.;
             };
-        state.should_save <- true;
+        state.save_pos <- Some game.player.ghost.entity.dest.pos;
         game.player.health.current <- game.player.health.max
       | _ -> ()));
     let liquid_collisions =

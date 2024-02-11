@@ -469,12 +469,35 @@ type trigger_kind =
   | FOLLOWUP
   | SHADOW
   | WARP of warp_target
+  | BOSS_FIGHT of vector
   | CUTSCENE
   | RESPAWN
   | PURPLE_PEN
   | BOSS_KILLED
   | D_NAIL
   | REFLECT
+
+type trigger = {
+  kind : trigger_kind;
+  full_name : string;
+  name_prefix : string;
+  name_suffix : string;
+  dest : rect;
+  label : string option;
+  blocking_interaction : string option;
+}
+
+(* this is for things that aren't created from Tiled objects in the triggers layer *)
+let make_stub_trigger kind name_prefix name_suffix : trigger =
+  {
+    full_name = fmt "%s:%s" name_prefix name_suffix;
+    name_prefix;
+    name_suffix;
+    kind;
+    dest = Zero.rect ();
+    label = None;
+    blocking_interaction = None;
+  }
 
 type camera_motion =
   | LINEAR of float
@@ -494,9 +517,14 @@ type screen_fade = {
 }
 
 module Interaction = struct
+  type options = {
+    remove_nail : bool;
+    autosave_pos : vector option;
+  }
+
   type general_step =
-    | INITIALIZE_INTERACTIONS of bool
-    | CONCLUDE_INTERACTIONS
+    | INITIALIZE_INTERACTIONS of options
+    | CONCLUDE_INTERACTIONS of trigger
     | SET_SCREEN_FADE of screen_fade
     | CLEAR_SCREEN_FADE
     | SHAKE_SCREEN of float
@@ -1284,28 +1312,6 @@ type room_cache = {
   tilesets_by_path : tileset String.Map.t;
 }
 
-type trigger = {
-  kind : trigger_kind;
-  full_name : string;
-  name_prefix : string;
-  name_suffix : string;
-  dest : rect;
-  label : string option;
-  blocking_interaction : string option;
-}
-
-(* this is for things that aren't created from Tiled objects in the triggers layer *)
-let make_stub_trigger kind name_prefix name_suffix : trigger =
-  {
-    full_name = fmt "%s:%s" name_prefix name_suffix;
-    name_prefix;
-    name_suffix;
-    kind;
-    dest = Zero.rect ();
-    label = None;
-    blocking_interaction = None;
-  }
-
 type lever = {
   sprite : sprite;
   trigger : trigger;
@@ -1328,6 +1334,7 @@ type respawn_trigger = {
 
 type triggers = {
   camera : trigger list;
+  boss_fight : trigger list;
   cutscene : trigger list;
   d_nail : trigger list;
   levers : lever list;
@@ -1515,7 +1522,7 @@ type state = {
   mutable screen_fade : screen_fade option;
   mutable camera : camera;
   mutable frame : frame_info;
-  mutable should_save : bool;
+  mutable save_pos : vector option;
   mutable pause_menu : pause_menu option;
   frame_inputs : frame_inputs;
   mutable debug : debug;

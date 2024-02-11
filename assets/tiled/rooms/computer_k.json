@@ -887,13 +887,30 @@
                 {
                  "height":185,
                  "id":81,
-                 "name":"cutscene:fight-borchert",
+                 "name":"boss-fight:BORCHERT",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":104
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":95,
                  "x":439,
                  "y":216
+                }, 
+                {
+                 "height":24,
+                 "id":104,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":576,
+                 "y":384
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2217,7 +2234,7 @@
          "y":0
         }],
  "nextlayerid":25,
- "nextobjectid":104,
+ "nextobjectid":105,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

@@ -2463,13 +2463,30 @@
                 {
                  "height":29,
                  "id":241,
-                 "name":"cutscene:fight-luis-guzman",
+                 "name":"boss-fight:LUIS_GUZMAN",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":242
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":95,
                  "x":885,
                  "y":1085
+                }, 
+                {
+                 "height":24,
+                 "id":242,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":996,
+                 "y":912
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -5407,7 +5424,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":242,
+ "nextobjectid":243,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

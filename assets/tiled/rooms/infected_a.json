@@ -357,7 +357,13 @@
                 {
                  "height":204,
                  "id":14,
-                 "name":"cutscene:fight-duncan",
+                 "name":"boss-fight:DUNCAN",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":20
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -408,6 +414,17 @@
                  "width":60,
                  "x":481,
                  "y":288
+                }, 
+                {
+                 "height":24,
+                 "id":20,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":180,
+                 "y":360
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1094,7 +1111,7 @@
          "y":0
         }],
  "nextlayerid":38,
- "nextobjectid":20,
+ "nextobjectid":21,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

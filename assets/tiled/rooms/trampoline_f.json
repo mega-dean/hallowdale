@@ -811,7 +811,13 @@
                 {
                  "height":79,
                  "id":51,
-                 "name":"cutscene:fight-joshua",
+                 "name":"boss-fight:JOSHUA",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":56
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -840,6 +846,17 @@
                  "width":591,
                  "x":52,
                  "y":350
+                }, 
+                {
+                 "height":24,
+                 "id":56,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":696,
+                 "y":552
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1136,7 +1153,7 @@
          "name":"hidden-boss-doors",
          "opacity":1,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":104,
          "x":0,
          "y":0
@@ -1510,7 +1527,7 @@
          "y":0
         }],
  "nextlayerid":23,
- "nextobjectid":56,
+ "nextobjectid":57,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

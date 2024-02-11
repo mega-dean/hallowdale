@@ -385,7 +385,13 @@
                 {
                  "height":77,
                  "id":16,
-                 "name":"cutscene:fight-buddy",
+                 "name":"boss-fight:BUDDY",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":19
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -414,6 +420,17 @@
                  "width":382,
                  "x":312,
                  "y":144
+                }, 
+                {
+                 "height":24,
+                 "id":19,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":828,
+                 "y":300
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -995,7 +1012,7 @@
          "y":0
         }],
  "nextlayerid":20,
- "nextobjectid":19,
+ "nextobjectid":20,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

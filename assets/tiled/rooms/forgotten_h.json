@@ -993,7 +993,13 @@
                 {
                  "height":66,
                  "id":44,
-                 "name":"cutscene:fight-dean",
+                 "name":"boss-fight:DEAN",
+                 "properties":[
+                        {
+                         "name":"a",
+                         "type":"object",
+                         "value":48
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -1022,6 +1028,17 @@
                  "width":542,
                  "x":487,
                  "y":606
+                }, 
+                {
+                 "height":24,
+                 "id":48,
+                 "name":"target",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":420,
+                 "y":792
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2547,7 +2564,7 @@
          "y":0
         }],
  "nextlayerid":22,
- "nextobjectid":48,
+ "nextobjectid":49,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

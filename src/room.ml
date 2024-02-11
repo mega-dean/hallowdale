@@ -57,6 +57,7 @@ let init (params : room_params) : room =
   let lore_triggers : trigger list ref = ref [] in
   let d_nail_triggers : trigger list ref = ref [] in
   let cutscene_triggers : trigger list ref = ref [] in
+  let boss_fight_triggers : trigger list ref = ref [] in
   let respawn_triggers : respawn_trigger list ref = ref [] in
   let targets : (int * vector) list ref = ref [] in
   let enemy_rects : (enemy_id * rect) list ref = ref [] in
@@ -323,6 +324,23 @@ let init (params : room_params) : room =
           |> List.to_ne_list
         in
         respawn_triggers := { trigger = get_object_trigger RESPAWN; targets } :: !respawn_triggers
+      | "boss-fight" ->
+        let target_ids : int ne_list = get_target_ids coll_rect in
+        let target : vector =
+          match
+            List.find_map
+              (fun ((target_id, target_pos) : int * vector) ->
+                if List.Non_empty.mem target_id target_ids then
+                  Some
+                    { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
+                else
+                  None)
+              !targets
+          with
+          | None -> failwith "no"
+          | Some v -> v
+        in
+        boss_fight_triggers := get_object_trigger (BOSS_FIGHT target) :: !boss_fight_triggers
       | "target" ->
         (* targets were already processed in collect_targets *)
         ()
@@ -670,14 +688,11 @@ let init (params : room_params) : room =
         ( Config.other.raindrop_scale *. (Raylib.Texture.width texture.image |> Int.to_float),
           Config.other.raindrop_scale *. (Raylib.Texture.height texture.image |> Int.to_float) )
       in
-      [
-        Sprite.create "raindrop 1" texture { pos = { x = 0.; y = -.h }; w; h };
-        Sprite.create "raindrop 2" texture { pos = { x = w; y = -.h }; w; h };
-        Sprite.create "raindrop 3" texture { pos = { x = 0.; y = 0. }; w; h };
-        Sprite.create "raindrop 4" texture { pos = { x = w; y = 0. }; w; h };
-        Sprite.create "raindrop 5" texture { pos = { x = 0.; y = h }; w; h };
-        Sprite.create "raindrop 6" texture { pos = { x = w; y = h }; w; h };
-      ]
+      let make_raindrop idx (x, y) =
+        Sprite.create (fmt "raindrop %d" idx) texture { pos = { x; y }; w; h }
+      in
+      let combinations xs ys = List.concat_map (fun x -> List.map (fun y -> (x, y)) ys) xs in
+      List.mapi make_raindrop (combinations [ 0.; w ] [ -.h; 0.; h ])
     | AC_REPAIR_ANNEX
     | BASEMENT
     | COMPUTER_WING
@@ -706,6 +721,7 @@ let init (params : room_params) : room =
       {
         camera = !camera_triggers;
         cutscene = !cutscene_triggers;
+        boss_fight = !boss_fight_triggers;
         d_nail = !d_nail_triggers;
         levers = !lever_triggers;
         lore = !lore_triggers;
