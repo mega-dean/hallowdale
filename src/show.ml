@@ -428,6 +428,7 @@ let npc_id (n : npc_id) : string =
   | FRANKIE -> "FRANKIE"
   | HUMAN_BEING -> "HUMAN_BEING"
   | POTTERY_TEACHER -> "POTTERY_TEACHER"
+  | TROY_AND_ABED_IN_A_BUBBLE -> "TROY_AND_ABED_IN_A_BUBBLE"
 
 let game_mode (game_mode : game_mode) : string =
   match game_mode with

@@ -1645,7 +1645,7 @@ let tick (game : game) (state : state) =
         let handle_general_step (general_step : Interaction.general_step) =
           match general_step with
           | SHAKE_SCREEN amount -> state.camera.shake <- amount
-          | DEBUG -> ()
+          | DEBUG s -> tmp "%s" s
           | INITIALIZE_INTERACTIONS options -> (
             game.player.ghost.entity.v <- Zero.vector ();
             if options.remove_nail then (
@@ -1752,11 +1752,14 @@ let tick (game : game) (state : state) =
             in
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
+          | PLAY_SOUND_EFFECT name -> Audio.play_sound state name
         in
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =
           match entity_step with
-          | SET_VX new_vx -> entity.v.x <- new_vx
+          | SET_VX new_vx ->
+            Entity.unfreeze entity;
+            entity.v.x <- new_vx
           | SET_VY new_vy -> entity.v.y <- new_vy
           | UNSET_FLOOR -> entity.current_floor <- None
           | SET_FACING direction -> Entity.set_facing_right entity direction
@@ -1778,6 +1781,7 @@ let tick (game : game) (state : state) =
           | UNFREEZE -> Entity.unfreeze entity
           | MOVE_TO (target_tile_x, target_tile_y) ->
             let target_pos = (target_tile_x, target_tile_y) |> Tiled.Tile.coords_to_pos in
+            entity.current_floor <- None;
             entity.dest.pos <-
               { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
         in

@@ -78,14 +78,26 @@
             ]
         }],
         [ "HICKEY", {
-            "w": 327,
-            "h": 228,
+            "w": 80,
+            "h": 80,
             "texture_configs": [
                 ["idle", {
-                    "count": 1,
-                    "duration": 0.0
+                    "x_offset": 113,
+                    "y_offset": 148
+                }],
+                ["provoke", {
+                    "x_offset": 113,
+                    "y_offset": 148
+                }],
+                ["provoke-wave", {
+                    "x_offset": 113,
+                    "y_offset": 148,
+                    "count": 2,
+                    "duration": 0.2
                 }],
                 ["walking", {
+                    "x_offset": 113,
+                    "y_offset": 148,
                     "count": 4,
                     "duration": 0.3
                 }]
@@ -149,6 +161,23 @@
             "h": 48,
             "texture_configs": [
                 ["idle", {
+                }]
+            ]
+        }],
+
+        [ "TROY_AND_ABED_IN_A_BUBBLE", {
+            "w": 59,
+            "h": 63,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 19,
+                    "y_offset": 24
+                }],
+                ["walking", {
+                    "count": 8,
+                    "duration": 0.1,
+                    "x_offset": 19,
+                    "y_offset": 24
                 }]
             ]
         }]

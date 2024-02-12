@@ -17,6 +17,7 @@ let parse_name context name : npc_id =
   | "FRANKIE" -> FRANKIE
   | "HUMAN_BEING" -> HUMAN_BEING
   | "POTTERY_TEACHER" -> POTTERY_TEACHER
+  | "TROY_AND_ABED_IN_A_BUBBLE" -> TROY_AND_ABED_IN_A_BUBBLE
   | _ -> failwithf "Npc.parse_name: found unrecognized npc name '%s' in %s" name context
 
 let create_from_rects

@@ -1261,6 +1261,17 @@
                  "width":16,
                  "x":548,
                  "y":1134
+                }, 
+                {
+                 "height":43,
+                 "id":137,
+                 "name":"hidden-npc:TROY_AND_ABED_IN_A_BUBBLE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":41,
+                 "x":1210,
+                 "y":1121
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2895,7 +2906,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":137,
+ "nextobjectid":138,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

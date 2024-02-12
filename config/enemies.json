@@ -555,6 +555,10 @@
                     "x_offset": 4,
                     "y_offset": 3
                 }],
+                ["with-hickey", {
+                    "x_offset": 4,
+                    "y_offset": 143
+                }],
                 ["walking", {
                     "count": 4,
                     "duration": 0.1,
@@ -612,6 +616,10 @@
                 ["idle", {
                     "x_offset": 4,
                     "y_offset": 3
+                }],
+                ["with-hickey", {
+                    "x_offset": 4,
+                    "y_offset": 143
                 }],
                 ["walking", {
                     "count": 4,

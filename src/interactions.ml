@@ -702,21 +702,86 @@ let get_steps
           STEP (WAIT 1.);
           ENEMY (LAVA_BRITTA_2, SET_POSE "lunge");
           ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 2000.));
+          CURRENT_GHOST (ENTITY (SET_VX (-600.)));
           STEP (WAIT 0.3);
           CURRENT_GHOST (SET_POSE (PERFORMING (TAKE_DAMAGE (0, RIGHT))));
           STEP (WAIT 0.1);
+          CURRENT_GHOST (ENTITY (SET_VX 0.));
           ENEMY (LAVA_BRITTA_2, SET_POSE "idle");
           ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
           STEP (WAIT 1.);
           CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-          STEP (SET_FIXED_CAMERA (54, 87));
-          PARTY_GHOST (TROY, ADD_TO_PARTY);
-          PARTY_GHOST (TROY, MAKE_CURRENT_GHOST);
-          PARTY_GHOST (JEFF, REMOVE_FROM_PARTY);
           ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING LEFT));
           STEP (DIALOGUE ("Britta", "Who's there, bitch? Floor!"));
           STEP (DIALOGUE ("Britta", "Floooooooooor!"));
+          STEP (SET_FIXED_CAMERA (65, 90));
+          PARTY_GHOST (TROY, ADD_TO_PARTY);
+          PARTY_GHOST (TROY, MAKE_CURRENT_GHOST);
+          PARTY_GHOST (JEFF, REMOVE_FROM_PARTY);
           PARTY_GHOST (JEFF, ENTITY HIDE);
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY UNHIDE);
+          NPC (HICKEY, ENTITY (MOVE_TO (125, 90)));
+          NPC (HICKEY, ENTITY (SET_FACING LEFT));
+          NPC (HICKEY, SET_POSE "idle");
+          NPC (HICKEY, ENTITY UNFREEZE);
+          STEP (SET_FIXED_CAMERA (112, 90));
+          STEP (DIALOGUE ("Troy and Abed", "Troy and Abed in a {{blue}} bubble!"));
+          STEP (SET_FIXED_CAMERA (115, 90));
+          STEP (WAIT 1.);
+          NPC (HICKEY, SET_POSE "provoke");
+          STEP (WAIT 1.);
+          NPC (HICKEY, SET_POSE "provoke-wave");
+          STEP (WAIT 1.);
+          NPC (HICKEY, SET_POSE "walking");
+          NPC (HICKEY, ENTITY (SET_VX (-600.)));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "walking");
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 600.));
+          STEP (WAIT 1.3);
+          NPC (HICKEY, ENTITY (SET_VX 0.));
+          NPC (HICKEY, SET_POSE "idle");
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 0.));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "idle");
+          STEP (WAIT 0.3);
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_FACING LEFT));
+          STEP (WAIT 0.3);
+          STEP (DIALOGUE ("Troy", "Ha! Hickey, you {{red}} chicken!"));
+          STEP (WAIT 0.5);
+          NPC (HICKEY, ENTITY (SET_FACING RIGHT));
+          STEP (WAIT 0.5);
+          STEP (PLAY_SOUND_EFFECT "spray");
+          STEP (WAIT 2.);
+          STEP (DIALOGUE ("Abed", "He {{red}} gutted {{white}} us. Retreat!"));
+          STEP (SET_FIXED_CAMERA (145, 90));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_FACING RIGHT));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "walking");
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 600.));
+          STEP (WAIT 1.8);
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY UNSET_FLOOR);
+          STEP (WAIT 0.6);
+          NPC (HICKEY, SET_POSE "walking");
+          NPC (HICKEY, ENTITY (SET_VX 300.));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING RIGHT));
+          ENEMY (LAVA_BRITTA_2, ENTITY (MOVE_TO (108, 95)));
+          ENEMY (LAVA_BRITTA_2, SET_POSE "with-hickey");
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 300.));
+          STEP (WAIT 3.);
+          NPC (HICKEY, SET_POSE "idle");
+          NPC (HICKEY, ENTITY (SET_VX 0.));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
+          STEP (DIALOGUE ("Britta", "You can't outrun your {{blue}} emotions!"));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "I will force you two to {{orange}} grieve properly {{white}} even if it kills us \
+                  all!" ));
+          NPC (HICKEY, SET_POSE "walking");
+          NPC (HICKEY, ENTITY (SET_VX 300.));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 300.));
+          STEP (WAIT 0.5);
+          STEP
+            (SET_SCREEN_FADE
+               { target_alpha = 255; timer = Some (make_timer 1.5); show_ghost = false });
+          STEP (WAIT 2.);
         ]
       | MANICORN_3 ->
         [
@@ -1199,6 +1264,7 @@ let get_steps
             PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
             CURRENT_GHOST (ENTITY (SET_FACING LEFT));
             NPC (HICKEY, ENTITY UNHIDE);
+            NPC (HICKEY, ENTITY UNFREEZE);
             ENEMY (MANICORN, ENTITY UNHIDE);
             ENEMY (MANICORN, ENTITY UNFREEZE);
             NTH_ENEMY (1, MANICORN, ENTITY (SET_FACING LEFT));
@@ -1267,7 +1333,7 @@ let get_steps
                  ( "Abed",
                    "Sounds {{red}} bad {{white}} when you put it that way. Can you put it a way \
                     that sounds {{green}} good?" ));
-            STEP (SET_FIXED_CAMERA (47, 80));
+            STEP (SET_FIXED_CAMERA (52, 79));
             STEP (WAIT 1.);
             STEP
               (DIALOGUE

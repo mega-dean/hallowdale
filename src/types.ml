@@ -352,6 +352,7 @@ type npc_id =
   | FRANKIE
   | HUMAN_BEING
   | POTTERY_TEACHER
+  | TROY_AND_ABED_IN_A_BUBBLE
 
 type enemy_id =
   (* enemies *)
@@ -528,7 +529,7 @@ module Interaction = struct
     | SET_SCREEN_FADE of screen_fade
     | CLEAR_SCREEN_FADE
     | SHAKE_SCREEN of float
-    | DEBUG
+    | DEBUG of string
     | WAIT of float
     | WARP of trigger_kind
     | DOOR_WARP of trigger_kind
@@ -549,6 +550,7 @@ module Interaction = struct
     (* layers *)
     | HIDE_LAYER of string
     | UNHIDE_LAYER of string
+    | PLAY_SOUND_EFFECT of string
 
   type entity_step =
     | UNSET_FLOOR
