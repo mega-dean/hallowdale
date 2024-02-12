@@ -641,6 +641,7 @@ let get_steps
           PARTY_GHOST (TROY, ENTITY UNFREEZE);
           PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
           PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
           STEP (SET_FIXED_CAMERA (177, 61));
           STEP
             (DIALOGUE
@@ -695,6 +696,7 @@ let get_steps
           ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING RIGHT));
           CURRENT_GHOST (PARTY (WALK_TO 62));
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (WAIT 1.);
           CURRENT_GHOST (SET_POSE (PERFORMING (ATTACK LEFT)));
           ENEMY (LAVA_BRITTA_2, SET_POSE "charge-lunge");
           STEP (WAIT 1.);
@@ -718,12 +720,13 @@ let get_steps
         ]
       | MANICORN_3 ->
         [
+          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
           STEP (WAIT 1.);
           ENEMY (MANICORN_3, ENTITY HIDE);
           CURRENT_GHOST (PARTY (WALK_TO 68));
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
           STEP (DIALOGUE ("Annie", "Yes! Ha ha ha!"));
-          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 65, 94));
+          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 64, 94));
           STEP (WAIT 1.6);
           CURRENT_GHOST (SET_POSE (PERFORMING (TAKE_DAMAGE (0, RIGHT))));
           STEP (WAIT 1.);
@@ -1153,7 +1156,6 @@ let get_steps
           STEP (TEXT [ "... No dean to cry suffering ..." ]);
           STEP (WAIT 2.);
           STEP (SET_SCREEN_FADE { target_alpha = 255; timer = None; show_ghost = false });
-          STEP (WAIT 1.5);
         ]
         (* switch current ghost
 
@@ -1172,7 +1174,7 @@ let get_steps
             PARTY_GHOST (JEFF, ENTITY UNSET_FLOOR);
             PARTY_GHOST (ANNIE, ENTITY UNSET_FLOOR);
             PARTY_GHOST (TROY, ENTITY UNSET_FLOOR);
-            STEP (WAIT 1.);
+            STEP (WAIT 3.);
             STEP CLEAR_SCREEN_FADE;
             STEP (WAIT 1.);
             PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
@@ -1221,12 +1223,12 @@ let get_steps
             STEP (WAIT 2.);
             STEP (DIALOGUE ("Neil", "Stay back!"));
             NPC (HICKEY, SET_POSE "walking");
-            NPC (NEIL, SET_POSE "take-damage");
             STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
             NTH_ENEMY (0, MANICORN, SET_POSE "punch");
-            NPC (NEIL, ENTITY (SET_VX 300.));
-            STEP (WAIT 0.6);
+            NPC (NEIL, SET_POSE "take-damage");
+            NPC (NEIL, ENTITY (SET_VX 500.));
+            STEP (WAIT 0.3);
             NPC (NEIL, ENTITY UNSET_FLOOR);
             STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
@@ -1249,12 +1251,10 @@ let get_steps
             ENEMY (LAVA_BRITTA, SET_POSE "megaphone");
             ENEMY (MANICORN_3, ENTITY UNHIDE);
             STEP (WAIT 2.);
-            STEP (SET_FIXED_CAMERA (47, 80));
             STEP (WAIT 2.);
             STEP
               (DIALOGUE
                  ("Britta", "I want to say something to you guys about {{blue}} mental health."));
-            STEP (SET_FIXED_CAMERA (182, 68));
             STEP (WAIT 1.);
             PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
@@ -1328,6 +1328,7 @@ let get_steps
             STEP (SET_FIXED_CAMERA (60, 80));
             PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
             STEP (DIALOGUE ("Jeff", "Hey, seat feet! {{blue}} Chair {{white}} to dance?"));
+            STEP (SET_IGNORE_CAMERA_TRIGGERS true);
             PARTY_GHOST (JEFF, SET_POSE (PERFORMING (ATTACK LEFT)));
             PARTY_GHOST (ANNIE, ENTITY (MOVE_TO (71, 62)));
             PARTY_GHOST (ANNIE, ENTITY UNSET_FLOOR);

@@ -540,44 +540,6 @@ let text_config (config : Interaction.text_config) : string =
     (vector config.padding) config.margin_x config.margin_y_top config.margin_y_bottom
     config.centered
 
-let interaction_step (step : Interaction.step) : string =
-  let open Interaction in
-  match step with
-  | STEP (INITIALIZE_INTERACTIONS _) -> "(INITIALIZE_INTERACTIONS _)"
-  | STEP (CONCLUDE_INTERACTIONS _) -> "(CONCLUDE_INTERACTIONS)"
-  | STEP (SET_SCREEN_FADE _) -> "SET_SCREEN_FADE"
-  | STEP CLEAR_SCREEN_FADE -> "CLEAR_SCREEN_FADE"
-  | STEP (SHAKE_SCREEN _) -> "(SHAKE_SCREEN _)"
-  | STEP DEBUG -> "DEBUG"
-  | STEP (WAIT _) -> "(WAIT _)"
-  | STEP (WARP _) -> "(WARP _)"
-  | STEP (DOOR_WARP _) -> "(DOOR_WARP _)"
-  | STEP (SPAWN_VENGEFUL_SPIRIT (_, _, _)) -> "(SPAWN_VENGEFUL_SPIRIT (_, _, _))"
-  | STEP (TEXT _) -> "(TEXT _)"
-  | STEP (FLOATING_TEXT (_, _)) -> "(FLOATING_TEXT (_, _))"
-  | STEP (FOCUS_ABILITY_TEXT (_, _, _)) -> "(FOCUS_ABILITY_TEXT (_, _, _))"
-  | STEP (ABILITY_TEXT (_, _)) -> "(ABILITY_TEXT (_, _))"
-  | STEP (DIALOGUE (_, _)) -> "(DIALOGUE (_, _))"
-  | STEP (PURPLE_PEN_TEXT _) -> "(PURPLE_PEN_TEXT _)"
-  | STEP (SET_FIXED_CAMERA (_, _)) -> "(SET_FIXED_CAMERA (_, _))"
-  | STEP SET_GHOST_CAMERA -> "SET_GHOST_CAMERA"
-  | STEP (SET_CAMERA_MOTION _) -> "(SET_CAMERA_MOTION _)"
-  | STEP (HIDE_LAYER _) -> "(HIDE_LAYER _)"
-  | STEP (UNHIDE_LAYER _) -> "(UNHIDE_LAYER _)"
-  | CURRENT_GHOST FILL_LIFE_VAPOR -> "GHOST FILL_LIFE_VAPOR"
-  | CURRENT_GHOST (CLAIM_REWARD _) -> "GHOST CLAIM_REWARD"
-  | CURRENT_GHOST (INCREASE_HEALTH_TEXT _) -> "GHOST (INCREASE_HEALTH_TEXT _)"
-  | CURRENT_GHOST (SET_POSE _) -> "GHOST (SET_POSE _)"
-  | CURRENT_GHOST (ADD_ITEM _) -> "GHOST (ADD_ITEM _)"
-  (* | CURRENT_GHOST UNSET_FLOOR -> "GHOST UNSET_FLOOR" *)
-  | CURRENT_GHOST (ENTITY _) -> "GHOST (ENTITY _)"
-  | CURRENT_GHOST (PARTY _) -> "GHOST (PARTY _) ->"
-  | PARTY_GHOST (_, _)
-  | ENEMY (_, _)
-  | NTH_ENEMY (_, _, _)
-  | NPC (_, _) ->
-    ""
-
 let interaction_options (options : Interaction.options) : string =
   fmt "remove_nail: %b, autosave_pos: %s" options.remove_nail (option vector options.autosave_pos)
 

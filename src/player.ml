@@ -1657,6 +1657,7 @@ let tick (game : game) (state : state) =
             | Some autosave_pos ->
               state.save_pos <- Some autosave_pos)
           | CONCLUDE_INTERACTIONS trigger ->
+            state.ignore_camera_triggers <- false;
             state.camera.motion <-
               SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
             set_ghost_camera ();
@@ -1715,6 +1716,7 @@ let tick (game : game) (state : state) =
             state.camera.subject <- FIXED { x; y }
           | SET_CAMERA_MOTION motion -> state.camera.motion <- motion
           | SET_GHOST_CAMERA -> set_ghost_camera ()
+          | SET_IGNORE_CAMERA_TRIGGERS b -> state.ignore_camera_triggers <- b
           | WAIT time -> new_wait := time -. state.frame.dt
           | HIDE_LAYER layer_name -> set_layer_hidden layer_name true
           | UNHIDE_LAYER layer_name -> set_layer_hidden layer_name false

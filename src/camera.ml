@@ -3,7 +3,10 @@ open Types
 
 let tick (game : game) (state : state) =
   let trigger_config : trigger option =
-    Player.find_trigger_collision game.player game.room.triggers.camera
+    if state.ignore_camera_triggers then
+      None
+    else
+      Player.find_trigger_collision game.player game.room.triggers.camera
   in
   let subject =
     match state.camera.subject with

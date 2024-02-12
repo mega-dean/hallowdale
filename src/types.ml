@@ -545,6 +545,7 @@ module Interaction = struct
     | SET_FIXED_CAMERA of int * int
     | SET_GHOST_CAMERA
     | SET_CAMERA_MOTION of camera_motion
+    | SET_IGNORE_CAMERA_TRIGGERS of bool
     (* layers *)
     | HIDE_LAYER of string
     | UNHIDE_LAYER of string
@@ -1522,6 +1523,7 @@ type state = {
   world : world;
   mutable screen_fade : screen_fade option;
   mutable camera : camera;
+  mutable ignore_camera_triggers : bool;
   mutable frame : frame_info;
   mutable save_pos : vector option;
   mutable pause_menu : pause_menu option;

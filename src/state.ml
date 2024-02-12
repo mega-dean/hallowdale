@@ -253,6 +253,7 @@ let init () : state =
         update_instantly = false;
         motion = SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
       };
+    ignore_camera_triggers = false;
     screen_fade = None;
     frame = { idx = 0; dt = 0.; time = 0.; timeout = Int.max_int };
     frame_inputs =

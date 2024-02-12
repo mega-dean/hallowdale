@@ -882,6 +882,29 @@
          "y":0
         }, 
         {
+         "color":"#777777",
+         "draworder":"topdown",
+         "id":23,
+         "name":"cameras",
+         "objects":[
+                {
+                 "height":312,
+                 "id":136,
+                 "name":"camera:x,y",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":536,
+                 "x":441,
+                 "y":864
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
          "color":"#658faf",
          "draworder":"topdown",
          "id":16,
@@ -2871,8 +2894,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":23,
- "nextobjectid":136,
+ "nextlayerid":24,
+ "nextobjectid":137,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
