@@ -342,6 +342,7 @@ let get_steps
           [ "Tap (A) while holding UP"; "to unleash the Vapors." ]
       | _ -> fail ())
     | "boss-fight" -> (
+      game.in_boss_fight <- true;
       match Enemy.parse_name "boss-fight interaction" trigger.name_suffix with
       | DUNCAN ->
         [
@@ -625,6 +626,7 @@ let get_steps
           ]
       | _ -> fail ())
     | "boss-killed" -> (
+      game.in_boss_fight <- false;
       remove_nail := false;
       match Enemy.parse_name "boss-killed interaction" trigger.name_suffix with
       | LAVA_BRITTA ->

@@ -13,17 +13,20 @@ let select_game_mode_menu save_file save_file_idx : menu =
       SELECT_GAME_MODE BACK;
     ]
 
-let pause_menu ghost_count : menu =
+let pause_menu ~allow_save ghost_count : menu =
   make_menu
-    ([
-       Some (PAUSE_MENU CONTINUE);
-       (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
-       Some (PAUSE_MENU CHANGE_WEAPON);
-       Some (PAUSE_MENU PROGRESS);
-       Some (PAUSE_MENU SETTINGS);
-       Some (PAUSE_MENU SAVE);
-       Some (PAUSE_MENU QUIT_TO_MAIN_MENU);
-     ]
+    (([
+        Some (PAUSE_MENU CONTINUE);
+        (if ghost_count > 1 then Some (PAUSE_MENU CHANGE_GHOST) else None);
+        Some (PAUSE_MENU CHANGE_WEAPON);
+        Some (PAUSE_MENU PROGRESS);
+        Some (PAUSE_MENU SETTINGS);
+      ]
+     @
+     if not allow_save then
+       []
+     else
+       [ Some (PAUSE_MENU SAVE); Some (PAUSE_MENU QUIT_TO_MAIN_MENU) ])
     |> List.filter_somes)
 
 let settings_menu () : menu =
@@ -91,6 +94,9 @@ let update_menu_choice (menu : menu) state =
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1))
 
 let update_pause_menu (game : game) (state : state) : state =
+  let allow_save =
+    List.length game.interaction.steps = 0 && not game.in_boss_fight
+  in
   let handle_pause_menu choice =
     match choice with
     | CONTINUE ->
@@ -117,7 +123,7 @@ let update_pause_menu (game : game) (state : state) : state =
 
   let go_back () =
     state.pause_menu <-
-      Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
+      Some (MENU (pause_menu ~allow_save (List.length (Player.ghost_ids_in_party game.party))))
   in
 
   let handle_change_weapon_menu choice =
@@ -163,7 +169,7 @@ let update_pause_menu (game : game) (state : state) : state =
     | None ->
       Audio.play_sound state "menu-expand";
       state.pause_menu <-
-        Some (MENU (pause_menu (List.length (Player.ghost_ids_in_party game.party))))
+        Some (MENU (pause_menu ~allow_save (List.length (Player.ghost_ids_in_party game.party))))
     | Some _ ->
       Audio.play_sound state "menu-close";
       state.pause_menu <- None)

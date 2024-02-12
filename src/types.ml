@@ -1462,6 +1462,7 @@ type game = {
   mutable party : party_ghost list;
   mutable room : room;
   mutable room_changed_last_frame : bool;
+  mutable in_boss_fight : bool;
   (* this is only used for the orb reflection *)
   mutable reflection_x : float option;
   mutable music : area_music;
