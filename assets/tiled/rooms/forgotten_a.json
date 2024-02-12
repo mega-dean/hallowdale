@@ -1127,7 +1127,7 @@
                  "type":"",
                  "visible":true,
                  "width":36,
-                 "x":2460,
+                 "x":2431,
                  "y":816
                 }, 
                 {
@@ -1272,6 +1272,17 @@
                  "width":41,
                  "x":1210,
                  "y":1121
+                }, 
+                {
+                 "height":76,
+                 "id":139,
+                 "name":"final-sequence|door-warp:basement_f@40,33",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":234,
+                 "x":2118,
+                 "y":764
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2906,7 +2917,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":138,
+ "nextobjectid":140,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

@@ -6,11 +6,12 @@ let cutscene_finished
     (progress_by_room : (string * Json_t.room_progress) list)
     (cutscene_name : string) : bool =
   let all_finished_interactions =
-    List.map snd progress_by_room
-    |> List.map (fun (r : Json_t.room_progress) -> r.finished_interactions)
-    |> List.flatten
+    let get_interaction_names (r : Json_t.room_progress) =
+      List.map (String.maybe_trim_before ':') r.finished_interactions
+    in
+    List.map snd progress_by_room |> List.map get_interaction_names |> List.flatten
   in
-  List.mem (fmt "cutscene:%s" cutscene_name) all_finished_interactions
+  List.mem cutscene_name all_finished_interactions
 
 let trigger_name trigger : string = String.maybe_trim_before '|' trigger.full_name
 
@@ -631,6 +632,7 @@ let get_steps
       remove_nail := false;
       match Enemy.parse_name "boss-killed interaction" trigger.name_suffix with
       | LAVA_BRITTA ->
+        game.in_boss_fight <- true;
         [
           STEP (WAIT 1.);
           NPC (SHIRLEY, ENTITY (MOVE_TO (195, 68)));
@@ -689,6 +691,7 @@ let get_steps
           ENEMY (LAVA_BRITTA_2, ENTITY UNFREEZE);
         ]
       | LAVA_BRITTA_2 ->
+        game.in_boss_fight <- true;
         [
           STEP (WAIT 1.);
           ENEMY (LAVA_BRITTA_2, WALK_TO 46);
@@ -784,6 +787,7 @@ let get_steps
           STEP (WAIT 2.);
         ]
       | MANICORN_3 ->
+        game.in_boss_fight <- true;
         [
           STEP (SET_IGNORE_CAMERA_TRIGGERS true);
           STEP (WAIT 1.);
@@ -1196,6 +1200,7 @@ let get_steps
           ]
       | _ -> fail ())
     | "dream-nail" -> (
+        game.in_boss_fight <- true;
       autosave_pos' := Some game.player.ghost.entity.dest.pos;
       match trigger.name_suffix with
       | "final-sequence" ->
@@ -1333,7 +1338,7 @@ let get_steps
                  ( "Abed",
                    "Sounds {{red}} bad {{white}} when you put it that way. Can you put it a way \
                     that sounds {{green}} good?" ));
-            STEP (SET_FIXED_CAMERA (52, 79));
+            STEP (SET_FIXED_CAMERA (51, 79));
             STEP (WAIT 1.);
             STEP
               (DIALOGUE

@@ -84,9 +84,7 @@ let OnlyShowHK = tiled.registerAction("OnlyShowHK", function(/* action */) {
   for (let i = 0; i < tiled.openAssets.length; i++) {
     const map = tiled.openAssets[i];
 
-    if (map.fileName.endsWith('ventways_hub.json')) {
-      console.log("skipping ventways");
-    } else {
+    if (!(map.fileName.endsWith('ventways_hub.json') || map.fileName.endsWith('basement_f.json'))) {
       for (let j = map.layerCount - 1; j >= 0; j--) {
         const layer = map.layerAt(j);
 

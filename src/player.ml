@@ -78,10 +78,7 @@ let maybe_begin_interactions
       if not (List.mem name game.room.progress.finished_interactions) then
         begin_interactions ~autosave_pos ()
     in
-    let strip_blocking_interaction (full_name : string) : string =
-      String.maybe_trim_before '|' full_name
-    in
-    let name = strip_blocking_interaction trigger.full_name in
+    let name = Interactions.trigger_name trigger in
     match trigger.kind with
     | REFLECT -> game.reflection_x <- Some trigger.dest.pos.x
     | WARP _
@@ -1537,10 +1534,22 @@ let tick (game : game) (state : state) =
   let handle_interactions () : bool * bool =
     (* the ghost can only collide with one trigger of each type per frame *)
     let check_for_new_interactions () : bool * bool =
+      let if_unblocked trigger fn =
+        match trigger.blocking_interaction with
+        | None -> fn ()
+        | Some blocking_interaction_name ->
+          let blocking_interaction_finished =
+            match String.split_at_first_opt '$' blocking_interaction_name with
+            | Some "key", key_name -> List.mem key_name game.progress.keys_found
+            | _ -> Interactions.cutscene_finished game.progress.by_room blocking_interaction_name
+          in
+          if blocking_interaction_finished then
+            fn ()
+      in
       let interactable_triggers = game.room.triggers.lore in
       (match find_trigger_collision game.player interactable_triggers with
       | None -> game.room.interaction_label <- None
-      | Some trigger -> (
+      | Some trigger ->
         let label =
           match trigger.label with
           | None -> ""
@@ -1550,25 +1559,15 @@ let tick (game : game) (state : state) =
           if state.frame_inputs.interact.pressed then
             maybe_begin_interaction state game trigger
         in
-        match trigger.blocking_interaction with
-        | None ->
-          game.room.interaction_label <- Some (label, trigger.dest);
-          check_interact_key ()
-        | Some blocking_interaction_name ->
-          let interaction_blocked =
-            match String.split_at_first_opt '$' blocking_interaction_name with
-            | Some "key", key_name -> List.mem key_name game.progress.keys_found
-            | _ -> Interactions.cutscene_finished game.progress.by_room blocking_interaction_name
-          in
-          if interaction_blocked then (
+        if_unblocked trigger (fun () ->
             game.room.interaction_label <- Some (label, trigger.dest);
-            check_interact_key ())));
+            check_interact_key ()));
       let triggers =
         game.room.triggers.cutscene @ game.room.triggers.reflect @ game.room.triggers.boss_fight
       in
       (match find_trigger_collision game.player triggers with
       | None -> ()
-      | Some trigger -> maybe_begin_interaction state game trigger);
+      | Some trigger -> if_unblocked trigger (fun () -> maybe_begin_interaction state game trigger));
       let respawn_trigger_collision =
         find_respawn_trigger_collision game.player game.room.triggers.respawns
       in
@@ -1654,8 +1653,7 @@ let tick (game : game) (state : state) =
               | None -> ());
             match options.autosave_pos with
             | None -> ()
-            | Some autosave_pos ->
-              state.save_pos <- Some autosave_pos)
+            | Some autosave_pos -> state.save_pos <- Some autosave_pos)
           | CONCLUDE_INTERACTIONS trigger ->
             state.ignore_camera_triggers <- false;
             state.camera.motion <-
