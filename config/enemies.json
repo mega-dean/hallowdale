@@ -3,8 +3,9 @@
         // bosses
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 65,
+            "health": 5,
             "scale": 2.5,
+            // "damage": 5,
             "w": 19,
             "h": 45,
             "can_recoil": false,
@@ -911,7 +912,7 @@
             "health": 70,
             "scale": 1.5,
             "w": 22,
-            "h": 45,
+            "h": 49,
             "dream_nail": {},
             "attrs": [
                 ["aggro_distance", 700.0],
@@ -966,8 +967,8 @@
                     "y_offset": 3
                 }],
                 ["dead", {
-                    "x_offset": 9,
-                    "y_offset": -17
+                    "x_offset": 13,
+                    "y_offset": -21
                 }]
             ]
         }],
@@ -977,7 +978,7 @@
             "health": 120,
             "scale": 2,
             "w": 22,
-            "h": 45,
+            "h": 49,
             "dream_nail": {},
             "attrs": [
                 ["aggro_distance", 700.0],
@@ -1032,8 +1033,8 @@
                     "y_offset": 3
                 }],
                 ["dead", {
-                    "x_offset": 9,
-                    "y_offset": -17
+                    "x_offset": 13,
+                    "y_offset": -21
                 }]
             ]
         }],
@@ -1044,7 +1045,7 @@
             "damage": 1,
             "scale": 2.5,
             "w": 22,
-            "h": 45,
+            "h": 49,
             "can_recoil": false,
             "dream_nail": {},
             "attrs": [
@@ -1100,8 +1101,8 @@
                     "y_offset": 3
                 }],
                 ["dead", {
-                    "x_offset": 9,
-                    "y_offset": -17
+                    "x_offset": 13,
+                    "y_offset": -21
                 }]
             ]
         }],

@@ -26,6 +26,7 @@ let get_steps
     { pos = { x = x *. w; y = y *. h }; w; h }
   in
   let remove_nail = ref true in
+  let autosave_pos' = ref autosave_pos in
 
   let get_interaction_steps (trigger : trigger) : step list =
     let fade_screen =
@@ -634,8 +635,8 @@ let get_steps
           STEP (WAIT 1.);
           NPC (SHIRLEY, ENTITY (MOVE_TO (195, 68)));
           NPC (SHIRLEY, ENTITY (SET_FACING LEFT));
-          PARTY_GHOST (ABED, ENTITY (MOVE_TO (192, 68)));
-          PARTY_GHOST (TROY, ENTITY (MOVE_TO (190, 68)));
+          PARTY_GHOST (ABED, ENTITY (MOVE_TO (188, 68)));
+          PARTY_GHOST (TROY, ENTITY (MOVE_TO (185, 68)));
           PARTY_GHOST (ABED, ENTITY UNFREEZE);
           PARTY_GHOST (TROY, ENTITY UNFREEZE);
           PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
@@ -669,11 +670,11 @@ let get_steps
                ( "Shirley",
                  "... well I don't want to waste your time. Just think of something {{blue}} cool \
                   {{white}} and give me credit." ));
-          ENEMY (LAVA_BRITTA, ENTITY HIDE);
-          ENEMY (LAVA_BRITTA_2, ENTITY UNHIDE);
           CURRENT_GHOST (ENTITY (MOVE_TO (62, 95)));
           CURRENT_GHOST (ENTITY (SET_FACING LEFT));
           CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (LAVA_BRITTA, ENTITY HIDE);
+          ENEMY (LAVA_BRITTA_2, ENTITY UNHIDE);
           STEP (SET_FIXED_CAMERA (54, 87));
           STEP (WAIT 1.);
           STEP
@@ -761,8 +762,8 @@ let get_steps
           STEP
             (DIALOGUE
                ( "Britta",
-                 "I'm not gonna say \"who's there?\" because someone on the {{red}} floor is \
-                  knocking." ));
+                 "I'm not gonna say \"who's there?\" because someone on the {{red}} floor \
+                  {{white}} is knocking." ));
           STEP
             (DIALOGUE
                ("Jeff", "Well that's {{orange}} lame. {{white}} You have to say \"who's there?\""));
@@ -1127,6 +1128,7 @@ let get_steps
           ]
       | _ -> fail ())
     | "dream-nail" -> (
+      autosave_pos' := Some game.player.ghost.entity.dest.pos;
       match trigger.name_suffix with
       | "final-sequence" ->
         let other_ghosts =
@@ -1150,10 +1152,8 @@ let get_steps
           STEP (WAIT 2.);
           STEP (TEXT [ "... No dean to cry suffering ..." ]);
           STEP (WAIT 2.);
-          STEP
-            (SET_SCREEN_FADE
-               { target_alpha = 255; timer = Some (make_timer 0.5); show_ghost = false });
-          STEP (WAIT 1.);
+          STEP (SET_SCREEN_FADE { target_alpha = 255; timer = None; show_ghost = false });
+          STEP (WAIT 1.5);
         ]
         (* switch current ghost
 
@@ -1352,6 +1352,6 @@ let get_steps
     | None -> steps'
     | Some followup' -> steps' @ get_interaction_steps followup'
   in
-  [ STEP (INITIALIZE_INTERACTIONS { remove_nail = !remove_nail; autosave_pos }) ]
+  [ STEP (INITIALIZE_INTERACTIONS { remove_nail = !remove_nail; autosave_pos = !autosave_pos' }) ]
   @ steps
   @ [ STEP (CONCLUDE_INTERACTIONS trigger) ]
