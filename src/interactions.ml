@@ -652,11 +652,7 @@ let get_steps
                ( "Troy",
                  "Right. Wait. Abed, the floor can't be {{red}} lava {{white}} forever. The game's \
                   got to end." ));
-          STEP (WAIT 1.);
-          PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
-          STEP (WAIT 1.);
-          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-          STEP (WAIT 1.);
+          STEP (WAIT 1.5);
           PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
           STEP
             (DIALOGUE
@@ -700,6 +696,7 @@ let get_steps
                  "You know what I think? I think he's used to getting his own way. I think he's \
                   never met me." ));
           STEP SET_GHOST_CAMERA;
+          ENEMY (HICKEY, SET_POSE "lunge");
           ENEMY (HICKEY, ENTITY (SET_VX 1800.));
           ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 1800.));
           STEP (SET_FIXED_CAMERA (72, 24));
@@ -710,11 +707,29 @@ let get_steps
         @ [
             STEP (HIDE_LAYER "bg");
             PARTY_GHOST (ABED, ENTITY FREEZE);
-            STEP (WAIT 0.5);
+            STEP (WAIT 1.);
+            ENEMY (HICKEY, SET_POSE "idle");
             ENEMY (HICKEY, ENTITY (SET_VX 0.));
             ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 0.5);
             STEP (DIALOGUE ("Troy", "Abed!"));
+            ENEMY (LAVA_BRITTA_2, ENTITY HIDE);
+            PARTY_GHOST (LAVA_BRITTA, ADD_TO_PARTY);
+            PARTY_GHOST (LAVA_BRITTA, MAKE_CURRENT_GHOST);
+            PARTY_GHOST (TROY, REMOVE_FROM_PARTY);
+            CURRENT_GHOST (ENTITY (MOVE_TO (110, 30)));
+            CURRENT_GHOST (ENTITY UNFREEZE);
+            ENEMY (HICKEY, ENTITY (MOVE_TO (124, 30)));
+            ENEMY (HICKEY, ENTITY (SET_FACING LEFT));
+            STEP (SET_FIXED_CAMERA (117, 30));
+            STEP (WAIT 3.);
+            STEP (UNHIDE_LAYER "boss-doors");
+            ENEMY (HICKEY, SET_POSE "scream");
+            CURRENT_GHOST (SET_POSE (PERFORMING (ATTACK RIGHT)));
+            STEP (WAIT 1.);
+            ENEMY (HICKEY, ENTITY (MOVE_TO (124, 30)));
+            ENEMY (HICKEY, ENTITY UNFREEZE);
       | _ -> fail ())
     | "boss-killed" -> (
       game.in_boss_fight <- false;
@@ -1024,7 +1039,9 @@ let get_steps
           | ABED -> "Abed"
           | JEFF -> "Jeff"
           | ANNIE -> "Annie"
-          | BRITTA -> "Britta"
+          | BRITTA
+          | LAVA_BRITTA ->
+            "Britta"
         in
         [
           STEP (WAIT 0.7);
