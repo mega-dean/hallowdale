@@ -67,11 +67,10 @@ let get_steps
       | Some lore -> lore
     in
 
-    let jump_party_ghost ?(end_pose = IDLE) ghost_id direction vx =
+    let jump_party_ghost ?(end_pose = IDLE) ghost_id direction vx wait_time =
       [
         PARTY_GHOST (ghost_id, JUMP (direction, vx));
-        (* this wait time is arbitrary and specific to the uses in the chang cutscene *)
-        STEP (WAIT 1.1);
+        STEP (WAIT wait_time);
         PARTY_GHOST (ghost_id, SET_POSE end_pose);
       ]
     in
@@ -344,6 +343,9 @@ let get_steps
           [ "Tap (A) while holding UP"; "to unleash the Vapors." ]
       | _ -> fail ())
     | "boss-fight" -> (
+      (* this doesn't include bosses from the final cutscene sequence, since those aren't
+         initiated by triggers
+      *)
       game.in_boss_fight <- true;
       match Enemy.parse_name "boss-fight interaction" trigger.name_suffix with
       | DUNCAN ->
@@ -626,12 +628,108 @@ let get_steps
             PARTY_GHOST (JEFF, ADD_TO_PARTY);
             PARTY_GHOST (TROY, ADD_TO_PARTY);
           ]
+      | "fight-hickey" ->
+        [
+          STEP (SET_FIXED_CAMERA (70, 24));
+          CURRENT_GHOST (SET_POSE IDLE);
+          PARTY_GHOST (ABED, ENTITY (UNHIDE_AT (68, 23, 0., 0.)));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          STEP (WAIT 1.);
+          STEP CLEAR_SCREEN_FADE;
+          STEP (WAIT 1.);
+          PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Abed", "Ok, we'll go into the vents. They'll never find us there."));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          STEP
+            (DIALOGUE ("Troy", "I say we take a stand here. I mean, someone's got to win sometime."));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE
+               ("Abed", "Not if we never kill each other. Then we can play {{green}} forever."));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          STEP
+            (DIALOGUE
+               ( "Troy",
+                 "Right. Wait. Abed, the floor can't be {{red}} lava {{white}} forever. The game's \
+                  got to end." ));
+          STEP (WAIT 1.);
+          PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+          STEP (WAIT 1.);
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          STEP (WAIT 1.);
+          PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "It's not a game for me, Troy. I'm seeing real {{red}} lava {{white}} because \
+                  you're leaving. It's embarrassing, and I don't want to be crazy, but I am crazy. \
+                  So I made a game that made you and everyone else see what I see." ));
+          STEP (WAIT 1.);
+          STEP (SET_CAMERA_MOTION (LINEAR 2.));
+          STEP (SET_FIXED_CAMERA (70, 34));
+          STEP (WAIT 1.);
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "I don't want it to be there either, I swear. I want you to be able to leave, but \
+                  I don't think the {{red}} lava {{white}} goes away until you stop leaving." ));
+          STEP
+            (DIALOGUE
+               ("Troy", "So the only way I can help you is by giving up my chance to be one person?"));
+          STEP (SHAKE_SCREEN 2.);
+          STEP (WAIT 2.);
+          ENEMY (HICKEY, ENTITY UNHIDE);
+          ENEMY (HICKEY, ENTITY UNFREEZE);
+          ENEMY (LAVA_BRITTA_2, ENTITY UNHIDE);
+          ENEMY (LAVA_BRITTA_2, ENTITY UNFREEZE);
+          ENEMY (LAVA_BRITTA_2, SET_POSE "with-hickey");
+          STEP (SET_CAMERA_MOTION (LINEAR 8.));
+          STEP (SET_FIXED_CAMERA (41, 24));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Britta", "You guys ready for closure?"));
+          STEP (DIALOGUE ("Hickey", "Of your caskets?"));
+          STEP
+            (DIALOGUE
+               ( "Troy",
+                 "Guys, stop, ok? The {{red}} lava's {{white}} real to Abed. It's not a game to \
+                  him." ));
+          STEP (DIALOGUE ("Britta", "Oh no..."));
+          STEP
+            (DIALOGUE
+               ( "Hickey",
+                 "You know what I think? I think he's used to getting his own way. I think he's \
+                  never met me." ));
+          STEP SET_GHOST_CAMERA;
+          ENEMY (HICKEY, ENTITY (SET_VX 1800.));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 1800.));
+          STEP (SET_FIXED_CAMERA (72, 24));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+        ]
+        @ jump_party_ghost ~end_pose:(AIRBORNE (-1.)) ABED RIGHT
+            Config.interactions.abed_shelves_jump_vx 0.8
+        @ [
+            STEP (HIDE_LAYER "bg");
+            PARTY_GHOST (ABED, ENTITY FREEZE);
+            STEP (WAIT 0.5);
+            ENEMY (HICKEY, ENTITY (SET_VX 0.));
+            ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (DIALOGUE ("Troy", "Abed!"));
       | _ -> fail ())
     | "boss-killed" -> (
       game.in_boss_fight <- false;
       remove_nail := false;
       match Enemy.parse_name "boss-killed interaction" trigger.name_suffix with
+      | HICKEY ->
+        [
+          STEP (WAIT 1.);
+          STEP
+            (DIALOGUE ("Hickey", "Unbelievable! When this game is over, I'm gonna shove you back."));
+        ]
       | LAVA_BRITTA ->
+        (* this needs to be set manually for boss fights in the final sequence because they
+           aren't started with "boss-fight" triggers
+        *)
         game.in_boss_fight <- true;
         [
           STEP (WAIT 1.);
@@ -727,7 +825,7 @@ let get_steps
           ENEMY (HICKEY, ENTITY (SET_FACING LEFT));
           ENEMY (HICKEY, SET_POSE "idle");
           ENEMY (HICKEY, ENTITY UNFREEZE);
-          STEP (SET_FIXED_CAMERA (112, 90));
+          STEP (SET_FIXED_CAMERA (108, 90));
           STEP (DIALOGUE ("Troy and Abed", "Troy and Abed in a {{blue}} bubble!"));
           STEP (SET_FIXED_CAMERA (115, 90));
           STEP (WAIT 1.);
@@ -1088,7 +1186,7 @@ let get_steps
           NPC (CHANG, SET_POSE "take-damage");
         ]
         @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT
-            Config.interactions.troy_dive_jump_vx
+            Config.interactions.troy_dive_jump_vx 1.1
         @ [ STEP (WAIT 0.3); NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
         @ get_ability_steps "desolate_dive" 0. 3.
             [ "Consumed the"; "Troy and Abed Intimidation Stance." ]
@@ -1159,7 +1257,7 @@ let get_steps
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             PARTY_GHOST (BRITTA, WALK_TO 163);
           ]
-        @ jump_party_ghost BRITTA RIGHT Config.interactions.britta_trash_can_jump_vx
+        @ jump_party_ghost BRITTA RIGHT Config.interactions.britta_trash_can_jump_vx 1.1
         @ [
             STEP (WAIT 0.3);
             PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
@@ -1200,7 +1298,7 @@ let get_steps
           ]
       | _ -> fail ())
     | "dream-nail" -> (
-        game.in_boss_fight <- true;
+      game.in_boss_fight <- true;
       autosave_pos' := Some game.player.ghost.entity.dest.pos;
       match trigger.name_suffix with
       | "final-sequence" ->

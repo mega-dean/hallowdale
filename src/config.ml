@@ -360,6 +360,7 @@ type interactions = {
   duncan_initial_jump_vx : float;
   duncan_chair_jump_vx : float;
   troy_dive_jump_vx : float;
+  abed_shelves_jump_vx : float;
   britta_trash_can_jump_vx : float;
   shirley_island_camera_motion : float;
 }
@@ -369,6 +370,7 @@ let interactions =
     duncan_initial_jump_vx = -350. *. window_scale;
     duncan_chair_jump_vx = 150. *. window_scale;
     troy_dive_jump_vx = 900. *. window_scale;
+    abed_shelves_jump_vx = 300. *. window_scale;
     britta_trash_can_jump_vx = 300. *. window_scale;
     shirley_island_camera_motion = 3. *. window_scale;
   }

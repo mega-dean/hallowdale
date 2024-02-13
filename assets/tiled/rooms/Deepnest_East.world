@@ -422,10 +422,10 @@
         },
         {
             "fileName": "basement_f.json",
-            "height": 600,
-            "width": 1560,
-            "x": 3744,
-            "y": 2712
+            "height": 480,
+            "width": 1800,
+            "x": 3456,
+            "y": 2808
         }
     ],
     "onlyShowAdjacentMaps": false,

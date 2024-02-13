@@ -1276,7 +1276,7 @@
                 {
                  "height":76,
                  "id":139,
-                 "name":"final-sequence|door-warp:basement_f@40,33",
+                 "name":"final-sequence|door-warp:basement_f@51,23",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -1286,7 +1286,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
