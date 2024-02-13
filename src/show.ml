@@ -129,6 +129,7 @@ let ghost_id id =
   | ABED -> "ABED"
   | ANNIE -> "ANNIE"
   | BRITTA -> "BRITTA"
+  | LAVA_BRITTA -> "LAVA_BRITTA"
   | JEFF -> "JEFF"
   | TROY -> "TROY"
 
@@ -477,7 +478,9 @@ let menu_choice ?(save_slots = []) (game_opt : game option) (choice : menu_choic
         match id with
         | ABED -> show "Abed"
         | ANNIE -> show "Annie"
-        | BRITTA -> show "Britta"
+        | BRITTA
+        | LAVA_BRITTA ->
+          show "Britta"
         | JEFF -> show "Jeff"
         | TROY -> show "Troy")
     in

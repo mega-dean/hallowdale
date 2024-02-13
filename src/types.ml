@@ -324,6 +324,7 @@ type ghost_pose =
 type ghost_id =
   | ABED
   | ANNIE
+  | LAVA_BRITTA
   | BRITTA
   | JEFF
   | TROY

@@ -245,7 +245,7 @@ let create
       let config = make_head_textures id in
       Player.init_party id config idle_texture ~start_pos:{ x = 1000.; y = 1000. } in_party
     in
-    List.map make_party_ghost [ BRITTA; ABED; TROY; ANNIE; JEFF ]
+    List.map make_party_ghost [ LAVA_BRITTA; BRITTA; ABED; TROY; ANNIE; JEFF ]
   in
 
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in

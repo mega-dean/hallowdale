@@ -7,6 +7,7 @@ let parse_name name : ghost_id =
   | "ABED" -> ABED
   | "ANNIE" -> ANNIE
   | "BRITTA" -> BRITTA
+  | "LAVA_BRITTA" -> LAVA_BRITTA
   | "JEFF" -> JEFF
   | "TROY" -> TROY
   | _ -> failwithf "bad ghost name '%s'" name
