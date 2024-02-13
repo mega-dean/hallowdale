@@ -35,6 +35,7 @@ let parse_name context name : enemy_id =
   | "BUDDY" -> BUDDY
   | "LAVA_BRITTA" -> LAVA_BRITTA
   | "LAVA_BRITTA_2" -> LAVA_BRITTA_2
+  | "HICKEY" -> HICKEY
   | _ -> failwithf "Enemy.parse_name: found unrecognized enemy name '%s' in %s" name context
 
 let action_started_at (enemy : enemy) (action_name : string) : time =
@@ -182,6 +183,7 @@ let maybe_take_damage
     | DUNCAN
     | LAVA_BRITTA
     | LAVA_BRITTA_2
+    | HICKEY
     | ELECTRICITY ->
       ()
     | BORCHERT
@@ -3006,6 +3008,7 @@ let get_module (id : enemy_id) : (module M) =
   | BUDDY -> (module Buddy)
   | LUIS_GUZMAN -> (module Luis_guzman)
   | BORCHERT -> (module Borchert)
+  | HICKEY
   | LAVA_BRITTA
   | LAVA_BRITTA_2 ->
     (module Lava_britta)
@@ -3041,6 +3044,7 @@ let create_from_rects
       | BAT
       | DUNCAN
       | LAVA_BRITTA
+      | HICKEY
       | LOCKER_BOY ->
         1
       | LAVA_BRITTA_2
@@ -3125,6 +3129,7 @@ let create_from_rects
       | DEAN
       | BUDDY
       | LAVA_BRITTA
+      | HICKEY
       | BIRD
       | BAT
       | DUNCAN

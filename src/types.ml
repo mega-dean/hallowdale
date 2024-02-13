@@ -339,7 +339,6 @@ type camera_subject =
 
 type npc_id =
   | CHANG
-  | HICKEY
   | ANNIES_BOOBS
   | NEIL
   | SHIRLEY
@@ -379,6 +378,7 @@ type enemy_id =
   | BUDDY
   | LAVA_BRITTA
   | LAVA_BRITTA_2
+  | HICKEY
 
 type weapon = {
   name : string;

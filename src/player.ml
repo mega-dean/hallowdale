@@ -1660,8 +1660,24 @@ let tick (game : game) (state : state) =
               SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
             set_ghost_camera ();
             zero_vy := true;
-            game.room.progress.finished_interactions <-
-              Interactions.trigger_name trigger :: game.room.progress.finished_interactions;
+            (* TODO maybe add a new property trigger.save_in_progress and set this in Room.init *)
+            (match trigger.kind with
+            | WARP _
+            | CAMERA (_, _)
+            | LEVER
+            | INFO
+            | FOLLOWUP
+            | SHADOW
+            | RESPAWN
+            | PURPLE_PEN
+            | REFLECT ->
+              ()
+            | BOSS_FIGHT _
+            | BOSS_KILLED
+            | D_NAIL
+            | CUTSCENE ->
+              game.room.progress.finished_interactions <-
+                Interactions.trigger_name trigger :: game.room.progress.finished_interactions);
             game.interaction.use_dashes_in_archives <- None
           | SET_SCREEN_FADE fade -> state.screen_fade <- Some fade
           | CLEAR_SCREEN_FADE -> state.screen_fade <- None

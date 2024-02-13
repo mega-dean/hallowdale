@@ -1133,7 +1133,7 @@
                 {
                  "height":28,
                  "id":119,
-                 "name":"hidden-npc:HICKEY",
+                 "name":"hidden-enemy:HICKEY",
                  "rotation":0,
                  "type":"",
                  "visible":true,

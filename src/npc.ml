@@ -7,7 +7,6 @@ let parse_name context name : npc_id =
   | "SHIRLEY" -> SHIRLEY
   | "NEIL" -> NEIL
   | "CHANG" -> CHANG
-  | "HICKEY" -> HICKEY
   | "VICKI" -> VICKI
   | "LEONARD" -> LEONARD
   | "GARRETT" -> GARRETT

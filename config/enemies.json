@@ -619,7 +619,7 @@
                 }],
                 ["with-hickey", {
                     "x_offset": 4,
-                    "y_offset": 143
+                    "y_offset": 153
                 }],
                 ["walking", {
                     "count": 4,
@@ -658,6 +658,43 @@
                 ["charge-throw", {
                     "x_offset": 4,
                     "y_offset": 3
+                }]
+            ]
+        }],
+
+        [ "HICKEY", {
+            "kind": "boss",
+            "health": 5,
+            "w": 80,
+            "h": 80,
+            "can_recoil": false,
+            "dream_nail": {},
+            "attrs": [
+                ["walk_vx", 400.0]
+            ],
+            "unscaled_attrs": [
+            ],
+
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 113,
+                    "y_offset": 148
+                }],
+                ["provoke", {
+                    "x_offset": 113,
+                    "y_offset": 148
+                }],
+                ["provoke-wave", {
+                    "x_offset": 113,
+                    "y_offset": 148,
+                    "count": 2,
+                    "duration": 0.2
+                }],
+                ["walking", {
+                    "x_offset": 113,
+                    "y_offset": 148,
+                    "count": 4,
+                    "duration": 0.3
                 }]
             ]
         }],
