@@ -689,6 +689,12 @@
                     "x_offset": 115,
                     "y_offset": 151
                 }],
+                ["dying", {
+                    "count": 6,
+                    "duration": 0.1,
+                    "x_offset": 115,
+                    "y_offset": 151
+                }],
                 ["scream", {
                     "count": 2,
                     "duration": 0.05,

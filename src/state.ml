@@ -228,11 +228,10 @@ let init () : state =
         [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ]
         settings.music_volume;
       Audio.load_music "daybreak" [ AC_REPAIR_ANNEX ] settings.music_volume;
-      Audio.load_music "ending" [ COMPUTER_WING ] settings.music_volume;
       Audio.load_music "greendale" [ LIBRARY; MEOW_MEOW_BEENZ; VENTWAYS ] settings.music_volume;
       Audio.load_music "kiss-from-a-rose" ~intro:22.255 ~loop:73.545 [ CITY_OF_CHAIRS; OUTLANDS ]
         settings.music_volume;
-      Audio.load_music "mash-theme" ~loop:75.451 [ BASEMENT ] settings.music_volume;
+      Audio.load_music "mash-theme" ~loop:75.451 [ BASEMENT; COMPUTER_WING ] settings.music_volume;
       Audio.load_music "somewhere-out-there" ~intro:35.306 ~loop:93.553 [ TRAMPOLINEPATH ]
         settings.music_volume;
     ]

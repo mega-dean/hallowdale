@@ -1681,7 +1681,9 @@ let tick (game : game) (state : state) =
                 Interactions.trigger_name trigger :: game.room.progress.finished_interactions);
             game.interaction.use_dashes_in_archives <- None
           | SET_SCREEN_FADE fade -> state.screen_fade <- Some fade
-          | CLEAR_SCREEN_FADE -> state.screen_fade <- None
+          | CLEAR_SCREEN_FADE time ->
+            state.screen_fade <-
+              Some { target_alpha = 0; timer = Some (make_timer time); show_ghost = false }
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
             match trigger_kind with
@@ -1772,6 +1774,9 @@ let tick (game : game) (state : state) =
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN text)
           | PLAY_SOUND_EFFECT name -> Audio.play_sound state name
+          | STOP_MUSIC -> Audio.stop_music game.music.music.t
+          | PLAY_END_CREDITS_MUSIC ->
+            game.music <- Audio.load_music "ending" [] state.settings.music_volume
         in
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =

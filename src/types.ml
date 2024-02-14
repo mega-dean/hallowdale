@@ -528,7 +528,7 @@ module Interaction = struct
     | INITIALIZE_INTERACTIONS of options
     | CONCLUDE_INTERACTIONS of trigger
     | SET_SCREEN_FADE of screen_fade
-    | CLEAR_SCREEN_FADE
+    | CLEAR_SCREEN_FADE of float
     | SHAKE_SCREEN of float
     | DEBUG of string
     | WAIT of float
@@ -554,6 +554,8 @@ module Interaction = struct
     | HIDE_LAYER of string
     | UNHIDE_LAYER of string
     | PLAY_SOUND_EFFECT of string
+    | STOP_MUSIC
+    | PLAY_END_CREDITS_MUSIC
 
   type entity_step =
     | UNSET_FLOOR

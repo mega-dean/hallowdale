@@ -524,7 +524,8 @@ let tick (state : state) =
         | "Jeff" -> "{{darkblue}}"
         | "Shirley" -> "{{darkpink}}"
         | "Troy"
-        | "Troy and Abed" -> "{{darkgreen}}"
+        | "Troy and Abed" ->
+          "{{darkgreen}}"
         | "Abed" -> "{{orange}}"
         | "Neil"
         | "Annie's Boobs"
@@ -602,7 +603,8 @@ let tick (state : state) =
       let alpha =
         match tt.visible with
         | UNTIL_UNSET
-        | PAUSE_MENU_OPEN -> 255
+        | PAUSE_MENU_OPEN ->
+          255
         | UNTIL (duration, end_time) ->
           255. *. ((end_time.at -. state.frame.time) /. duration) |> Float.to_int
       in
@@ -1149,12 +1151,25 @@ let tick (state : state) =
             | None -> 255
             | Some timer ->
               timer.left <- { seconds = timer.left.seconds -. state.frame.dt };
-              let target' =
-                (fade.target_alpha |> Int.to_float)
-                *. (1. -. (timer.left.seconds /. timer.total.seconds))
-                |> Float.to_int
-              in
-              Int.min target' fade.target_alpha
+              if fade.target_alpha > 0 then (
+                let target' =
+                  (fade.target_alpha |> Int.to_float)
+                  *. (1. -. (timer.left.seconds /. timer.total.seconds))
+                  |> Float.to_int
+                in
+                Int.min target' fade.target_alpha)
+              else (
+                let target' =
+                  255
+                  - ((255 - fade.target_alpha |> Int.to_float)
+                     *. (1. -. (timer.left.seconds /. timer.total.seconds))
+                    |> Float.to_int)
+                in
+                if target' < 0 && timer.left.seconds < 0. then (
+                  state.screen_fade <- None;
+                  0)
+                else
+                  target')
           in
           draw_screen_fade target;
           true)
