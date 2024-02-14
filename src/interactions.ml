@@ -740,7 +740,185 @@ let get_steps
           STEP (WAIT 1.);
           STEP
             (DIALOGUE ("Hickey", "Unbelievable! When this game is over, I'm gonna shove you back."));
+          STEP (HIDE_LAYER "boss-doors");
+          STEP (SET_FIXED_CAMERA (72, 24));
+          STEP (DIALOGUE ("Troy", "Abed, give me your other hand!"));
+          STEP (DIALOGUE ("Abed", "It's down to us. You or Britta will be the winner."));
+          STEP
+            (DIALOGUE
+               ( "Troy",
+                 "I'm not leaving, ok? Just... I promise. The floor's not {{red}} lava {{white}} \
+                  now. Just give me your hand." ));
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "I don't think the {{red}} lava's {{white}} here because you're leaving. I think \
+                  it's here because I won't {{red}} let go." ));
+          STEP (WAIT 2.);
+          STEP (DIALOGUE ("Abed", "Sorry."));
+          STEP (WAIT 1.);
+          STEP (DIALOGUE ("Abed", "Bye."));
+          STEP (DIALOGUE ("Troy", "Abed... Abed!"));
+          PARTY_GHOST (ABED, ENTITY (SET_VX 0.));
+          PARTY_GHOST (ABED, ENTITY (SET_VY 0.));
+          PARTY_GHOST (ABED, ENTITY UNFREEZE);
+          PARTY_GHOST (ABED, ENTITY (WAIT_UNTIL_LANDED false));
+          PARTY_GHOST (ABED, SET_POSE (PERFORMING FOCUS));
+          STEP (WAIT 0.5);
+          STEP (DIALOGUE ("Troy", "Abed..."));
+          STEP (WAIT 0.5);
+          STEP (CORNER_TEXT "El está muerto para siempre.");
+          STEP (DIALOGUE ("Troy", "He's... He's fake dead. Forever."));
+          STEP UNSET_CORNER_TEXT;
+          STEP
+            (SET_SCREEN_FADE
+               { target_alpha = 255; timer = Some (make_timer 2.); show_ghost = false });
+          STEP (WAIT 2.);
+          PARTY_GHOST (ABED, ENTITY (MOVE_TO (7, 27)));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (TROY, ENTITY (MOVE_TO (14, 24)));
+          PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+          CURRENT_GHOST (ENTITY (MOVE_TO (11, 24)));
+          CURRENT_GHOST (SET_POSE IDLE);
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (SET_CAMERA_MOTION (LINEAR 16.));
+          STEP (SET_FIXED_CAMERA (23, 24));
+          STEP (WAIT 1.);
+          STEP CLEAR_SCREEN_FADE;
+          STEP (DIALOGUE ("Britta", "He's not really dead."));
+          STEP (DIALOGUE ("Troy", "No, but he's really playing dead and he's not gonna stop."));
+          STEP (DIALOGUE ("Troy", "You don't get it. No one gets Abed. I got him a little."));
+          STEP (WAIT 1.);
+          STEP (DIALOGUE ("Troy", "This is my fault."));
+          STEP (WAIT 1.);
+          PARTY_GHOST (TROY, WALK_TO 18);
+          STEP (DIALOGUE ("Troy", "I don't deserve to fake live."));
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (TROY, WALK_TO 22);
+          STEP (DIALOGUE ("Britta", "Wait! No."));
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (WAIT 0.7);
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          STEP (DIALOGUE ("Britta", "I can {{green}} fix {{white}} him."));
+          PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Troy", "How?"));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE ("Britta", "I don't know. In real life, I don't know, but I can fake fix him."));
+          STEP (WAIT 1.);
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          STEP
+            (DIALOGUE
+               ("Britta", "I can {{green}} clone {{white}} him. I'll {{green}} clone {{white}} him."));
+          STEP (WAIT 1.);
+          STEP (DIALOGUE ("Troy", "... go on ..."));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "I just need his {{blue}} DNA. {{white}} Let's get his {{blue}} DNA. {{white}} \
+                  Don't touch the {{red}} lava." ));
+          CURRENT_GHOST (PARTY (WALK_TO 8));
+          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+          STEP
+            (DIALOGUE
+               ( "Troy",
+                 "You might be onto something... I'm gonna find {{green}} discarded technology \
+                  {{white}} from this {{orange}} once-great civilization {{white}} and start a \
+                  {{blue}} cloning {{white}} machine." ));
+          PARTY_GHOST (TROY, WALK_TO 16);
+          PARTY_GHOST (TROY, SET_POSE READING);
+          STEP (WAIT 1.);
+          CURRENT_GHOST (SET_POSE IDLE);
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "Ok, I'm placing this {{blue}} Cellular Regeneration Sequencer {{white}} on the \
+                  spot where he died." ));
+          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (WAIT 0.5);
+          PARTY_GHOST (TROY, SET_POSE IDLE);
+          PARTY_GHOST (TROY, WALK_TO 10);
+          STEP (DIALOGUE ("Troy", "Here, don't forget this."));
+          CURRENT_GHOST (SET_POSE IDLE);
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "This is a {{pink}} Laser Guidance System {{white}} that keeps the regeneration \
+                  sequence from {{red}} jib-jabbing." ));
+          STEP (DIALOGUE ("Troy", "{{red}} Jib-jabbing?"));
+          STEP (WAIT 0.5);
+          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Britta", "Initiate regeneration sequence."));
+          PARTY_GHOST (TROY, SET_POSE (PERFORMING FOCUS));
+          STEP (WAIT 1.);
+          PARTY_GHOST (TROY, SET_POSE IDLE);
+          CURRENT_GHOST (SET_POSE IDLE);
+          STEP (WAIT 1.);
         ]
+        @
+        if game.progress.dreamer_items_found = 6 then
+          [
+            PARTY_GHOST (ABED, SET_POSE IDLE);
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Troy", "It worked!"));
+            STEP (DIALOGUE ("Britta", "We made a {{green}} perfect clone {{white}} of Abed!"));
+            STEP (WAIT 1.);
+            STEP
+              (DIALOGUE ("Abed", "Actually, Britta's work was sloppy. I'm not an exact replication."));
+            STEP
+              (DIALOGUE
+                 ( "Abed",
+                   "I have all of Abed's abilities and memories, but I'm missing his wild \
+                    emotionality." ));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Abed", "Although I think I may be able to let Troy go now."));
+            STEP (WAIT 1.);
+            STEP
+              (DIALOGUE
+                 ( "Troy",
+                   "I don't know... I haven't been completely honest. I'm really {{red}} scared \
+                    {{white}} to go on my trip." ));
+            STEP
+              (DIALOGUE ("Abed", "Well you don't have to go. Your {{blue}} clone {{white}} can."));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Troy", "Right."));
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, WALK_TO 22);
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+          ]
+          @ jump_party_ghost ~end_pose:(AIRBORNE (-1.)) TROY RIGHT
+              Config.interactions.troy_final_jump_vx 0.1
+          @ [
+              STEP
+                (SET_SCREEN_FADE
+                   { target_alpha = 255; timer = Some (make_timer 1.); show_ghost = false });
+              STEP (WAIT 2.);
+            ]
+        else
+          [
+            STEP
+              (DIALOGUE
+                 ( "Troy",
+                   "It didn't work... I think we need to collect more {{blue}} Dreamer Items." ));
+            STEP
+              (DIALOGUE
+                 ( "Britta",
+                   "We can use the {{blue}} Cellular Regeneration Sequencer {{white}} to go back \
+                    in time to collect the rest." ));
+            STEP
+              (SET_SCREEN_FADE
+                 { target_alpha = 255; timer = Some (make_timer 1.); show_ghost = false });
+            STEP (WAIT 2.);
+          ]
       | LAVA_BRITTA ->
         (* this needs to be set manually for boss fights in the final sequence because they
            aren't started with "boss-fight" triggers

@@ -1714,6 +1714,10 @@ let tick (game : game) (state : state) =
                   visible = Interaction.make_UNTIL duration state.frame.time;
                   scale = 1.;
                 }
+          | CORNER_TEXT text ->
+            game.interaction.corner_text <-
+              Some { content = text; visible = UNTIL_UNSET; scale = 1. }
+          | UNSET_CORNER_TEXT -> game.interaction.corner_text <- None
           | TEXT paragraphs ->
             game.interaction.speaker_name <- None;
             game.interaction.text <- Some (PLAIN paragraphs)
@@ -1851,6 +1855,9 @@ let tick (game : game) (state : state) =
                      - would need to move player.children to ghost, and update draw_party_ghost in render.ml
                   *)
                   (party_ghost.ghost.head_textures.look_up, state.global.textures.ghost_bodies.dive)
+                | FOCUS ->
+                  ( party_ghost.ghost.head_textures.look_down,
+                    state.global.textures.ghost_bodies.focus )
                 | _ ->
                   failwithf "bad PERFORMING action for party ghost: %s"
                     (Show.ghost_action_kind action))
@@ -1865,7 +1872,8 @@ let tick (game : game) (state : state) =
                      cutscene because Abed doesn't have enough time to fall to the lower level *)
                   party_ghost.ghost.entity.v.x <- party_ghost.ghost.entity.v.x *. 2.;
                 (party_ghost.ghost.head_textures.walk, state.global.textures.ghost_bodies.walk)
-              | READING
+              | READING ->
+                (party_ghost.ghost.head_textures.read, state.global.textures.ghost_bodies.read)
               | WALL_SLIDING _
               | SWIMMING _ ->
                 failwithf "bad interaction pose '%s' for party ghost %s" (Show.ghost_pose pose)

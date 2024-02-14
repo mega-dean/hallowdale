@@ -601,6 +601,7 @@ let tick (state : state) =
       in
       let alpha =
         match tt.visible with
+        | UNTIL_UNSET
         | PAUSE_MENU_OPEN -> 255
         | UNTIL (duration, end_time) ->
           255. *. ((end_time.at -. state.frame.time) /. duration) |> Float.to_int

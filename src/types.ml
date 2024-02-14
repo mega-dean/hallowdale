@@ -538,6 +538,8 @@ module Interaction = struct
     (* text *)
     | TEXT of string list
     | FLOATING_TEXT of string * float
+    | CORNER_TEXT of string
+    | UNSET_CORNER_TEXT
     | FOCUS_ABILITY_TEXT of string list * rect * string list
     | ABILITY_TEXT of rect * string list
     (* TODO maybe add OFFSET_DIALOGUE that takes params for where to draw the text box *)
@@ -646,6 +648,7 @@ module Interaction = struct
   type non_blocking_text_visible =
     (* duration, end_time *)
     | UNTIL of float * time
+    | UNTIL_UNSET
     | PAUSE_MENU_OPEN
 
   let make_UNTIL duration time = UNTIL (duration, { at = time +. duration })

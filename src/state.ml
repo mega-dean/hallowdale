@@ -535,6 +535,7 @@ let update_interaction_text (game : game) (state : state) =
     | None -> ()
     | Some (text : Interaction.non_blocking_text) -> (
       match text.visible with
+      | UNTIL_UNSET -> ()
       | PAUSE_MENU_OPEN -> (
         match state.pause_menu with
         | Some _ -> ()
