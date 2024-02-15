@@ -362,13 +362,6 @@ let animate_and_despawn_children frame_time ghost : unit =
   in
   Ghost_child_kind.Map.iter advance ghost.children
 
-let get_nail_damage (player : player) =
-  player.weapons
-  |> String.Map.to_list
-  |> List.map snd
-  |> List.map (fun (w : Json_t.weapon) -> w.damage)
-  |> List.fold_left ( + ) 0
-
 let get_damage (player : player) (damage_kind : damage_kind) =
   match damage_kind with
   | DREAM_NAIL -> 0
@@ -1722,7 +1715,10 @@ let tick (game : game) (state : state) =
           | UNSET_CORNER_TEXT -> game.interaction.corner_text <- None
           | TEXT paragraphs ->
             game.interaction.speaker_name <- None;
-            game.interaction.text <- Some (PLAIN paragraphs)
+            game.interaction.text <- Some (PLAIN (false, paragraphs))
+          | CENTERED_TEXT paragraphs ->
+            game.interaction.speaker_name <- None;
+            game.interaction.text <- Some (PLAIN (true, paragraphs))
           | FOCUS_ABILITY_TEXT (top_paragraphs, outline_src, bottom_paragraphs) ->
             game.interaction.speaker_name <- None;
             game.interaction.text <-
@@ -1772,7 +1768,7 @@ let tick (game : game) (state : state) =
                   content_with_prefix
             in
             game.interaction.speaker_name <- None;
-            game.interaction.text <- Some (PLAIN text)
+            game.interaction.text <- Some (PLAIN (false, text))
           | PLAY_SOUND_EFFECT name -> Audio.play_sound state name
           | STOP_MUSIC -> Audio.stop_music game.music.music.t
           | PLAY_END_CREDITS_MUSIC ->
@@ -1821,7 +1817,7 @@ let tick (game : game) (state : state) =
             game.progress.dreamer_items_found <- game.progress.dreamer_items_found + 1;
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;
-            game.interaction.text <- Some (PLAIN text)
+            game.interaction.text <- Some (PLAIN (false, text))
           | WEAPON weapon_name ->
             let weapon_config = String.Map.find weapon_name state.global.weapons in
             let text : string list =
@@ -1832,7 +1828,7 @@ let tick (game : game) (state : state) =
             in
             acquire_weapon state game weapon_name;
             game.interaction.speaker_name <- None;
-            game.interaction.text <- Some (PLAIN text)
+            game.interaction.text <- Some (PLAIN (false, text))
         in
 
         let handle_party_ghost_step
@@ -1941,7 +1937,7 @@ let tick (game : game) (state : state) =
             player.health.current <- player.health.max;
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;
-            game.interaction.text <- Some (PLAIN [ str ])
+            game.interaction.text <- Some (PLAIN (false, [ str ]))
           | ADD_ITEM item_kind -> add_item item_kind
           | ENTITY entity_step -> handle_entity_step player.ghost.entity entity_step
           | PARTY party_step ->

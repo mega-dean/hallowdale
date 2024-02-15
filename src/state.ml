@@ -778,52 +778,23 @@ let tick (state : state) =
         | DEMO
         | STEEL_SOLE ->
           let time, current_time =
-            let current_time_frames = state.frame.idx in
-            let get_time frames =
-              let ms' =
-                (* TODO this won't be consistent if a game is started with one fps, and loaded with a different one
-                   - need to convert and save hours/minutes/seconds/ms to save file, then use current fps to count up
-                *)
-                fmt "%.3f"
-                  ((frames mod Config.window.fps |> Int.to_float)
-                  /. (Config.window.fps |> Int.to_float))
-              in
-              let ms = String.sub ms' 1 (String.length ms' - 1) in
-              let seconds' = frames / Config.window.fps in
-              let seconds = seconds' mod 60 in
-              let minutes' = seconds' / 60 in
-              let minutes = minutes' mod 60 in
-              let hours' = minutes' / 60 in
-              let hours = hours' mod 60 in
-              fmt "%02d:%02d:%02d%s" hours minutes seconds ms
-            in
             if List.length game.progress.purple_pens_found = 0 then
-              ("", get_time current_time_frames)
+              ("", Progress.get_total_game_time state.frame.idx)
             else (
-              let frames' =
+              let frames_at_last_pen =
                 (* take the first because newest entries are pushed to the front *)
                 List.hd game.progress.purple_pens_found |> fst
               in
-              (fmt " in %s" (get_time frames'), get_time current_time_frames))
+              ( fmt " in %s" (Progress.get_total_game_time frames_at_last_pen),
+                Progress.get_total_game_time state.frame.idx ))
           in
-          let pen_lore =
-            List.filter
-              (fun (k, v) -> Str.string_match (Str.regexp "[1-6]") k 0)
-              (state.global.lore |> String.Map.to_list)
-          in
-          let total_purple_pen_count =
-            state.global.lore
-            |> String.Map.to_list
-            |> List.filter (fun (name, _) -> String.starts_with ~prefix:"purple-pen:" name)
-            |> List.length
-          in
+          let pen_progress = Progress.get_row state game "Purple Pens" in
           game.interaction.corner_text <-
             Some
               {
                 content =
-                  fmt "%d / %d purple pens found%s, %d dunks, %d c-dashes --- %s"
-                    (List.length game.progress.purple_pens_found)
-                    total_purple_pen_count time game.progress.steel_sole.dunks
+                  fmt "%d / %d purple pens found%s, %d dunks, %d c-dashes --- %s" pen_progress.found
+                    pen_progress.total time game.progress.steel_sole.dunks
                     game.progress.steel_sole.c_dashes current_time;
                 visible = PAUSE_MENU_OPEN;
                 scale = 1.;

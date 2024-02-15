@@ -537,6 +537,7 @@ module Interaction = struct
     | SPAWN_VENGEFUL_SPIRIT of direction * int * int
     (* text *)
     | TEXT of string list
+    | CENTERED_TEXT of string list
     | FLOATING_TEXT of string * float
     | CORNER_TEXT of string
     | UNSET_CORNER_TEXT
@@ -640,7 +641,7 @@ module Interaction = struct
   }
 
   type text_kind =
-    | PLAIN of string list
+    | PLAIN of bool * string list
     | ABILITY of ability_text
     | (* this is a separate variant because the focus dialogue is the only one with top_paragraphs *)
       FOCUS_ABILITY of ability_text
@@ -1133,6 +1134,13 @@ type player = {
   mutable children : ghost_child Ghost_child_kind.Map.t;
   mutable spawned_vengeful_spirits : projectile list;
 }
+
+let get_nail_damage (player : player) =
+  player.weapons
+  |> String.Map.to_list
+  |> List.map snd
+  |> List.map (fun (w : Json_t.weapon) -> w.damage)
+  |> List.fold_left ( + ) 0
 
 (* a cache for image/tiles that have been loaded for a tileset *)
 type tileset = {

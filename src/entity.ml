@@ -19,12 +19,12 @@ let recoil_backwards (entity : entity) (recoil : recoil) =
   else
     entity.x_recoil <- Some positive_r
 
-let recoil (entity : entity) (direction : direction) =
+let recoil ?(reset_v = true) (entity : entity) (direction : direction) =
   let recoil' scale =
     {
       speed = Config.ghost.recoil_speed *. scale;
       time_left = { seconds = Config.ghost.nail_recoil_time };
-      reset_v = true;
+      reset_v;
     }
   in
   match direction with

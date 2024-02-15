@@ -71,7 +71,6 @@ let load_all_save_slots () : save_slot list =
     | Some save_file -> { file = Json_j.save_file_of_string save_file; new_game = false }
   in
   List.map (fun i -> load_file (i + 1)) (Int.range Config.other.save_slots)
-(* { slot_1 = load_file 1; slot_2 = load_file 2; slot_3 = load_file 3; slot_4 = load_file 4 } *)
 
 let save ?(after_fn = ignore) (game : game) (state : state) =
   Room.save_progress_to_game game;
@@ -177,13 +176,7 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
 
 let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
   if is_new_game then (
-    state.screen_fade <-
-      Some
-        {
-          target_alpha = 255;
-          timer = None;
-          show_ghost = false;
-        };
+    state.screen_fade <- Some { target_alpha = 255; timer = None; show_ghost = false };
     let interaction_name =
       match game.mode with
       | STEEL_SOLE -> "ss-opening-poem"

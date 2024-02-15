@@ -557,7 +557,7 @@ let tick (state : state) =
       in
       display_paragraph ~force_spaces config 0
         (fmt "%s %s:  {{white}} %s" color_str speaker_name text')
-    | Some (PLAIN lines) ->
+    | Some (PLAIN (centered, lines)) ->
       let margin_y_bottom =
         let tall_text =
           (* TODO it's worth cleaning this up if there are any long dialogs needed besides the ACB note *)
@@ -568,7 +568,7 @@ let tick (state : state) =
         else
           Config.text.short_margin_y_bottom
       in
-      let config : text_config = Config.get_plain_text_config margin_y_bottom in
+      let config : text_config = { (Config.get_plain_text_config margin_y_bottom) with centered } in
       draw_text_bg_box config;
       let force_spaces =
         match game_opt with
@@ -1064,81 +1064,29 @@ let tick (state : state) =
     in
 
     let draw_progress () =
-      let config = Config.text.progress_config in
-      let lore = state.global.lore |> String.Map.to_list in
-      let count_lore prefix =
-        List.filter (fun (name, _) -> String.starts_with ~prefix:(fmt "%s:" prefix) name) lore
-        |> List.length
-      in
-      draw_text_bg_box config;
-      let row n =
+      draw_text_bg_box Config.text.progress_config;
+      let row_y n =
         camera_y +. Config.other.progress_y_padding +. (n *. line_height ~font_scale:2. ())
       in
-      let draw_progress' idx (label, found, count, suffix) =
+      let draw_progress_row idx (row : Progress.row) =
         Draw.text
-          (fmt "%s: %d / %d  %s" label found count suffix)
-          { x = camera_x +. Config.other.progress_x_padding; y = row (idx |> Int.to_float) }
+          (fmt "%s: %d / %d  %s" row.name row.found row.total row.suffix)
+          { x = camera_x +. Config.other.progress_x_padding; y = row_y (idx |> Int.to_float) }
       in
-      let abilities =
+      let all_progress = Progress.get_all_progress state game in
+      let (rows : Progress.row list) =
         [
-          game.player.abilities.vengeful_spirit;
-          game.player.abilities.desolate_dive;
-          game.player.abilities.howling_wraiths;
-          game.player.abilities.shade_soul;
-          game.player.abilities.descending_dark;
-          game.player.abilities.abyss_shriek;
-          game.player.abilities.mothwing_cloak;
-          game.player.abilities.shade_cloak;
-          game.player.abilities.mantis_claw;
-          game.player.abilities.crystal_heart;
-          game.player.abilities.monarch_wings;
-          game.player.abilities.ismas_tear;
-          game.player.abilities.dream_nail;
-        ]
-        |> List.filter (fun a -> a)
-        |> List.length
-      in
-      let total_abilities = count_lore "ability" in
-      let weapons = game.player.weapons |> String.Map.to_list |> List.length in
-      let keys = List.length game.progress.keys_found in
-      let pens = List.length game.progress.purple_pens_found in
-      let dreamer_items = game.progress.dreamer_items_found in
-      let total_weapons = state.global.weapons |> String.Map.to_list |> List.length in
-      let total_keys = count_lore "key" in
-      let total_pens = count_lore "purple-pen" in
-      let total_dreamer_items = count_lore "dreamer" in
-      let rows =
-        [
-          ( "Weapons",
-            weapons,
-            total_weapons,
-            fmt "  (damage: %d)" (Player.get_nail_damage game.player) );
-          ("Abilities", abilities, total_abilities, "");
-          ("Keys", keys, total_keys, "");
-          ("Purple Pens", pens, total_pens, "");
-          ("Dreamer Items", dreamer_items, total_dreamer_items, "");
+          all_progress.weapons;
+          all_progress.dreamer_items;
+          all_progress.keys;
+          all_progress.abilities;
+          all_progress.purple_pens;
         ]
       in
-      List.iteri draw_progress' rows;
-      let weapon_percent = 18. in
-      let dreamer_item_percent = 24. in
-      let key_percent = 15. in
-      let ability_percent = 20. in
-      let purple_pen_percent =
-        100. -. (weapon_percent +. dreamer_item_percent +. key_percent +. ability_percent)
-      in
-      let percentage a b p = (a |> Int.to_float) /. (b |> Int.to_float) *. p in
-      let total_percent =
-        percentage weapons total_weapons weapon_percent
-        +. percentage keys total_keys key_percent
-        +. percentage abilities total_abilities ability_percent
-        +. percentage dreamer_items total_dreamer_items dreamer_item_percent
-        +. percentage pens total_pens purple_pen_percent
-      in
+      List.iteri draw_progress_row rows;
       Draw.text
-        (fmt "Total: %0.2f%s" total_percent "%")
-        { x = camera_x +. Config.other.progress_x_padding; y = row 8. };
-      ()
+        (fmt "Total: %0.2f%s" all_progress.total "%")
+        { x = camera_x +. Config.other.progress_x_padding; y = row_y 8. }
     in
 
     let maybe_show_screen_fade ~under_ghost : bool =

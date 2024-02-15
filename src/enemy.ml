@@ -246,7 +246,7 @@ let maybe_take_damage
         | Some d -> d
         | None -> collision.collided_from
       in
-      Entity.recoil enemy.entity direction);
+      Entity.recoil ~reset_v:false enemy.entity direction);
     true)
   else
     false

@@ -95,18 +95,19 @@ let get_steps
         CURRENT_GHOST (ENTITY FREEZE);
         (* TODO center this text box *)
         STEP (WAIT 1.);
-        STEP (TEXT [ "Give me some rope, tie me to dream." ]);
+        STEP (CENTERED_TEXT [ "Give me some rope, tie me to dream." ]);
         STEP
-          (TEXT [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
+          (CENTERED_TEXT
+             [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
         STEP
-          (TEXT
+          (CENTERED_TEXT
              [
                "Give me some rope, tie me to dream.";
                "Give me the hope to run out of steam.";
                "Somebody said it could be here.";
              ]);
         STEP
-          (TEXT
+          (CENTERED_TEXT
              [
                "Give me some rope, tie me to dream.";
                "Give me the hope to run out of steam.";
@@ -114,7 +115,7 @@ let get_steps
                "We could be roped up, tied up, dead in a year.";
              ]);
         STEP
-          (TEXT
+          (CENTERED_TEXT
              [
                "Give me some rope, tie me to dream.";
                "Give me the hope to run out of steam.";
@@ -527,8 +528,9 @@ let get_steps
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
           STEP (WAIT 0.7);
           (* TODO camera moves too fast here *)
-          STEP (SET_CAMERA_MOTION (LINEAR 16.));
+          STEP (SET_CAMERA_MOTION (LINEAR 10.));
           STEP (SET_FIXED_CAMERA (127, 28));
+          STEP (WAIT 1.6);
           STEP (DIALOGUE ("Annie", "Mama mahogany, feast your feet on that stack of sticks."));
           STEP (WAIT 1.6);
           STEP SET_GHOST_CAMERA;
@@ -637,7 +639,7 @@ let get_steps
           CURRENT_GHOST (SET_POSE IDLE);
           PARTY_GHOST (ABED, ENTITY (UNHIDE_AT (68, 23, 0., 0.)));
           PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-          STEP (WAIT 1.);
+          STEP (WAIT 2.);
         ]
         @ clear_screen_fade 1.
         @ [
@@ -863,23 +865,24 @@ let get_steps
             STEP (DIALOGUE ("Troy", "Here, don't forget this."));
             CURRENT_GHOST (SET_POSE IDLE);
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
             STEP
               (DIALOGUE
                  ( "Britta",
                    "This is a {{pink}} Laser Guidance System {{white}} that keeps the regeneration \
                     sequence from {{red}} jib-jabbing." ));
+            CURRENT_GHOST (PARTY (WALK_TO 5));
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             STEP (DIALOGUE ("Troy", "{{red}} Jib-jabbing?"));
             STEP (WAIT 0.5);
             CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+            STEP (WAIT 0.5);
             STEP (DIALOGUE ("Britta", "Initiate regeneration sequence."));
             PARTY_GHOST (TROY, SET_POSE (PERFORMING FOCUS));
-            STEP (WAIT 1.);
+            STEP (WAIT 2.);
             PARTY_GHOST (TROY, SET_POSE IDLE);
-            CURRENT_GHOST (PARTY (WALK_TO 5));
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             CURRENT_GHOST (SET_POSE IDLE);
-            STEP (WAIT 1.);
+            STEP (WAIT 2.);
           ]
         @
         if true || game.progress.dreamer_items_found = 6 then
@@ -938,7 +941,7 @@ let get_steps
               STEP PLAY_END_CREDITS_MUSIC;
               STEP (WAIT 3.);
               STEP
-                (TEXT
+                (CENTERED_TEXT
                    [
                      "Congratulations.";
                      "Well done on achieving this great feat. You persevered and you triumphed.";
@@ -946,28 +949,14 @@ let get_steps
                      "We'll meet again soon on the road ahead.";
                    ]);
               STEP (WAIT 1.);
-              (let total_time =
-                 let ms' =
-                   fmt "%.3f"
-                     ((state.frame.idx mod Config.window.fps |> Int.to_float)
-                     /. (Config.window.fps |> Int.to_float))
-                 in
-                 let ms = String.sub ms' 1 (String.length ms' - 1) in
-                 let seconds' = state.frame.idx / Config.window.fps in
-                 let seconds = seconds' mod 60 in
-                 let minutes' = seconds' / 60 in
-                 let minutes = minutes' mod 60 in
-                 let hours' = minutes' / 60 in
-                 let hours = hours' mod 60 in
-                 fmt "%02d:%02d:%02d%s" hours minutes seconds ms
-               in
-
+              (let total_time = Progress.get_total_game_time state.frame.idx in
+               let percentage = (Progress.get_all_progress state game).total in
                STEP
-                 (TEXT
+                 (CENTERED_TEXT
                     [
                       "Game Completion";
                       "================================";
-                      fmt "Percentage: %s" total_time;
+                      fmt "Percentage: %.02f%s" percentage "%";
                       fmt "Time: %s" total_time;
                     ]));
               STEP (WAIT 2.);
