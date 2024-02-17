@@ -372,7 +372,7 @@ let interactions =
     duncan_chair_jump_vx = 150. *. window_scale;
     troy_dive_jump_vx = 900. *. window_scale;
     troy_final_jump_vx = 200. *. window_scale;
-    abed_shelves_jump_vx = 300. *. window_scale;
+    abed_shelves_jump_vx = 400. *. window_scale;
     britta_trash_can_jump_vx = 300. *. window_scale;
     shirley_island_camera_motion = 3. *. window_scale;
   }

@@ -716,6 +716,7 @@ let get_steps
             Config.interactions.abed_shelves_jump_vx 0.8
         @ [
             STEP (HIDE_LAYER "bg");
+            STEP (UNHIDE_LAYER "bg4");
             PARTY_GHOST (ABED, ENTITY FREEZE);
             STEP (WAIT 1.);
             ENEMY (HICKEY, SET_POSE "idle");
@@ -879,13 +880,22 @@ let get_steps
             STEP (WAIT 0.5);
             STEP (DIALOGUE ("Britta", "Initiate regeneration sequence."));
             PARTY_GHOST (TROY, SET_POSE (PERFORMING FOCUS));
+            STEP (PLAY_SOUND_EFFECT "menu-expand");
+            STEP (PLAY_SOUND_EFFECT "menu-close");
+            STEP (WAIT 0.2);
+            STEP (PLAY_SOUND_EFFECT "menu-close");
+            STEP (WAIT 0.2);
+            STEP (PLAY_SOUND_EFFECT "menu-expand");
+            STEP (WAIT 0.2);
+            STEP (PLAY_SOUND_EFFECT "menu-expand");
             STEP (WAIT 2.);
             PARTY_GHOST (TROY, SET_POSE IDLE);
             CURRENT_GHOST (SET_POSE IDLE);
             STEP (WAIT 2.);
           ]
         @
-        if true || game.progress.dreamer_items_found = 6 then
+        let game_progress = Progress.get_all_progress state game in
+        if game.progress.dreamer_items_found = game_progress.dreamer_items.total then
           [
             (*
 
@@ -905,18 +915,24 @@ let get_steps
             STEP
               (DIALOGUE
                  ( "Abed",
-                   "I have all of Abed's abilities and memories, but I'm missing his wild \
-                    emotionality." ));
+                   "I have all of Abed's {{blue}} abilities {{white}} and {{blue}} memories, \
+                    {{white}} but I'm missing his {{green}} wild emotionality." ));
             STEP (WAIT 1.);
             PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
             STEP (WAIT 1.);
-            STEP (DIALOGUE ("Abed", "Although I think I may be able to let Troy go now."));
+            STEP
+              (DIALOGUE
+                 ("Abed", "Although I think I may be able to {{red}} let Troy go {{white}} now."));
             STEP (WAIT 1.);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Troy", "I don't know..."));
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
                  ( "Troy",
-                   "I don't know... I haven't been completely honest. I'm really {{red}} scared \
-                    {{white}} to go on my trip." ));
+                   "I haven't been completely honest. I'm really {{red}} scared {{white}} to go on \
+                    my trip." ));
             STEP
               (DIALOGUE ("Abed", "Well you don't have to go. Your {{blue}} clone {{white}} can."));
             STEP (WAIT 1.);
@@ -943,6 +959,9 @@ let get_steps
               STEP
                 (CENTERED_TEXT
                    [
+                     "";
+                     "";
+                     "";
                      "Congratulations.";
                      "Well done on achieving this great feat. You persevered and you triumphed.";
                      "We hope you enjoyed yourself in the world of Hallowdale.";
@@ -950,16 +969,20 @@ let get_steps
                    ]);
               STEP (WAIT 1.);
               (let total_time = Progress.get_total_game_time state.frame.idx in
-               let percentage = (Progress.get_all_progress state game).total in
+               let percentage = game_progress.total in
                STEP
                  (CENTERED_TEXT
                     [
+                      "";
+                      "";
+                      "";
                       "Game Completion";
                       "================================";
                       fmt "Percentage: %.02f%s" percentage "%";
                       fmt "Time: %s" total_time;
                     ]));
               STEP (WAIT 2.);
+              STEP RETURN_TO_MAIN_MENU;
             ]
         else
           [
@@ -974,8 +997,9 @@ let get_steps
                     in time to collect the rest." ));
             STEP
               (SET_SCREEN_FADE
-                 { target_alpha = 255; timer = Some (make_timer 1.); show_ghost = false });
-            STEP (WAIT 2.);
+                 { target_alpha = 255; timer = Some (make_timer 2.); show_ghost = false });
+            STEP (WAIT 3.);
+            STEP RELOAD_GAME;
           ]
       | LAVA_BRITTA ->
         (* this needs to be set manually for boss fights in the final sequence because they
@@ -1570,11 +1594,11 @@ let get_steps
                { target_alpha = 255; timer = Some (make_timer 0.5); show_ghost = true });
           STEP (SET_FIXED_CAMERA (210, 61));
           STEP (WAIT 2.);
-          STEP (TEXT [ "... No mind to think ..." ]);
+          STEP (CENTERED_TEXT [ ""; "... No mind to think ..." ]);
           STEP (WAIT 2.);
-          STEP (TEXT [ "... No will to break ..." ]);
+          STEP (CENTERED_TEXT [ ""; "... No will to break ..." ]);
           STEP (WAIT 2.);
-          STEP (TEXT [ "... No dean to cry suffering ..." ]);
+          STEP (CENTERED_TEXT [ ""; "... No dean to cry suffering ..." ]);
           STEP (WAIT 2.);
           STEP (SET_SCREEN_FADE { target_alpha = 255; timer = None; show_ghost = false });
         ]
@@ -1665,7 +1689,8 @@ let get_steps
                  ( "Hickey",
                    "Come out with your feet on the floor and there will be no need for {{red}} \
                     nudging {{white}} or {{red}} jostling." ));
-            STEP (DIALOGUE ("Shirley", "I did not skip my son's birthday for second place!"));
+            STEP
+              (DIALOGUE ("Shirley", "I did not skip my son's birthday for {{blue}} second place!"));
             NPC (SHIRLEY, ENTITY (SET_FACING RIGHT));
             STEP (SHAKE_SCREEN 2.);
             (* return of Britta
@@ -1691,7 +1716,7 @@ let get_steps
                  ( "Abed",
                    "Sounds {{red}} bad {{white}} when you put it that way. Can you put it a way \
                     that sounds {{green}} good?" ));
-            STEP (SET_FIXED_CAMERA (51, 79));
+            STEP (SET_FIXED_CAMERA (53, 79));
             STEP (WAIT 1.);
             STEP
               (DIALOGUE
@@ -1706,7 +1731,7 @@ let get_steps
                     going to tear down your fort." ));
             STEP (DIALOGUE ("Britta", "Chairwalkers, attack!"));
             NPC (VICKI, ENTITY (SET_FACING RIGHT));
-            STEP (SET_FIXED_CAMERA (120, 56));
+            STEP (SET_FIXED_CAMERA (120, 50));
             STEP (WAIT 1.);
             (* Death of other characters
 
@@ -1720,7 +1745,7 @@ let get_steps
             STEP (WAIT 0.3);
             NPC (VICKI, ENTITY UNSET_FLOOR);
             STEP (WAIT 0.3);
-            STEP (SET_FIXED_CAMERA (115, 48));
+            STEP (SET_FIXED_CAMERA (115, 42));
             STEP
               (DIALOGUE
                  ("Garrett", "These are my {{red}} only pants! {{white}} I can't get them dirty!"));
@@ -1737,7 +1762,7 @@ let get_steps
             PARTY_GHOST (ANNIE, ENTITY (SET_FACING LEFT));
             STEP (DIALOGUE ("Annie", "Do you have any rolling chairs?"));
             STEP (DIALOGUE ("Shirley", "Behind the curtain."));
-            STEP (SET_FIXED_CAMERA (140, 48));
+            STEP (SET_FIXED_CAMERA (140, 42));
             STEP (DIALOGUE ("Leonard", "I knew this day would come. I'm out of here."));
             NTH_ENEMY (2, MANICORN, SET_POSE "punch");
             NPC (LEONARD, SET_POSE "take-damage");

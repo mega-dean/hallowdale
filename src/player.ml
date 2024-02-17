@@ -1240,7 +1240,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
           Audio.stop_sound state "spray";
           respawn_ghost game;
           game.player.health.current <- game.player.health.max;
-          state.game_context <- DIED game;
+          state.game_context <- RELOAD_LAST_SAVED_GAME game;
           state.screen_fade <- None)))
   | C_DASH
   | C_DASH_CHARGE
@@ -1628,14 +1628,19 @@ let tick (game : game) (state : state) =
           Room.reset_tile_groups game.room
         in
 
-        let set_ghost_camera () =
-          Entity.unfreeze game.player.ghost.entity;
-          state.camera.subject <- GHOST
-        in
-
         (* could divide these up into some smaller groups like TEXT or LAYER to get rid of more of the duplication, but
            probably not really worth it *)
         let handle_general_step (general_step : Interaction.general_step) =
+          let set_ghost_camera () =
+            Entity.unfreeze game.player.ghost.entity;
+            state.camera.subject <- GHOST
+          in
+          let reset_camera () =
+            state.ignore_camera_triggers <- false;
+            state.camera.motion <-
+              SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
+            set_ghost_camera ()
+          in
           match general_step with
           | SHAKE_SCREEN amount -> state.camera.shake <- amount
           | DEBUG s -> tmp "%s" s
@@ -1649,10 +1654,7 @@ let tick (game : game) (state : state) =
             | None -> ()
             | Some autosave_pos -> state.save_pos <- Some autosave_pos)
           | CONCLUDE_INTERACTIONS trigger ->
-            state.ignore_camera_triggers <- false;
-            state.camera.motion <-
-              SMOOTH (Config.window.camera_motion.x, Config.window.camera_motion.y);
-            set_ghost_camera ();
+            reset_camera ();
             zero_vy := true;
             (* TODO maybe add a new property trigger.save_in_progress and set this in Room.init *)
             (match trigger.kind with
@@ -1773,6 +1775,12 @@ let tick (game : game) (state : state) =
           | STOP_MUSIC -> Audio.stop_music game.music.music.t
           | PLAY_END_CREDITS_MUSIC ->
             game.music <- Audio.load_music "ending" [] state.settings.music_volume
+          | RETURN_TO_MAIN_MENU -> state.game_context <- RETURN_TO_MAIN_MENU game
+          | RELOAD_GAME ->
+            state.screen_fade <-
+              Some { target_alpha = 0; timer = Some (make_timer 2.); show_ghost = false };
+            reset_camera ();
+            state.game_context <- RELOAD_LAST_SAVED_GAME game
         in
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =

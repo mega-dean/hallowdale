@@ -557,6 +557,8 @@ module Interaction = struct
     | PLAY_SOUND_EFFECT of string
     | STOP_MUSIC
     | PLAY_END_CREDITS_MUSIC
+    | RETURN_TO_MAIN_MENU
+    | RELOAD_GAME
 
   type entity_step =
     | UNSET_FLOOR
@@ -1508,7 +1510,8 @@ type game_context =
   | MAIN_MENU of menu * save_slot list
   | SAVE_FILES of menu * save_slot list
   | IN_PROGRESS of game
-  | DIED of game
+  | RELOAD_LAST_SAVED_GAME of game
+  | RETURN_TO_MAIN_MENU of game
 
 type frame_info = {
   mutable idx : int;

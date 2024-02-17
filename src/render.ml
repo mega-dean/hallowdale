@@ -429,8 +429,9 @@ let tick (state : state) =
           (false, sep)
         | STEEL_SOLE -> (true, sep))
       | MAIN_MENU (_, _)
+      | RETURN_TO_MAIN_MENU _
       | SAVE_FILES (_, _)
-      | DIED _ ->
+      | RELOAD_LAST_SAVED_GAME _ ->
         (false, ' ')
     in
     let display_line (config : text_config) y_offset line_idx (line : line) =
@@ -642,7 +643,9 @@ let tick (state : state) =
   match state.game_context with
   | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
   | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
-  | DIED _ -> state
+  | RETURN_TO_MAIN_MENU _
+  | RELOAD_LAST_SAVED_GAME _ ->
+    state
   | IN_PROGRESS game ->
     let draw_skybox tint =
       (* TODO could add some parallax scrolling here, but this won't be visible very often *)

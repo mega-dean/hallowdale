@@ -94,9 +94,7 @@ let update_menu_choice (menu : menu) state =
     menu.current_choice_idx <- Int.max 0 (menu.current_choice_idx - 1))
 
 let update_pause_menu (game : game) (state : state) : state =
-  let allow_save =
-    List.length game.interaction.steps = 0 && not game.in_boss_fight
-  in
+  let allow_save = List.length game.interaction.steps = 0 && not game.in_boss_fight in
   let handle_pause_menu choice =
     match choice with
     | CONTINUE ->

@@ -744,7 +744,10 @@ let tick (state : state) =
   | MAIN_MENU (menu, save_slots) ->
     Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
-  | DIED game ->
+  | RETURN_TO_MAIN_MENU game ->
+    state.game_context <- MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
+    state
+  | RELOAD_LAST_SAVED_GAME game ->
     let saved_game_before_dying = Game.load state game.save_file game.save_file_slot in
     state.game_context <- IN_PROGRESS saved_game_before_dying;
     state
