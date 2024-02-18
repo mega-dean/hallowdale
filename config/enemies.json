@@ -474,6 +474,7 @@
             "gravity_multiplier": 0,
             "dream_nail": {},
             "attrs": [
+                ["distance_threshold", 400],
                 ["wires_projectile_vx", 800],
                 ["computer_projectile_v", 800],
                 ["orbit_radius", 400],
@@ -540,7 +541,7 @@
 
         [ "LAVA_BRITTA", {
             "kind": "boss",
-            "health": 50,
+            "health": 25,
             "w": 20,
             "h": 36,
             "can_recoil": true,
@@ -602,7 +603,7 @@
 
         [ "LAVA_BRITTA_2", {
             "kind": "boss",
-            "health": 25,
+            "health": 5,
             "w": 20,
             "h": 36,
             "can_recoil": true,

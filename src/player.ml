@@ -74,10 +74,15 @@ let maybe_begin_interactions
       game.interaction.floating_text <- None;
       game.interaction.steps <- Interactions.get_steps state game ~autosave_pos ~followup trigger
     in
-    let begin_cutscene_interaction ?(autosave_pos = None) name =
-      (* these are only viewable once *)
-      if not (List.mem name game.room.progress.finished_interactions) then
-        begin_interactions ~autosave_pos ()
+    let maybe_begin_cutscene_interaction ?(autosave_pos = None) name =
+      match game.mode with
+      | DEMO
+      | STEEL_SOLE ->
+        ()
+      | CLASSIC ->
+        (* these are only viewable once *)
+        if not (List.mem name game.room.progress.finished_interactions) then
+          begin_interactions ~autosave_pos ()
     in
     let name = Interactions.trigger_name trigger in
     match trigger.kind with
@@ -89,20 +94,12 @@ let maybe_begin_interactions
          - purple pens aren't repeatable because destroying them removes the trigger
       *)
       begin_interactions ()
-    | BOSS_FIGHT autosave_pos -> (
-      match game.mode with
-      | DEMO
-      | STEEL_SOLE ->
-        ()
-      | CLASSIC -> begin_cutscene_interaction ~autosave_pos:(Some autosave_pos) name)
+    | BOSS_FIGHT autosave_pos ->
+      maybe_begin_cutscene_interaction ~autosave_pos:(Some autosave_pos) name
     | D_NAIL
     | BOSS_KILLED
-    | CUTSCENE -> (
-      match game.mode with
-      | DEMO
-      | STEEL_SOLE ->
-        ()
-      | CLASSIC -> begin_cutscene_interaction name)
+    | CUTSCENE ->
+      maybe_begin_cutscene_interaction name
     | CAMERA _
     | FOLLOWUP
     | LEVER
@@ -213,7 +210,7 @@ let make_slash
   let down_points =
     List.map
       (fun (point : vector) ->
-        { point with y = (189. -. point.y) *. player.current_weapon.scale_y })
+        { point with y = (189. *. player.current_weapon.scale_y) -. point.y })
       up_points
   in
   let make_scaled_shape ?(scale = Config.scale.slash) points =
@@ -1229,9 +1226,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       check_dream_nail_collisions state game)
   | DIE -> (
     match state.screen_fade with
-    | None ->
-      state.screen_fade <-
-        Some { target_alpha = 255; timer = Some (make_timer 3.); show_ghost = false }
+    | None -> state.screen_fade <- Some (make_screen_fade (0, 255) 3.)
     | Some fade -> (
       match fade.timer with
       | None -> failwith "unreachable"
@@ -1240,7 +1235,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
           Audio.stop_sound state "spray";
           respawn_ghost game;
           game.player.health.current <- game.player.health.max;
-          state.game_context <- RELOAD_LAST_SAVED_GAME game;
+          state.context <- RELOAD_LAST_SAVED_GAME game;
           state.screen_fade <- None)))
   | C_DASH
   | C_DASH_CHARGE
@@ -1594,17 +1589,17 @@ let tick (game : game) (state : state) =
       game.room.respawn.in_trigger_now <- Option.is_some respawn_trigger_collision;
       (List.length game.interaction.steps > 0, false)
     in
-    let speed_through_interaction =
+    let skip_interaction =
       (* holding down c-dash will skip through interactions quickly, but still perform each step
          once so side-effects like gaining abilities still happen
          TODO this starts a c-dash after the interaction, not sure if there's a better option
       *)
-      state.frame_inputs.c_dash.down
+      game.interaction.can_skip && state.frame_inputs.c_dash.down
     in
     match game.interaction.text with
     | Some _text ->
       (* press interact key to advance dialogue by one *)
-      if state.frame_inputs.interact.pressed || speed_through_interaction then
+      if state.frame_inputs.interact.pressed || skip_interaction then
         game.interaction.text <- None;
       (true, false)
     | None -> (
@@ -1620,6 +1615,13 @@ let tick (game : game) (state : state) =
         in
         let still_waiting_for_floor = ref false in
         let zero_vy = ref false in
+
+        let maybe_stop_walking target_tile_x (entity : entity) =
+          let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_dest in
+          let dist = tile.x -. entity.dest.pos.x in
+          still_walking := abs_float dist > Config.interactions.walk_target_distance;
+          dist
+        in
 
         let set_layer_hidden (layer_name : string) hidden =
           (match List.find_opt (fun (l : layer) -> l.name = layer_name) game.room.layers with
@@ -1645,6 +1647,7 @@ let tick (game : game) (state : state) =
           | SHAKE_SCREEN amount -> state.camera.shake <- amount
           | DEBUG s -> tmp "%s" s
           | INITIALIZE_INTERACTIONS options -> (
+            game.interaction.can_skip <- true;
             game.player.ghost.entity.v <- Zero.vector ();
             if options.remove_nail then (
               match get_current_slash game.player with
@@ -1676,9 +1679,8 @@ let tick (game : game) (state : state) =
                 Interactions.trigger_name trigger :: game.room.progress.finished_interactions);
             game.interaction.use_dashes_in_archives <- None
           | SET_SCREEN_FADE fade -> state.screen_fade <- Some fade
-          | CLEAR_SCREEN_FADE time ->
-            state.screen_fade <-
-              Some { target_alpha = 0; timer = Some (make_timer time); show_ghost = false }
+          | CLEAR_SCREEN_FADE (starting_alpha, time) ->
+            state.screen_fade <- Some (make_screen_fade (starting_alpha, 0) time)
           | DOOR_WARP trigger_kind
           | WARP trigger_kind -> (
             match trigger_kind with
@@ -1730,9 +1732,8 @@ let tick (game : game) (state : state) =
             game.interaction.text <-
               Some (ABILITY { top_paragraphs = []; outline_src; bottom_paragraphs })
           | SET_FIXED_CAMERA (tile_x, tile_y) ->
-            let tile = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
-            let x, y = (tile.x *. Config.scale.room, tile.y *. Config.scale.room) in
-            state.camera.subject <- FIXED { x; y }
+            let tile = (tile_x, tile_y) |> Tiled.Tile.coords_to_dest in
+            state.camera.subject <- FIXED tile
           | SET_CAMERA_MOTION motion -> state.camera.motion <- motion
           | SET_GHOST_CAMERA -> set_ghost_camera ()
           | SET_IGNORE_CAMERA_TRIGGERS b -> state.ignore_camera_triggers <- b
@@ -1740,8 +1741,8 @@ let tick (game : game) (state : state) =
           | HIDE_LAYER layer_name -> set_layer_hidden layer_name true
           | UNHIDE_LAYER layer_name -> set_layer_hidden layer_name false
           | SPAWN_VENGEFUL_SPIRIT (direction, end_tile_x, end_tile_y) ->
-            let tile = (end_tile_x, end_tile_y) |> Tiled.Tile.coords_to_pos in
-            let end_x, end_y = (tile.x *. Config.scale.room, tile.y *. Config.scale.room) in
+            let tile = (end_tile_x, end_tile_y) |> Tiled.Tile.coords_to_dest in
+            let end_x, end_y = (tile.x, tile.y) in
             let vs_length =
               (* end_tile_x is off by a few tiles to the left, but this step is probably only going to be
                  used once so it's probably not worth fixing *)
@@ -1775,12 +1776,12 @@ let tick (game : game) (state : state) =
           | STOP_MUSIC -> Audio.stop_music game.music.music.t
           | PLAY_END_CREDITS_MUSIC ->
             game.music <- Audio.load_music "ending" [] state.settings.music_volume
-          | RETURN_TO_MAIN_MENU -> state.game_context <- RETURN_TO_MAIN_MENU game
+          | RETURN_TO_MAIN_MENU -> state.context <- RETURN_TO_MAIN_MENU game
           | RELOAD_GAME ->
-            state.screen_fade <-
-              Some { target_alpha = 0; timer = Some (make_timer 2.); show_ghost = false };
+            state.screen_fade <- Some (make_screen_fade (255, 0) 2.);
             reset_camera ();
-            state.game_context <- RELOAD_LAST_SAVED_GAME game
+            state.context <- RELOAD_LAST_SAVED_GAME game
+          | DISABLE_SKIP_INTERACTION -> game.interaction.can_skip <- false
         in
 
         let handle_entity_step (entity : entity) (entity_step : Interaction.entity_step) =
@@ -1793,25 +1794,22 @@ let tick (game : game) (state : state) =
           | SET_FACING direction -> Entity.set_facing_right entity direction
           | WAIT_UNTIL_LANDED can_hardfall ->
             if not can_hardfall then
-              game.player.ghost.hardfall_timer <- None;
+              game.player.ghost.hardfall_time <- None;
             if Option.is_none entity.current_floor then
               still_waiting_for_floor := true
           | UNHIDE -> Entity.unhide entity
           | UNHIDE_AT (start_tile_x, start_tile_y, x_offset, y_offset) ->
-            let tile = (start_tile_x, start_tile_y) |> Tiled.Tile.coords_to_pos in
-            let x, y =
-              ((tile.x +. x_offset) *. Config.scale.room, (tile.y +. y_offset) *. Config.scale.room)
-            in
+            let tile = (start_tile_x, start_tile_y) |> Tiled.Tile.coords_to_dest in
+            let x, y = (tile.x +. x_offset, tile.y +. y_offset) in
             state.debug.rects <- (Raylib.Color.green, entity.dest) :: state.debug.rects;
             Entity.unhide_at entity { x; y }
           | HIDE -> Entity.hide entity
           | FREEZE -> Entity.freeze entity
           | UNFREEZE -> Entity.unfreeze entity
           | MOVE_TO (target_tile_x, target_tile_y) ->
-            let target_pos = (target_tile_x, target_tile_y) |> Tiled.Tile.coords_to_pos in
+            let target_pos = (target_tile_x, target_tile_y) |> Tiled.Tile.coords_to_dest in
             entity.current_floor <- None;
-            entity.dest.pos <-
-              { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
+            entity.dest.pos <- target_pos
         in
 
         let add_item (item_kind : Interaction.item_kind) =
@@ -1825,7 +1823,7 @@ let tick (game : game) (state : state) =
             game.progress.dreamer_items_found <- game.progress.dreamer_items_found + 1;
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;
-            game.interaction.text <- Some (PLAIN (false, text))
+            game.interaction.text <- Some (PLAIN (true, text))
           | WEAPON weapon_name ->
             let weapon_config = String.Map.find weapon_name state.global.weapons in
             let text : string list =
@@ -1836,7 +1834,7 @@ let tick (game : game) (state : state) =
             in
             acquire_weapon state game weapon_name;
             game.interaction.speaker_name <- None;
-            game.interaction.text <- Some (PLAIN (false, text))
+            game.interaction.text <- Some (PLAIN (true, text))
         in
 
         let handle_party_ghost_step
@@ -1876,7 +1874,7 @@ let tick (game : game) (state : state) =
                 (party_ghost.ghost.head_textures.look_down, state.global.textures.ghost_bodies.focus)
               | WALKING direction ->
                 Entity.walk_ghost party_ghost.ghost.entity direction;
-                if speed_through_interaction then
+                if skip_interaction then
                   (* can't go faster than 2x because it breaks the locker-boys-killed
                      cutscene because Abed doesn't have enough time to fall to the lower level *)
                   party_ghost.ghost.entity.v.x <- party_ghost.ghost.entity.v.x *. 2.;
@@ -1909,9 +1907,7 @@ let tick (game : game) (state : state) =
             | _ -> ());
             handle_entity_step party_ghost.ghost.entity entity_step
           | WALK_TO target_tile_x ->
-            let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
-            let dist = (tile.x *. Config.scale.room) -. party_ghost.ghost.entity.dest.pos.x in
-            still_walking := abs_float dist > 10.;
+            let dist = maybe_stop_walking target_tile_x party_ghost.ghost.entity in
             if not !still_walking then
               set_interaction_pose IDLE
             else if dist > 0. then
@@ -1956,47 +1952,44 @@ let tick (game : game) (state : state) =
           let enemies : enemy list =
             List.filter (fun (e : enemy) -> e.id = enemy_id) game.room.enemies
           in
-          let apply_to_all fn =
+          let apply fn =
             match idx with
             | None -> List.iter fn enemies
             | Some idx' -> List.nth enemies idx' |> fn
           in
-          let apply_to_only step_name fn =
+          let walk_to target_tile_x dead =
+            let walk (enemy : enemy) =
+              let (module M : Enemy.M) = Enemy.get_module enemy.id in
+              let dist = maybe_stop_walking target_tile_x enemy.entity in
+              let action_name = if dead then "walking-dead" else "walking" in
+              if not !still_walking then (
+                enemy.entity.v.x <- 0.;
+                Enemy.set_pose enemy "idle")
+              else if dist > 0. then (
+                enemy.entity.sprite.facing_right <- true;
+                M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time)
+              else (
+                enemy.entity.sprite.facing_right <- false;
+                M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time)
+            in
             match idx with
             | None ->
               if List.length enemies <> 1 then
-                failwithf "can't use %s when there are multiple enemies" step_name
+                failwith "can't use 'WALK_TO' when there are multiple enemies"
               else
-                fn (List.hd enemies)
-            | Some idx' -> List.nth enemies idx' |> fn
-          in
-          let walk_to target_tile_x dead =
-            apply_to_only "WALK_TO" (fun (enemy : enemy) ->
-                let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
-                let dist = (tile.x *. Config.scale.room) -. enemy.entity.dest.pos.x in
-                let (module M : Enemy.M) = Enemy.get_module enemy.id in
-                still_walking := abs_float dist > 10.;
-                let action_name = if dead then "walking-dead" else "walking" in
-                if not !still_walking then (
-                  enemy.entity.v.x <- 0.;
-                  Enemy.set_pose enemy "idle")
-                else if dist > 0. then (
-                  enemy.entity.sprite.facing_right <- true;
-                  M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time)
-                else (
-                  enemy.entity.sprite.facing_right <- false;
-                  M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time))
+                walk (List.hd enemies)
+            | Some idx' -> List.nth enemies idx' |> walk
           in
           match enemy_step with
           | DEAD_WALK_TO target_tile_x -> walk_to target_tile_x true
           | WALK_TO target_tile_x -> walk_to target_tile_x false
           | SET_POSE pose_name ->
-            apply_to_all (fun (enemy : enemy) ->
+            apply (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
                 M.Action.log enemy pose_name state.frame.time;
                 Enemy.set_pose enemy pose_name)
           | START_ACTION action_name ->
-            apply_to_all (fun (enemy : enemy) ->
+            apply (fun (enemy : enemy) ->
                 let (module M : Enemy.M) = Enemy.get_module enemy.id in
                 M.Action.log enemy action_name state.frame.time;
                 M.Action.set enemy (M.Action.from_string action_name) ~frame_time:state.frame.time)
@@ -2006,10 +1999,10 @@ let tick (game : game) (state : state) =
               | UNFREEZE -> true
               | _ -> false
             in
-            apply_to_all (fun (e : enemy) ->
-                e.status.active <- active;
-                e.status.check_damage_collisions <- active;
-                handle_entity_step e.entity entity_step)
+            apply (fun (enemy : enemy) ->
+                enemy.status.active <- active;
+                enemy.status.check_damage_collisions <- active;
+                handle_entity_step enemy.entity entity_step)
         in
 
         let set_npc_pose (npc : npc) pose =
@@ -2025,23 +2018,17 @@ let tick (game : game) (state : state) =
           match npc_step with
           | ENTITY entity_step -> handle_entity_step npc.entity entity_step
           | WALK_TO target_tile_x ->
-            (* TODO duplicated in walk_ghost *)
-            let tile = (target_tile_x, 1) |> Tiled.Tile.coords_to_pos in
-            let dist = (tile.x *. Config.scale.room) -. npc.entity.dest.pos.x in
-            still_walking := abs_float dist > 10.;
+            let dist = maybe_stop_walking target_tile_x npc.entity in
             if not !still_walking then (
               npc.entity.v.x <- 0.;
               set_npc_pose npc "idle")
             else if dist > 0. then (
               npc.entity.sprite.facing_right <- true;
-              (* TODO use a config (maybe npc-specific configs, but a global
-                 config for shared things like walk_vx might be nice)
-              *)
-              npc.entity.v.x <- 400.;
+              npc.entity.v.x <- Config.npc.walk_vx;
               set_npc_pose npc "walking")
             else (
               npc.entity.sprite.facing_right <- false;
-              npc.entity.v.x <- -400.;
+              npc.entity.v.x <- -.Config.npc.walk_vx;
               set_npc_pose npc "walking")
           | SET_POSE target_pose -> set_npc_pose npc target_pose
         in
@@ -2069,7 +2056,7 @@ let tick (game : game) (state : state) =
 
         if !still_walking || !still_waiting_for_floor then
           ( (* leave the current step on top of the stack *) )
-        else if !new_wait > 0. && not speed_through_interaction then
+        else if !new_wait > 0. && not skip_interaction then
           game.interaction.steps <- STEP (WAIT !new_wait) :: List.tl game.interaction.steps
         else
           game.interaction.steps <- List.tl game.interaction.steps;
@@ -2552,7 +2539,7 @@ let tick (game : game) (state : state) =
             ()
           | STEEL_SOLE -> add_phantom_floor game game.room.respawn.target);
           Entity.unfreeze game.player.ghost.entity;
-          game.player.ghost.hardfall_timer <- None;
+          game.player.ghost.hardfall_time <- None;
           state.camera.update_instantly <- true;
           respawn_ghost game
         in
@@ -2717,24 +2704,24 @@ let tick (game : game) (state : state) =
     | None -> ()
     | Some coll ->
       let started_hardfalling : time =
-        match game.player.ghost.hardfall_timer with
+        match game.player.ghost.hardfall_time with
         | None -> { at = state.frame.time }
         | Some time -> time
       in
       if started_hardfalling.at +. Config.ghost.hardfall_duration < state.frame.time then
         start_action state game HARDFALL);
-    let reset_hardfall_timer =
+    let reset_hardfall_time =
       Option.is_some game.player.ghost.entity.current_floor
       || Option.is_some game.player.current.wall
       || Option.is_some game.player.ghost.entity.y_recoil
       || game.player.current.is_diving
       || game.player.ghost.entity.v.y <= 0.
     in
-    if reset_hardfall_timer then
-      game.player.ghost.hardfall_timer <- None
+    if reset_hardfall_time then
+      game.player.ghost.hardfall_time <- None
     else (
-      match game.player.ghost.hardfall_timer with
-      | None -> game.player.ghost.hardfall_timer <- Some { at = state.frame.time }
+      match game.player.ghost.hardfall_time with
+      | None -> game.player.ghost.hardfall_time <- Some { at = state.frame.time }
       | Some _ -> ());
     handle_wall_sliding floor_collisions;
     check_damage_collisions hazard_collisions platform_spike_collisions;
@@ -2940,7 +2927,7 @@ let init
               w = Config.ghost.width *. Config.scale.ghost;
               h = Config.ghost.height *. Config.scale.ghost;
             };
-        hardfall_timer = None;
+        hardfall_time = None;
       };
     current = reset_current_status ();
     children = Ghost_child_kind.Map.empty;
@@ -3013,6 +3000,6 @@ let init_party
     entity'
   in
   {
-    ghost = { id; head = head_textures.idle; head_textures; entity; hardfall_timer = None };
+    ghost = { id; head = head_textures.idle; head_textures; entity; hardfall_time = None };
     in_party;
   }

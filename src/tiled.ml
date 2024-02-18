@@ -77,6 +77,12 @@ module Tile = struct
       y = (y |> Int.to_float) *. Config.window.tile_size;
     }
 
+  let coords_to_dest ((x, y) : int * int) : vector =
+    {
+      x = (x |> Int.to_float) *. Config.window.tile_size *. Config.scale.room;
+      y = (y |> Int.to_float) *. Config.window.tile_size *. Config.scale.room;
+    }
+
   let pos_to_dest_coords (pos : vector) : int * int =
     ( pos.x /. Config.window.dest_tile_size |> Float.to_int,
       pos.y /. Config.window.dest_tile_size |> Float.to_int )
@@ -84,10 +90,6 @@ module Tile = struct
   let pos_to_coords (pos : vector) : int * int =
     ( pos.x /. Config.window.tile_size |> Float.to_int,
       pos.y /. Config.window.tile_size |> Float.to_int )
-
-  let tile_dest ~tile_w ~tile_h (x, y) : float * float =
-    ( (x |> Int.to_float) *. tile_w *. Config.scale.room,
-      (y |> Int.to_float) *. tile_h *. Config.scale.room )
 
   let src_pos idx width : vector =
     let tile_coords idx width : int * int = (idx mod width, idx / width) in
@@ -122,11 +124,10 @@ module JsonRoom = struct
     (x /. room.tile_w |> Float.to_int, y /. room.tile_h |> Float.to_int)
     |> Tile.coords_to_idx ~width:room.w_in_tiles
 
-  let coords_to_dest (json_room : t) (coords : string) : vector =
+  let coords_to_dest (coords : string) : vector =
     let target_x', target_y' = String.split_at_first ',' coords in
     let tile_x, tile_y = (target_x' |> int_of_string, target_y' |> int_of_string) in
-    let x, y = Tile.tile_dest ~tile_w:json_room.tile_w ~tile_h:json_room.tile_h (tile_x, tile_y) in
-    { x; y }
+    Tile.coords_to_dest (tile_x, tile_y)
 
   let locate_by_coords (world : world) global_x global_y : room_id * room_location =
     let in_location ((_room_id, room_location) : room_id * room_location) : bool =

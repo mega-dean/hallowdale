@@ -289,44 +289,42 @@ type spell_kind =
   | HOWLING_WRAITHS
 
 type ghost_action_kind =
-  | FLAP
-  | WALL_KICK
-  | JUMP
-  | DIE
-  | TAKE_DAMAGE_AND_RESPAWN
-  | TAKE_DAMAGE of int * direction
+  | ATTACK of direction
   | CAST of spell_kind
-  | DIVE_COOLDOWN
-  | HARDFALL
-  | SHADE_DASH
-  | DASH
-  | (* TODO maybe do this like CAST, ie C_DASH of [CHARGE,DASH,COOLDOWN] *)
-    C_DASH_CHARGE
   | C_DASH
+  | C_DASH_CHARGE
   | C_DASH_COOLDOWN
   | C_DASH_WALL_COOLDOWN
+  | DASH
+  | DIE
+  | DIVE_COOLDOWN
   | DREAM_NAIL
-    (* dream_nail doesn't need a direction because it can't upslash/downslash, and it can use sprite.facing_right *)
-  | ATTACK of direction
+  | FLAP
   | FOCUS
+  | HARDFALL
+  | JUMP
+  | SHADE_DASH
+  | TAKE_DAMAGE of int * direction
+  | TAKE_DAMAGE_AND_RESPAWN
+  | WALL_KICK
 
 (* the ghost's state that can be mapped to a texture and rendered *)
 type ghost_pose =
-  | PERFORMING of ghost_action_kind
   | AIRBORNE of float (* new_vy *)
   | CRAWLING
   | IDLE
+  | PERFORMING of ghost_action_kind
   | READING
+  | SWIMMING of rect
   | WALKING of direction
   | WALL_SLIDING of rect
-  | SWIMMING of rect
 
 type ghost_id =
   | ABED
   | ANNIE
-  | LAVA_BRITTA
   | BRITTA
   | JEFF
+  | LAVA_BRITTA
   | TROY
 
 type health = {
@@ -339,47 +337,47 @@ type camera_subject =
   | FIXED of vector
 
 type npc_id =
-  | CHANG
   | ANNIES_BOOBS
-  | NEIL
-  | SHIRLEY
-  | LEONARD
-  | VICKI
-  | GARRETT
-  | JERRY
   | BLACKSMITH_WIFE
-  | HILDA
+  | CHANG
   | FRANKIE
+  | GARRETT
+  | HILDA
   | HUMAN_BEING
+  | JERRY
+  | LEONARD
+  | NEIL
   | POTTERY_TEACHER
+  | SHIRLEY
   | TROY_AND_ABED_IN_A_BUBBLE
+  | VICKI
 
 type enemy_id =
   (* enemies *)
-  | FISH
-  | FROG
+  | BAT
+  | BIRD
   | ELECTRICITY
-  | PENGUIN
-  | HIPPIE
+  | FISH
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2
-  | BIRD
-  | BAT
+  | FROG
+  | HIPPIE
   | MANICORN
   | MANICORN_2
   | MANICORN_3
+  | PENGUIN
   (* bosses *)
-  | DUNCAN
-  | LOCKER_BOY
-  | JOSHUA
-  | VICE_DEAN_LAYBOURNE
-  | LUIS_GUZMAN
   | BORCHERT
-  | DEAN
   | BUDDY
+  | DEAN
+  | DUNCAN
+  | HICKEY
+  | JOSHUA
   | LAVA_BRITTA
   | LAVA_BRITTA_2
-  | HICKEY
+  | LOCKER_BOY
+  | LUIS_GUZMAN
+  | VICE_DEAN_LAYBOURNE
 
 type weapon = {
   name : string;
@@ -465,19 +463,19 @@ type warp_target = {
 }
 
 type trigger_kind =
+  | BOSS_FIGHT of vector
+  | BOSS_KILLED
   | CAMERA of string * string
-  | LEVER
-  | INFO
+  | CUTSCENE
+  | D_NAIL
   | FOLLOWUP
+  | INFO
+  | LEVER
+  | PURPLE_PEN
+  | REFLECT
+  | RESPAWN
   | SHADOW
   | WARP of warp_target
-  | BOSS_FIGHT of vector
-  | CUTSCENE
-  | RESPAWN
-  | PURPLE_PEN
-  | BOSS_KILLED
-  | D_NAIL
-  | REFLECT
 
 type trigger = {
   kind : trigger_kind;
@@ -513,22 +511,26 @@ type timer = {
 let make_timer seconds = { left = { seconds }; total = { seconds } }
 
 type screen_fade = {
+  starting_alpha : int;
   target_alpha : int;
   mutable timer : timer option;
   show_ghost : bool;
 }
 
+let make_screen_fade ?(show_ghost = false) (starting_alpha, target_alpha) duration =
+  { starting_alpha; target_alpha; timer = Some (make_timer duration); show_ghost }
+
 module Interaction = struct
-  type options = {
+  type config = {
     remove_nail : bool;
     autosave_pos : vector option;
   }
 
   type general_step =
-    | INITIALIZE_INTERACTIONS of options
+    | INITIALIZE_INTERACTIONS of config
     | CONCLUDE_INTERACTIONS of trigger
     | SET_SCREEN_FADE of screen_fade
-    | CLEAR_SCREEN_FADE of float
+    | CLEAR_SCREEN_FADE of int * float
     | SHAKE_SCREEN of float
     | DEBUG of string
     | WAIT of float
@@ -559,20 +561,20 @@ module Interaction = struct
     | PLAY_END_CREDITS_MUSIC
     | RETURN_TO_MAIN_MENU
     | RELOAD_GAME
+    | DISABLE_SKIP_INTERACTION
 
   type entity_step =
-    | UNSET_FLOOR
-    | SET_FACING of direction
-    | WAIT_UNTIL_LANDED of bool
-    | HIDE
-    | UNHIDE
-    | (* TODO add another param facing_right : bool *)
-      UNHIDE_AT of int * int * float * float
     | FREEZE
-    | UNFREEZE
+    | HIDE
     | MOVE_TO of (int * int)
+    | SET_FACING of direction
     | SET_VX of float
     | SET_VY of float
+    | UNFREEZE
+    | UNHIDE
+    | UNHIDE_AT of int * int * float * float
+    | UNSET_FLOOR
+    | WAIT_UNTIL_LANDED of bool
 
   type item_kind =
     | WEAPON of string
@@ -581,13 +583,13 @@ module Interaction = struct
     | KEY of string
 
   type party_ghost_step =
+    | ADD_TO_PARTY
+    | ENTITY of entity_step
+    | JUMP of direction * float
+    | MAKE_CURRENT_GHOST
+    | REMOVE_FROM_PARTY
     | SET_POSE of ghost_pose
     | WALK_TO of int
-    | ADD_TO_PARTY
-    | REMOVE_FROM_PARTY
-    | JUMP of direction * float
-    | ENTITY of entity_step
-    | MAKE_CURRENT_GHOST
 
   type reward =
     | INCREASE_MAX_SOUL
@@ -678,6 +680,8 @@ module Interaction = struct
     (* this is for text boxes that should show up on the screen without blocking gameplay,
        like dream-nail thoughts and some interactions *)
     mutable floating_text : non_blocking_text option;
+    (* this is reset to true at the beginning of every interaction *)
+    mutable can_skip : bool;
   }
 end
 
@@ -1114,7 +1118,7 @@ type ghost = {
   head_textures : ghost_head_textures;
   (* the entity.sprite.texture is the ghost body *)
   entity : entity;
-  mutable hardfall_timer : time option;
+  mutable hardfall_time : time option;
 }
 
 (* this is for the ghosts that are not being controlled right now *)
@@ -1214,11 +1218,11 @@ type area_id =
   | COMPUTER_WING
   | FORGOTTEN_CLASSROOMS
   | INFECTED_CLASSROOMS
+  | LIBRARY
   | MEOW_MEOW_BEENZ
   | OUTLANDS
   | TRAMPOLINEPATH
   | VENTWAYS
-  | LIBRARY
 
 type music = {
   name : string;
@@ -1506,7 +1510,7 @@ type camera = {
   mutable motion : camera_motion;
 }
 
-type game_context =
+type state_context =
   | MAIN_MENU of menu * save_slot list
   | SAVE_FILES of menu * save_slot list
   | IN_PROGRESS of game
@@ -1538,7 +1542,7 @@ type pause_menu =
   | PROGRESS
 
 type state = {
-  mutable game_context : game_context;
+  mutable context : state_context;
   world : world;
   mutable screen_fade : screen_fade option;
   mutable camera : camera;

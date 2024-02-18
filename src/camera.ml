@@ -12,7 +12,7 @@ let tick (game : game) (state : state) =
     match state.camera.subject with
     | GHOST ->
       let e = game.player.ghost.entity in
-      let offset = (* TODO move to config *) 50. in
+      let offset = Config.window.camera_x_offset in
       if e.sprite.facing_right then
         { e.dest.pos with x = e.dest.pos.x +. offset }
       else

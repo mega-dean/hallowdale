@@ -21,9 +21,9 @@ let get_steps
     ?(autosave_pos = None)
     ?(followup : trigger option = None)
     (trigger : trigger) : step list =
+  let config = Config.interactions in
   let ability_text_outline x y =
-    (* TODO move these to config *)
-    let w, h = (150., 60.) in
+    let w, h = (config.ability_outline_w, config.ability_outline_w) in
     { pos = { x = x *. w; y = y *. h }; w; h }
   in
   let remove_nail = ref true in
@@ -32,17 +32,17 @@ let get_steps
   let get_interaction_steps (trigger : trigger) : step list =
     let fade_screen =
       [
-        STEP
-          (SET_SCREEN_FADE { target_alpha = 160; timer = Some (make_timer 1.5); show_ghost = false });
-        STEP (WAIT 1.5);
+        STEP (SET_SCREEN_FADE (make_screen_fade (0, config.screen_fade_half) 1.5)); STEP (WAIT 1.5);
       ]
     in
-    let clear_screen_fade time = [ STEP (CLEAR_SCREEN_FADE time); STEP (WAIT time) ] in
+    let clear_screen_fade starting_fade time =
+      [ STEP (CLEAR_SCREEN_FADE (starting_fade, time)); STEP (WAIT time) ]
+    in
     let fade_screen_with_dramatic_pause steps =
       [ STEP (WAIT 0.5); CURRENT_GHOST (SET_POSE (PERFORMING FOCUS)); STEP (WAIT 1.) ]
       @ fade_screen
       @ steps
-      @ clear_screen_fade 1.
+      @ clear_screen_fade config.screen_fade_half 1.
       @ [ CURRENT_GHOST (SET_POSE IDLE) ]
     in
 
@@ -80,9 +80,9 @@ let get_steps
       failwithf "unknown '%s' interaction: %s" trigger.name_prefix trigger.name_suffix
     in
 
-    let unhide_and_unfreeze ?(direction : direction = LEFT) ghost_id x =
+    let unhide_and_unfreeze ?(direction : direction = LEFT) ghost_id (x, y) =
       [
-        PARTY_GHOST (ghost_id, ENTITY (UNHIDE_AT (x, 67, 0., 0.)));
+        PARTY_GHOST (ghost_id, ENTITY (UNHIDE_AT (x, y, 0., 0.)));
         PARTY_GHOST (ghost_id, ENTITY (SET_FACING direction));
         PARTY_GHOST (ghost_id, SET_POSE IDLE);
       ]
@@ -93,7 +93,6 @@ let get_steps
       [
         CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
         CURRENT_GHOST (ENTITY FREEZE);
-        (* TODO center this text box *)
         STEP (WAIT 1.);
         STEP (CENTERED_TEXT [ "Give me some rope, tie me to dream." ]);
         STEP
@@ -126,17 +125,13 @@ let get_steps
         STEP (WAIT 1.);
         CURRENT_GHOST (ENTITY UNFREEZE);
       ]
-      @ clear_screen_fade 0.5
+      @ clear_screen_fade 255 2.
     in
 
-    (* TODO add dialogue for Shirley Island npcs
-       HILDA -> "I live in the village. I love {{orange}} Abed.",
-    *)
     match trigger.name_prefix with
     | "warp" -> [ STEP (WARP trigger.kind) ]
     | "door-warp" -> [ STEP (DOOR_WARP trigger.kind) ]
     | "weapon" ->
-      (* TODO center this text *)
       fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_ITEM (WEAPON trigger.name_suffix)) ]
     | "purple-pen" ->
       remove_nail := false;
@@ -159,60 +154,69 @@ let get_steps
     | "dreamer" ->
       fade_screen_with_dramatic_pause
         [ CURRENT_GHOST (ADD_ITEM (DREAMER (trigger.name_suffix, get_lore ()))) ]
-    | "talk" -> (
-      match trigger.name_suffix with
-      | "annies-boobs" -> (
-        let rewards : (int * reward) list =
-          [
-            (20, INCREASE_MAX_SOUL);
-            ( 30,
-              ABILITY
-                ("Soul Catcher", "increases the amount of LIFE VAPOR gained when striking an enemy.")
-            );
-            (40, ABILITY ("Quick Focus", "increases the speed of focusing LIFE VAPOR."));
-            (50, INCREASE_MAX_SOUL);
-            ( 60,
-              ABILITY
-                ("Soul Catcher", "increases the amount of LIFE VAPOR gained when striking an enemy.")
-            );
-            ( 70,
-              ABILITY
-                ( "Dream Wielder",
-                  "charge the Honda Nail faster and collect more LIFE VAPOR when striking foes." )
-            );
-            (80, INCREASE_MAX_SOUL);
-            ( 90,
-              ABILITY
-                ("Soul Catcher", "increases the amount of LIFE VAPOR gained when striking an enemy.")
-            );
-            (100, ABILITY ("Deep Focus", "heals two masks when focusing."));
-            (110, ABILITY ("Shaman Stone", "increases the power of spells."));
-            (120, ABILITY ("Spell Twister", "reduces the LIFE VAPOR cost of casting spells."));
-          ]
-        in
-        let purple_pens_found = List.length game.progress.purple_pens_found in
-        let last_upgrade = game.progress.last_upgrade_claimed in
-        match List.find_opt (fun (amount, reward) -> amount > last_upgrade) rewards with
-        | None -> [ STEP (DIALOGUE ("Annie's Boobs", "I have no more rewards for you.")) ]
-        | Some (next_upgrade_amount, reward) ->
-          if purple_pens_found >= next_upgrade_amount then
+    | "talk" ->
+      let steps =
+        match trigger.name_suffix with
+        | "annies-boobs" -> (
+          let rewards : (int * reward) list =
             [
-              CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
-              STEP (WAIT 1.);
-              CURRENT_GHOST (CLAIM_REWARD (next_upgrade_amount, reward));
-              STEP (TEXT [ "Claimed a reward:"; Show.reward reward ]);
+              (20, INCREASE_MAX_SOUL);
+              ( 30,
+                ABILITY
+                  ( "Soul Catcher",
+                    "increases the amount of LIFE VAPOR gained when striking an enemy." ) );
+              (40, ABILITY ("Quick Focus", "increases the speed of focusing LIFE VAPOR."));
+              (50, INCREASE_MAX_SOUL);
+              ( 60,
+                ABILITY
+                  ( "Soul Catcher",
+                    "increases the amount of LIFE VAPOR gained when striking an enemy." ) );
+              ( 70,
+                ABILITY
+                  ( "Dream Wielder",
+                    "charge the Honda Nail faster and collect more LIFE VAPOR when striking foes."
+                  ) );
+              (80, INCREASE_MAX_SOUL);
+              ( 90,
+                ABILITY
+                  ( "Soul Catcher",
+                    "increases the amount of LIFE VAPOR gained when striking an enemy." ) );
+              (100, ABILITY ("Deep Focus", "heals two masks when focusing."));
+              (110, ABILITY ("Shaman Stone", "increases the power of spells."));
+              (120, ABILITY ("Spell Twister", "reduces the LIFE VAPOR cost of casting spells."));
             ]
-          else
-            [
-              STEP
-                (DIALOGUE
-                   ( "Annie's Boobs",
-                     fmt
-                       "You have {{purple}} %d purple pens {{white}} - come back when you have \
-                        {{purple}} %d."
-                       purple_pens_found next_upgrade_amount ));
-            ])
-      | name -> [ STEP (DIALOGUE (name, get_lore ())) ])
+          in
+          let purple_pens_found = List.length game.progress.purple_pens_found in
+          let last_upgrade = game.progress.last_upgrade_claimed in
+          match List.find_opt (fun (amount, reward) -> amount > last_upgrade) rewards with
+          | None -> [ STEP (DIALOGUE ("Annie's Boobs", "I have no more rewards for you.")) ]
+          | Some (next_upgrade_amount, reward) ->
+            if purple_pens_found >= next_upgrade_amount then
+              [
+                CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
+                STEP (WAIT 1.);
+                CURRENT_GHOST (CLAIM_REWARD (next_upgrade_amount, reward));
+                STEP (TEXT [ "Claimed a reward:"; Show.reward reward ]);
+              ]
+            else
+              [
+                STEP
+                  (DIALOGUE
+                     ( "Annie's Boobs",
+                       fmt
+                         "You have {{purple}} %d purple pens {{white}} - come back when you have \
+                          {{purple}} %d."
+                         purple_pens_found next_upgrade_amount ));
+              ])
+        | name -> [ STEP (DIALOGUE (name, get_lore ())) ]
+      in
+      let facing =
+        if rect_center_x trigger.dest < rect_center_x game.player.ghost.entity.dest then
+          LEFT
+        else
+          RIGHT
+      in
+      [ CURRENT_GHOST (SET_POSE IDLE); CURRENT_GHOST (ENTITY (SET_FACING facing)) ] @ steps
     | "info" -> (
       match trigger.name_suffix with
       | "focus" ->
@@ -236,12 +240,13 @@ let get_steps
                      "to focus LIFE VAPOR and HEAL.";
                    ] ));
           ]
-        @ clear_screen_fade 1.
+        @ clear_screen_fade config.screen_fade_half 1.
       | "true-form" ->
         read_sign
+        @ fade_screen
         @ [
             STEP
-              (TEXT
+              (CENTERED_TEXT
                  [
                    "Human Beings, these words are for you alone.";
                    "";
@@ -249,29 +254,29 @@ let get_steps
                     produce ones such as you.";
                  ]);
           ]
+        @ clear_screen_fade config.screen_fade_half 1.
       | "dean-and-creator" ->
         read_sign
+        @ fade_screen
         @ [
             STEP
-              (TEXT
+              (CENTERED_TEXT
                  [
-                   (* TEXT is left-aligned by default so this line looks weird, but it can't be manually centered with spaces
-                      because Render.get_lines trims them
-                   *)
                    "Human Beings, these words are for you alone.";
                    "";
                    "Beyond this point you enter the land of Dean and Creator. Step across this \
                     threshold and obey our laws.";
                  ]);
-            STEP (WAIT 0.4);
+            STEP (WAIT 1.);
             STEP
-              (TEXT
+              (CENTERED_TEXT
                  [
                    "Bear witness to the last and only civilisation, the eternal Campus.";
                    "";
                    "Hallowdale";
                  ]);
           ]
+        @ clear_screen_fade config.screen_fade_half 1.
       | lore -> read_sign @ [ STEP (TEXT [ get_lore () ]) ])
     | "ability" -> (
       let quote = Some (get_lore ()) in
@@ -387,7 +392,7 @@ let get_steps
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
           STEP (UNHIDE_LAYER "boss-doors");
           ENEMY (DUNCAN, START_ACTION "jumping");
-          ENEMY (DUNCAN, ENTITY (SET_VX Config.interactions.duncan_initial_jump_vx));
+          ENEMY (DUNCAN, ENTITY (SET_VX config.duncan_initial_jump_vx));
           ENEMY (DUNCAN, ENTITY UNFREEZE);
           STEP (WAIT 0.7);
         ]
@@ -479,7 +484,7 @@ let get_steps
           ENEMY (BORCHERT, ENTITY (SET_FACING LEFT));
           ENEMY (BORCHERT, ENTITY UNFREEZE);
           ENEMY (BORCHERT, SET_POSE "dive");
-          ENEMY (BORCHERT, ENTITY (SET_VY 300.));
+          ENEMY (BORCHERT, ENTITY (SET_VY config.borchert_descend_vy));
           STEP (WAIT 1.7);
           ENEMY (BORCHERT, ENTITY (SET_VY 0.));
           STEP (WAIT 2.);
@@ -527,7 +532,6 @@ let get_steps
           CURRENT_GHOST (SET_POSE IDLE);
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
           STEP (WAIT 0.7);
-          (* TODO camera moves too fast here *)
           STEP (SET_CAMERA_MOTION (LINEAR 10.));
           STEP (SET_FIXED_CAMERA (127, 28));
           STEP (WAIT 1.6);
@@ -548,11 +552,7 @@ let get_steps
           STEP (WAIT 1.);
           STEP (DIALOGUE ("Neil", "Welcome to {{purple}} Shirley Island."));
           NPC (NEIL, ENTITY (SET_FACING RIGHT));
-          STEP (SET_CAMERA_MOTION (LINEAR Config.interactions.shirley_island_camera_motion));
-          (* TODO might be a problem that steps continue running without waiting for SET_FIXED_CAMERA to get to the destination
-             - maybe could look at the motion speed and estimate how long it will take, then add a new_wait step
-             - that's probably more work than it's worth though
-          *)
+          STEP (SET_CAMERA_MOTION (LINEAR config.shirley_island_camera_motion));
           STEP (SET_FIXED_CAMERA (125, 48));
           STEP
             (DIALOGUE
@@ -565,13 +565,12 @@ let get_steps
                ( "Garrett",
                  "Then came the now-now time, when the floors were covered with the {{red}} burny \
                   touch." ));
-          (* this isn't unhiding, just using it to move *)
-          CURRENT_GHOST (ENTITY (UNHIDE_AT (177, 67, 0., 0.)));
+          CURRENT_GHOST (ENTITY (MOVE_TO (177, 67)));
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
         ]
-        @ unhide_and_unfreeze TROY ~direction:RIGHT 174
-        @ unhide_and_unfreeze JEFF 196
-        @ unhide_and_unfreeze ANNIE 187
+        @ unhide_and_unfreeze TROY ~direction:RIGHT (174, 67)
+        @ unhide_and_unfreeze JEFF (196, 67)
+        @ unhide_and_unfreeze ANNIE (187, 67)
         @ [
             STEP (SET_FIXED_CAMERA (192, 62));
             STEP (WAIT 4.);
@@ -641,7 +640,7 @@ let get_steps
           PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
           STEP (WAIT 2.);
         ]
-        @ clear_screen_fade 1.
+        @ clear_screen_fade 255 1.
         @ [
             STEP (WAIT 1.);
             PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
@@ -707,13 +706,12 @@ let get_steps
                     never met me." ));
             STEP SET_GHOST_CAMERA;
             ENEMY (HICKEY, SET_POSE "lunge");
-            ENEMY (HICKEY, ENTITY (SET_VX 1800.));
-            ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 1800.));
+            ENEMY (HICKEY, ENTITY (SET_VX config.hickey_dash_vx));
+            ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX config.hickey_dash_vx));
             STEP (SET_FIXED_CAMERA (72, 24));
             PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
           ]
-        @ jump_party_ghost ~end_pose:(AIRBORNE (-1.)) ABED RIGHT
-            Config.interactions.abed_shelves_jump_vx 0.8
+        @ jump_party_ghost ~end_pose:(AIRBORNE (-1.)) ABED RIGHT config.abed_shelves_jump_vx 0.8
         @ [
             STEP (HIDE_LAYER "bg");
             STEP (UNHIDE_LAYER "bg4");
@@ -747,476 +745,264 @@ let get_steps
       game.in_boss_fight <- false;
       remove_nail := false;
       match Enemy.parse_name "boss-killed interaction" trigger.name_suffix with
-      | HICKEY ->
+      | DUNCAN ->
         [
-          ENEMY (HICKEY, SET_POSE "dying");
-          STEP (WAIT 0.5);
-          ENEMY (HICKEY, SET_POSE "dead");
           STEP (WAIT 1.);
-          STEP
-            (DIALOGUE ("Hickey", "Unbelievable! When this game is over, I'm gonna shove you back."));
-          (* TODO Hickey might be off-screen here - maybe find the enemy pos, convert to tile coords,
-             and set fixed camera there
-          *)
+          ENEMY (DUNCAN, ENTITY (SET_VX 0.));
+          CURRENT_GHOST (PARTY (WALK_TO 52));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          ENEMY (DUNCAN, WALK_TO 30);
+          ENEMY (DUNCAN, SET_POSE "idle");
+          ENEMY (DUNCAN, ENTITY (SET_FACING RIGHT));
+          STEP (WAIT 0.6);
+          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
+          STEP (WAIT 0.3);
+          ENEMY (DUNCAN, ENTITY (SET_VX config.duncan_chair_jump_vx));
+          ENEMY (DUNCAN, START_ACTION "jumping");
+          STEP (WAIT 1.2);
+          ENEMY (DUNCAN, SET_POSE "scavenging-dead");
+          ENEMY (DUNCAN, ENTITY FREEZE);
+          STEP (HIDE_LAYER "bg-iso4");
+          STEP (UNHIDE_LAYER "bg-iso5");
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (23, 24, 0., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (21, 26, 0., 0.)));
+          PARTY_GHOST (ANNIE, ENTITY FREEZE);
+          PARTY_GHOST (JEFF, ENTITY FREEZE);
+          STEP (WAIT 1.5);
+          STEP (SET_FIXED_CAMERA (33, 33));
+          STEP (WAIT 0.5);
+          ENEMY (DUNCAN, SET_POSE "idle-dead");
+          ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
+        ]
+        @ get_ability_steps "vengeful_spirit" 0. 1.
+            [ "Consumed the"; "Vengeful Cushion" ]
+            [
+              "Tap (A)";
+              "to unleash the Cushion.";
+              "Spells will deplete LIFE VAPOR.";
+              "Replenish LIFE VAPOR by striking enemies.";
+            ]
+        @ [
+            STEP (WAIT 0.2);
+            CURRENT_GHOST FILL_LIFE_VAPOR;
+            STEP (WAIT 0.2);
+            STEP (DIALOGUE ("Duncan", "Real nice, Winger."));
+            STEP
+              (DIALOGUE
+                 ( "Duncan",
+                   "This is why the English never win any sports - because everyone else cheats!" ));
+            ENEMY (DUNCAN, ENTITY UNFREEZE);
+            ENEMY (DUNCAN, DEAD_WALK_TO 7);
+            STEP (WAIT 0.2);
+            STEP (DIALOGUE ("Annie", "Britta, there you are."));
+            PARTY_GHOST (JEFF, SET_POSE CRAWLING);
+            (* PARTY_GHOST (JEFF, SET_POSE (PERFORMING FOCUS)); *)
+            STEP
+              (DIALOGUE
+                 ( "Jeff",
+                   "Sweet, sweet portable chairs. {{gold}} Plastic gold, {{white}} four-legged \
+                    diamonds!" ));
+            PARTY_GHOST (JEFF, SET_POSE IDLE);
+            STEP (DIALOGUE ("Jeff", "You claimin' this?"));
+            PARTY_GHOST (JEFF, SET_POSE (PERFORMING (ATTACK RIGHT)));
+            PARTY_GHOST (ANNIE, SET_POSE (PERFORMING (ATTACK RIGHT)));
+            STEP (DIALOGUE ("Jeff", "Lava joust?"));
+            STEP (DIALOGUE ("Britta", "Did you all hit your heads on each other's heads?"));
+            PARTY_GHOST (JEFF, SET_POSE IDLE);
+            PARTY_GHOST (ANNIE, SET_POSE IDLE);
+            STEP
+              (DIALOGUE
+                 ( "Annie",
+                   "Let's get real, Britta. Once the last of the chairs are gone, a sofa-hopper \
+                    like you won't last 20 minutes." ));
+            STEP
+              (DIALOGUE
+                 ("Annie", "You want to join this alliance? Or you want to join the {{red}} lava?"));
+            STEP (DIALOGUE ("Britta", "Fine, but I'm not learning the new names for anything."));
+            STEP (WAIT 0.4);
+            STEP (WAIT 0.4);
+            STEP SET_GHOST_CAMERA;
+            STEP (WAIT 1.4);
+            ENEMY (DUNCAN, ENTITY HIDE);
+            STEP (HIDE_LAYER "boss-doors");
+            PARTY_GHOST (JEFF, ENTITY HIDE);
+            PARTY_GHOST (ANNIE, ENTITY HIDE);
+          ]
+      | LOCKER_BOY ->
+        [
+          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (157, 31, 0., 0.)));
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (156, 33, 0., 0.)));
           STEP (HIDE_LAYER "boss-doors");
-          STEP (SET_FIXED_CAMERA (72, 24));
-          STEP (DIALOGUE ("Troy", "Abed, give me your other hand!"));
-          STEP (DIALOGUE ("Abed", "It's down to us. You or Britta will be the winner."));
+          STEP (WAIT 0.5);
+          CURRENT_GHOST (SET_POSE IDLE);
+          CURRENT_GHOST (PARTY (WALK_TO 160));
+          PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
+          (* TODO center this text box so it doesn't overlap the ghosts or chang *)
+          STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
+          STEP (SET_FIXED_CAMERA (169, 42));
+          STEP (WAIT 1.5);
+          NPC (CHANG, SET_POSE "combination");
+          STEP (DIALOGUE ("Chang", "What a delicious {{blue}} combination!"));
+          STEP (DIALOGUE ("Britta", "What are we getting from this extra level of commitment?"));
+          NPC (CHANG, SET_POSE "idle");
+          STEP
+            (DIALOGUE
+               ( "Chang",
+                 "We're getting your chairs, your food, and the names of your same-sex celebrity \
+                  crushes. Everyone has one. Don't lie." ));
+          STEP (DIALOGUE ("Chang", "Then you're free to go..."));
+          NPC (CHANG, SET_POSE "attack");
+          STEP (DIALOGUE ("Chang", "... into {{red}} lava!"));
+          (* TODO sound effect for Troy/Abed entrance *)
+          PARTY_GHOST (TROY, ENTITY (UNHIDE_AT (163, 20, 0., 0.)));
+          PARTY_GHOST (ABED, ENTITY (UNHIDE_AT (161, 20, 0., 0.)));
+          PARTY_GHOST (TROY, SET_POSE (AIRBORNE (-1.)));
+          PARTY_GHOST (ABED, SET_POSE (AIRBORNE (-1.)));
+          PARTY_GHOST (TROY, ENTITY FREEZE);
+          PARTY_GHOST (ABED, ENTITY FREEZE);
+          STEP (DIALOGUE ("Abed", "Stand down or meet your doom, Chang."));
+          PARTY_GHOST (TROY, ENTITY UNFREEZE);
+          PARTY_GHOST (ABED, ENTITY UNFREEZE);
+          PARTY_GHOST (TROY, ENTITY (WAIT_UNTIL_LANDED false));
+          PARTY_GHOST (TROY, SET_POSE IDLE);
+          PARTY_GHOST (ABED, SET_POSE IDLE);
+          NPC (CHANG, SET_POSE "idle");
+          STEP (WAIT 0.3);
+          STEP
+            (DIALOGUE
+               ( "Chang",
+                 "You're in no position to make threats, floor-strider. Our truce ended when you \
+                  {{red}} banished {{white}} us from the Payphone Bench." ));
           STEP
             (DIALOGUE
                ( "Troy",
-                 "I'm not leaving, ok? Just... I promise. The floor's not {{red}} lava {{white}} \
-                  now. Just give me your hand." ));
-          STEP
-            (DIALOGUE
-               ( "Abed",
-                 "I don't think the {{red}} lava's {{white}} here because you're leaving. I think \
-                  it's here because I won't {{red}} let go." ));
-          STEP (WAIT 2.);
-          STEP (DIALOGUE ("Abed", "Sorry."));
-          STEP (WAIT 1.);
-          STEP (DIALOGUE ("Abed", "Bye."));
-          STEP (DIALOGUE ("Troy", "Abed... Abed!"));
-          PARTY_GHOST (ABED, ENTITY (SET_VX 0.));
-          PARTY_GHOST (ABED, ENTITY (SET_VY 0.));
-          PARTY_GHOST (ABED, ENTITY UNFREEZE);
-          PARTY_GHOST (ABED, ENTITY (WAIT_UNTIL_LANDED false));
-          PARTY_GHOST (ABED, SET_POSE (PERFORMING FOCUS));
-          STEP (WAIT 0.5);
-          STEP (DIALOGUE ("Troy", "Abed..."));
-          STEP (WAIT 0.5);
-          STEP (CORNER_TEXT "El está muerto para siempre.");
-          STEP (DIALOGUE ("Troy", "He's... He's fake dead. Forever."));
-          STEP UNSET_CORNER_TEXT;
-          STEP
-            (SET_SCREEN_FADE
-               { target_alpha = 255; timer = Some (make_timer 2.); show_ghost = false });
-          STEP (WAIT 2.);
-          PARTY_GHOST (ABED, ENTITY (MOVE_TO (7, 27)));
-          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-          PARTY_GHOST (TROY, ENTITY (MOVE_TO (14, 24)));
-          PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
-          CURRENT_GHOST (ENTITY (MOVE_TO (11, 24)));
-          CURRENT_GHOST (SET_POSE IDLE);
-          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          STEP (SET_CAMERA_MOTION (LINEAR 16.));
-          STEP (SET_FIXED_CAMERA (23, 24));
-          STEP (WAIT 1.);
+                 "You used that bench to upset the balance. By the {{orange}} Vapors of Magmarath, \
+                  {{white}} we will restore it." ));
+          STEP (DIALOGUE ("Britta", "You have gods?"));
+          NPC (CHANG, SET_POSE "idle-with-locker-boys");
+          STEP (DIALOGUE ("Chang", "Locker Boys!"));
+          STEP (SET_FIXED_CAMERA (175, 42));
+          NPC (CHANG, SET_POSE "attack-with-locker-boys");
+          STEP (WAIT 0.7);
+          STEP (DIALOGUE ("Chang", "Earn your M&M's!"));
+          PARTY_GHOST (TROY, WALK_TO 163);
+          STEP (DIALOGUE ("Troy", "Troy and Abed Intimidation Stance!"));
+          NPC (CHANG, SET_POSE "take-damage");
         ]
-        @ clear_screen_fade 1.
+        @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT
+            config.troy_dive_jump_vx 1.1
+        @ [ STEP (WAIT 0.3); NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
+        @ get_ability_steps "desolate_dive" 0. 3.
+            [ "Consumed the"; "Troy and Abed Intimidation Stance." ]
+            [
+              "Tap (A) while";
+              "holding DOWN to strike the earth with a burst of intimidation.";
+              "Spells will deplete LIFE VAPOR.";
+              "Replenish LIFE VAPOR by striking enemies.";
+            ]
         @ [
-            STEP (DIALOGUE ("Britta", "He's not really dead."));
-            STEP (DIALOGUE ("Troy", "No, but he's really playing dead and he's not gonna stop."));
-            STEP (DIALOGUE ("Troy", "You don't get it. No one gets Abed. I got him a little."));
-            STEP (WAIT 1.);
-            STEP (DIALOGUE ("Troy", "This is my fault."));
-            STEP (WAIT 1.);
-            PARTY_GHOST (TROY, WALK_TO 18);
-            STEP (DIALOGUE ("Troy", "I don't deserve to fake live."));
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            PARTY_GHOST (TROY, WALK_TO 22);
-            STEP (DIALOGUE ("Britta", "Wait! No."));
-            STEP (WAIT 0.7);
-            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-            STEP (WAIT 0.7);
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            STEP (DIALOGUE ("Britta", "I can {{green}} fix {{white}} him."));
-            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
-            STEP (DIALOGUE ("Troy", "How?"));
-            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-            STEP
-              (DIALOGUE
-                 ("Britta", "I don't know. In real life, I don't know, but I can fake fix him."));
-            STEP (WAIT 1.);
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            STEP
-              (DIALOGUE
-                 ( "Britta",
-                   "I can {{green}} clone {{white}} him. I'll {{green}} clone {{white}} him." ));
-            STEP (WAIT 1.);
-            STEP (DIALOGUE ("Troy", "... go on ..."));
-            STEP
-              (DIALOGUE
-                 ( "Britta",
-                   "I just need his {{blue}} DNA. {{white}} Let's get his {{blue}} DNA. {{white}} \
-                    Don't touch the {{red}} lava." ));
-            CURRENT_GHOST (PARTY (WALK_TO 8));
-            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-            STEP
-              (DIALOGUE
-                 ( "Troy",
-                   "You might be onto something... I'm gonna find {{green}} discarded technology \
-                    {{white}} from this {{orange}} once-great civilization {{white}} and start a \
-                    {{blue}} cloning {{white}} machine." ));
-            PARTY_GHOST (TROY, WALK_TO 16);
-            PARTY_GHOST (TROY, SET_POSE READING);
-            STEP (WAIT 1.);
-            CURRENT_GHOST (SET_POSE IDLE);
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            STEP
-              (DIALOGUE
-                 ( "Britta",
-                   "Ok, I'm placing this {{blue}} Cellular Regeneration Sequencer {{white}} on the \
-                    spot where he died." ));
-            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-            STEP (WAIT 0.5);
+            STEP (WAIT 0.3);
             PARTY_GHOST (TROY, SET_POSE IDLE);
-            PARTY_GHOST (TROY, WALK_TO 10);
-            STEP (DIALOGUE ("Troy", "Here, don't forget this."));
-            CURRENT_GHOST (SET_POSE IDLE);
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 0.9);
+            STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
+            STEP (SHAKE_SCREEN 1.);
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Hickey", "Hiya kids."));
+            ENEMY (HICKEY, ENTITY UNHIDE);
+            ENEMY (HICKEY, ENTITY UNFREEZE);
+            ENEMY (HICKEY, ENTITY (SET_FACING LEFT));
+            STEP (SET_FIXED_CAMERA (215, 17));
+            STEP (WAIT 1.1);
+            STEP (DIALOGUE ("Hickey", "I'm criminology professor Buzz Hickey."));
             STEP
-              (DIALOGUE
-                 ( "Britta",
-                   "This is a {{pink}} Laser Guidance System {{white}} that keeps the regeneration \
-                    sequence from {{red}} jib-jabbing." ));
-            CURRENT_GHOST (PARTY (WALK_TO 5));
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            STEP (DIALOGUE ("Troy", "{{red}} Jib-jabbing?"));
-            STEP (WAIT 0.5);
-            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-            STEP (WAIT 0.5);
-            STEP (DIALOGUE ("Britta", "Initiate regeneration sequence."));
-            PARTY_GHOST (TROY, SET_POSE (PERFORMING FOCUS));
-            STEP (PLAY_SOUND_EFFECT "menu-expand");
-            STEP (PLAY_SOUND_EFFECT "menu-close");
-            STEP (WAIT 0.2);
-            STEP (PLAY_SOUND_EFFECT "menu-close");
-            STEP (WAIT 0.2);
-            STEP (PLAY_SOUND_EFFECT "menu-expand");
-            STEP (WAIT 0.2);
-            STEP (PLAY_SOUND_EFFECT "menu-expand");
-            STEP (WAIT 2.);
-            PARTY_GHOST (TROY, SET_POSE IDLE);
-            CURRENT_GHOST (SET_POSE IDLE);
-            STEP (WAIT 2.);
-          ]
-        @
-        let game_progress = Progress.get_all_progress state game in
-        if game.progress.dreamer_items_found = game_progress.dreamer_items.total then
-          [
-            (*
-
- *)
-            PARTY_GHOST (ABED, SET_POSE IDLE);
+              (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
+            ENEMY (HICKEY, SET_POSE "walking");
+            STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
+            STEP (SHAKE_SCREEN 1.);
+            STEP (WAIT 1.);
+            STEP (SHAKE_SCREEN 1.);
+            STEP (SET_FIXED_CAMERA (175, 42));
+            STEP (WAIT 1.1);
             PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
-            STEP (WAIT 1.);
-            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-            STEP (DIALOGUE ("Troy", "It worked!"));
-            STEP (DIALOGUE ("Britta", "We made a {{green}} perfect clone {{white}} of Abed!"));
-            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-            STEP (WAIT 1.);
-            STEP (DIALOGUE ("Abed", "Actually, Britta's work was sloppy."));
-            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
-            STEP (DIALOGUE ("Abed", "I'm not an exact replication."));
             STEP
               (DIALOGUE
                  ( "Abed",
-                   "I have all of Abed's {{blue}} abilities {{white}} and {{blue}} memories, \
-                    {{white}} but I'm missing his {{green}} wild emotionality." ));
-            STEP (WAIT 1.);
+                   "Jeff, Annie, get to {{purple}} Shirley Island! {{white}} We'll meet you there!"
+                 ));
+            PARTY_GHOST (ANNIE, WALK_TO 166);
+            PARTY_GHOST (ANNIE, SET_POSE (AIRBORNE (-1.)));
+            PARTY_GHOST (ANNIE, ENTITY (WAIT_UNTIL_LANDED false));
+            PARTY_GHOST (ANNIE, ENTITY HIDE);
+            PARTY_GHOST (JEFF, WALK_TO 166);
+            PARTY_GHOST (JEFF, SET_POSE (AIRBORNE (-1.)));
+            PARTY_GHOST (JEFF, ENTITY (WAIT_UNTIL_LANDED false));
+            PARTY_GHOST (JEFF, ENTITY HIDE);
             PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-            STEP (WAIT 1.);
-            STEP
-              (DIALOGUE
-                 ("Abed", "Although I think I may be able to {{red}} let Troy go {{white}} now."));
-            STEP (WAIT 1.);
-            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
-            STEP (WAIT 1.);
-            STEP (DIALOGUE ("Troy", "I don't know..."));
             PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
-            STEP
-              (DIALOGUE
-                 ( "Troy",
-                   "I haven't been completely honest. I'm really {{red}} scared {{white}} to go on \
-                    my trip." ));
-            STEP
-              (DIALOGUE ("Abed", "Well you don't have to go. Your {{blue}} clone {{white}} can."));
-            STEP (WAIT 1.);
-            STEP (DIALOGUE ("Troy", "Right."));
-            STEP (WAIT 1.);
-            PARTY_GHOST (TROY, WALK_TO 22);
-            STEP (WAIT 1.);
-            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
-            STEP (WAIT 1.);
-            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
-            STEP (WAIT 1.);
-          ]
-          @ jump_party_ghost ~end_pose:(AIRBORNE (-1.)) TROY RIGHT
-              Config.interactions.troy_final_jump_vx 0.1
-          @ [
-              STEP
-                (SET_SCREEN_FADE
-                   { target_alpha = 255; timer = Some (make_timer 1.); show_ghost = false });
-              STEP (WAIT 5.);
-              STEP STOP_MUSIC;
-              STEP (WAIT 3.);
-              STEP PLAY_END_CREDITS_MUSIC;
-              STEP (WAIT 3.);
-              STEP
-                (CENTERED_TEXT
-                   [
-                     "";
-                     "";
-                     "";
-                     "Congratulations.";
-                     "Well done on achieving this great feat. You persevered and you triumphed.";
-                     "We hope you enjoyed yourself in the world of Hallowdale.";
-                     "We'll meet again soon on the road ahead.";
-                   ]);
-              STEP (WAIT 1.);
-              (let total_time = Progress.get_total_game_time state.frame.idx in
-               let percentage = game_progress.total in
-               STEP
-                 (CENTERED_TEXT
-                    [
-                      "";
-                      "";
-                      "";
-                      "Game Completion";
-                      "================================";
-                      fmt "Percentage: %.02f%s" percentage "%";
-                      fmt "Time: %s" total_time;
-                    ]));
-              STEP (WAIT 2.);
-              STEP RETURN_TO_MAIN_MENU;
-            ]
-        else
-          [
-            STEP
-              (DIALOGUE
-                 ( "Troy",
-                   "It didn't work... I think we need to collect more {{blue}} Dreamer Items." ));
+            STEP (DIALOGUE ("Troy", "Abed, save yourself!"));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
                  ( "Britta",
-                   "We can use the {{blue}} Cellular Regeneration Sequencer {{white}} to go back \
-                    in time to collect the rest." ));
+                   "Abed, before troy {{red}} dies in lava, {{white}} you can save yourself \
+                    {{blue}} emotionally {{white}} by honestly experiencing the pain of him \
+                    leaving Hallowdale." ));
+            STEP (WAIT 0.4);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 0.9);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+            STEP (WAIT 0.4);
+            PARTY_GHOST (ABED, ADD_TO_PARTY);
+            PARTY_GHOST (ABED, MAKE_CURRENT_GHOST);
+            PARTY_GHOST (BRITTA, REMOVE_FROM_PARTY);
             STEP
-              (SET_SCREEN_FADE
-                 { target_alpha = 255; timer = Some (make_timer 2.); show_ghost = false });
-            STEP (WAIT 3.);
-            STEP RELOAD_GAME;
+              (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (BRITTA, WALK_TO 163);
           ]
-      | LAVA_BRITTA ->
-        (* this needs to be set manually for boss fights in the final sequence because they
-           aren't started with "boss-fight" triggers
-        *)
-        game.in_boss_fight <- true;
-        [
-          STEP (WAIT 1.);
-          NPC (SHIRLEY, ENTITY (MOVE_TO (195, 68)));
-          NPC (SHIRLEY, ENTITY (SET_FACING LEFT));
-          PARTY_GHOST (ABED, ENTITY (MOVE_TO (188, 68)));
-          PARTY_GHOST (TROY, ENTITY (MOVE_TO (185, 68)));
-          PARTY_GHOST (ABED, ENTITY UNFREEZE);
-          PARTY_GHOST (TROY, ENTITY UNFREEZE);
-          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-          PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
-          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
-          STEP (SET_FIXED_CAMERA (177, 61));
-          STEP
-            (DIALOGUE
-               ( "Abed",
-                 "Shirley, give us {{blue}} the orb {{white}} and we can save Shirley Island!" ));
-          STEP
-            (DIALOGUE
-               ( "Shirley",
-                 "{{blue}} The orb {{white}} can't {{green}} save {{white}} Shirley Island because \
-                  Shirley Island {{purple}} is {{blue}} the orb." ));
-          STEP
-            (DIALOGUE
-               ( "Abed",
-                 "In a cool way like {{gold}} Keyser Soze {{white}} or in a lame way like \
-                  {{magenta}} Jewel of the Nile?" ));
-          STEP (WAIT 1.);
-          NPC (SHIRLEY, ENTITY (SET_FACING RIGHT));
-          STEP (WAIT 1.);
-          STEP (SET_FIXED_CAMERA (187, 61));
-          STEP
-            (DIALOGUE
-               ("Shirley", "You tell Buzz Hickey that {{purple}} Shirley Bennett {{white}} said..."));
-          STEP (WAIT 1.);
-          NPC (SHIRLEY, ENTITY (SET_FACING LEFT));
-          STEP
-            (DIALOGUE
-               ( "Shirley",
-                 "... well I don't want to waste your time. Just think of something {{blue}} cool \
-                  {{white}} and give me credit." ));
-          CURRENT_GHOST (ENTITY (MOVE_TO (62, 95)));
-          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          CURRENT_GHOST (SET_POSE IDLE);
-          ENEMY (LAVA_BRITTA, ENTITY HIDE);
-          ENEMY (LAVA_BRITTA_2, ENTITY UNHIDE);
-          STEP (SET_FIXED_CAMERA (54, 87));
-          STEP (WAIT 1.);
-          STEP
-            (DIALOGUE
-               ( "Jeff",
-                 "But the door I'm knocking on is {{green}} your {{white}} home, so if I'm the \
-                  floor, it means you're {{red}} dead." ));
-          STEP (DIALOGUE ("Britta", "If you're the floor, you're {{red}} already dead."));
-          STEP (DIALOGUE ("Jeff", "Just do it right! Knock, knock!"));
-          STEP (DIALOGUE ("Britta", "Knock, knock!"));
-          ENEMY (LAVA_BRITTA_2, ENTITY UNFREEZE);
-        ]
-      | LAVA_BRITTA_2 ->
-        game.in_boss_fight <- true;
-        [
-          STEP (WAIT 1.);
-          ENEMY (LAVA_BRITTA_2, WALK_TO 46);
-          STEP (WAIT 1.);
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING RIGHT));
-          CURRENT_GHOST (PARTY (WALK_TO 62));
-          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          STEP (WAIT 1.);
-          CURRENT_GHOST (SET_POSE (PERFORMING (ATTACK LEFT)));
-          ENEMY (LAVA_BRITTA_2, SET_POSE "charge-lunge");
-          STEP (WAIT 1.);
-          ENEMY (LAVA_BRITTA_2, SET_POSE "lunge");
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 2000.));
-          CURRENT_GHOST (ENTITY (SET_VX (-600.)));
-          STEP (WAIT 0.3);
-          CURRENT_GHOST (SET_POSE (PERFORMING (TAKE_DAMAGE (0, RIGHT))));
-          STEP (WAIT 0.1);
-          CURRENT_GHOST (ENTITY (SET_VX 0.));
-          ENEMY (LAVA_BRITTA_2, SET_POSE "idle");
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
-          STEP (WAIT 1.);
-          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING LEFT));
-          STEP (DIALOGUE ("Britta", "Who's there, bitch? Floor!"));
-          STEP (DIALOGUE ("Britta", "Floooooooooor!"));
-          STEP (SET_FIXED_CAMERA (65, 90));
-          PARTY_GHOST (TROY, ADD_TO_PARTY);
-          PARTY_GHOST (TROY, MAKE_CURRENT_GHOST);
-          PARTY_GHOST (JEFF, REMOVE_FROM_PARTY);
-          PARTY_GHOST (JEFF, ENTITY HIDE);
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY UNHIDE);
-          ENEMY (HICKEY, ENTITY (MOVE_TO (125, 90)));
-          ENEMY (HICKEY, ENTITY (SET_FACING LEFT));
-          ENEMY (HICKEY, SET_POSE "idle");
-          ENEMY (HICKEY, ENTITY UNFREEZE);
-          STEP (SET_FIXED_CAMERA (108, 90));
-          STEP (DIALOGUE ("Troy and Abed", "Troy and Abed in a {{blue}} bubble!"));
-          STEP (SET_FIXED_CAMERA (115, 90));
-          STEP (WAIT 1.);
-          ENEMY (HICKEY, SET_POSE "provoke");
-          STEP (WAIT 1.);
-          ENEMY (HICKEY, SET_POSE "provoke-wave");
-          STEP (WAIT 1.);
-          ENEMY (HICKEY, SET_POSE "walking");
-          ENEMY (HICKEY, ENTITY (SET_VX (-600.)));
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "walking");
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 600.));
-          STEP (WAIT 1.3);
-          ENEMY (HICKEY, ENTITY (SET_VX 0.));
-          ENEMY (HICKEY, SET_POSE "idle");
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 0.));
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "idle");
-          STEP (WAIT 0.3);
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_FACING LEFT));
-          STEP (WAIT 0.3);
-          STEP (DIALOGUE ("Troy", "Ha! Hickey, you {{red}} chicken!"));
-          STEP (WAIT 0.5);
-          ENEMY (HICKEY, ENTITY (SET_FACING RIGHT));
-          STEP (WAIT 0.5);
-          STEP (PLAY_SOUND_EFFECT "spray");
-          STEP (WAIT 2.);
-          STEP (DIALOGUE ("Abed", "He {{red}} gutted {{white}} us. Retreat!"));
-          STEP (SET_FIXED_CAMERA (145, 90));
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_FACING RIGHT));
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "walking");
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 600.));
-          STEP (WAIT 1.8);
-          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY UNSET_FLOOR);
-          STEP (WAIT 0.6);
-          ENEMY (HICKEY, SET_POSE "walking");
-          ENEMY (HICKEY, ENTITY (SET_VX 300.));
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING RIGHT));
-          ENEMY (LAVA_BRITTA_2, ENTITY (MOVE_TO (108, 95)));
-          ENEMY (LAVA_BRITTA_2, SET_POSE "with-hickey");
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 300.));
-          STEP (WAIT 3.);
-          ENEMY (HICKEY, SET_POSE "idle");
-          ENEMY (HICKEY, ENTITY (SET_VX 0.));
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
-          STEP (DIALOGUE ("Britta", "You can't outrun your {{blue}} emotions!"));
-          STEP
-            (DIALOGUE
-               ( "Britta",
-                 "I will force you two to {{orange}} grieve properly {{white}} even if it kills us \
-                  all!" ));
-          ENEMY (HICKEY, SET_POSE "walking");
-          ENEMY (HICKEY, ENTITY (SET_VX 300.));
-          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 300.));
-          STEP (WAIT 0.5);
-          STEP
-            (SET_SCREEN_FADE
-               { target_alpha = 255; timer = Some (make_timer 1.5); show_ghost = false });
-          STEP (WAIT 2.);
-        ]
-      | MANICORN_3 ->
-        game.in_boss_fight <- true;
-        [
-          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
-          STEP (WAIT 1.);
-          ENEMY (MANICORN_3, ENTITY HIDE);
-          CURRENT_GHOST (PARTY (WALK_TO 68));
-          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-          STEP (DIALOGUE ("Annie", "Yes! Ha ha ha!"));
-          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 64, 94));
-          STEP (WAIT 1.6);
-          CURRENT_GHOST (SET_POSE (PERFORMING (TAKE_DAMAGE (0, RIGHT))));
-          STEP (WAIT 1.);
-          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
-          ENEMY (LAVA_BRITTA, ENTITY (MOVE_TO (44, 94)));
-          ENEMY (LAVA_BRITTA, ENTITY UNFREEZE);
-          ENEMY (LAVA_BRITTA, SET_POSE "idle");
-          STEP (WAIT 1.);
-          STEP (SET_FIXED_CAMERA (50, 87));
-          STEP (DIALOGUE ("Britta", "Ha ha ha!"));
-          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          STEP (DIALOGUE ("Annie", "Britta, I'm your {{blue}} friend."));
-          STEP
-            (DIALOGUE
-               ( "Britta",
-                 "I can't hear {{red}} dead people, {{white}} Annie. I'm in a world of imagination."
-               ));
-          CURRENT_GHOST (PARTY (WALK_TO 75));
-          PARTY_GHOST (JEFF, ADD_TO_PARTY);
-          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (75, 95, 0., 0.)));
-          PARTY_GHOST (JEFF, MAKE_CURRENT_GHOST);
-          PARTY_GHOST (ANNIE, REMOVE_FROM_PARTY);
-          PARTY_GHOST (ANNIE, ENTITY HIDE);
-          STEP (DIALOGUE ("Jeff", "Then imagine what the {{red}} floor {{white}} looks like!"));
-          STEP (SET_FIXED_CAMERA (61, 87));
-          STEP
-            (DIALOGUE
-               ( "Britta",
-                 "I don't have to. I'll just imagine where {{blue}} you're {{white}} about to be."
-               ));
-          STEP (DIALOGUE ("Jeff", "That's the {{purple}} same {{white}} as imagining the floor."));
-          STEP
-            (DIALOGUE
-               ("Britta", "Then you just {{green}} admitted {{white}} that's where you'll be."));
-          STEP (DIALOGUE ("Jeff", "Knock knock, Britta."));
-          STEP
-            (DIALOGUE
-               ( "Britta",
-                 "I'm not gonna say \"who's there?\" because someone on the {{red}} floor \
-                  {{white}} is knocking." ));
-          STEP
-            (DIALOGUE
-               ("Jeff", "Well that's {{orange}} lame. {{white}} You have to say \"who's there?\""));
-          STEP (DIALOGUE ("Britta", "Floor!"));
-          STEP (DIALOGUE ("Jeff", "What?"));
-          STEP (DIALOGUE ("Britta", "That's who's there!"));
-          STEP (DIALOGUE ("Jeff", "Yeah, but it's {{red}} for you!"));
-        ]
+        @ jump_party_ghost BRITTA RIGHT config.britta_trash_can_jump_vx 1.1
+        @ [
+            STEP (WAIT 0.3);
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
+            STEP (DIALOGUE ("Abed", "Now Troy, start inchworming."));
+            (* if the cutscene is skipped, Troy ends up on the ledge above,
+               so the extra WALK_TO and WAIT here is just to ensure he ends up on the bottom level
+            *)
+            PARTY_GHOST (TROY, WALK_TO 167);
+            PARTY_GHOST (TROY, WALK_TO 157);
+            STEP (WAIT 0.7);
+            CURRENT_GHOST (PARTY (WALK_TO 167));
+            CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
+            CURRENT_GHOST (ENTITY (WAIT_UNTIL_LANDED false));
+            CURRENT_GHOST (PARTY (WALK_TO 155));
+            STEP (DIALOGUE ("Britta", "What's the third step?"));
+            STEP SET_GHOST_CAMERA;
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP
+              (DIALOGUE ("Abed", "The third step is {{blue}} survival. {{white}} Good luck, Britta."));
+            STEP (DIALOGUE ("Britta", "Seriously!?"));
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 0.5);
+            PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
+            STEP (DIALOGUE ("Britta", "Troy!"));
+            STEP SET_GHOST_CAMERA;
+            CURRENT_GHOST (PARTY (WALK_TO 153));
+            PARTY_GHOST (TROY, WALK_TO 156);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+            STEP
+              (DIALOGUE
+                 ( "Troy",
+                   "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing \
+                    us down and complaining a lot." ));
+            PARTY_GHOST (BRITTA, SET_POSE CRAWLING);
+            PARTY_GHOST (TROY, WALK_TO 124);
+            PARTY_GHOST (TROY, ENTITY HIDE);
+            CURRENT_GHOST (PARTY (WALK_TO 84));
+            STEP (WAIT 0.1);
+          ]
       | BORCHERT ->
         [
           STEP (WAIT 0.7);
@@ -1315,263 +1101,465 @@ let get_steps
           CURRENT_GHOST (ENTITY UNSET_FLOOR);
           ENEMY (JOSHUA, ENTITY UNSET_FLOOR);
         ]
-      | DUNCAN ->
+      | MANICORN_3 ->
+        game.in_boss_fight <- true;
         [
-          ENEMY (DUNCAN, ENTITY (SET_VX 0.));
-          CURRENT_GHOST (PARTY (WALK_TO 52));
-          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
-          ENEMY (DUNCAN, WALK_TO 30);
-          ENEMY (DUNCAN, SET_POSE "idle");
-          ENEMY (DUNCAN, ENTITY (SET_FACING RIGHT));
-          STEP (WAIT 0.6);
-          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 32, 25));
-          STEP (WAIT 0.3);
-          ENEMY (DUNCAN, ENTITY (SET_VX Config.interactions.duncan_chair_jump_vx));
-          ENEMY (DUNCAN, START_ACTION "jumping");
-          STEP (WAIT 1.2);
-          ENEMY (DUNCAN, SET_POSE "scavenging-dead");
-          ENEMY (DUNCAN, ENTITY FREEZE);
-          STEP (HIDE_LAYER "bg-iso4");
-          STEP (UNHIDE_LAYER "bg-iso5");
-          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (23, 24, 0., 0.)));
-          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (21, 26, 0., 0.)));
-          PARTY_GHOST (ANNIE, ENTITY FREEZE);
-          PARTY_GHOST (JEFF, ENTITY FREEZE);
-          STEP (WAIT 1.5);
-          STEP (SET_FIXED_CAMERA (33, 33));
-          STEP (WAIT 0.5);
-          ENEMY (DUNCAN, SET_POSE "idle-dead");
-          ENEMY (DUNCAN, ENTITY (SET_FACING LEFT));
-        ]
-        @ get_ability_steps "vengeful_spirit" 0. 1.
-            [ "Consumed the"; "Vengeful Cushion" ]
-            [
-              "Tap (A)";
-              "to unleash the Cushion.";
-              "Spells will deplete LIFE VAPOR.";
-              "Replenish LIFE VAPOR by striking enemies.";
-            ]
-        @ [
-            STEP (WAIT 0.2);
-            CURRENT_GHOST FILL_LIFE_VAPOR;
-            STEP (WAIT 0.2);
-            STEP (DIALOGUE ("Duncan", "Real nice, Winger."));
-            STEP
-              (DIALOGUE
-                 ( "Duncan",
-                   "This is why the English never win any sports - because everyone else cheats!" ));
-            ENEMY (DUNCAN, ENTITY UNFREEZE);
-            ENEMY (DUNCAN, DEAD_WALK_TO 7);
-            STEP (WAIT 0.2);
-            STEP (DIALOGUE ("Annie", "Britta, there you are."));
-            PARTY_GHOST (JEFF, SET_POSE CRAWLING);
-            (* PARTY_GHOST (JEFF, SET_POSE (PERFORMING FOCUS)); *)
-            STEP
-              (DIALOGUE
-                 ( "Jeff",
-                   "Sweet, sweet portable chairs. {{gold}} Plastic gold, {{white}} four-legged \
-                    diamonds!" ));
-            PARTY_GHOST (JEFF, SET_POSE IDLE);
-            STEP (DIALOGUE ("Jeff", "You claimin' this?"));
-            PARTY_GHOST (JEFF, SET_POSE (PERFORMING (ATTACK RIGHT)));
-            PARTY_GHOST (ANNIE, SET_POSE (PERFORMING (ATTACK RIGHT)));
-            STEP (DIALOGUE ("Jeff", "Lava joust?"));
-            STEP (DIALOGUE ("Britta", "Did you all hit your heads on each other's heads?"));
-            PARTY_GHOST (JEFF, SET_POSE IDLE);
-            PARTY_GHOST (ANNIE, SET_POSE IDLE);
-            STEP
-              (DIALOGUE
-                 ( "Annie",
-                   "Let's get real, Britta. Once the last of the chairs are gone, a sofa-hopper \
-                    like you won't last 20 minutes." ));
-            STEP
-              (DIALOGUE
-                 ("Annie", "You want to join this alliance? Or you want to join the {{red}} lava?"));
-            STEP (DIALOGUE ("Britta", "Fine, but I'm not learning the new names for anything."));
-            STEP (WAIT 0.4);
-            STEP (WAIT 0.4);
-            STEP SET_GHOST_CAMERA;
-            STEP (WAIT 1.4);
-            ENEMY (DUNCAN, ENTITY HIDE);
-            STEP (HIDE_LAYER "boss-doors");
-            PARTY_GHOST (JEFF, ENTITY HIDE);
-            PARTY_GHOST (ANNIE, ENTITY HIDE);
-          ]
-      | LOCKER_BOY ->
-        [
-          PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (157, 31, 0., 0.)));
-          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (156, 33, 0., 0.)));
-          STEP (HIDE_LAYER "boss-doors");
-          STEP (WAIT 0.5);
-          CURRENT_GHOST (SET_POSE IDLE);
-          (* PARTY_GHOST (JEFF, WALK_TO 153);
-           * PARTY_GHOST (ANNIE, WALK_TO 155); *)
-          CURRENT_GHOST (PARTY (WALK_TO 160));
-          (* PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT)); *)
-          PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
-          PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
-          (* TODO center this text box so it doesn't overlap the ghosts or chang *)
-          STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
-          STEP (SET_FIXED_CAMERA (169, 42));
-          STEP (WAIT 1.5);
-          NPC (CHANG, SET_POSE "combination");
-          STEP (DIALOGUE ("Chang", "What a delicious {{blue}} combination!"));
-          STEP (DIALOGUE ("Britta", "What are we getting from this extra level of commitment?"));
-          NPC (CHANG, SET_POSE "idle");
-          STEP
-            (DIALOGUE
-               ( "Chang",
-                 "We're getting your chairs, your food, and the names of your same-sex celebrity \
-                  crushes. Everyone has one. Don't lie." ));
-          STEP (DIALOGUE ("Chang", "Then you're free to go..."));
-          NPC (CHANG, SET_POSE "attack");
-          STEP (DIALOGUE ("Chang", "... into {{red}} lava!"));
-          (* TODO sound effect for Troy/Abed entrance *)
-          PARTY_GHOST (TROY, ENTITY (UNHIDE_AT (163, 20, 0., 0.)));
-          PARTY_GHOST (ABED, ENTITY (UNHIDE_AT (161, 20, 0., 0.)));
-          PARTY_GHOST (TROY, SET_POSE (AIRBORNE (-1.)));
-          PARTY_GHOST (ABED, SET_POSE (AIRBORNE (-1.)));
-          PARTY_GHOST (TROY, ENTITY FREEZE);
-          PARTY_GHOST (ABED, ENTITY FREEZE);
-          STEP (DIALOGUE ("Abed", "Stand down or meet your doom, Chang."));
-          PARTY_GHOST (TROY, ENTITY UNFREEZE);
-          PARTY_GHOST (ABED, ENTITY UNFREEZE);
+          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
           STEP (WAIT 1.);
-          PARTY_GHOST (TROY, SET_POSE IDLE);
-          PARTY_GHOST (ABED, SET_POSE IDLE);
-          NPC (CHANG, SET_POSE "idle");
-          STEP (WAIT 0.3);
+          ENEMY (MANICORN_3, ENTITY HIDE);
+          CURRENT_GHOST (PARTY (WALK_TO 68));
+          CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+          STEP (DIALOGUE ("Annie", "Yes! Ha ha ha!"));
+          STEP (SPAWN_VENGEFUL_SPIRIT (RIGHT, 64, 94));
+          STEP (WAIT 1.6);
+          CURRENT_GHOST (SET_POSE (PERFORMING (TAKE_DAMAGE (0, RIGHT))));
+          STEP (WAIT 1.);
+          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+          ENEMY (LAVA_BRITTA, ENTITY (MOVE_TO (44, 94)));
+          ENEMY (LAVA_BRITTA, ENTITY UNFREEZE);
+          ENEMY (LAVA_BRITTA, SET_POSE "idle");
+          STEP (WAIT 1.);
+          STEP (SET_FIXED_CAMERA (50, 87));
+          STEP (DIALOGUE ("Britta", "Ha ha ha!"));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Annie", "Britta, I'm your {{blue}} friend."));
           STEP
             (DIALOGUE
-               ( "Chang",
-                 "You're in no position to make threats, floor-strider. Our truce ended when you \
-                  {{red}} banished {{white}} us from the Payphone Bench." ));
+               ( "Britta",
+                 "I can't hear {{red}} dead people, {{white}} Annie. I'm in a world of imagination."
+               ));
+          CURRENT_GHOST (PARTY (WALK_TO 75));
+          PARTY_GHOST (JEFF, ADD_TO_PARTY);
+          PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (75, 95, 0., 0.)));
+          PARTY_GHOST (JEFF, MAKE_CURRENT_GHOST);
+          PARTY_GHOST (ANNIE, REMOVE_FROM_PARTY);
+          PARTY_GHOST (ANNIE, ENTITY HIDE);
+          STEP (DIALOGUE ("Jeff", "Then imagine what the {{red}} floor {{white}} looks like!"));
+          STEP (SET_FIXED_CAMERA (61, 87));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "I don't have to. I'll just imagine where {{blue}} you're {{white}} about to be."
+               ));
+          STEP (DIALOGUE ("Jeff", "That's the {{purple}} same {{white}} as imagining the floor."));
+          STEP
+            (DIALOGUE
+               ("Britta", "Then you just {{green}} admitted {{white}} that's where you'll be."));
+          STEP (DIALOGUE ("Jeff", "Knock knock, Britta."));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "I'm not gonna say \"who's there?\" because someone on the {{red}} floor \
+                  {{white}} is knocking." ));
+          STEP
+            (DIALOGUE
+               ("Jeff", "Well that's {{orange}} lame. {{white}} You have to say \"who's there?\""));
+          STEP (DIALOGUE ("Britta", "Floor!"));
+          STEP (DIALOGUE ("Jeff", "What?"));
+          STEP (DIALOGUE ("Britta", "That's who's there!"));
+          STEP (DIALOGUE ("Jeff", "Yeah, but it's {{red}} for you!"));
+        ]
+      | LAVA_BRITTA ->
+        (* this needs to be set manually for boss fights in the final sequence because they
+           aren't started with "boss-fight" triggers
+        *)
+        game.in_boss_fight <- true;
+        [
+          STEP (WAIT 1.);
+          NPC (SHIRLEY, ENTITY (MOVE_TO (195, 68)));
+          NPC (SHIRLEY, ENTITY (SET_FACING LEFT));
+          PARTY_GHOST (ABED, ENTITY (MOVE_TO (188, 68)));
+          PARTY_GHOST (TROY, ENTITY (MOVE_TO (185, 68)));
+          PARTY_GHOST (ABED, ENTITY UNFREEZE);
+          PARTY_GHOST (TROY, ENTITY UNFREEZE);
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
+          STEP (SET_FIXED_CAMERA (177, 61));
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "Shirley, give us {{blue}} the orb {{white}} and we can save Shirley Island!" ));
+          STEP
+            (DIALOGUE
+               ( "Shirley",
+                 "{{blue}} The orb {{white}} can't {{green}} save {{white}} Shirley Island because \
+                  Shirley Island {{purple}} is {{blue}} the orb." ));
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "In a cool way like {{gold}} Keyser Soze {{white}} or in a lame way like \
+                  {{magenta}} Jewel of the Nile?" ));
+          STEP (WAIT 1.);
+          NPC (SHIRLEY, ENTITY (SET_FACING RIGHT));
+          STEP (WAIT 1.);
+          STEP (SET_FIXED_CAMERA (187, 61));
+          STEP
+            (DIALOGUE
+               ("Shirley", "You tell Buzz Hickey that {{purple}} Shirley Bennett {{white}} said..."));
+          STEP (WAIT 1.);
+          NPC (SHIRLEY, ENTITY (SET_FACING LEFT));
+          STEP
+            (DIALOGUE
+               ( "Shirley",
+                 "... well I don't want to waste your time. Just think of something {{blue}} cool \
+                  {{white}} and give me credit." ));
+          CURRENT_GHOST (ENTITY (MOVE_TO (62, 95)));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          CURRENT_GHOST (SET_POSE IDLE);
+          ENEMY (LAVA_BRITTA, ENTITY HIDE);
+          ENEMY (LAVA_BRITTA_2, ENTITY UNHIDE);
+          STEP (SET_FIXED_CAMERA (54, 87));
+          STEP (WAIT 1.);
+          STEP
+            (DIALOGUE
+               ( "Jeff",
+                 "But the door I'm knocking on is {{green}} your {{white}} home, so if I'm the \
+                  floor, it means you're {{red}} dead." ));
+          STEP (DIALOGUE ("Britta", "If you're the floor, you're {{red}} already dead."));
+          STEP (DIALOGUE ("Jeff", "Just do it right! Knock, knock!"));
+          STEP (DIALOGUE ("Britta", "Knock, knock!"));
+          ENEMY (LAVA_BRITTA_2, ENTITY UNFREEZE);
+        ]
+      | LAVA_BRITTA_2 ->
+        game.in_boss_fight <- true;
+        [
+          STEP (WAIT 1.);
+          ENEMY (LAVA_BRITTA_2, WALK_TO 46);
+          STEP (WAIT 1.);
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING RIGHT));
+          CURRENT_GHOST (PARTY (WALK_TO 62));
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (WAIT 1.);
+          CURRENT_GHOST (SET_POSE (PERFORMING (ATTACK LEFT)));
+          ENEMY (LAVA_BRITTA_2, SET_POSE "charge-lunge");
+          STEP (WAIT 1.);
+          ENEMY (LAVA_BRITTA_2, SET_POSE "lunge");
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX config.lava_britta_lunge_vx));
+          CURRENT_GHOST (ENTITY (SET_VX (-.config.jeff_lunge_vx)));
+          STEP (WAIT 0.3);
+          CURRENT_GHOST (SET_POSE (PERFORMING (TAKE_DAMAGE (0, RIGHT))));
+          STEP (WAIT 0.1);
+          CURRENT_GHOST (ENTITY (SET_VX 0.));
+          ENEMY (LAVA_BRITTA_2, SET_POSE "idle");
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
+          STEP (WAIT 1.);
+          CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING LEFT));
+          STEP (DIALOGUE ("Britta", "Who's there, bitch? Floor!"));
+          STEP (DIALOGUE ("Britta", "Floooooooooor!"));
+          STEP (SET_FIXED_CAMERA (65, 90));
+          PARTY_GHOST (TROY, ADD_TO_PARTY);
+          PARTY_GHOST (TROY, MAKE_CURRENT_GHOST);
+          PARTY_GHOST (JEFF, REMOVE_FROM_PARTY);
+          PARTY_GHOST (JEFF, ENTITY HIDE);
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY UNHIDE);
+          ENEMY (HICKEY, ENTITY (MOVE_TO (125, 90)));
+          ENEMY (HICKEY, ENTITY (SET_FACING LEFT));
+          ENEMY (HICKEY, SET_POSE "idle");
+          ENEMY (HICKEY, ENTITY UNFREEZE);
+          STEP (SET_FIXED_CAMERA (100, 90));
+          STEP (DIALOGUE ("Troy and Abed", "Troy and Abed in a {{blue}} bubble!"));
+          STEP (SET_FIXED_CAMERA (115, 90));
+          STEP (WAIT 1.);
+          ENEMY (HICKEY, SET_POSE "provoke");
+          STEP (WAIT 1.);
+          ENEMY (HICKEY, SET_POSE "provoke-wave");
+          STEP (WAIT 1.);
+          ENEMY (HICKEY, SET_POSE "walking");
+          ENEMY (HICKEY, ENTITY (SET_VX (-.config.bubble_vx)));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "walking");
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX config.bubble_vx));
+          STEP (WAIT 1.3);
+          ENEMY (HICKEY, ENTITY (SET_VX 0.));
+          ENEMY (HICKEY, SET_POSE "idle");
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX 0.));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "idle");
+          STEP (WAIT 0.3);
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_FACING LEFT));
+          STEP (WAIT 0.3);
+          STEP (DIALOGUE ("Troy", "Ha! Hickey, you {{red}} chicken!"));
+          STEP (WAIT 0.5);
+          ENEMY (HICKEY, ENTITY (SET_FACING RIGHT));
+          STEP (WAIT 0.5);
+          STEP (PLAY_SOUND_EFFECT "spray");
+          STEP (WAIT 2.);
+          STEP (DIALOGUE ("Abed", "He {{red}} gutted {{white}} us. Retreat!"));
+          STEP (SET_FIXED_CAMERA (145, 90));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_FACING RIGHT));
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, SET_POSE "walking");
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY (SET_VX config.bubble_vx));
+          STEP (WAIT 1.78);
+          NPC (TROY_AND_ABED_IN_A_BUBBLE, ENTITY UNSET_FLOOR);
+          STEP (WAIT 0.6);
+          ENEMY (HICKEY, SET_POSE "walking");
+          ENEMY (HICKEY, ENTITY (SET_VX config.hickey_walk_vx));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_FACING RIGHT));
+          ENEMY (LAVA_BRITTA_2, ENTITY (MOVE_TO (108, 95)));
+          ENEMY (LAVA_BRITTA_2, SET_POSE "with-hickey");
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX config.hickey_walk_vx));
+          STEP (WAIT 3.);
+          ENEMY (HICKEY, SET_POSE "idle");
+          ENEMY (HICKEY, ENTITY (SET_VX 0.));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
+          STEP (DIALOGUE ("Britta", "You can't outrun your {{blue}} emotions!"));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "I will force you two to {{orange}} grieve properly {{white}} even if it kills us \
+                  all!" ));
+          ENEMY (HICKEY, SET_POSE "walking");
+          ENEMY (HICKEY, ENTITY (SET_VX config.hickey_walk_vx));
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX config.hickey_walk_vx));
+          STEP (WAIT 0.5);
+          STEP (SET_SCREEN_FADE (make_screen_fade (0, 255) 1.5));
+          STEP (WAIT 2.);
+        ]
+      | HICKEY ->
+        [
+          ENEMY (HICKEY, SET_POSE "dying");
+          STEP (WAIT 0.5);
+          ENEMY (HICKEY, SET_POSE "dead");
+          STEP (WAIT 1.);
+          STEP
+            (DIALOGUE ("Hickey", "Unbelievable! When this game is over, I'm gonna shove you back."));
+          (* TODO Hickey might be off-screen here - maybe find the enemy pos, convert to tile coords,
+             and set fixed camera there
+          *)
+          STEP (HIDE_LAYER "boss-doors");
+          STEP (SET_FIXED_CAMERA (72, 24));
+          STEP (DIALOGUE ("Troy", "Abed, give me your other hand!"));
+          STEP (DIALOGUE ("Abed", "It's down to us. You or Britta will be the winner."));
           STEP
             (DIALOGUE
                ( "Troy",
-                 "You used that bench to upset the balance. By the {{orange}} Vapors of Magmarath, \
-                  {{white}} we will restore it." ));
-          STEP (DIALOGUE ("Britta", "You have gods?"));
-          NPC (CHANG, SET_POSE "idle-with-locker-boys");
-          STEP (DIALOGUE ("Chang", "Locker Boys!"));
-          STEP (SET_FIXED_CAMERA (175, 42));
-          NPC (CHANG, SET_POSE "attack-with-locker-boys");
-          STEP (WAIT 0.7);
-          STEP (DIALOGUE ("Chang", "Earn your M&M's!"));
-          PARTY_GHOST (TROY, WALK_TO 163);
-          STEP (DIALOGUE ("Troy", "Troy and Abed Intimidation Stance!"));
-          NPC (CHANG, SET_POSE "take-damage");
+                 "I'm not leaving, ok? Just... I promise. The floor's not {{red}} lava {{white}} \
+                  now. Just give me your hand." ));
+          STEP
+            (DIALOGUE
+               ( "Abed",
+                 "I don't think the {{red}} lava's {{white}} here because you're leaving. I think \
+                  it's here because I won't {{red}} let go." ));
+          STEP (WAIT 2.);
+          STEP (DIALOGUE ("Abed", "Sorry."));
+          STEP (WAIT 1.);
+          STEP (DIALOGUE ("Abed", "Bye."));
+          STEP (DIALOGUE ("Troy", "Abed... Abed!"));
+          PARTY_GHOST (ABED, ENTITY (SET_VX 0.));
+          PARTY_GHOST (ABED, ENTITY (SET_VY 0.));
+          PARTY_GHOST (ABED, ENTITY UNFREEZE);
+          PARTY_GHOST (ABED, ENTITY (WAIT_UNTIL_LANDED false));
+          PARTY_GHOST (ABED, SET_POSE (PERFORMING FOCUS));
+          STEP (WAIT 0.5);
+          STEP (DIALOGUE ("Troy", "Abed..."));
+          STEP (WAIT 0.5);
+          STEP (CORNER_TEXT "El está muerto para siempre.");
+          STEP (DIALOGUE ("Troy", "He's... He's fake dead. Forever."));
+          STEP UNSET_CORNER_TEXT;
+          STEP (SET_SCREEN_FADE (make_screen_fade (0, 255) 2.));
+          STEP (WAIT 2.);
+          PARTY_GHOST (ABED, ENTITY (MOVE_TO (7, 27)));
+          PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+          PARTY_GHOST (TROY, ENTITY (MOVE_TO (14, 24)));
+          PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+          CURRENT_GHOST (ENTITY (MOVE_TO (11, 24)));
+          CURRENT_GHOST (SET_POSE IDLE);
+          CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+          STEP (SET_CAMERA_MOTION (LINEAR 16.));
+          STEP (SET_FIXED_CAMERA (23, 24));
+          STEP (WAIT 1.);
         ]
-        @ jump_party_ghost ~end_pose:(PERFORMING (CAST DESOLATE_DIVE)) TROY RIGHT
-            Config.interactions.troy_dive_jump_vx 1.1
-        @ [ STEP (WAIT 0.3); NPC (CHANG, ENTITY HIDE); STEP (WAIT 0.3) ]
-        @ get_ability_steps "desolate_dive" 0. 3.
-            [ "Consumed the"; "Troy and Abed Intimidation Stance." ]
-            [
-              "Tap (A) while";
-              "holding DOWN to strike the earth with a burst of intimidation.";
-              "Spells will deplete LIFE VAPOR.";
-              "Replenish LIFE VAPOR by striking enemies.";
-            ]
+        @ clear_screen_fade 255 1.
         @ [
-            STEP (WAIT 0.3);
-            PARTY_GHOST (TROY, SET_POSE IDLE);
-            STEP (WAIT 0.9);
-            STEP (SHAKE_SCREEN 1.);
+            STEP (DIALOGUE ("Britta", "He's not really dead."));
+            STEP (DIALOGUE ("Troy", "No, but he's really playing dead and he's not gonna stop."));
+            STEP (DIALOGUE ("Troy", "You don't get it. No one gets Abed. I got him a little."));
             STEP (WAIT 1.);
-            STEP (SHAKE_SCREEN 1.);
+            STEP (DIALOGUE ("Troy", "This is my fault."));
             STEP (WAIT 1.);
-            STEP (DIALOGUE ("Hickey", "Hiya kids."));
-            ENEMY (HICKEY, ENTITY UNHIDE);
-            ENEMY (HICKEY, ENTITY UNFREEZE);
-            ENEMY (HICKEY, ENTITY (SET_FACING LEFT));
-            STEP (SET_FIXED_CAMERA (215, 17));
-            STEP (WAIT 1.1);
-            STEP (DIALOGUE ("Hickey", "I'm criminology professor Buzz Hickey."));
-            STEP
-              (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
-            ENEMY (HICKEY, SET_POSE "walking");
-            STEP (SHAKE_SCREEN 1.);
-            STEP (WAIT 1.);
-            STEP (SHAKE_SCREEN 1.);
-            STEP (WAIT 1.);
-            STEP (SHAKE_SCREEN 1.);
-            STEP (SET_FIXED_CAMERA (175, 42));
-            STEP (WAIT 1.1);
-            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+            PARTY_GHOST (TROY, WALK_TO 18);
+            STEP (DIALOGUE ("Troy", "I don't deserve to fake live."));
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            PARTY_GHOST (TROY, WALK_TO 22);
+            STEP (DIALOGUE ("Britta", "Wait! No."));
+            STEP (WAIT 0.7);
+            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+            STEP (WAIT 0.7);
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (DIALOGUE ("Britta", "I can {{green}} fix {{white}} him."));
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            STEP (DIALOGUE ("Troy", "How?"));
+            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
             STEP
               (DIALOGUE
-                 ( "Abed",
-                   "Jeff, Annie, get to {{purple}} Shirley Island! {{white}} We'll meet you there!"
-                 ));
-            PARTY_GHOST (ANNIE, WALK_TO 166);
-            PARTY_GHOST (ANNIE, SET_POSE (AIRBORNE (-1.)));
-            PARTY_GHOST (JEFF, WALK_TO 166);
-            PARTY_GHOST (JEFF, SET_POSE (AIRBORNE (-1.)));
-            STEP (WAIT 0.7);
-            PARTY_GHOST (ANNIE, ENTITY HIDE);
-            PARTY_GHOST (JEFF, ENTITY HIDE);
-            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
-            STEP (DIALOGUE ("Troy", "Abed, save yourself!"));
-            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+                 ("Britta", "I don't know. In real life, I don't know, but I can fake fix him."));
+            STEP (WAIT 1.);
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             STEP
               (DIALOGUE
                  ( "Britta",
-                   "Abed, before troy {{red}} dies in lava, {{white}} you can save yourself \
-                    {{blue}} emotionally {{white}} by honestly experiencing the pain of him \
-                    leaving Hallowdale." ));
-            STEP (WAIT 0.4);
-            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
-            STEP (WAIT 0.9);
-            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
-            STEP (WAIT 0.4);
-            PARTY_GHOST (ABED, ADD_TO_PARTY);
-            PARTY_GHOST (ABED, MAKE_CURRENT_GHOST);
-            PARTY_GHOST (BRITTA, REMOVE_FROM_PARTY);
+                   "I can {{green}} clone {{white}} him. I'll {{green}} clone {{white}} him." ));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Troy", "... go on ..."));
             STEP
-              (DIALOGUE ("Abed", "We can do this in three steps. Britta, jump to that trash can."));
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            PARTY_GHOST (BRITTA, WALK_TO 163);
-          ]
-        @ jump_party_ghost BRITTA RIGHT Config.interactions.britta_trash_can_jump_vx 1.1
-        @ [
-            STEP (WAIT 0.3);
-            PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
-            STEP (DIALOGUE ("Abed", "Now Troy, start inchworming."));
-            (* if the cutscene is skipped, Troy ends up on the ledge above,
-               so the extra WALK_TO and WAIT here is just to ensure he ends up on the bottom level
-            *)
-            PARTY_GHOST (TROY, WALK_TO 167);
-            PARTY_GHOST (TROY, WALK_TO 157);
-            STEP (WAIT 0.7);
-            CURRENT_GHOST (PARTY (WALK_TO 167));
-            STEP (WAIT 0.7);
-            CURRENT_GHOST (PARTY (WALK_TO 155));
-            STEP (DIALOGUE ("Britta", "What's the third step?"));
-            STEP SET_GHOST_CAMERA;
-            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
-            STEP
-              (DIALOGUE ("Abed", "The third step is {{blue}} survival. {{white}} Good luck, Britta."));
-            STEP (DIALOGUE ("Britta", "Seriously!?"));
-            PARTY_GHOST (BRITTA, ENTITY (SET_FACING RIGHT));
-            STEP (WAIT 0.5);
-            PARTY_GHOST (BRITTA, ENTITY (SET_FACING LEFT));
-            STEP (DIALOGUE ("Britta", "Troy!"));
-            STEP SET_GHOST_CAMERA;
-            CURRENT_GHOST (PARTY (WALK_TO 153));
-            PARTY_GHOST (TROY, WALK_TO 156);
-            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+              (DIALOGUE
+                 ( "Britta",
+                   "I just need his {{blue}} DNA. {{white}} Let's get his {{blue}} DNA. {{white}} \
+                    Don't touch the {{red}} lava." ));
+            CURRENT_GHOST (PARTY (WALK_TO 8));
+            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
             STEP
               (DIALOGUE
                  ( "Troy",
-                   "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing \
-                    us down and complaining a lot." ));
-            PARTY_GHOST (BRITTA, SET_POSE CRAWLING);
-            PARTY_GHOST (TROY, WALK_TO 124);
-            PARTY_GHOST (TROY, ENTITY HIDE);
-            CURRENT_GHOST (PARTY (WALK_TO 84));
-            STEP (WAIT 0.1);
+                   "You might be onto something... I'm gonna find {{green}} discarded technology \
+                    {{white}} from this {{orange}} once-great civilization {{white}} and start a \
+                    {{blue}} cloning {{white}} machine." ));
+            PARTY_GHOST (TROY, WALK_TO 16);
+            PARTY_GHOST (TROY, SET_POSE READING);
+            STEP (WAIT 1.);
+            CURRENT_GHOST (SET_POSE IDLE);
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP
+              (DIALOGUE
+                 ( "Britta",
+                   "Ok, I'm placing this {{blue}} Cellular Regeneration Sequencer {{white}} on the \
+                    spot where he died." ));
+            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+            CURRENT_GHOST (ENTITY (SET_FACING LEFT));
+            STEP (WAIT 0.5);
+            PARTY_GHOST (TROY, SET_POSE IDLE);
+            PARTY_GHOST (TROY, WALK_TO 10);
+            STEP (DIALOGUE ("Troy", "Here, don't forget this."));
+            CURRENT_GHOST (SET_POSE IDLE);
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+            STEP
+              (DIALOGUE
+                 ( "Britta",
+                   "This is a {{pink}} Laser Guidance System {{white}} that keeps the regeneration \
+                    sequence from {{red}} jib-jabbing." ));
+            CURRENT_GHOST (PARTY (WALK_TO 5));
+            CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
+            STEP (DIALOGUE ("Troy", "{{red}} Jib-jabbing?"));
+            STEP (WAIT 0.5);
+            CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
+            STEP (WAIT 0.5);
+            STEP (DIALOGUE ("Britta", "Initiate regeneration sequence."));
+            PARTY_GHOST (TROY, SET_POSE (PERFORMING FOCUS));
+            STEP (PLAY_SOUND_EFFECT "menu-expand");
+            STEP (PLAY_SOUND_EFFECT "menu-close");
+            STEP (WAIT 0.2);
+            STEP (PLAY_SOUND_EFFECT "menu-close");
+            STEP (WAIT 0.2);
+            STEP (PLAY_SOUND_EFFECT "menu-expand");
+            STEP (WAIT 0.2);
+            STEP (PLAY_SOUND_EFFECT "menu-expand");
+            STEP (WAIT 2.);
+            PARTY_GHOST (TROY, SET_POSE IDLE);
+            CURRENT_GHOST (SET_POSE IDLE);
+            STEP (WAIT 2.);
+          ]
+        @
+        let game_progress = Progress.get_all_progress state game in
+        if game.progress.dreamer_items_found = game_progress.dreamer_items.total then
+          [
+            PARTY_GHOST (ABED, SET_POSE IDLE);
+            STEP (WAIT 1.);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+            STEP (WAIT 1.);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            STEP (DIALOGUE ("Troy", "It worked!"));
+            STEP (DIALOGUE ("Britta", "We made a {{green}} perfect clone {{white}} of Abed!"));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Abed", "Actually, Britta's work was sloppy."));
+            PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
+            STEP (DIALOGUE ("Abed", "I'm not an exact replication."));
+            STEP
+              (DIALOGUE
+                 ( "Abed",
+                   "I have all of Abed's {{blue}} abilities {{white}} and {{blue}} memories, \
+                    {{white}} but I'm missing his {{green}} wild emotionality." ));
+            STEP (WAIT 1.);
+            PARTY_GHOST (ABED, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+            STEP
+              (DIALOGUE
+                 ("Abed", "Although I think I may be able to {{red}} let Troy go {{white}} now."));
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Troy", "I don't know..."));
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            STEP
+              (DIALOGUE
+                 ( "Troy",
+                   "I haven't been completely honest. I'm really {{red}} scared {{white}} to go on \
+                    my trip." ));
+            STEP
+              (DIALOGUE ("Abed", "Well you don't have to go. Your {{blue}} clone {{white}} can."));
+            STEP (WAIT 1.);
+            STEP (DIALOGUE ("Troy", "Right."));
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, WALK_TO 22);
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING LEFT));
+            STEP (WAIT 1.);
+            PARTY_GHOST (TROY, ENTITY (SET_FACING RIGHT));
+            STEP (WAIT 1.);
+          ]
+          @ jump_party_ghost ~end_pose:(AIRBORNE (-1.)) TROY RIGHT config.troy_final_jump_vx 0.1
+          @ [
+              STEP (SET_SCREEN_FADE (make_screen_fade (0, 255) 1.));
+              STEP (WAIT 5.);
+              STEP STOP_MUSIC;
+              STEP (WAIT 3.);
+              STEP PLAY_END_CREDITS_MUSIC;
+              STEP (WAIT 3.);
+              STEP
+                (CENTERED_TEXT
+                   [
+                     "";
+                     "";
+                     "";
+                     "Congratulations.";
+                     "Well done on achieving this great feat. You persevered and you triumphed.";
+                     "We hope you enjoyed yourself in the world of Hallowdale.";
+                     "We'll meet again soon on the road ahead.";
+                   ]);
+              STEP (WAIT 1.);
+              STEP DISABLE_SKIP_INTERACTION;
+              (let total_time = Progress.get_total_game_time state.frame.idx in
+               let percentage = game_progress.total in
+               STEP
+                 (CENTERED_TEXT
+                    [
+                      "";
+                      "";
+                      "";
+                      "Game Completion";
+                      "================================";
+                      fmt "Percentage: %.02f%s" percentage "%";
+                      fmt "Time: %s" total_time;
+                    ]));
+              STEP (WAIT 2.);
+              (* TODO fade out music *)
+              STEP RETURN_TO_MAIN_MENU;
+            ]
+        else
+          [
+            STEP
+              (DIALOGUE
+                 ( "Troy",
+                   "It didn't work... I think we need to collect more {{blue}} Dreamer Items." ));
+            STEP
+              (DIALOGUE
+                 ( "Britta",
+                   "We can use the {{blue}} Cellular Regeneration Sequencer {{white}} to go back \
+                    in time to collect the rest." ));
+            STEP (SET_SCREEN_FADE (make_screen_fade (0, 255) 2.));
+            STEP (WAIT 3.);
+            STEP RELOAD_GAME;
           ]
       | _ -> fail ())
     | "dream-nail" -> (
@@ -1586,12 +1574,7 @@ let get_steps
             game.party
         in
         [
-          (* start
-
-          *)
-          STEP
-            (SET_SCREEN_FADE
-               { target_alpha = 255; timer = Some (make_timer 0.5); show_ghost = true });
+          STEP (SET_SCREEN_FADE (make_screen_fade ~show_ghost:true (0, 255) 0.5));
           STEP (SET_FIXED_CAMERA (210, 61));
           STEP (WAIT 2.);
           STEP (CENTERED_TEXT [ ""; "... No mind to think ..." ]);
@@ -1600,11 +1583,10 @@ let get_steps
           STEP (WAIT 2.);
           STEP (CENTERED_TEXT [ ""; "... No dean to cry suffering ..." ]);
           STEP (WAIT 2.);
-          STEP (SET_SCREEN_FADE { target_alpha = 255; timer = None; show_ghost = false });
+          STEP
+            (SET_SCREEN_FADE
+               { starting_alpha = 0; target_alpha = 255; timer = None; show_ghost = false });
         ]
-        (* switch current ghost
-
-        *)
         @ (if game.player.ghost.id <> ABED then [ PARTY_GHOST (ABED, MAKE_CURRENT_GHOST) ] else [])
         @ [
             CURRENT_GHOST (ENTITY (MOVE_TO (194, 69)));
@@ -1621,7 +1603,7 @@ let get_steps
             PARTY_GHOST (TROY, ENTITY UNSET_FLOOR);
             STEP (WAIT 3.);
           ]
-        @ clear_screen_fade 1.
+        @ clear_screen_fade 255 1.
         @ [
             STEP (WAIT 1.);
             PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
@@ -1632,9 +1614,6 @@ let get_steps
             STEP (WAIT 1.);
             STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
-            (* Hickey
-
-          *)
             STEP (DIALOGUE ("Hickey", "Citizens of Shirley Island!"));
             PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
@@ -1661,9 +1640,6 @@ let get_steps
                6 - big center
                7 - big right
             *)
-            (* Death of Neil
-
-          *)
             NPC (NEIL, ENTITY (SET_FACING LEFT));
             NPC (NEIL, ENTITY UNFREEZE);
             STEP (SET_CAMERA_MOTION (LINEAR 16.));
@@ -1675,7 +1651,7 @@ let get_steps
             STEP (WAIT 1.);
             NTH_ENEMY (0, MANICORN, SET_POSE "punch");
             NPC (NEIL, SET_POSE "take-damage");
-            NPC (NEIL, ENTITY (SET_VX 500.));
+            NPC (NEIL, ENTITY (SET_VX config.npc_death_vx));
             STEP (WAIT 0.3);
             NPC (NEIL, ENTITY UNSET_FLOOR);
             STEP (SHAKE_SCREEN 1.);
@@ -1693,9 +1669,6 @@ let get_steps
               (DIALOGUE ("Shirley", "I did not skip my son's birthday for {{blue}} second place!"));
             NPC (SHIRLEY, ENTITY (SET_FACING RIGHT));
             STEP (SHAKE_SCREEN 2.);
-            (* return of Britta
-
-          *)
             ENEMY (LAVA_BRITTA, ENTITY UNHIDE);
             ENEMY (LAVA_BRITTA, SET_POSE "megaphone");
             ENEMY (MANICORN_3, ENTITY UNHIDE);
@@ -1733,13 +1706,10 @@ let get_steps
             NPC (VICKI, ENTITY (SET_FACING RIGHT));
             STEP (SET_FIXED_CAMERA (120, 50));
             STEP (WAIT 1.);
-            (* Death of other characters
-
-          *)
             STEP (DIALOGUE ("Vicki", "My name was Vicki! Tell my story!"));
             STEP (WAIT 1.);
             NTH_ENEMY (1, MANICORN, SET_POSE "punch");
-            NPC (VICKI, ENTITY (SET_VX (-500.)));
+            NPC (VICKI, ENTITY (SET_VX (-.config.npc_death_vx)));
             NPC (VICKI, ENTITY UNSET_FLOOR);
             NPC (VICKI, SET_POSE "take-damage");
             STEP (WAIT 0.3);
@@ -1752,7 +1722,7 @@ let get_steps
             NPC (VICKI, ENTITY HIDE);
             NTH_ENEMY (3, MANICORN, SET_POSE "punch");
             NPC (GARRETT, SET_POSE "take-damage");
-            NPC (GARRETT, ENTITY (SET_VX (-500.)));
+            NPC (GARRETT, ENTITY (SET_VX (-.config.npc_death_vx)));
             STEP (WAIT 0.35);
             NPC (GARRETT, ENTITY UNSET_FLOOR);
             STEP (WAIT 1.);
@@ -1766,7 +1736,7 @@ let get_steps
             STEP (DIALOGUE ("Leonard", "I knew this day would come. I'm out of here."));
             NTH_ENEMY (2, MANICORN, SET_POSE "punch");
             NPC (LEONARD, SET_POSE "take-damage");
-            NPC (LEONARD, ENTITY (SET_VX 500.));
+            NPC (LEONARD, ENTITY (SET_VX config.npc_death_vx));
             STEP (WAIT 0.2);
             NPC (LEONARD, ENTITY UNSET_FLOOR);
             STEP (WAIT 1.);

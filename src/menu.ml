@@ -116,7 +116,7 @@ let update_pause_menu (game : game) (state : state) : state =
       (* TODO unload textures *)
       state.pause_menu <- None;
       Game.save game state ~after_fn:(fun state ->
-          state.game_context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
+          state.context <- MAIN_MENU (main_menu (), Game.load_all_save_slots ()))
   in
 
   let go_back () =
@@ -215,10 +215,10 @@ let update_pause_menu (game : game) (state : state) : state =
       state.pause_menu <- None);
 
   (* pause menu / world map should have no effect on hardfall timer *)
-  let pause_hardfall_timer () =
-    match game.player.ghost.hardfall_timer with
+  let pause_hardfall_time () =
+    match game.player.ghost.hardfall_time with
     | None -> ()
-    | Some time -> game.player.ghost.hardfall_timer <- Some { at = time.at +. state.frame.dt }
+    | Some time -> game.player.ghost.hardfall_time <- Some { at = time.at +. state.frame.dt }
   in
 
   (match state.pause_menu with
@@ -226,9 +226,9 @@ let update_pause_menu (game : game) (state : state) : state =
   | Some PROGRESS
   | Some (WORLD_MAP _) ->
     (* the map is closed by unpausing, so there's nothing to do here *)
-    pause_hardfall_timer ()
+    pause_hardfall_time ()
   | Some (MENU menu) ->
-    pause_hardfall_timer ();
+    pause_hardfall_time ();
     update_menu_choice menu state;
 
     if state.frame_inputs.jump.pressed then (
@@ -258,7 +258,7 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
       | Some slot -> slot
     in
     if save_slot.new_game then
-      state.game_context <-
+      state.context <-
         MAIN_MENU (select_game_mode_menu save_slot.file save_file_idx, save_slots)
     else (
       let game = Game.load state save_slot.file save_file_idx in
@@ -280,7 +280,7 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
   in
 
   let show_save_files_menu () =
-    state.game_context <- SAVE_FILES (save_files_menu save_slots, save_slots)
+    state.context <- SAVE_FILES (save_files_menu save_slots, save_slots)
   in
 
   let handle_main_menu choice =
@@ -307,8 +307,8 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
   let handle_save_files_menu choice =
     match choice with
     | START_SLOT n -> load_file n
-    | DELETE_SAVE_FILE n -> state.game_context <- MAIN_MENU (confirm_delete_menu n, save_slots)
-    | BACK -> state.game_context <- MAIN_MENU (main_menu (), save_slots)
+    | DELETE_SAVE_FILE n -> state.context <- MAIN_MENU (confirm_delete_menu n, save_slots)
+    | BACK -> state.context <- MAIN_MENU (main_menu (), save_slots)
   in
 
   let handle_delete_file_menu choice =
@@ -316,7 +316,7 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
     | CONFIRM_DELETE n ->
       File.delete_save n;
       let reloaded_save_slots = Game.load_all_save_slots () in
-      state.game_context <- SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots)
+      state.context <- SAVE_FILES (save_files_menu reloaded_save_slots, reloaded_save_slots)
     | CANCEL -> show_save_files_menu ()
   in
 

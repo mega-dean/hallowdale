@@ -1131,6 +1131,17 @@
                  "y":816
                 }, 
                 {
+                 "height":30,
+                 "id":135,
+                 "name":"hidden-enemy:LAVA_BRITTA_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":548,
+                 "y":1134
+                }, 
+                {
                  "height":28,
                  "id":119,
                  "name":"hidden-enemy:HICKEY",
@@ -1250,17 +1261,6 @@
                  "width":518,
                  "x":450,
                  "y":883
-                }, 
-                {
-                 "height":30,
-                 "id":135,
-                 "name":"hidden-enemy:LAVA_BRITTA_2",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":548,
-                 "y":1134
                 }, 
                 {
                  "height":43,

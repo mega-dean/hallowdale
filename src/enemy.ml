@@ -1361,16 +1361,27 @@ module Borchert : M = struct
             ~frame_props:
               [ ("new_x", ghost_pos.x -. (enemy.entity.dest.w /. 2.)); ("new_y", boss_area.pos.y) ]
         | `SHOOT ->
+          let { x = new_x; y = new_y } =
+            let rec get_new_pos () =
+              let new_pos =
+                {
+                  x = Random.x_in boss_area;
+                  y =
+                    (if Random.bool () then
+                       boss_area.pos.y
+                     else
+                       boss_area.pos.y +. boss_area.h -. enemy.entity.dest.h);
+                }
+              in
+              let too_close =
+                get_distance new_pos ghost_pos < get_attr enemy "distance_threshold"
+              in
+              if too_close then get_new_pos () else new_pos
+            in
+            get_new_pos ()
+          in
           Action.start_and_log enemy CHARGE_SHOOT ~frame_time
-            ~frame_props:
-              [
-                ("new_x", Random.x_in boss_area);
-                ( "new_y",
-                  if Random.bool () then
-                    boss_area.pos.y
-                  else
-                    boss_area.pos.y +. boss_area.h -. enemy.entity.dest.h );
-              ]
+            ~frame_props:[ ("new_x", new_x); ("new_y", new_y) ]
         | `DASH ->
           Action.start_and_log enemy CHARGE_DASH ~frame_time
             ~frame_props:
@@ -3027,28 +3038,28 @@ let create_from_rects
       : enemy =
     let level =
       match id with
-      | MANICORN
-      | FISH
-      | FROG
-      | ELECTRICITY
-      | PENGUIN
-      | VICE_DEAN_LAYBOURNE
-      | LUIS_GUZMAN
+      | BAT
+      | BIRD
       | BORCHERT
-      | DEAN
       | BUDDY
+      | DEAN
+      | DUNCAN
+      | ELECTRICITY
+      | FISH
+      | FLYING_HIPPIE
+      | FROG
+      | HICKEY
       | HIPPIE
       | JOSHUA
-      | FLYING_HIPPIE
-      | BIRD
-      | BAT
-      | DUNCAN
       | LAVA_BRITTA
-      | HICKEY
-      | LOCKER_BOY ->
+      | LOCKER_BOY
+      | LUIS_GUZMAN
+      | MANICORN
+      | PENGUIN
+      | VICE_DEAN_LAYBOURNE ->
         1
-      | LAVA_BRITTA_2
       | FLYING_HIPPIE_2
+      | LAVA_BRITTA_2
       | MANICORN_2 ->
         2
       | MANICORN_3 -> 3

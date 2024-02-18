@@ -176,7 +176,8 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
 
 let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_t.save_file) =
   if is_new_game then (
-    state.screen_fade <- Some { target_alpha = 255; timer = None; show_ghost = false };
+    state.screen_fade <-
+      Some { starting_alpha = 0; target_alpha = 255; timer = None; show_ghost = false };
     let interaction_name =
       match game.mode with
       | STEEL_SOLE -> "ss-opening-poem"
@@ -194,7 +195,7 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
     with
     | Not_found -> ());
   Audio.stop_music state.menu_music.t;
-  state.game_context <- IN_PROGRESS game
+  state.context <- IN_PROGRESS game
 
 let create
     (state : state)
@@ -292,6 +293,7 @@ let create
         corner_text = None;
         floating_text = None;
         use_dashes_in_archives = None;
+        can_skip = true;
       };
     progress = clone_game_progress save_file.progress;
     save_file;

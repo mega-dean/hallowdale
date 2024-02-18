@@ -415,7 +415,7 @@ let tick (state : state) =
       (paragraph_idx : int)
       (paragraph : string) =
     let is_steel_sole, word_separator =
-      match state.game_context with
+      match state.context with
       | IN_PROGRESS game -> (
         let sep =
           if Room.in_teachers_archives game.room && not force_spaces then
@@ -640,7 +640,7 @@ let tick (state : state) =
     state
   in
 
-  match state.game_context with
+  match state.context with
   | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
   | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
   | RETURN_TO_MAIN_MENU _
@@ -1102,7 +1102,7 @@ let tick (state : state) =
             | None -> 255
             | Some timer ->
               timer.left <- { seconds = timer.left.seconds -. state.frame.dt };
-              if fade.target_alpha > 0 then (
+              if fade.target_alpha > fade.starting_alpha then (
                 let target' =
                   (fade.target_alpha |> Int.to_float)
                   *. (1. -. (timer.left.seconds /. timer.total.seconds))
@@ -1111,8 +1111,8 @@ let tick (state : state) =
                 Int.min target' fade.target_alpha)
               else (
                 let target' =
-                  255
-                  - ((255 - fade.target_alpha |> Int.to_float)
+                  fade.starting_alpha
+                  - ((fade.starting_alpha - fade.target_alpha |> Int.to_float)
                      *. (1. -. (timer.left.seconds /. timer.total.seconds))
                     |> Float.to_int)
                 in

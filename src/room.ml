@@ -177,15 +177,16 @@ let init (params : room_params) : room =
       in
 
       let tile_idx () =
-        (* this fn finds the tile_idx that the trigger object's top-left corner is in, so trigger objects that are
-           used like this (purple-pen, door-health) don't need to be placed exactly at that tile's coordinates *)
+        (* this fn finds the tile_idx that the trigger object's top-left corner is in, so
+           trigger objects that are used like this (purple-pen, door-health) don't need to
+           be placed exactly at that tile's coordinates *)
         Tiled.JsonRoom.tile_idx json_room (coll_rect.x, coll_rect.y)
       in
       let add_idx_config config = idx_configs := (tile_idx (), config) :: !idx_configs in
 
       let parse_warp_target name : warp_target =
         let room_name, coords = String.split_at_first '@' name in
-        let target = coords |> Tiled.JsonRoom.coords_to_dest json_room in
+        let target = Tiled.JsonRoom.coords_to_dest coords in
         { room_name; target }
       in
 
@@ -193,6 +194,13 @@ let init (params : room_params) : room =
         List.Non_empty.map
           (fun (target : Json_t.connected_object) -> target.id)
           (coll_rect.targets |> List.to_ne_list)
+      in
+
+      let find_target_opt target_ids ((target_id, target_pos) : int * vector) =
+        if List.Non_empty.mem target_id target_ids then
+          Some { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
+        else
+          None
       in
 
       match name_prefix with
@@ -313,30 +321,13 @@ let init (params : room_params) : room =
       | "respawn" ->
         let target_ids : int ne_list = get_target_ids coll_rect in
         let targets : vector ne_list =
-          List.filter_map
-            (fun ((target_id, target_pos) : int * vector) ->
-              if List.Non_empty.mem target_id target_ids then
-                Some
-                  { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
-              else
-                None)
-            !targets
-          |> List.to_ne_list
+          List.filter_map (find_target_opt target_ids) !targets |> List.to_ne_list
         in
         respawn_triggers := { trigger = get_object_trigger RESPAWN; targets } :: !respawn_triggers
       | "boss-fight" ->
         let target_ids : int ne_list = get_target_ids coll_rect in
         let target : vector =
-          match
-            List.find_map
-              (fun ((target_id, target_pos) : int * vector) ->
-                if List.Non_empty.mem target_id target_ids then
-                  Some
-                    { x = target_pos.x *. Config.scale.room; y = target_pos.y *. Config.scale.room }
-                else
-                  None)
-              !targets
-          with
+          match List.find_map (find_target_opt target_ids) !targets with
           | None -> failwith "no"
           | Some v -> v
         in
@@ -562,7 +553,6 @@ let init (params : room_params) : room =
          written for a 24x24 tileset *)
       let make_jug (config : jug_config) : int * jug_fragments =
         let make_stub width tile_x tile_y =
-          (* TODO maybe just pass x/y into Sprite.build_ functions and do the scaling in there *)
           let stub_pos = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
           let stub_h =
             (* two tiles for some big stubs, but most are only one tile high *)
@@ -587,16 +577,16 @@ let init (params : room_params) : room =
           let in_this_column (c : Json_t.collision) = c.id mod tileset.json.columns = tile_x in
           let build_fragment (collision_idx : int) (collision : Json_t.collision) : entity option =
             let make_fragment name y_offset w h : entity =
-              let fragment_pos' = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
-              let fragment_pos = { fragment_pos' with y = fragment_pos'.y +. y_offset } in
+              let src_pos' = (tile_x, tile_y) |> Tiled.Tile.coords_to_pos in
+              let src_pos = { src_pos' with y = src_pos'.y +. y_offset } in
               let texture =
-                Sprite.build_texture_from_image tileset.image (Some { pos = fragment_pos; w; h })
+                Sprite.build_texture_from_image tileset.image (Some { pos = src_pos; w; h })
               in
               let sprite =
                 Sprite.create
                   (fmt "fragment sprite %s %0.1f" name y_offset)
                   texture
-                  { pos = fragment_pos; w = w *. Config.scale.room; h = h *. Config.scale.room }
+                  { pos = Zero.vector (); w = w *. Config.scale.room; h = h *. Config.scale.room }
               in
               let entity =
                 Entity.create_for_sprite sprite ~inanimate:true

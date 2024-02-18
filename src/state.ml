@@ -154,6 +154,8 @@ let init () : state =
       }
   in
 
+  (* CLEANUP move to audio.ml *)
+  (* CLEANUP try using .wav files to see if it improves latency *)
   let load_sound name =
     let path = File.make_assets_path [ "audio"; "sound-effects"; fmt "%s.ogg" name ] in
     (name, Raylib.load_sound path)
@@ -240,7 +242,7 @@ let init () : state =
   {
     menu_music = (Audio.load_music "opening" [] settings.music_volume).music;
     area_musics;
-    game_context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
+    context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;
     save_pos = None;
     world;
@@ -305,6 +307,7 @@ let update_projectile (projectile : projectile) (game : game) (state : state) : 
              else
                projectile.entity.v.x -. dv);
           y =
+            (* don't take rect_center_y of ghost so it aims the projectile at the ghost's head *)
             (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y then
                projectile.entity.v.y +. dv
              else
@@ -657,6 +660,10 @@ let update_npcs (game : game) (state : state) =
   List.iter update_npc game.room.npcs;
   state
 
+let reset_frame game state =
+  game.reflection_x <- None;
+  state
+
 let update_spawned_vengeful_spirits (game : game) (state : state) =
   let damage_enemies vs_start_time (projectile : projectile) =
     let maybe_damage_enemy (enemy : enemy) =
@@ -739,17 +746,17 @@ let tick (state : state) =
         state.debug.enabled <- true;
         print "\n/----------------------\\\n enabled debug at %d" state.frame.idx));
   state.debug.rects <- [];
-  match state.game_context with
+  match state.context with
   | SAVE_FILES (menu, save_slots)
   | MAIN_MENU (menu, save_slots) ->
     Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
   | RETURN_TO_MAIN_MENU game ->
-    state.game_context <- MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
+    state.context <- MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     state
   | RELOAD_LAST_SAVED_GAME game ->
     let saved_game_before_dying = Game.load state game.save_file game.save_file_slot in
-    state.game_context <- IN_PROGRESS saved_game_before_dying;
+    state.context <- IN_PROGRESS saved_game_before_dying;
     state
   | IN_PROGRESS game ->
     (* TODO the music stutters at room transitions
@@ -758,7 +765,7 @@ let tick (state : state) =
     Audio.play_game_music game;
 
     if state.debug.paused then (
-      game.player.ghost.hardfall_timer <- None;
+      game.player.ghost.hardfall_time <- None;
       if key_pressed DEBUG_2 then
         state
         |> update_frame_inputs
@@ -844,8 +851,6 @@ let tick (state : state) =
                @ game.room.hazards
                @ (game.room.platform_spikes |> String.Map.to_list |> List.map snd))));
 
-        game.reflection_x <- None;
-
         (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
            so this skips position updates to prevent the ghost from falling through floors
         *)
@@ -854,6 +859,7 @@ let tick (state : state) =
           state')
         else
           state'
+          |> reset_frame game
           |> Player.handle_debug_keys game
           |> Player.tick game
           |> update_spawned_vengeful_spirits game

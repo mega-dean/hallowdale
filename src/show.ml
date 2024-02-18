@@ -91,19 +91,19 @@ let platform_kind_opt (kind : platform_kind option) =
 
 let trigger_kind (kind : trigger_kind) =
   match kind with
+  | BOSS_FIGHT autosave_pos -> fmt "BOSS_FIGHT (%s)" (vector autosave_pos)
+  | BOSS_KILLED -> "BOSS_KILLED"
   | CAMERA (x, y) -> fmt "CAMERA_%s-%s" x y
-  | LEVER -> "LEVER"
-  | INFO -> "INFO"
+  | CUTSCENE -> "CUTSCENE"
+  | D_NAIL -> "D_NAIL"
   | FOLLOWUP -> "FOLLOWUP"
+  | INFO -> "INFO"
+  | LEVER -> "LEVER"
+  | PURPLE_PEN -> "PURPLE_PEN"
+  | REFLECT -> "REFLECT"
+  | RESPAWN -> "RESPAWN"
   | SHADOW -> "SHADOW"
   | WARP warp -> fmt "WARP to %s at (%0.2f, %0.2f)" warp.room_name warp.target.x warp.target.y
-  | BOSS_FIGHT autosave_pos -> fmt "BOSS_FIGHT (%s)" (vector autosave_pos)
-  | CUTSCENE -> "CUTSCENE"
-  | RESPAWN -> "RESPAWN"
-  | PURPLE_PEN -> "PURPLE_PEN"
-  | BOSS_KILLED -> "BOSS_KILLED"
-  | D_NAIL -> "D_NAIL"
-  | REFLECT -> "REFLECT"
 
 let animation_src (anim_src : animation_src) =
   match anim_src with
@@ -129,8 +129,8 @@ let ghost_id id =
   | ABED -> "ABED"
   | ANNIE -> "ANNIE"
   | BRITTA -> "BRITTA"
-  | LAVA_BRITTA -> "LAVA_BRITTA"
   | JEFF -> "JEFF"
+  | LAVA_BRITTA -> "LAVA_BRITTA"
   | TROY -> "TROY"
 
 let spell_kind (kind : spell_kind) =
@@ -149,35 +149,35 @@ let ghost_action_config (config : ghost_action_config) =
 
 let ghost_action_kind id =
   match id with
-  | DIE -> "DIE"
-  | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (direction direction')
-  | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | ATTACK d -> fmt "ATTACK (%s)" (direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
-  | DREAM_NAIL -> "DREAM_NAIL"
-  | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
-  | HARDFALL -> "HARDFALL"
+  | C_DASH -> "C_DASH"
+  | C_DASH_CHARGE -> "C_DASH_CHARGE"
   | C_DASH_COOLDOWN -> "C_DASH_COOLDOWN"
   | C_DASH_WALL_COOLDOWN -> "C_DASH_WALL_COOLDOWN"
-  | C_DASH_CHARGE -> "C_DASH_CHARGE"
-  | C_DASH -> "C_DASH"
-  | SHADE_DASH -> "SHADE_DASH"
   | DASH -> "DASH"
-  | FOCUS -> "FOCUS"
-  | JUMP -> "JUMP"
+  | DIE -> "DIE"
+  | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
+  | DREAM_NAIL -> "DREAM_NAIL"
   | FLAP -> "FLAP"
+  | FOCUS -> "FOCUS"
+  | HARDFALL -> "HARDFALL"
+  | JUMP -> "JUMP"
+  | SHADE_DASH -> "SHADE_DASH"
+  | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (direction direction')
+  | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | WALL_KICK -> "WALL_KICK"
 
 let ghost_pose pose =
   match pose with
-  | PERFORMING action_kind -> fmt "PERFORMING %s" (ghost_action_kind action_kind)
   | AIRBORNE f -> fmt (if f >= 0. then "DESCENDING(%f)" else "ASCENDING(%f)") f
   | CRAWLING -> "CRAWLING"
   | IDLE -> "IDLE"
+  | PERFORMING action_kind -> fmt "PERFORMING %s" (ghost_action_kind action_kind)
   | READING -> "READING"
+  | SWIMMING _ -> "SWIMMING"
   | WALKING d -> fmt "WALKING (%s)" (direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"
-  | SWIMMING _ -> "SWIMMING"
 
 let ghost_location (g : player) =
   print "ghost at %0.1f, %0.1f" g.ghost.entity.sprite.dest.pos.x g.ghost.entity.sprite.dest.pos.y
@@ -192,10 +192,10 @@ let area_id id =
   | COMPUTER_WING -> "computer"
   | FORGOTTEN_CLASSROOMS -> "forgotten"
   | INFECTED_CLASSROOMS -> "infected"
+  | LIBRARY -> "library"
   | MEOW_MEOW_BEENZ -> "beenz"
   | OUTLANDS -> "outlands"
   | TRAMPOLINEPATH -> "trampoline"
-  | LIBRARY -> "library"
   | VENTWAYS -> "ventways"
 
 let area_id_corner_text id =
@@ -206,10 +206,10 @@ let area_id_corner_text id =
   | COMPUTER_WING -> "Computer Wing"
   | FORGOTTEN_CLASSROOMS -> "Forgotten Classrooms"
   | INFECTED_CLASSROOMS -> "Infected Classrooms"
+  | LIBRARY -> "Library"
   | MEOW_MEOW_BEENZ -> "MeowMeowBeenz Beta Test"
   | OUTLANDS -> "The Outlands"
   | TRAMPOLINEPATH -> "Trampolinepath"
-  | LIBRARY -> "Library"
   | VENTWAYS -> "Ventways"
 
 let room_id id =
@@ -344,15 +344,15 @@ let room_id_filename id =
 
 let ghost_child_kind (d : ghost_child_kind) : string =
   match d with
-  | DIVE -> "DIVE"
-  | DREAM_NAIL -> "DREAM_NAIL"
   | C_DASH_CHARGE_CRYSTALS -> "C_DASH_CHARGE_CRYSTALS"
   | C_DASH_WALL_CHARGE_CRYSTALS -> "C_DASH_WALL_CHARGE_CRYSTALS"
   | C_DASH_WHOOSH -> "C_DASH_WHOOSH"
-  | SHADE_DASH_SPARKLES -> "SHADE_DASH_SPARKLES"
+  | DIVE -> "DIVE"
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
+  | DREAM_NAIL -> "DREAM_NAIL"
   | FOCUS -> "FOCUS"
   | NAIL _ -> "NAIL"
+  | SHADE_DASH_SPARKLES -> "SHADE_DASH_SPARKLES"
   | WRAITHS -> "WRAITHS"
 
 let time (t : time) = fmt "%f" t.at
@@ -371,12 +371,12 @@ let debug_change_ability name b = print "%s: %b -> %b" name b (not b)
 
 let damage_kind (d : damage_kind) : string =
   match d with
-  | NAIL -> "NAIL"
-  | DREAM_NAIL -> "DREAM_NAIL"
-  | VENGEFUL_SPIRIT -> "VENGEFUL_SPIRIT"
   | DESOLATE_DIVE -> "DESOLATE_DIVE"
   | DESOLATE_DIVE_SHOCKWAVE -> "DESOLATE_DIVE_SHOCKWAVE"
+  | DREAM_NAIL -> "DREAM_NAIL"
   | HOWLING_WRAITHS -> "HOWLING_WRAITHS"
+  | NAIL -> "NAIL"
+  | VENGEFUL_SPIRIT -> "VENGEFUL_SPIRIT"
 
 let enemy_id (e : enemy_id) : string =
   match e with
@@ -391,13 +391,13 @@ let enemy_id (e : enemy_id) : string =
   | FLYING_HIPPIE -> "FLYING_HIPPIE"
   | FLYING_HIPPIE_2 -> "FLYING_HIPPIE_2"
   | FROG -> "FROG"
+  | HICKEY -> "HICKEY"
   | HIPPIE -> "HIPPIE"
   | JOSHUA -> "JOSHUA"
   | LAVA_BRITTA -> "LAVA_BRITTA"
   | LAVA_BRITTA_2 -> "LAVA_BRITTA_2"
-  | HICKEY -> "HICKEY"
-  | LUIS_GUZMAN -> "LUIS_GUZMAN"
   | LOCKER_BOY -> "LOCKER_BOY"
+  | LUIS_GUZMAN -> "LUIS_GUZMAN"
   | MANICORN -> "MANICORN"
   | MANICORN_2 -> "MANICORN_2"
   | MANICORN_3 -> "MANICORN_3"
@@ -417,19 +417,19 @@ let npc_name (npc : npc) = fmt "npc(%s)" (entity npc.entity)
 let npc_id (n : npc_id) : string =
   match n with
   | ANNIES_BOOBS -> "ANNIES_BOOBS"
+  | BLACKSMITH_WIFE -> "BLACKSMITH_WIFE"
   | CHANG -> "CHANG"
+  | FRANKIE -> "FRANKIE"
   | GARRETT -> "GARRETT"
+  | HILDA -> "HILDA"
+  | HUMAN_BEING -> "HUMAN_BEING"
+  | JERRY -> "JERRY"
   | LEONARD -> "LEONARD"
   | NEIL -> "NEIL"
-  | SHIRLEY -> "SHIRLEY"
-  | VICKI -> "VICKI"
-  | JERRY -> "JERRY"
-  | BLACKSMITH_WIFE -> "BLACKSMITH_WIFE"
-  | HILDA -> "HILDA"
-  | FRANKIE -> "FRANKIE"
-  | HUMAN_BEING -> "HUMAN_BEING"
   | POTTERY_TEACHER -> "POTTERY_TEACHER"
+  | SHIRLEY -> "SHIRLEY"
   | TROY_AND_ABED_IN_A_BUBBLE -> "TROY_AND_ABED_IN_A_BUBBLE"
+  | VICKI -> "VICKI"
 
 let game_mode (game_mode : game_mode) : string =
   match game_mode with
@@ -544,8 +544,8 @@ let text_config (config : Interaction.text_config) : string =
     (vector config.padding) config.margin_x config.margin_y_top config.margin_y_bottom
     config.centered
 
-let interaction_options (options : Interaction.options) : string =
-  fmt "remove_nail: %b, autosave_pos: %s" options.remove_nail (option vector options.autosave_pos)
+let interaction_config (config : Interaction.config) : string =
+  fmt "remove_nail: %b, autosave_pos: %s" config.remove_nail (option vector config.autosave_pos)
 
 let reward (reward : Interaction.reward) : string =
   match reward with

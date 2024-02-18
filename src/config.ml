@@ -70,6 +70,7 @@ type window_config = {
   min_width : float;
   min_height : float;
   camera_motion : vector;
+  camera_x_offset : float;
   fps : int;
 }
 
@@ -98,8 +99,9 @@ let window : window_config =
     max_height;
     min_width;
     min_height;
-    fps;
     camera_motion = { x = 60. *. fps_scale; y = 12. *. fps_scale };
+    camera_x_offset = 50. *. window_scale;
+    fps;
   }
 
 type platform_config = {
@@ -237,6 +239,10 @@ let physics =
     jump_fall_threshold = -80. *. window_scale;
   }
 
+type npc = { walk_vx : float }
+
+let npc = { walk_vx = 400. *. window_scale }
+
 type enemy = {
   death_recoil_vx : float;
   death_recoil_time : float;
@@ -274,10 +280,11 @@ type text = {
 let get_text_margins menu_choice =
   let main_menu_values = (500., 360., 0.) in
   let pause_menu_values = (250., 220., 300.) in
+  let weapon_menu_values = (250., 120., 300.) in
   let margin_x, margin_y_top, cursor_padding =
     match menu_choice with
+    | CHANGE_WEAPON_MENU _ -> weapon_menu_values
     | PAUSE_MENU _
-    | CHANGE_WEAPON_MENU _
     | CHANGE_GHOST_MENU _
     | SETTINGS_MENU _
     | CHANGE_AUDIO_SETTING _ ->
@@ -357,6 +364,9 @@ let get_menu_text_config menu_choice =
   { text.base_config with margin_x; margin_y_top; margin_y_bottom; cursor_padding; centered = true }
 
 type interactions = {
+  ability_outline_w : float;
+  ability_outline_h : float;
+  screen_fade_half : int;
   duncan_initial_jump_vx : float;
   duncan_chair_jump_vx : float;
   troy_dive_jump_vx : float;
@@ -364,10 +374,21 @@ type interactions = {
   abed_shelves_jump_vx : float;
   britta_trash_can_jump_vx : float;
   shirley_island_camera_motion : float;
+  borchert_descend_vy : float;
+  hickey_dash_vx : float;
+  walk_target_distance : float;
+  lava_britta_lunge_vx : float;
+  jeff_lunge_vx : float;
+  bubble_vx : float;
+  hickey_walk_vx : float;
+  npc_death_vx : float;
 }
 
 let interactions =
   {
+    ability_outline_w = 150.;
+    ability_outline_h = 60.;
+    screen_fade_half = 160;
     duncan_initial_jump_vx = -350. *. window_scale;
     duncan_chair_jump_vx = 150. *. window_scale;
     troy_dive_jump_vx = 900. *. window_scale;
@@ -375,6 +396,14 @@ let interactions =
     abed_shelves_jump_vx = 400. *. window_scale;
     britta_trash_can_jump_vx = 300. *. window_scale;
     shirley_island_camera_motion = 3. *. window_scale;
+    borchert_descend_vy = 300. *. window_scale;
+    hickey_dash_vx = 1800. *. window_scale;
+    walk_target_distance = 10. *. window_scale;
+    lava_britta_lunge_vx = 2000. *. window_scale;
+    jeff_lunge_vx = 600. *. window_scale;
+    bubble_vx = 600. *. window_scale;
+    hickey_walk_vx = 300. *. window_scale;
+    npc_death_vx = 500. *. window_scale;
   }
 
 type other = {
