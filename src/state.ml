@@ -154,19 +154,12 @@ let init () : state =
       }
   in
 
-  (* CLEANUP move to audio.ml *)
-  (* CLEANUP try using .wav files to see if it improves latency *)
-  let load_sound name =
-    let path = File.make_assets_path [ "audio"; "sound-effects"; fmt "%s.ogg" name ] in
-    (name, Raylib.load_sound path)
-  in
-
   let sounds =
-    List.map load_sound
+    List.map Audio.load_sound
       [
+        "high-punch";
         "punch";
         "nail-swing";
-        "sword_hit";
         "nail-hit-metal";
         "glass-break";
         "break";

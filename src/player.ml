@@ -467,7 +467,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         match Collision.between_slash_and_entity slash enemy.entity with
         | None -> ()
         | Some collision ->
-          Audio.play_sound state "punch";
+          Audio.play_sound state "high-punch";
           if
             Enemy.maybe_take_damage state enemy game.player.history.nail.started NAIL
               (get_damage game.player NAIL) collision

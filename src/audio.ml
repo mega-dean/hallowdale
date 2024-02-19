@@ -49,3 +49,7 @@ let load_music name ?(intro = 0.) ?(loop = Float.max_float) areas music_volume =
   *)
   Raylib.play_music_stream music;
   { areas; music = { name; t = music; loop_start = { at = intro }; loop_end = { at = loop } } }
+
+let load_sound name =
+  let path = File.make_assets_path [ "audio"; "sound-effects"; fmt "%s.wav" name ] in
+  (name, Raylib.load_sound path)
