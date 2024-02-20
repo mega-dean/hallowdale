@@ -32,8 +32,16 @@ module Draw = struct
       Config.text.spacing color
 end
 
-let debug_shape_outline ?(size = 1.) ?(color = Color.raywhite) (sprite : sprite) (shape : shape) =
-  let adjusted_shape : shape = align_shape_with_parent_sprite sprite shape in
+let debug_shape_outline
+    ?(size = 1.)
+    ?(color = Color.raywhite)
+    (sprite : sprite option)
+    (shape : shape) =
+  let adjusted_shape : shape =
+    match sprite with
+    | Some sprite -> align_shape_with_parent_sprite sprite shape
+    | None -> shape
+  in
   let points = get_points adjusted_shape in
   let draw_edge point_idx (point : vector) =
     (* TODO duplicated in make_shape
@@ -125,7 +133,7 @@ let draw_sprite ?(debug = false) ?(tint = Color.white) ?(render_offset = None) (
   match sprite.collision with
   | Some (SHAPE shape) ->
     if debug then
-      debug_shape_outline sprite shape
+      debug_shape_outline (Some sprite) shape
   | _ -> ()
 
 let draw_entity ?(debug = false) ?(tint = Color.white) (entity : entity) =
@@ -710,7 +718,7 @@ let tick (state : state) =
           draw_texture lever.sprite.texture lever.sprite.dest lever.transformation;
           if state.debug.enabled then (
             match lever.sprite.collision with
-            | Some (SHAPE shape) -> debug_shape_outline lever.sprite shape
+            | Some (SHAPE shape) -> debug_shape_outline (Some lever.sprite) shape
             | _ -> ()))
         game.room.triggers.levers
     in
@@ -851,13 +859,17 @@ let tick (state : state) =
     let draw_enemies (enemies : enemy list) =
       let projectiles_on_top = ref [] in
       List.iter
-        (fun (e : enemy) ->
+        (fun (enemy : enemy) ->
           if state.debug.enabled then (
-            debug_rect_outline ~color:Color.purple e.entity.dest;
-            debug_rect e.entity.sprite.dest);
-          if e.entity.dest.pos.x > -1. && e.entity.dest.pos.y > -1. then (
+            List.iter
+              (fun shape ->
+                debug_shape_outline ~size:5. ~color:Color.purple (Some enemy.entity.sprite) shape)
+              enemy.collision_shapes;
+            debug_rect_outline ~color:Color.purple enemy.entity.dest;
+            debug_rect enemy.entity.sprite.dest);
+          if enemy.entity.dest.pos.x > -1. && enemy.entity.dest.pos.y > -1. then (
             let tint =
-              let d = state.frame.time -. (Enemy.last_damage e).at in
+              let d = state.frame.time -. (Enemy.last_damage enemy).at in
               (* TODO move to config *)
               if d < 0.25 then (
                 let gb = get_flashing_tint d in
@@ -865,15 +877,15 @@ let tick (state : state) =
               else
                 Color.white
             in
-            draw_entity ~tint e.entity;
+            draw_entity ~tint enemy.entity;
             let maybe_draw projectile =
               if projectile.draw_on_top then
                 projectiles_on_top := [ projectile ] @ !projectiles_on_top
               else
                 draw_projectile projectile
             in
-            List.iter maybe_draw e.projectiles;
-            List.iter draw_sprite e.damage_sprites))
+            List.iter maybe_draw enemy.projectiles;
+            List.iter draw_sprite enemy.damage_sprites))
         enemies;
       !projectiles_on_top
     in
@@ -928,7 +940,8 @@ let tick (state : state) =
             if state.debug.enabled then (
               debug_rect_outline ~size:2. ~color:Color.purple slash.sprite.dest;
               match slash.collision with
-              | SHAPE shape -> debug_shape_outline ~size:2. ~color:Color.red slash.sprite shape
+              | SHAPE shape ->
+                debug_shape_outline ~size:2. ~color:Color.red (Some slash.sprite) shape
               | _ -> ());
             player.current_weapon.tint
           | WRAITHS -> if game.player.abilities.abyss_shriek then Color.red else Color.white
@@ -1139,6 +1152,7 @@ let tick (state : state) =
     draw_party_ghosts game.party;
     let screen_faded = maybe_show_screen_fade ~under_ghost:true in
     draw_player game.player;
+    let entity_shape = shape_of_rect game.player.ghost.entity.dest in
     if not screen_faded then (
       let enemy_projectiles = draw_enemies game.room.enemies in
       draw_floating_platforms game.room state.frame.idx;

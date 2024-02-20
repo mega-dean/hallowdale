@@ -464,7 +464,7 @@ let resolve_slash_collisions (state : state) (game : game) =
   | Some slash ->
     let resolve_enemy (enemy : enemy) =
       if enemy.json.can_take_damage && enemy.status.check_damage_collisions then (
-        match Collision.between_slash_and_entity slash enemy.entity with
+        match Collision.between_slash_and_enemy slash enemy with
         | None -> ()
         | Some collision ->
           Audio.play_sound state "high-punch";
@@ -2481,7 +2481,7 @@ let tick (game : game) (state : state) =
       let find_colliding_enemy (enemy : enemy) =
         if Enemy.is_dead enemy then
           None
-        else if Collision.between_entities player.ghost.entity enemy.entity then (
+        else if Collision.with_enemy player.ghost.entity enemy then (
           let direction : direction =
             if rect_center_x enemy.entity.dest > rect_center_x player.ghost.entity.dest then
               LEFT

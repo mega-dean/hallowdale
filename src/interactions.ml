@@ -720,6 +720,7 @@ let get_steps
             ENEMY (HICKEY, SET_POSE "idle");
             ENEMY (HICKEY, ENTITY (SET_VX 0.));
             ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
+            CURRENT_GHOST (SET_POSE IDLE);
             CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
             STEP (WAIT 0.5);
             STEP (DIALOGUE ("Troy", "Abed!"));

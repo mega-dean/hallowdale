@@ -54,12 +54,8 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
   let edge_has_separating_axis ((point, line) : vector * line) : line option =
     let normal = get_normal line in
     let first xs = List.nth xs 0 in
-    let get_projected sort_fn =
-      ( List.map (project_point_onto_line normal) (get_points s1) |> sort_fn,
-        List.map (project_point_onto_line normal) (get_points s2) |> sort_fn )
-    in
 
-    let compare_points' get_coord =
+    let compare_points get_coord =
       let sort (points : vector list) =
         List.sort (fun p1 p2 -> compare (get_coord p1) (get_coord p2)) points
       in
@@ -82,9 +78,9 @@ let between_shapes (s1 : shape) (s2 : shape) : bool =
     in
 
     if vertical normal then
-      compare_points' (fun v -> v.y)
+      compare_points (fun v -> v.y)
     else
-      compare_points' (fun v -> v.x)
+      compare_points (fun v -> v.x)
   in
   (* this returns the normal that is the separating axis *)
   let edge_with_separating_axis (shape : shape) : line option =
@@ -194,3 +190,47 @@ let between_slash_and_sprite (slash : slash) (sprite : sprite) : collision optio
 
 let between_slash_and_entity (slash : slash) (entity : entity) : collision option =
   between_slash_and_shape slash (get_entity_collision_shape entity) entity.dest
+
+let between_slash_and_enemy (slash : slash) (enemy : enemy) : collision option =
+  let between' (a, b) = between_slash_and_shape slash a b in
+  List.find_map between'
+    ((get_entity_collision_shape enemy.entity, enemy.entity.dest)
+    :: List.map
+         (fun shape ->
+           (align_shape_with_parent_sprite enemy.entity.sprite shape, enemy.entity.dest))
+         enemy.collision_shapes)
+
+let with_enemy (entity : entity) (enemy : enemy) : bool =
+  let entity_shape = shape_of_rect entity.dest in
+  let shapes' =
+    List.map (align_shape_with_parent_sprite enemy.entity.sprite) enemy.collision_shapes
+  in
+  let shapes = List.map Show.shape_points shapes' |> String.join in
+  between_entities entity enemy.entity || List.exists (between_shapes entity_shape) shapes'
+
+let between_sprite_and_enemy (sprite : sprite) (enemy : enemy) : collision option =
+  let sprite_shape = shape_of_rect sprite.dest in
+  let shapes' =
+    List.map (align_shape_with_parent_sprite enemy.entity.sprite) enemy.collision_shapes
+  in
+  let shapes = List.map Show.shape_points shapes' |> String.join in
+  if
+    between_shapes sprite_shape (shape_of_rect enemy.entity.dest)
+    || List.exists (between_shapes sprite_shape) shapes'
+  then (
+    let collided_from =
+      let sprite_center = get_rect_center sprite.dest in
+      let enemy_center = get_rect_center enemy.entity.dest in
+      if sprite_center.x < enemy_center.x then
+        LEFT
+      else
+        RIGHT
+    in
+    Some
+      {
+        center = get_midpoint sprite.dest enemy.entity.dest;
+        other_rect = enemy.entity.dest;
+        collided_from;
+      })
+  else
+    None

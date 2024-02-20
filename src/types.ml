@@ -762,6 +762,8 @@ and enemy = {
   status : enemy_status;
   level : int;
   entity : entity;
+  (* this is in addition to entity.dest *)
+  collision_shapes : shape list;
   damage : int;
   initial_pos : vector;
   health : health;

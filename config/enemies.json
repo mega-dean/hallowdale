@@ -573,7 +573,7 @@
                 }],
                 ["with-hickey", {
                     "x_offset": 4,
-                    "y_offset": 143
+                    "y_offset": 133
                 }],
                 ["walking", {
                     "count": 4,
@@ -656,7 +656,7 @@
                 }],
                 ["with-hickey", {
                     "x_offset": 4,
-                    "y_offset": 143
+                    "y_offset": 133
                 }],
                 ["walking", {
                     "count": 4,

@@ -581,8 +581,7 @@ let update_enemies (game : game) (state : state) =
       match Player.get_spell_sprite game.player with
       | None -> ()
       | Some (sprite, action_started) -> (
-        (* TODO use Collision.between_shapes *)
-        match Collision.with_entity enemy.entity sprite.dest with
+        match Collision.between_sprite_and_enemy sprite enemy with
         | None -> ()
         | Some collision ->
           let damage_kind, collision_direction =
@@ -661,7 +660,7 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
   let damage_enemies vs_start_time (projectile : projectile) =
     let maybe_damage_enemy (enemy : enemy) =
       if enemy.status.check_damage_collisions then (
-        match Collision.with_entity enemy.entity projectile.entity.dest with
+        match Collision.between_sprite_and_enemy projectile.entity.sprite enemy with
         | None -> ()
         | Some collision ->
           let collision_direction = if projectile.entity.v.x > 0. then RIGHT else LEFT in

@@ -1634,6 +1634,40 @@ module Lava_britta : M = struct
       | WALK -> ( (* this is only used in cutscenes *) ))
 end
 
+module Hickey_actions = struct
+  type t = IDLE
+
+  let to_string (action : t) : string =
+    match action with
+    | IDLE -> "idle"
+
+  let from_string (s : string) : t =
+    match s with
+    | "idle" -> IDLE
+    | _ -> failwithf "Hickey_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time = ()
+end
+
+module Hickey : M = struct
+  module Action = Make_loggable (Hickey_actions)
+
+  type args = {
+    frame_time : float;
+    boss_area : rect;
+    ghost_pos : vector;
+  }
+
+  let get_args state game : args =
+    {
+      frame_time = state.frame.time;
+      boss_area = get_boss_area game;
+      ghost_pos = get_rect_center game.player.ghost.entity.dest;
+    }
+
+  let choose_behavior (enemy : enemy) args = ()
+end
+
 module Buddy_actions = struct
   type t =
     | IDLE
@@ -3136,7 +3170,7 @@ let get_module (id : enemy_id) : (module M) =
   | BUDDY -> (module Buddy)
   | LUIS_GUZMAN -> (module Luis_guzman)
   | BORCHERT -> (module Borchert)
-  | HICKEY
+  | HICKEY -> (module Hickey)
   | LAVA_BRITTA
   | LAVA_BRITTA_2 ->
     (module Lava_britta)
@@ -3214,12 +3248,71 @@ let create_from_rects
       in
       scaled @ json.unscaled_attrs |> List.to_string_map
     in
+    let collision_shapes =
+      match id with
+      | BAT
+      | BIRD
+      | ELECTRICITY
+      | FISH
+      | FLYING_HIPPIE
+      | FLYING_HIPPIE_2
+      | FROG
+      | HIPPIE
+      | MANICORN
+      | MANICORN_2
+      | MANICORN_3
+      | PENGUIN
+      | BORCHERT
+      | BUDDY
+      | DEAN
+      | DUNCAN
+      | JOSHUA
+      | LAVA_BRITTA
+      | LAVA_BRITTA_2
+      | LOCKER_BOY
+      | LUIS_GUZMAN
+      | VICE_DEAN_LAYBOURNE ->
+        []
+      | HICKEY ->
+        [
+          [
+            { x = 0. *. Config.window.scale; y = 90. *. Config.window.scale };
+            { x = 475. *. Config.window.scale; y = 90. *. Config.window.scale };
+            { x = 475. *. Config.window.scale; y = 225. *. Config.window.scale };
+            { x = 240. *. Config.window.scale; y = 225. *. Config.window.scale };
+            { x = 0. *. Config.window.scale; y = 120. *. Config.window.scale };
+          ]
+          |> make_shape;
+          [
+            { x = 475. *. Config.window.scale; y = 90. *. Config.window.scale };
+            { x = 540. *. Config.window.scale; y = 70. *. Config.window.scale };
+            { x = 540. *. Config.window.scale; y = 170. *. Config.window.scale };
+            { x = 475. *. Config.window.scale; y = 210. *. Config.window.scale };
+          ]
+          |> make_shape;
+          [
+            { x = 540. *. Config.window.scale; y = 70. *. Config.window.scale };
+            { x = 680. *. Config.window.scale; y = 70. *. Config.window.scale };
+            { x = 680. *. Config.window.scale; y = 200. *. Config.window.scale };
+            { x = 540. *. Config.window.scale; y = 170. *. Config.window.scale };
+          ]
+          |> make_shape;
+          [
+            { x = 300. *. Config.window.scale; y = 220. *. Config.window.scale };
+            { x = 420. *. Config.window.scale; y = 220. *. Config.window.scale };
+            { x = 430. *. Config.window.scale; y = 300. *. Config.window.scale };
+            { x = 320. *. Config.window.scale; y = 320. *. Config.window.scale };
+          ]
+          |> make_shape;
+        ]
+    in
     {
       id;
       status;
       kind;
       level;
       entity;
+      collision_shapes;
       damage = json.damage;
       health = { current = enemy_config.health; max = enemy_config.health };
       textures = textures |> List.Non_empty.to_list |> List.to_string_map;

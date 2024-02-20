@@ -29,7 +29,7 @@ let shape_lines (shape : shape) =
 
 let shape_points shape : string =
   List.map fst shape.edges
-  |> List.map (fun v -> fmt "{ x = %f; y = %f };" v.x v.y)
+  |> List.map vector
   |> String.join_lines
 
 let direction (d : direction) : string =
