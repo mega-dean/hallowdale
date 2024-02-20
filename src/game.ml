@@ -194,7 +194,6 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
       state.frame.timeout <- save_file.progress.frame_idx + timeout
     with
     | Not_found -> ());
-  Audio.stop_music state.menu_music.t;
   state.context <- IN_PROGRESS game
 
 let create

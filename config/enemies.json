@@ -115,18 +115,19 @@
             "kind": "boss",
             "health": 680,
             "scale": 3.5,
+            "gravity_multiplier": 1.5,
             "w": 19,
             "h": 38,
             "can_recoil": false,
             "dream_nail": {},
             "attrs": [
-                ["dash_vx", 900],
+                ["dash_vx", 1100],
                 ["dash_dx", 500],
                 ["projectile_vx", 400],
                 ["min_projectile_vy", -900],
-                ["min_jump_vx", 200],
-                ["max_jump_vx", 800],
-                ["jump_vy", -1200]
+                ["min_jump_vx", 300],
+                ["max_jump_vx", 1000],
+                ["jump_vy", -1600]
             ],
             "unscaled_attrs": [
                 ["dash_duration", 1.2],
@@ -150,6 +151,8 @@
                     "y_offset": 5
                 }],
                 ["charge-dash", {
+                    "count": 2,
+                    "duration": 0.01,
                     "x_offset": 8,
                     "y_offset": 1
                 }],
@@ -541,15 +544,27 @@
 
         [ "LAVA_BRITTA", {
             "kind": "boss",
-            "health": 25,
+            "health": 900,
+            "scale": 1.2,
+            "gravity_multiplier": 2.0,
             "w": 20,
             "h": 36,
             "can_recoil": true,
             "dream_nail": {},
             "attrs": [
-                ["walk_vx", 400.0]
+                ["min_jump_vx", 400],
+                ["max_jump_vx", 1400],
+                ["jump_vy", -2000],
+                ["lunge_vx", 1000],
+                ["plunger_vx", 900],
+                ["walk_vx", 400]
             ],
             "unscaled_attrs": [
+                ["charge_duration", 0.8],
+                ["idle_duration", 0.8],
+                ["throw_duration", 1.1],
+                ["storm_duration", 1.5],
+                ["lunge_duration", 1.2]
             ],
             "texture_configs": [
                 ["idle", {
@@ -586,32 +601,53 @@
                     "x_offset": 5,
                     "y_offset": 3
                 }],
+                ["plunger-projectile", {}],
+                ["storm-projectile", {
+                    "count": 4,
+                    "duration": 0.07
+                }],
                 ["charge-lunge", {
                     "x_offset": 9,
                     "y_offset": 0
                 }],
                 ["charge-storm", {
+                    "count": 2,
+                    "duration": 0.01,
                     "x_offset": 7,
                     "y_offset": 4
                 }],
                 ["charge-throw", {
+                    "count": 2,
+                    "duration": 0.01,
                     "x_offset": 4,
-                    "y_offset": 3
+                    "y_offset": 11
                 }]
             ]
         }],
 
         [ "LAVA_BRITTA_2", {
             "kind": "boss",
-            "health": 5,
+            "health": 1400,
+            "scale": 1.2,
+            "gravity_multiplier": 2.0,
             "w": 20,
             "h": 36,
             "can_recoil": true,
             "dream_nail": {},
             "attrs": [
-                ["walk_vx", 400.0]
+                ["min_jump_vx", 400],
+                ["max_jump_vx", 1400],
+                ["jump_vy", -2000],
+                ["lunge_vx", 1300],
+                ["plunger_vx", 1100],
+                ["walk_vx", 400]
             ],
             "unscaled_attrs": [
+                ["charge_duration", 0.5],
+                ["idle_duration", 0.6],
+                ["throw_duration", 0.9],
+                ["storm_duration", 1.5],
+                ["lunge_duration", 1]
             ],
             "texture_configs": [
                 ["idle", {
@@ -620,7 +656,7 @@
                 }],
                 ["with-hickey", {
                     "x_offset": 4,
-                    "y_offset": 153
+                    "y_offset": 143
                 }],
                 ["walking", {
                     "count": 4,
@@ -648,17 +684,26 @@
                     "x_offset": 5,
                     "y_offset": 3
                 }],
+                ["plunger-projectile", {}],
+                ["storm-projectile", {
+                    "count": 4,
+                    "duration": 0.07
+                }],
                 ["charge-lunge", {
                     "x_offset": 9,
                     "y_offset": 0
                 }],
                 ["charge-storm", {
+                    "count": 2,
+                    "duration": 0.01,
                     "x_offset": 7,
                     "y_offset": 4
                 }],
                 ["charge-throw", {
+                    "count": 2,
+                    "duration": 0.01,
                     "x_offset": 4,
-                    "y_offset": 3
+                    "y_offset": 11
                 }]
             ]
         }],

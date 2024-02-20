@@ -874,9 +874,15 @@ let set_pose
 let past_cooldown ?(debug = false) pose_frames frame_time : bool =
   pose_frames.blocked_until.at < frame_time
 
-let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None) state game =
+let spawn_vengeful_spirit
+    ?(start = None)
+    ?(interaction = false)
+    ?(direction : direction option = None)
+    state
+    game =
+  let is_shade_soul = game.player.abilities.shade_soul && not interaction in
   let texture =
-    if game.player.abilities.shade_soul then
+    if is_shade_soul then
       game.player.shared_textures.shade_soul
     else
       game.player.shared_textures.vengeful_spirit
@@ -919,7 +925,7 @@ let spawn_vengeful_spirit ?(start = None) ?(direction : direction option = None)
   in
   let vx =
     let vx =
-      if game.player.abilities.shade_soul then
+      if is_shade_soul then
         Config.action.shade_soul_vx
       else
         Config.action.vengeful_spirit_vx
@@ -1750,7 +1756,8 @@ let tick (game : game) (state : state) =
             in
             let start_x = end_x -. vs_length in
             let v = { x = start_x; y = end_y } in
-            spawn_vengeful_spirit ~start:(Some v) ~direction:(Some direction) state game
+            spawn_vengeful_spirit ~start:(Some v) ~direction:(Some direction) ~interaction:true
+              state game
           | DIALOGUE (speaker, str) ->
             game.interaction.speaker_name <- Some speaker;
             game.interaction.text <- Some (DIALOGUE (speaker, str))

@@ -1445,6 +1445,7 @@ module Lava_britta_actions = struct
     | LUNGE
     | STORM
     | THROW
+    | IDLE
     | WALK
 
   let to_string (action : t) : string =
@@ -1456,6 +1457,7 @@ module Lava_britta_actions = struct
     | LUNGE -> "lunge"
     | STORM -> "storm"
     | THROW -> "throw"
+    | IDLE -> "idle"
     | WALK -> "walking"
 
   let from_string (s : string) : t =
@@ -1467,6 +1469,7 @@ module Lava_britta_actions = struct
     | "lunge" -> LUNGE
     | "storm" -> STORM
     | "throw" -> THROW
+    | "idle" -> IDLE
     | "walking" -> WALK
     | _ -> failwithf "Lava_britta_actions.from_string: %s" s
 
@@ -1484,13 +1487,60 @@ module Lava_britta_actions = struct
       | WALK ->
         walk ();
         "walking"
-      | CHARGE_LUNGE
-      | CHARGE_STORM
-      | CHARGE_THROW
-      | JUMP
-      | LUNGE
-      | STORM
+      | CHARGE_LUNGE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "charge-lunge"
+      | CHARGE_STORM ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "charge-storm"
+      | CHARGE_THROW ->
+        enemy.entity.v.x <- 0.;
+        "charge-throw"
+      | JUMP ->
+        let vx = get_frame_prop ~default:(Some enemy.entity.v.x) "random_jump_vx" in
+        move_forward enemy vx;
+        enemy.entity.v.y <- get_attr enemy "jump_vy";
+        enemy.entity.current_floor <- None;
+        "jump"
+      | LUNGE ->
+        move_forward enemy (get_attr enemy "lunge_vx");
+        enemy.entity.v.y <- 0.;
+        "lunge"
+      | STORM ->
+        if get_frame_prop ~default:(Some 0.) "spawn_projectile" = 1. then
+          enemy.projectiles <-
+            [
+              spawn_projectile enemy ~projectile_texture_name:"storm-projectile" ~scale:8.
+                ~projectile_pos:(RELATIVE (CENTER, CENTER))
+                ~v:(Zero.vector ())
+                (TIME_LEFT { seconds = get_attr enemy "storm_duration" })
+                frame_time;
+            ];
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "storm"
       | THROW ->
+        let vx =
+          if enemy.entity.sprite.facing_right then
+            get_attr enemy "plunger_vx"
+          else
+            -.get_attr enemy "plunger_vx"
+        in
+        enemy.projectiles <-
+          [
+            spawn_projectile enemy ~projectile_texture_name:"plunger-projectile" ~scale:1.2
+              ~collide_with_floors:true
+              ~projectile_pos:(RELATIVE (IN_FRONT enemy.entity.sprite.facing_right, CENTER))
+              ~v:{ x = vx; y = 0. } UNTIL_FLOOR_COLLISION frame_time;
+          ];
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "throw"
+      | IDLE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
         "idle"
     in
     set_pose enemy pose_name
@@ -1513,7 +1563,75 @@ module Lava_britta : M = struct
     }
 
   let choose_behavior (enemy : enemy) args =
-    ()
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+    let boss_area = args.boss_area in
+    let start_new_action () =
+      let actions =
+        if below_ghost enemy ~ghost_pos then
+          [ (1., `JUMP) ]
+        else if enemy.entity.dest.pos.y > ghost_pos.y then
+          [ (5., `JUMP); (1., `THROW); (1., `LUNGE) ]
+        else
+          [ (1., `JUMP); (1., `THROW); (1., `LUNGE) ]
+      in
+      match Random.weighted actions with
+      | `JUMP ->
+        enemy.status.props <-
+          String.Map.update "should_storm"
+            (fun _ -> Some (if Random.percent 40 then 1. else 0.))
+            enemy.status.props;
+        Action.jump enemy JUMP ~ghost_pos ~frame_time
+      | `THROW -> Action.start_and_log enemy CHARGE_THROW ~frame_time
+      | `LUNGE -> Action.start_and_log enemy CHARGE_LUNGE ~frame_time
+    in
+    match enemy.last_performed with
+    | None -> start_new_action ()
+    | Some (action_name, action_time) -> (
+      let action = Action.from_string action_name in
+      let handle_charge
+          ?(get_frame_props = fun () -> [])
+          ?(charge_attr = "charge_duration")
+          done_charging_action =
+        Action.handle_charging enemy ~charge_attr ~ghost_pos ~action_time ~charge_action:action
+          ~action:done_charging_action ~frame_time ~get_frame_props
+      in
+      match action with
+      | CHARGE_LUNGE -> handle_charge LUNGE
+      | CHARGE_STORM ->
+        handle_charge STORM ~get_frame_props:(fun () -> [ ("spawn_projectile", 1.) ])
+      | CHARGE_THROW -> handle_charge THROW
+      | JUMP ->
+        (match String.Map.find_opt "should_storm" enemy.status.props with
+        | None -> ()
+        | Some f ->
+          if f = 1. && enemy.entity.dest.pos.y < boss_area.pos.y +. (boss_area.h /. 2.) then
+            Action.start_and_log enemy CHARGE_STORM ~frame_time);
+        let still_jumping = still_airborne enemy ~frame_time ~action_time in
+        if not still_jumping then
+          Action.start_and_log enemy IDLE ~frame_time
+      | IDLE -> Action.idle enemy start_new_action ~frame_time
+      | LUNGE ->
+        let duration = get_attr enemy "lunge_duration" in
+        let still_lunging =
+          Action.still_doing enemy "lunge" ~duration ~frame_time
+          && still_within_boss_area enemy boss_area
+        in
+        if not still_lunging then
+          Action.start_and_log enemy IDLE ~frame_time
+      | STORM ->
+        let duration = get_attr enemy "storm_duration" in
+        let still_storming = Action.still_doing enemy "storm" ~duration ~frame_time in
+        if still_storming then
+          Action.set enemy STORM ~frame_time
+        else
+          Action.start_and_log enemy IDLE ~frame_time
+      | THROW ->
+        let duration = get_attr enemy "throw_duration" in
+        let still_throwing = Action.still_doing enemy "throw" ~duration ~frame_time in
+        if not still_throwing then
+          Action.start_and_log enemy IDLE ~frame_time
+      | WALK -> ( (* this is only used in cutscenes *) ))
 end
 
 module Buddy_actions = struct
@@ -1725,7 +1843,7 @@ module Buddy : M = struct
       | `JUMP ->
         enemy.status.props <-
           String.Map.update "should_shoot_red"
-            (fun _ -> Some (if Random.percent 90 then 1. else 0.))
+            (fun _ -> Some (if Random.percent 70 then 1. else 0.))
             enemy.status.props;
         Action.jump enemy JUMP ~ghost_pos ~frame_time
       | `BACKDASH -> Action.start_and_log enemy BACKDASH ~frame_time
@@ -1741,7 +1859,6 @@ module Buddy : M = struct
       let handle_charge
           ?(get_frame_props = fun () -> [])
           ?(charge_attr = "charge_duration")
-          action_time
           done_charging_action =
         Action.handle_charging enemy ~charge_attr ~ghost_pos ~action_time ~charge_action:action
           ~action:done_charging_action ~frame_time ~get_frame_props
@@ -1813,9 +1930,9 @@ module Buddy : M = struct
         in
         if not still_backdashing then
           Action.start_and_log enemy IDLE ~frame_time
-      | CHARGE_YELLOW -> handle_charge action_time YELLOW
-      | CHARGE_PURPLE -> handle_charge action_time PURPLE
-      | CHARGE_BLUE -> handle_charge action_time BLUE
+      | CHARGE_YELLOW -> handle_charge YELLOW
+      | CHARGE_PURPLE -> handle_charge PURPLE
+      | CHARGE_BLUE -> handle_charge BLUE
       | YELLOW -> still_shooting `YELLOW
       | PURPLE -> still_shooting `PURPLE
       | BLUE ->

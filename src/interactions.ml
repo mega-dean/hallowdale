@@ -1761,6 +1761,7 @@ let get_steps
             STEP SET_GHOST_CAMERA;
             PARTY_GHOST (JEFF, ENTITY HIDE);
             ENEMY (MANICORN_3, ENTITY UNFREEZE);
+            ENEMY (HICKEY, ENTITY FREEZE);
           ]
       | _ -> fail ())
     | _ -> failwithf "unknown interaction prefix: %s" trigger.name_prefix
