@@ -23,7 +23,7 @@ let get_steps
     (trigger : trigger) : step list =
   let config = Config.interactions in
   let ability_text_outline x y =
-    let w, h = (config.ability_outline_w, config.ability_outline_w) in
+    let w, h = (config.ability_outline_w, config.ability_outline_h) in
     { pos = { x = x *. w; y = y *. h }; w; h }
   in
   let remove_nail = ref true in
@@ -1328,6 +1328,7 @@ let get_steps
              and set fixed camera there
           *)
           STEP (HIDE_LAYER "boss-doors");
+          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
           STEP (SET_FIXED_CAMERA (72, 24));
           STEP (DIALOGUE ("Troy", "Abed, give me your other hand!"));
           STEP (DIALOGUE ("Abed", "It's down to us. You or Britta will be the winner."));

@@ -5,7 +5,7 @@ let is_dead (enemy : enemy) : bool = enemy.health.current <= 0
 let is_alive (enemy : enemy) : bool = not (is_dead enemy)
 let is_wounded (enemy : enemy) : bool = enemy.health.current < enemy.health.max / 2
 
-let wounded_attr (enemy : enemy) attr : string =
+let get_wounded_attr (enemy : enemy) attr : string =
   if is_wounded enemy then
     fmt "wounded_%s" attr
   else
@@ -405,7 +405,7 @@ module Make_loggable (Actions : Enemy_actions) : Loggable with type t = Actions.
         ]
 
   let idle enemy start_next_action ~frame_time =
-    let duration = get_attr enemy "idle_duration" in
+    let duration = get_attr enemy (get_wounded_attr enemy "idle_duration") in
     let still_idling = still_doing enemy "idle" ~duration ~frame_time in
     if not still_idling then
       start_next_action ()
@@ -1347,7 +1347,7 @@ module Borchert : M = struct
         let charge_attr =
           match attr with
           | Some a -> a
-          | None -> wounded_attr enemy "charge_duration"
+          | None -> get_wounded_attr enemy "charge_duration"
         in
         Action.handle_charging enemy ~charge_attr ~ghost_pos ~action_time ~charge_action:action
           ~action:done_charging_action ~frame_time ~get_frame_props
@@ -1635,18 +1635,152 @@ module Lava_britta : M = struct
 end
 
 module Hickey_actions = struct
-  type t = IDLE
+  type t =
+    | IDLE
+    | CHARGE_LUNGE
+    | LUNGE
+    | OUTBREAK
+    | PILLARS_DIVE
+    | PILLARS_LAND
+    | BOUNCE_FLOAT
+    | BOUNCE_DIVE
+    | BARRAGE
+    | JUMP
+    | WALK
 
   let to_string (action : t) : string =
     match action with
     | IDLE -> "idle"
+    | CHARGE_LUNGE -> "charge-lunge"
+    | LUNGE -> "lunge"
+    | OUTBREAK -> "outbreak"
+    | PILLARS_DIVE -> "pillars-dive"
+    | PILLARS_LAND -> "pillars-land"
+    | BOUNCE_FLOAT -> "bounce-float"
+    | BOUNCE_DIVE -> "bounce-dive"
+    | BARRAGE -> "barrage"
+    | JUMP -> "jump"
+    | WALK -> "walk"
 
   let from_string (s : string) : t =
     match s with
     | "idle" -> IDLE
+    | "charge-lunge" -> CHARGE_LUNGE
+    | "lunge" -> LUNGE
+    | "outbreak" -> OUTBREAK
+    | "pillars-dive" -> PILLARS_DIVE
+    | "pillars-land" -> PILLARS_LAND
+    | "bounce-float" -> BOUNCE_FLOAT
+    | "bounce-dive" -> BOUNCE_DIVE
+    | "barrage" -> BARRAGE
+    | "jump" -> JUMP
+    | "walk" -> WALK
     | _ -> failwithf "Hickey_actions.from_string: %s" s
 
-  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time = ()
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
+    let get_offset_projectile_pos () =
+      let offset = get_attr enemy "projectile_offset" in
+      if enemy.entity.sprite.facing_right then
+        ABSOLUTE
+          {
+            x = enemy.entity.dest.pos.x +. enemy.entity.dest.w +. offset;
+            y = enemy.entity.dest.pos.y -. offset;
+          }
+      else
+        ABSOLUTE { x = enemy.entity.dest.pos.x -. offset; y = enemy.entity.dest.pos.y -. offset }
+    in
+    let pose_name =
+      match action with
+      | IDLE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "idle"
+      | CHARGE_LUNGE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "scream"
+      | LUNGE ->
+        move_forward enemy (get_attr enemy "lunge_vx");
+        enemy.entity.v.y <- 0.;
+        "lunge"
+      | OUTBREAK ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        if get_frame_prop ~default:(Some 0.) "outbreak_shoot" = 1. then (
+          let spawn idx =
+            let vx = get_frame_prop (fmt "outbreak_vx_%d" idx) in
+            let vy = get_frame_prop (fmt "outbreak_vy_%d" idx) in
+            spawn_projectile enemy ~scale:1.5 ~gravity_multiplier:0.5
+              ~projectile_pos:(get_offset_projectile_pos ()) ~collide_with_floors:true
+              ~v:{ x = vx; y = vy } UNTIL_FLOOR_COLLISION frame_time
+          in
+          enemy.projectiles <- List.map spawn (Int.range 5) @ enemy.projectiles);
+        "scream"
+      | PILLARS_DIVE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- get_attr enemy "dive_vy";
+        "pillars"
+      | PILLARS_LAND ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        let boss_area_x = get_frame_prop "boss_area_x" in
+        let boss_area_bottom = get_frame_prop "boss_area_bottom" in
+        let spawn idx =
+          let dx = get_attr enemy "pillars_dx" in
+          let dy = get_attr enemy "pillars_dy" in
+          let projectile_pos =
+            ABSOLUTE { x = boss_area_x +. (idx *. dx); y = boss_area_bottom +. dy }
+          in
+          let up_projectile =
+            spawn_projectile enemy ~scale:2. ~projectile_pos
+              ~v:{ x = 0.; y = get_attr enemy "pillars_vy" }
+              ~draw_on_top:true ~damage:2
+              (TIME_LEFT { seconds = 3. })
+              frame_time
+          in
+          Entity.freeze up_projectile.entity;
+          spawn_projectile enemy ~scale:2. ~projectile_pos ~v:(Zero.vector ()) ~draw_on_top:true
+            (DETONATE ({ seconds = 1. }, [ up_projectile ]))
+            frame_time
+          :: [ up_projectile ]
+        in
+        enemy.projectiles <- List.concat_map spawn (Float.range 12) @ enemy.projectiles;
+        "pillars"
+      | BOUNCE_FLOAT ->
+        enemy.entity.v.x <- get_frame_prop "float_vx";
+        enemy.entity.v.y <- get_attr enemy "bounce_float_vy";
+        "bounce-float"
+      | BOUNCE_DIVE ->
+        enemy.entity.v.x <- get_frame_prop "bounce_dive_vx";
+        enemy.entity.v.y <- get_attr enemy "dive_vy";
+        "dive"
+      | BARRAGE ->
+        if get_frame_prop ~default:(Some 0.) "shoot_projectile" = 1. then (
+          let vx =
+            if enemy.entity.sprite.facing_right then
+              get_frame_prop "projectile_vx"
+            else
+              -.get_frame_prop "projectile_vx"
+          in
+          let vy = get_frame_prop "projectile_vy" in
+          let projectile_pos = get_offset_projectile_pos () in
+          enemy.projectiles <-
+            spawn_projectile enemy ~scale:1.2 ~collide_with_floors:true ~gravity_multiplier:1.
+              ~projectile_pos ~v:{ x = vx; y = vy } UNTIL_FLOOR_COLLISION frame_time
+            :: enemy.projectiles);
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "scream"
+      | JUMP ->
+        let vx = get_frame_prop ~default:(Some enemy.entity.v.x) "random_jump_vx" in
+        move_forward enemy vx;
+        enemy.entity.v.y <- get_attr enemy "jump_vy";
+        enemy.entity.current_floor <- None;
+        "jump"
+      | WALK -> "walk"
+    in
+    set_pose enemy pose_name
 end
 
 module Hickey : M = struct
@@ -1665,7 +1799,201 @@ module Hickey : M = struct
       ghost_pos = get_rect_center game.player.ghost.entity.dest;
     }
 
-  let choose_behavior (enemy : enemy) args = ()
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+    let boss_area = args.boss_area in
+    let start_new_action () =
+      let actions =
+        let dx = abs_float (rect_center_x enemy.entity.dest -. ghost_pos.x) in
+        if enemy.entity.dest.pos.y > ghost_pos.y && dx < get_attr enemy "above_dx" then
+          [ (1., `JUMP) ]
+        else
+          [ (1., `JUMP); (1., `LUNGE); (1., `BARRAGE) ]
+      in
+      match Random.weighted actions with
+      | `JUMP ->
+        let set prop =
+          (* this unsets all previous props *)
+          enemy.status.props <- [ (prop, 1.) ] |> List.to_string_map
+        in
+        (match Random.weighted [ (4., `PILLAR); (1., `OUTBREAK); (2., `BOUNCE); (10., `NONE) ] with
+        | `PILLAR -> set "should_pillar"
+        | `OUTBREAK ->
+          set_prop enemy "outbreak_shot" frame_time;
+          set "should_outbreak"
+        | `BOUNCE -> set "should_bounce"
+        | `NONE -> enemy.status.props <- String.Map.empty);
+
+        Action.jump enemy JUMP ~ghost_pos ~frame_time
+      | `LUNGE -> Action.start_and_log enemy CHARGE_LUNGE ~frame_time
+      | `BARRAGE ->
+        face_ghost enemy ~ghost_pos;
+        set_prop enemy "barrage_shot" frame_time;
+        set_prop enemy "barrage_projectile_idx" 0.;
+        Action.start_and_log enemy BARRAGE ~frame_time
+    in
+    match enemy.last_performed with
+    | None -> start_new_action ()
+    | Some (action_name, action_time) -> (
+      let action = Action.from_string action_name in
+      let bounce_vx ~floating =
+        let dvx = get_attr enemy (if floating then "float_dvx" else "bounce_dive_dvx") in
+        let max_v = get_attr enemy "bounce_max_v" in
+        let bound n = Float.bound (-.max_v) n max_v in
+        if ghost_pos.x < rect_center_x enemy.entity.dest then
+          bound (enemy.entity.v.x -. dvx)
+        else
+          bound (enemy.entity.v.x +. dvx)
+      in
+      let make_outbreak_props idx =
+        let min_vx = get_attr enemy "outbreak_min_vx" in
+        let max_vx = get_attr enemy "outbreak_max_vx" in
+        let min_vy = get_attr enemy "outbreak_min_vy" in
+        let max_vy = get_attr enemy "outbreak_max_vy" in
+        [
+          ("outbreak_shoot", 1.);
+          (fmt "outbreak_vx_%d" idx, Random.float_between min_vx max_vx);
+          (fmt "outbreak_vy_%d" idx, Random.float_between min_vy max_vy);
+        ]
+      in
+      match action with
+      | CHARGE_LUNGE ->
+        Action.handle_charging enemy
+          ~charge_attr:(get_wounded_attr enemy "charge_duration")
+          ~ghost_pos ~action_time ~charge_action:action ~action:LUNGE ~frame_time
+      | LUNGE ->
+        let duration = get_attr enemy "lunge_duration" in
+        let still_lunging =
+          Action.still_doing enemy "lunge" ~duration ~frame_time
+          && still_within_boss_area enemy boss_area
+        in
+        if not still_lunging then
+          Action.start_and_log enemy IDLE ~frame_time
+      | IDLE -> Action.idle enemy start_new_action ~frame_time
+      | PILLARS_DIVE ->
+        let still_diving = still_airborne enemy ~frame_time ~action_time in
+        if not still_diving then
+          Action.start_and_log enemy PILLARS_LAND ~frame_time
+            ~frame_props:
+              [
+                ("boss_area_x", boss_area.pos.x);
+                ("boss_area_bottom", boss_area.pos.y +. boss_area.h);
+              ]
+      | PILLARS_LAND ->
+        let duration = get_attr enemy (get_wounded_attr enemy "pillars_land_duration") in
+        let still_landing = Action.still_doing enemy "pillars-land" ~duration ~frame_time in
+        if not still_landing then
+          Action.start_and_log enemy IDLE ~frame_time
+      | OUTBREAK ->
+        let duration = get_attr enemy "outbreak_duration" in
+        let still_outbreaking = Action.still_doing enemy "outbreak" ~duration ~frame_time in
+        if still_outbreaking then (
+          let last_outbreak_shot = get_prop "outbreak_shot" enemy.status.props in
+          let frame_props =
+            if frame_time -. last_outbreak_shot > get_attr enemy "outbreak_shot_duration" then (
+              set_prop enemy "outbreak_shot" frame_time;
+              List.concat_map make_outbreak_props (Int.range 5) |> List.to_string_map)
+            else
+              [] |> List.to_string_map
+          in
+          Action.set enemy OUTBREAK ~frame_time ~frame_props)
+        else
+          Action.start_and_log enemy IDLE ~frame_time
+      | BOUNCE_FLOAT ->
+        face_ghost enemy ~ghost_pos;
+        let duration = get_attr enemy "bounce_float_duration" in
+        let still_floating = Action.still_doing enemy "bounce-float" ~duration ~frame_time in
+        if still_floating then
+          Action.set enemy BOUNCE_FLOAT ~frame_time
+            ~frame_props:([ ("float_vx", bounce_vx ~floating:true) ] |> List.to_string_map)
+        else
+          Action.start_and_log enemy BOUNCE_DIVE ~frame_time
+            ~frame_props:[ ("bounce_dive_vx", bounce_vx ~floating:false) ]
+      | BOUNCE_DIVE ->
+        let still_diving = still_airborne enemy ~frame_time ~action_time in
+        if still_diving then
+          Action.set enemy BOUNCE_DIVE ~frame_time
+            ~frame_props:([ ("bounce_dive_vx", bounce_vx ~floating:false) ] |> List.to_string_map)
+        else (
+          let next_action : Action.t =
+            if Random.percent 70 then (
+              face_ghost enemy ~ghost_pos;
+              BOUNCE_FLOAT)
+            else
+              IDLE
+          in
+          Action.start_and_log enemy next_action ~frame_time
+            ~frame_props:[ ("float_vx", bounce_vx ~floating:true) ])
+      | JUMP ->
+        let perform_jump_action ?(frame_props = []) ?(face_center = false) name action_to_start cond
+            =
+          match String.Map.find_opt (fmt "should_%s" name) enemy.status.props with
+          | None -> ()
+          | Some f ->
+            if f = 1. && cond then (
+              if face_center then
+                enemy.entity.sprite.facing_right <-
+                  rect_center_x enemy.entity.dest < rect_center_x boss_area;
+              Action.start_and_log enemy action_to_start ~frame_time ~frame_props)
+        in
+        perform_jump_action "pillar" PILLARS_DIVE (enemy.entity.v.y > 0.);
+        perform_jump_action "bounce" BOUNCE_FLOAT true
+          ~frame_props:[ ("float_vx", bounce_vx ~floating:true) ];
+        perform_jump_action "outbreak" OUTBREAK ~face_center:true
+          ~frame_props:
+            (set_prop enemy "outbreak_shot" frame_time;
+             List.concat_map make_outbreak_props (Int.range 5))
+          (enemy.entity.v.y > 0.
+          && enemy.entity.dest.pos.y > boss_area.pos.y +. (boss_area.h *. 0.66666));
+        let still_jumping = still_airborne enemy ~frame_time ~action_time in
+        if not still_jumping then
+          Action.start_and_log enemy IDLE ~frame_time
+      | BARRAGE ->
+        let duration = get_attr enemy "barrage_duration" in
+        let still_barraging = Action.still_doing enemy "barrage" ~duration ~frame_time in
+        if still_barraging then (
+          let last_barrage_projectile = get_prop "barrage_shot" enemy.status.props in
+          let frame_props =
+            if frame_time -. last_barrage_projectile > get_attr enemy "barrage_shot_duration" then (
+              let barrage_projectile_idx =
+                get_prop "barrage_projectile_idx" enemy.status.props |> Float.to_int
+              in
+              set_prop enemy "barrage_shot" frame_time;
+              set_prop enemy "barrage_projectile_idx" (barrage_projectile_idx + 1 |> Int.to_float);
+              let vx, vy =
+                List.nth
+                  [
+                    (-200., -200.);
+                    (-100., -100.);
+                    (0., 0.);
+                    (100., -100.);
+                    (200., -200.);
+                    (300., -300.);
+                    (400., -400.);
+                    (500., -500.);
+                    (600., -600.);
+                    (700., -700.);
+                    (800., -800.);
+                    (900., -900.);
+                    (800., -1000.);
+                    (700., -1100.);
+                  ]
+                  barrage_projectile_idx
+              in
+              [
+                ("shoot_projectile", 1.);
+                ("projectile_vx", vx *. Config.window.scale);
+                ("projectile_vy", vy *. Config.window.scale);
+              ]
+              |> List.to_string_map)
+            else
+              [] |> List.to_string_map
+          in
+          Action.set enemy BARRAGE ~frame_time ~frame_props)
+        else
+          Action.start_and_log enemy IDLE ~frame_time
+      | WALK -> ())
 end
 
 module Buddy_actions = struct

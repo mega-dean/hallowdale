@@ -132,7 +132,8 @@
             "unscaled_attrs": [
                 ["dash_duration", 1.2],
                 ["shoot_duration", 1.5],
-                ["idle_duration", 0.8],
+                ["healthy_idle_duration", 0.8],
+                ["wounded_idle_duration", 0.6],
                 ["charge_duration", 0.4]
             ],
             "texture_configs": [
@@ -205,7 +206,8 @@
             ],
             "unscaled_attrs": [
                 ["swarm_projectile_duration", 4],
-                ["idle_duration", 0.7],
+                ["healthy_idle_duration", 0.7],
+                ["wounded_idle_duration", 0.6],
                 ["lunge_duration", 0.35],
                 ["spikes_duration", 0.9],
                 ["swarm_duration", 1.2],
@@ -278,7 +280,8 @@
             "unscaled_attrs": [
                 ["lunge_duration", 0.7],
                 ["land_duration", 1],
-                ["idle_duration", 0.7],
+                ["healthy_idle_duration", 0.7],
+                ["wounded_idle_duration", 0.6],
                 ["cascade_duration", 1.5],
                 ["cascade_shot_duration", 0.6],
                 ["charge_duration", 0.6]
@@ -360,7 +363,8 @@
                 ["purple_shot_duration", 0.3],
                 ["purple_duration", 1.8],
                 ["blue_duration", 1],
-                ["idle_duration", 0.8],
+                ["healthy_idle_duration", 0.8],
+                ["wounded_idle_duration", 0.6],
                 ["charge_duration", 0.8]
             ],
             "texture_configs": [
@@ -430,7 +434,8 @@
             "unscaled_attrs": [
                 ["orbit_speed_healthy", 2],
                 ["orbit_speed_wounded", 3],
-                ["idle_duration", 1.2],
+                ["healthy_idle_duration", 1.2],
+                ["wounded_idle_duration", 1.0],
                 ["xero_projectile_duration", 10],
                 ["no_eyes_shoot_duration", 1.5],
                 ["shoot_duration", 1.2],
@@ -561,7 +566,8 @@
             ],
             "unscaled_attrs": [
                 ["charge_duration", 0.8],
-                ["idle_duration", 0.8],
+                ["healthy_idle_duration", 0.8],
+                ["wounded_idle_duration", 0.7],
                 ["throw_duration", 1.1],
                 ["storm_duration", 1.5],
                 ["lunge_duration", 1.2]
@@ -644,7 +650,8 @@
             ],
             "unscaled_attrs": [
                 ["charge_duration", 0.5],
-                ["idle_duration", 0.6],
+                ["healthy_idle_duration", 0.6],
+                ["wounded_idle_duration", 0.5],
                 ["throw_duration", 0.9],
                 ["storm_duration", 1.5],
                 ["lunge_duration", 1]
@@ -710,24 +717,57 @@
 
         [ "HICKEY", {
             "kind": "boss",
-            "health": 5,
-            // this rect isn't used because Hickey has custom collision shapes
+            "health": 2000,
             "w": 66,
             "h": 52,
+            "gravity_multiplier": 1.7,
             "can_recoil": false,
             "dream_nail": {},
             "attrs": [
+                ["bounce_max_v", 600.0],
+                ["float_dvx", 30.0],
+                ["bounce_dive_dvx", 250.0],
+                ["outbreak_min_vx", -1000.0],
+                ["outbreak_max_vx", 800.0],
+                ["outbreak_min_vy", -1000.0],
+                ["outbreak_max_vy", 200.0],
+                ["projectile_offset", 200.0],
+                ["barrage_vx_0", -200.0],
+                ["barrage_vy_0", -200.0],
+                ["pillars_dx", 200.0],
+                ["pillars_dy", 50.0],
+                ["pillars_vy", -2000.0],
+                ["bounce_float_vy", -400.0],
+                ["lunge_vx", 1200.0],
+                ["min_jump_vx", 400],
+                ["max_jump_vx", 1400],
+                ["jump_vy", -1800.0],
+                ["above_dx", 600.0],
+                ["bounce_dive_vx", 1400.0],
+                ["dive_vy", 1400.0],
                 ["walk_vx", 400.0]
             ],
             "unscaled_attrs": [
+                ["barrage_duration", 2.1],
+                ["lunge_duration", 0.8],
+                ["outbreak_duration", 4.5],
+                ["outbreak_shot_duration", 0.4],
+                ["barrage_shot_duration", 0.15],
+                ["bounce_float_duration", 1.0],
+                ["healthy_pillars_land_duration", 1.0],
+                ["wounded_pillars_land_duration", 0.8],
+                ["healthy_idle_duration", 0.6],
+                ["wounded_idle_duration", 0.4],
+                ["healthy_charge_duration", 0.7],
+                ["wounded_charge_duration", 0.4]
             ],
 
             "texture_configs": [
-                ["idle", {
-                    "x_offset": 115,
-                    "y_offset": 151
+                ["projectile", {
+                    "count": 2,
+                    "duration": 0.05
                 }],
-                ["lunge", {
+                ["bounce-float", {
                     "x_offset": 115,
                     "y_offset": 151
                 }],
@@ -738,6 +778,26 @@
                 ["dying", {
                     "count": 6,
                     "duration": 0.1,
+                    "x_offset": 115,
+                    "y_offset": 151
+                }],
+                ["dive", {
+                    "x_offset": 115,
+                    "y_offset": 151
+                }],
+                ["idle", {
+                    "x_offset": 115,
+                    "y_offset": 151
+                }],
+                ["jump", {
+                    "x_offset": 115,
+                    "y_offset": 151
+                }],
+                ["lunge", {
+                    "x_offset": 115,
+                    "y_offset": 151
+                }],
+                ["pillars", {
                     "x_offset": 115,
                     "y_offset": 151
                 }],

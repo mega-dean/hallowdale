@@ -275,92 +275,85 @@ let init () : state =
 
 (* return value is "keep spawned" *)
 let update_projectile (projectile : projectile) (game : game) (state : state) : bool =
-  if projectile.entity.frozen then (
-    if projectile.despawn <> UNTIL_FLOOR_COLLISION then
-      failwithf "frozen projectiles need despawn UNTIL_FLOOR_COLLISION, but %s has despawn %s"
-        (Show.entity projectile.entity)
-        (Show.projectile_despawn projectile.despawn);
-    true)
-  else (
-    (match projectile.update_v with
-    | None -> ()
-    | Some WAVY ->
-      projectile.entity.v <-
-        {
-          x = projectile.entity.v.x;
-          y = projectile.entity.v.y +. cos (state.frame.time -. projectile.spawned.at);
-        }
-    | Some (HOMING dv) ->
-      projectile.entity.v <-
+  (match projectile.update_v with
+  | None -> ()
+  | Some WAVY ->
+    projectile.entity.v <-
+      {
+        x = projectile.entity.v.x;
+        y = projectile.entity.v.y +. cos (state.frame.time -. projectile.spawned.at);
+      }
+  | Some (HOMING dv) ->
+    projectile.entity.v <-
+      {
+        x =
+          (if rect_center_x projectile.entity.dest < rect_center_x game.player.ghost.entity.dest
+           then
+             projectile.entity.v.x +. dv
+           else
+             projectile.entity.v.x -. dv);
+        y =
+          (* don't take rect_center_y of ghost so it aims the projectile at the ghost's head *)
+          (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y then
+             projectile.entity.v.y +. dv
+           else
+             projectile.entity.v.y -. dv);
+      });
+  let collisions =
+    match projectile.orbiting with
+    | None ->
+      Entity.update_pos ~_debug:true ~apply_floor_collisions:projectile.collide_with_floors
+        game.room state.frame.dt projectile.entity
+    | Some (offset, clockwise, enemy) ->
+      let new_pos =
+        let w, h = get_scaled_texture_size 1. projectile.entity.sprite.texture in
+        (* TODO radius is slightly different based on window_scale *)
+        let radius = Enemy.get_attr enemy "orbit_radius" in
+        let speed =
+          if enemy.health.current < enemy.health.max / 2 then
+            Enemy.get_attr enemy "orbit_speed_wounded"
+          else
+            Enemy.get_attr enemy "orbit_speed_healthy"
+        in
+        let mult = if clockwise then -1. else 1. in
         {
           x =
-            (if rect_center_x projectile.entity.dest < rect_center_x game.player.ghost.entity.dest
-             then
-               projectile.entity.v.x +. dv
-             else
-               projectile.entity.v.x -. dv);
+            rect_center_x enemy.entity.dest
+            +. (radius *. sin (mult *. (offset +. (state.frame.time *. speed))))
+            -. w;
           y =
-            (* don't take rect_center_y of ghost so it aims the projectile at the ghost's head *)
-            (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y then
-               projectile.entity.v.y +. dv
-             else
-               projectile.entity.v.y -. dv);
-        });
-    let collisions =
-      match projectile.orbiting with
-      | None ->
-        Entity.update_pos ~_debug:true ~apply_floor_collisions:projectile.collide_with_floors
-          game.room state.frame.dt projectile.entity
-      | Some (offset, clockwise, enemy) ->
-        let new_pos =
-          let w, h = get_scaled_texture_size 1. projectile.entity.sprite.texture in
-          (* TODO radius is slightly different based on window_scale *)
-          let radius = Enemy.get_attr enemy "orbit_radius" in
-          let speed =
-            if enemy.health.current < enemy.health.max / 2 then
-              Enemy.get_attr enemy "orbit_speed_wounded"
-            else
-              Enemy.get_attr enemy "orbit_speed_healthy"
-          in
-          let mult = if clockwise then -1. else 1. in
-          {
-            x =
-              rect_center_x enemy.entity.dest
-              +. (radius *. sin (mult *. (offset +. (state.frame.time *. speed))))
-              -. w;
-            y =
-              rect_center_y enemy.entity.dest
-              +. (radius *. cos (mult *. (offset +. (state.frame.time *. speed))))
-              -. h;
-          }
-        in
-        projectile.entity.dest.pos <- new_pos;
-        []
-    in
-    let despawn_projectile =
-      match projectile.despawn with
-      (* these adjust by Config.window.center.x/y as a buffer so the projectiles don't
-         despawn on-screen *)
-      | BOSS_AREA_Y (min_y, max_y) ->
-        let y = rect_center_y projectile.entity.dest in
-        y < min_y -. Config.window.center.y || y > max_y +. Config.window.center.y
-      | BOSS_AREA_X (min_x, max_x) ->
-        let x = rect_center_x projectile.entity.dest in
-        x < min_x -. Config.window.center.x || x > max_x +. Config.window.center.x
-      | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
-      | DETONATE (d, new_projectiles) ->
-        let despawn = state.frame.time -. projectile.spawned.at > d.seconds in
-        if despawn then
-          List.iter (fun (p : projectile) -> Entity.unfreeze p.entity) new_projectiles;
-        despawn
-      | UNTIL_FLOOR_COLLISION -> List.length collisions > 0
-      | UNTIL_ENEMY_DEATH -> false
-    in
-    if despawn_projectile then
-      false
-    else (
-      Sprite.advance_animation state.frame.time projectile.entity.sprite;
-      true))
+            rect_center_y enemy.entity.dest
+            +. (radius *. cos (mult *. (offset +. (state.frame.time *. speed))))
+            -. h;
+        }
+      in
+      projectile.entity.dest.pos <- new_pos;
+      []
+  in
+  let despawn_projectile =
+    match projectile.despawn with
+    (* these adjust by Config.window.center.x/y as a buffer so the projectiles don't
+       despawn on-screen *)
+    | BOSS_AREA_Y (min_y, max_y) ->
+      let y = rect_center_y projectile.entity.dest in
+      y < min_y -. Config.window.center.y || y > max_y +. Config.window.center.y
+    | BOSS_AREA_X (min_x, max_x) ->
+      let x = rect_center_x projectile.entity.dest in
+      x < min_x -. Config.window.center.x || x > max_x +. Config.window.center.x
+    | TIME_LEFT d -> state.frame.time -. projectile.spawned.at > d.seconds
+    | DETONATE (d, new_projectiles) ->
+      let despawn = state.frame.time -. projectile.spawned.at > d.seconds in
+      if despawn then
+        List.iter (fun (p : projectile) -> Entity.unfreeze p.entity) new_projectiles;
+      despawn
+    | UNTIL_FLOOR_COLLISION -> List.length collisions > 0
+    | UNTIL_ENEMY_DEATH -> false
+  in
+  if despawn_projectile then
+    false
+  else (
+    Sprite.advance_animation state.frame.time projectile.entity.sprite;
+    true)
 
 (* this is for inanimate objects like jug fragments or door levers *)
 let update_environment (game : game) (state : state) =

@@ -1438,9 +1438,6 @@ type texture_cache = {
      - multiple sprites can still be rendered at separate dests, but they animations are synced
      - so creating a new damage sprite while one is on the screen will cause it to reset at the beginning
      - in practice this doesn't matter because the animation is so short, but it might cause problems for other cached textures
-
-     - this will cause problems for rotating platforms
-     - maybe just write a clone_texture function to spawn a new one
   *)
   damage : texture;
   ability_outlines : texture;
