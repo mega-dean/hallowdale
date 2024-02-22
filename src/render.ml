@@ -944,7 +944,7 @@ let tick (state : state) =
                 debug_shape_outline ~size:2. ~color:Color.red (Some slash.sprite) shape
               | _ -> ());
             player.current_weapon.tint
-          | WRAITHS -> if game.player.abilities.abyss_shriek then Color.red else Color.white
+          | WRAITHS -> if game.player.abilities.abyss_shriek then Color.purple else Color.white
           | DIVE_COOLDOWN
           | DIVE ->
             if game.player.abilities.descending_dark then Color.red else Color.white

@@ -1075,10 +1075,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         game.player.history.cast_vs
       | DESOLATE_DIVE ->
         (* TODO probably should set is_diving in this fn (like how c-dash does it) *)
-        let w, h =
-          (* TODO these are temporarily scaled so the dive.png image can be reused *)
-          (game.player.ghost.entity.dest.w *. 5., game.player.ghost.entity.dest.h *. 5.)
-        in
+        let w, h = (game.player.ghost.entity.dest.w *. 5., game.player.ghost.entity.dest.h *. 5.) in
         let child =
           make_ghost_child game.player DIVE (CENTER, BOTTOM_INSIDE)
             game.player.shared_textures.desolate_dive w h
@@ -1086,7 +1083,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
         add_child game.player DIVE child;
         game.player.history.cast_dive
       | HOWLING_WRAITHS ->
-        spawn_child game.player WRAITHS (CENTER, BOTTOM_INSIDE) ~scale:Config.ghost.wraiths_scale
+        spawn_child game.player WRAITHS (CENTER, TOP_OUTSIDE) ~scale:Config.ghost.wraiths_scale
           game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
     | DIE ->

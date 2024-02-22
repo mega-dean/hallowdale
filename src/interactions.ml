@@ -878,7 +878,7 @@ let get_steps
           STEP
             (DIALOGUE
                ( "Troy",
-                 "You used that bench to upset the balance. By the {{orange}} Vapors of Magmarath, \
+                 "You used that bench to upset the balance. By the {{purple}} Vapors of Magmarath, \
                   {{white}} we will restore it." ));
           STEP (DIALOGUE ("Britta", "You have gods?"));
           NPC (CHANG, SET_POSE "idle-with-locker-boys");
@@ -1321,6 +1321,7 @@ let get_steps
           ENEMY (HICKEY, SET_POSE "dying");
           STEP (WAIT 0.5);
           ENEMY (HICKEY, SET_POSE "dead");
+          ENEMY (HICKEY, ENTITY (SET_VX 0.));
           STEP (WAIT 1.);
           STEP
             (DIALOGUE ("Hickey", "Unbelievable! When this game is over, I'm gonna shove you back."));

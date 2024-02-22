@@ -172,7 +172,7 @@ let ghost : ghost_config =
     hardfall_duration = 1.25;
     c_dash_whoosh_scale = 6. *. window_scale;
     shade_dash_sparkles_scale = 6. *. window_scale;
-    wraiths_scale = 1.7 *. window_scale;
+    wraiths_scale = 5.7 *. window_scale;
     vx = 400. *. window_scale;
     jump_vy;
     flap_vy = jump_vy *. 0.8;
