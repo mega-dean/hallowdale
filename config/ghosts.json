@@ -223,6 +223,11 @@
             "cooldown": 0.7,
             "input_buffer": 0.2
         }],
+        ["dive-hop", {
+            "duration": 0.1,
+            "cooldown": 0.0,
+            "input_buffer": 0.2
+        }],
         ["dive-cooldown", {
             "duration": 0.5, // this is how long the ghost is stuck in the intimidation stance
             "cooldown": 0.9, // this is how long the i-frames last after diving

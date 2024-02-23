@@ -702,6 +702,7 @@ let reset_current_status ?(taking_hazard_damage = None) () =
   {
     wall = None;
     water = None;
+    is_dive_hopping = false;
     is_diving = false;
     is_c_dashing = false;
     is_charging_c_dash = false;
@@ -796,6 +797,10 @@ let set_pose
       update_vx 2.;
       (player.ghost.head_textures.idle, bodies.dash)
     | CAST spell_kind -> handle_cast spell_kind
+    | DIVE_HOP ->
+      update_vx 0.;
+      player.ghost.entity.v.y <- Config.ghost.dive_hop_vy;
+      (player.ghost.head_textures.look_up, bodies.dive)
     | DIVE_COOLDOWN ->
       update_vx 0.;
       (player.ghost.head_textures.look_up, bodies.dive)
@@ -957,6 +962,7 @@ let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind
     | FLAP ->
       game.player.current.can_flap <- true;
       game.player.history.flap
+    | DIVE_HOP
     | WALL_KICK
     | JUMP
     | TAKE_DAMAGE_AND_RESPAWN
@@ -1146,6 +1152,7 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       | DEMO ->
         game.player.health.current <- game.player.health.current - damage);
       game.player.history.take_damage
+    | DIVE_HOP -> game.player.history.dive_hop
     | DIVE_COOLDOWN -> game.player.history.dive_cooldown
     | FOCUS ->
       game.player.soul.at_focus_start <- game.player.soul.current;
@@ -1247,6 +1254,7 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
   | JUMP
   | TAKE_DAMAGE _
   | CAST _
+  | DIVE_HOP
   | DIVE_COOLDOWN
   | HARDFALL
   | DASH
@@ -1274,6 +1282,7 @@ let is_doing (player : player) (action_kind : ghost_action_kind) (frame_time : f
   | C_DASH_COOLDOWN -> check_action player.history.c_dash_cooldown
   | SHADE_DASH -> check_action player.history.shade_dash
   | DASH -> check_action player.history.dash
+  | DIVE_HOP -> check_action player.history.dive_hop
   | DIVE_COOLDOWN -> check_action player.history.dive_cooldown
   | HARDFALL -> check_action player.history.hardfall
   | TAKE_DAMAGE_AND_RESPAWN -> check_action player.history.take_damage_and_respawn
@@ -1484,8 +1493,7 @@ let handle_debug_keys (game : game) (state : state) =
         (* toggle_ability game.player "shade_soul";
          * toggle_ability game.player "descending_dark";
          * toggle_ability game.player "abyss_shriek"; *)
-        ()
-      )
+        ())
       else if key_pressed DEBUG_4 then (
         toggle_ability game.player "desolate_dive";
         (* toggle_ability game.player "ismas_tear" *)
@@ -2085,11 +2093,11 @@ let tick (game : game) (state : state) =
     in
 
     let this_frame =
+      let cast_spell spell_kind =
+        start_action ~debug:true state game (CAST spell_kind);
+        true
+      in
       if trying_cast then (
-        let cast_spell spell_kind =
-          start_action ~debug:true state game (CAST spell_kind);
-          true
-        in
         let can_howl () =
           game.player.abilities.howling_wraiths
           && past_cooldown game.player.history.cast_wraiths state.frame.time
@@ -2107,8 +2115,9 @@ let tick (game : game) (state : state) =
         if can_howl () then
           cast_spell HOWLING_WRAITHS
         else if can_dive () then (
-          game.player.current.is_diving <- true;
-          cast_spell DESOLATE_DIVE)
+          game.player.current.is_dive_hopping <- true;
+          start_action state game DIVE_HOP;
+          true)
         else if can_vs () then
           cast_spell VENGEFUL_SPIRIT
         else
@@ -2123,7 +2132,7 @@ let tick (game : game) (state : state) =
 
         match continuing_spell_kind with
         | None ->
-          if game.player.current.is_diving then (* TODO also need to check if ghost is in water *)
+          if game.player.current.is_diving then
             if Option.is_some game.player.ghost.entity.current_floor then (
               state.camera.shake <- 1.;
               game.player.current.is_diving <- false;
@@ -2147,6 +2156,14 @@ let tick (game : game) (state : state) =
               | Some dive_sprite ->
                 continue_action state game (CAST DESOLATE_DIVE);
                 true)
+          else if game.player.current.is_dive_hopping then
+            if is_doing game.player DIVE_HOP state.frame.time then (
+              continue_action state game DIVE_HOP;
+              true)
+            else (
+              game.player.current.is_dive_hopping <- false;
+              game.player.current.is_diving <- true;
+              cast_spell DESOLATE_DIVE)
           else
             false
         | Some kind ->
@@ -2949,6 +2966,7 @@ let init
         die = make_action "die";
         dream_nail = make_action "dream-nail";
         dash = make_action "dash";
+        dive_hop = make_action "dive-hop";
         dive_cooldown = make_action "dive-cooldown";
         flap = make_action "flap";
         focus = make_action "focus";

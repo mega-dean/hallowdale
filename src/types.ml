@@ -299,6 +299,7 @@ type ghost_action_kind =
   | C_DASH_WALL_COOLDOWN
   | DASH
   | DIE
+  | DIVE_HOP
   | DIVE_COOLDOWN
   | DREAM_NAIL
   | FLAP
@@ -838,6 +839,7 @@ type ghost_action_history = {
   cast_vs : ghost_action;
   (* cast_dive ends when landing on a floor, not based on duration *)
   cast_dive : ghost_action;
+  dive_hop : ghost_action;
   dive_cooldown : ghost_action;
   cast_wraiths : ghost_action;
   dash : ghost_action;
@@ -876,6 +878,7 @@ type ghost_status = {
      - c-dash charge ends when a button is released
   *)
   mutable water : rect option;
+  mutable is_dive_hopping : bool;
   mutable is_diving : bool;
   mutable is_c_dashing : bool;
   mutable is_charging_c_dash : bool;

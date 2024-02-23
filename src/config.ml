@@ -139,6 +139,7 @@ type ghost_config = {
   upslash_vy : float;
   hardfall_duration : float;
   dive_vy : float;
+  dive_hop_vy : float;
   c_dash_whoosh_scale : float;
   shade_dash_sparkles_scale : float;
   wraiths_scale : float;
@@ -169,6 +170,7 @@ let ghost : ghost_config =
     height;
     max_vy = 1100. *. window_scale;
     dive_vy = 2000. *. window_scale;
+    dive_hop_vy = -500. *. window_scale;
     hardfall_duration = 1.25;
     c_dash_whoosh_scale = 6. *. window_scale;
     shade_dash_sparkles_scale = 6. *. window_scale;

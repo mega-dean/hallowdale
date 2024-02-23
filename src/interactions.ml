@@ -738,7 +738,6 @@ let get_steps
             ENEMY (HICKEY, SET_POSE "scream");
             CURRENT_GHOST (SET_POSE (PERFORMING (ATTACK RIGHT)));
             STEP (WAIT 1.);
-            ENEMY (HICKEY, ENTITY (MOVE_TO (124, 30)));
             ENEMY (HICKEY, ENTITY UNFREEZE);
           ]
       | _ -> fail ())

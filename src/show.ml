@@ -157,6 +157,7 @@ let ghost_action_kind id =
   | C_DASH_WALL_COOLDOWN -> "C_DASH_WALL_COOLDOWN"
   | DASH -> "DASH"
   | DIE -> "DIE"
+  | DIVE_HOP -> "DIVE_HOP"
   | DIVE_COOLDOWN -> "DIVE_COOLDOWN"
   | DREAM_NAIL -> "DREAM_NAIL"
   | FLAP -> "FLAP"

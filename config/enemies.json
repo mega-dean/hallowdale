@@ -724,9 +724,9 @@
             "can_recoil": false,
             "dream_nail": {},
             "attrs": [
-                ["bounce_max_v", 600.0],
+                ["bounce_max_v", 500.0],
                 ["float_dvx", 30.0],
-                ["bounce_dive_dvx", 250.0],
+                ["bounce_dive_dvx", 200.0],
                 ["outbreak_min_vx", -1000.0],
                 ["outbreak_max_vx", 800.0],
                 ["outbreak_min_vy", -1000.0],
@@ -757,9 +757,9 @@
                 ["healthy_pillars_land_duration", 1.0],
                 ["wounded_pillars_land_duration", 0.8],
                 ["healthy_idle_duration", 0.6],
-                ["wounded_idle_duration", 0.4],
+                ["wounded_idle_duration", 0.5],
                 ["healthy_charge_duration", 0.7],
-                ["wounded_charge_duration", 0.4]
+                ["wounded_charge_duration", 0.5]
             ],
 
             "texture_configs": [
