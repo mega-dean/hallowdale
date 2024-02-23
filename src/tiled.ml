@@ -216,6 +216,7 @@ module JsonRoom = struct
         ("chair4", None);
         ("chair2x2", None);
         ("chair3x2", None);
+        ("monkey-gas-block", Some (LOCKED_DOOR ("monkey-gas", VISIBLE)));
       ]
     in
     let texture_name, platform_kind =

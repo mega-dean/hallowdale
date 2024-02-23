@@ -381,7 +381,13 @@ let update_environment (game : game) (state : state) =
     | Some (ROTATABLE UPRIGHT) ->
       platform.kind <- Some (ROTATABLE (TOUCHED Config.platform.rotatable_touched_time))
     | Some (LOCKED_DOOR (key, state')) ->
-      if List.mem key game.progress.keys_found then
+      let unlocked =
+        if key = "monkey-gas" then
+          game.player.abilities.howling_wraiths
+        else
+          List.mem key game.progress.keys_found
+      in
+      if unlocked then
         (* after unlocking a door, shake and permanently disappear like a TEMPORARY platform *)
         platform.kind <-
           Some (LOCKED_DOOR (key, TOUCHED Config.platform.disappearable_touched_time))

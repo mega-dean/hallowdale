@@ -238,7 +238,9 @@ type platform_kind =
   | TEMPORARY of disappearable_state
   | DISAPPEARABLE of disappearable_state
   | ROTATABLE of rotatable_state
-  (* string is key name *)
+  (* string is key name
+     - string can also be "monkey-gas", which will check the ability instead
+  *)
   | LOCKED_DOOR of string * disappearable_state
 
 type platform = {

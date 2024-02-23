@@ -9,7 +9,7 @@
  "name":"platforms",
  "objectalignment":"topleft",
  "spacing":0,
- "tilecount":32,
+ "tilecount":33,
  "tiledversion":"1.10.2",
  "tileheight":108,
  "tiles":[
@@ -204,6 +204,12 @@
          "image":"chair3x2.png",
          "imageheight":42,
          "imagewidth":72
+        }, 
+        {
+         "id":33,
+         "image":"monkey-gas-block.png",
+         "imageheight":72,
+         "imagewidth":60
         }],
  "tilewidth":264,
  "type":"tileset",

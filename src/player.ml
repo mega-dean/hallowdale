@@ -1108,7 +1108,6 @@ let start_action ?(debug = false) (state : state) (game : game) (action_kind : g
       Entity.freeze game.player.ghost.entity;
       game.player.history.take_damage_and_respawn
     | TAKE_DAMAGE (damage, direction) ->
-      (* TODO separate sound for this *)
       Audio.play_sound state "punch";
       state.camera.shake <- 0.5;
       let x_recoil_speed =
@@ -1481,9 +1480,12 @@ let handle_debug_keys (game : game) (state : state) =
         ())
       else if key_pressed DEBUG_3 then (
         (* print "player water is_some: %b" (Option.is_some game.player.current.water) *)
-        toggle_ability game.player "shade_soul";
-        toggle_ability game.player "descending_dark";
-        toggle_ability game.player "abyss_shriek")
+        toggle_ability game.player "howling_wraiths";
+        (* toggle_ability game.player "shade_soul";
+         * toggle_ability game.player "descending_dark";
+         * toggle_ability game.player "abyss_shriek"; *)
+        ()
+      )
       else if key_pressed DEBUG_4 then (
         toggle_ability game.player "desolate_dive";
         (* toggle_ability game.player "ismas_tear" *)
