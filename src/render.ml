@@ -592,9 +592,9 @@ let tick (state : state) =
       let config' : text_config = Config.get_menu_text_config (List.nth menu.choices 0) in
       let menu_choices, config =
         match save_slots' with
-        | None -> (List.map (Show.menu_choice game_opt) menu.choices, config')
+        | None -> (List.map (Show.menu_choice state game_opt) menu.choices, config')
         | Some save_slots ->
-          ( List.map (Show.menu_choice ~save_slots game_opt) (Menu.get_save_file_choices save_slots),
+          ( List.map (Show.menu_choice ~save_slots state game_opt) (Menu.get_save_file_choices save_slots),
             { config' with centered = false } )
       in
       draw_text_bg_box config;

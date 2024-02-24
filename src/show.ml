@@ -1,5 +1,6 @@
 open Utils
 open Types
+open Controls
 
 let option (to_str : 'a -> string) (v : 'a option) =
   match v with
@@ -27,17 +28,7 @@ let shape (shape : shape) = fmt "shape with %d edges" (List.length shape.edges)
 let shape_lines (shape : shape) =
   fmt "shape with lines:\n%s" (List.map line_mx_b (get_lines shape) |> String.join_lines)
 
-let shape_points shape : string =
-  List.map fst shape.edges
-  |> List.map vector
-  |> String.join_lines
-
-let direction (d : direction) : string =
-  match d with
-  | UP -> "up"
-  | DOWN -> "down"
-  | LEFT -> "left"
-  | RIGHT -> "right"
+let shape_points shape : string = List.map fst shape.edges |> List.map vector |> String.join_lines
 
 let x_alignment (x : x_alignment) : string =
   match x with
@@ -122,7 +113,7 @@ let asset_dir (asset_dir : asset_dir) =
 let attack_direction (d : direction option) : string =
   match d with
   | None -> "not attacking"
-  | Some d -> fmt "attacking %s" (direction d)
+  | Some d -> fmt "attacking %s" (show_direction d)
 
 let ghost_id id =
   match id with
@@ -149,7 +140,7 @@ let ghost_action_config (config : ghost_action_config) =
 
 let ghost_action_kind id =
   match id with
-  | ATTACK d -> fmt "ATTACK (%s)" (direction d)
+  | ATTACK d -> fmt "ATTACK (%s)" (show_direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
   | C_DASH -> "C_DASH"
   | C_DASH_CHARGE -> "C_DASH_CHARGE"
@@ -165,7 +156,7 @@ let ghost_action_kind id =
   | HARDFALL -> "HARDFALL"
   | JUMP -> "JUMP"
   | SHADE_DASH -> "SHADE_DASH"
-  | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (direction direction')
+  | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (show_direction direction')
   | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | WALL_KICK -> "WALL_KICK"
 
@@ -177,7 +168,7 @@ let ghost_pose pose =
   | PERFORMING action_kind -> fmt "PERFORMING %s" (ghost_action_kind action_kind)
   | READING -> "READING"
   | SWIMMING _ -> "SWIMMING"
-  | WALKING d -> fmt "WALKING (%s)" (direction d)
+  | WALKING d -> fmt "WALKING (%s)" (show_direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"
 
 let ghost_location (g : player) =
@@ -448,7 +439,7 @@ let save_slot idx save_slot =
   in
   fmt "file %d: %s" (idx + 1) (if save_slot.new_game then "New Game" else continue)
 
-let menu_choice ?(save_slots = []) (game_opt : game option) (choice : menu_choice) =
+let menu_choice ?(save_slots = []) state (game_opt : game option) (choice : menu_choice) =
   let save_files_choice (choice : save_files_choice) =
     match choice with
     | START_SLOT n -> save_slot (n - 1) (List.nth save_slots (n - 1))
@@ -527,6 +518,49 @@ let menu_choice ?(save_slots = []) (game_opt : game option) (choice : menu_choic
     match choice with
     | MUSIC -> "Music"
     | SOUND_EFFECTS -> "Sound Effects"
+    | REBIND_CONTROLS -> "Rebind Controls"
+    | BACK -> "Back"
+  in
+  let rebind_menu_choice (choice : rebind_menu_choice) =
+    match choice with
+    | KEYBOARD -> "Keyboard"
+    | GAMEPAD -> "Gamepad"
+    | BACK -> "Back"
+  in
+  let rebind_game_action_choice ~keyboard (choice : rebind_action_menu_choice) =
+    match choice with
+    | REBIND_ACTION action -> (
+        let binding =
+          if keyboard then
+            (get_key state.controls action |> show_key)
+          else
+            (get_button state.controls action |> show_button)
+        in
+        let show_control s = fmt "%s: %s" s binding in
+      match action with
+      (* actions *)
+      | CAST -> show_control "Cast"
+      | C_DASH -> show_control "C-dash"
+      | DASH -> show_control "Dash"
+      | D_NAIL -> show_control "Dream Nail"
+      | FOCUS -> show_control "Focus"
+      | INTERACT -> show_control "Interact"
+      | JUMP -> show_control "Jump"
+      | NAIL -> show_control "Attack"
+      | PAUSE -> show_control "Pause"
+      | OPEN_MAP -> show_control "Open Map"
+      (* directions *)
+      | ARROW direction' -> show_control (show_direction direction')
+      (* debug *)
+      | DEBUG_1 -> "DEBUG_1"
+      | DEBUG_2 -> "DEBUG_2"
+      | DEBUG_3 -> "DEBUG_3"
+      | DEBUG_4 -> "DEBUG_4"
+      | DEBUG_5 -> "DEBUG_5"
+      | DEBUG_UP -> "DEBUG_UP"
+      | DEBUG_DOWN -> "DEBUG_DOWN"
+      | DEBUG_LEFT -> "DEBUG_LEFT"
+      | DEBUG_RIGHT -> "DEBUG_RIGHT")
     | BACK -> "Back"
   in
   match choice with
@@ -538,6 +572,9 @@ let menu_choice ?(save_slots = []) (game_opt : game option) (choice : menu_choic
   | CHANGE_WEAPON_MENU choice -> change_weapon_menu_choice choice
   | CHANGE_GHOST_MENU choice -> change_ghost_menu_choice choice
   | SETTINGS_MENU choice -> settings_menu_choice choice
+  | REBIND_CONTROLS_MENU choice -> rebind_menu_choice choice
+  | REBIND_KEYBOARD_MENU choice -> rebind_game_action_choice ~keyboard:true choice
+  | REBIND_GAMEPAD_MENU choice -> rebind_game_action_choice ~keyboard:false choice
   | CHANGE_AUDIO_SETTING (setting, choice) -> change_setting setting choice
 
 let text_config (config : Interaction.text_config) : string =

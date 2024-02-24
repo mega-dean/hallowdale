@@ -917,7 +917,7 @@ let spawn_vengeful_spirit
       match d with
       | LEFT -> false
       | RIGHT -> true
-      | _ -> failwithf "spawn_vengeful_spirit invalid direction: %s" (Show.direction d))
+      | _ -> failwithf "spawn_vengeful_spirit invalid direction: %s" (show_direction d))
   in
   let vengeful_spirit : sprite =
     {
@@ -1455,16 +1455,16 @@ let handle_debug_keys (game : game) (state : state) =
       state.debug.safe_ss <- not state.debug.safe_ss;
       print "set debug.safe_ss: %b" state.debug.safe_ss
     in
-    if key_down DEBUG_UP then
+    if key_down state.controls DEBUG_UP then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
-    else if key_down DEBUG_DOWN then
+    else if key_down state.controls DEBUG_DOWN then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y +. dv
-    else if key_down DEBUG_RIGHT then
+    else if key_down state.controls DEBUG_RIGHT then
       game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x +. dv
-    else if key_down DEBUG_LEFT then
+    else if key_down state.controls DEBUG_LEFT then
       game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x -. dv
     else if holding_shift () then (
-      if key_pressed DEBUG_1 then (
+      if key_pressed state.controls DEBUG_1 then (
         (* game.ghost.soul.current <- game.ghost.soul.max *)
         (* swap_current_ghost_in_cutscene state game ANNIE *)
         (* show_camera_location () *)
@@ -1473,7 +1473,7 @@ let handle_debug_keys (game : game) (state : state) =
         show_ghost_positions ();
         (* game.player.health.current <- 1; *)
         ())
-      else if key_pressed DEBUG_2 then (
+      else if key_pressed state.controls DEBUG_2 then (
         (* toggle_ability game.ghost "mantis_claw" *)
         (* game.player.health.current <- game.player.health.current - 1; *)
         (* toggle_ability game.player "Dream Wielder"; *)
@@ -1487,18 +1487,18 @@ let handle_debug_keys (game : game) (state : state) =
          *     last_decremented = { at = 0. };
          *   }; *)
         ())
-      else if key_pressed DEBUG_3 then (
+      else if key_pressed state.controls DEBUG_3 then (
         (* print "player water is_some: %b" (Option.is_some game.player.current.water) *)
         toggle_ability game.player "howling_wraiths";
         (* toggle_ability game.player "shade_soul";
          * toggle_ability game.player "descending_dark";
          * toggle_ability game.player "abyss_shriek"; *)
         ())
-      else if key_pressed DEBUG_4 then (
+      else if key_pressed state.controls DEBUG_4 then (
         toggle_ability game.player "desolate_dive";
         (* toggle_ability game.player "ismas_tear" *)
         ()))
-    else if key_pressed DEBUG_1 then
+    else if key_pressed state.controls DEBUG_1 then
       state.debug.paused <- not state.debug.paused;
     state)
 
@@ -1510,7 +1510,7 @@ let in_water (player : player) : bool = Option.is_some player.current.water
 let tick (game : game) (state : state) =
   let stop_wall_sliding = ref false in
 
-  let pressed_or_buffered game_action =
+  let pressed_or_buffered (game_action : game_action) =
     let (input, buffer) : frame_input * float =
       match game_action with
       | NAIL -> (state.frame_inputs.nail, game.player.history.nail.config.input_buffer.seconds)
@@ -2800,7 +2800,7 @@ let tick (game : game) (state : state) =
         let vy = game.player.ghost.entity.v.y in
         let ascending = vy < 0. in
         let dvy = Config.physics.gravity *. state.frame.dt in
-        if key_up JUMP && ascending then
+        if key_up state.controls JUMP && ascending then
           (vy *. Config.physics.jump_damping) +. dvy
         else (
           match game.player.current.wall with

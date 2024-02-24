@@ -239,6 +239,12 @@ let init () : state =
     pause_menu = None;
     save_pos = None;
     world;
+    controls =
+      {
+        keyboard = key_bindings |> Game_action.Map.of_list;
+        gamepad = gamepad_bindings |> Game_action.Map.of_list;
+      };
+    rebinding_action = None;
     camera =
       {
         raylib = camera;
@@ -683,9 +689,9 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
 
 let update_frame_inputs (state : state) : state =
   let update_frame_input ?(direction = false) key (input : frame_input) =
-    input.released <- key_released ~direction key;
-    input.down <- key_down ~direction key;
-    input.pressed <- key_pressed ~direction key;
+    input.released <- key_released state.controls ~direction key;
+    input.down <- key_down state.controls ~direction key;
+    input.pressed <- key_pressed state.controls ~direction key;
     if input.pressed then
       input.down_since <- Some { at = state.frame.time }
     else if not input.down then
@@ -722,14 +728,14 @@ let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
 
 let tick (state : state) =
   if not (holding_shift ()) then (
-    if Controls.key_pressed DEBUG_3 then
+    if key_pressed state.controls DEBUG_3 then
       if state.debug.show_frame_inputs then (
         state.debug.show_frame_inputs <- false;
         print " disabled show_frame_inputs at %d\n\\----------------------/\n" state.frame.idx)
       else (
         state.debug.show_frame_inputs <- true;
         print "\n/----------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
-    if Controls.key_pressed DEBUG_4 then
+    if key_pressed state.controls DEBUG_4 then
       if state.debug.enabled then (
         state.debug.enabled <- false;
         print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
@@ -749,114 +755,141 @@ let tick (state : state) =
     let saved_game_before_dying = Game.load state game.save_file game.save_file_slot in
     state.context <- IN_PROGRESS saved_game_before_dying;
     state
-  | IN_PROGRESS game ->
+  | IN_PROGRESS game -> (
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
-    Audio.play_game_music game;
+    match state.rebinding_action with
+    | Some (KEY, action, idx_pressed) ->
+      (match Raylib.get_key_pressed () with
+      | Raylib.Key.Null -> ()
+      | key ->
+        state.controls.keyboard <-
+          Game_action.Map.update action (fun _ -> Some key) state.controls.keyboard;
+        state.rebinding_action <- None
+      );
+      if state.frame.idx > idx_pressed + 144 then
+        state.rebinding_action <- None;
+      state
+    | Some (BUTTON, action, idx_pressed) ->
+      (match get_pressed_button () with
+      | None -> ()
+      | Some button ->
+        state.controls.gamepad <-
+          Game_action.Map.update action (fun _ -> Some button) state.controls.gamepad;
+        state.rebinding_action <- None
+      );
+      if state.frame.idx > idx_pressed + 144 then
+        state.rebinding_action <- None;
+      state
+    | None ->
+      Audio.play_game_music game;
 
-    if state.debug.paused then (
-      game.player.ghost.hardfall_time <- None;
-      if key_pressed DEBUG_2 then
-        state
-        |> update_frame_inputs
-        |> Menu.update_pause_menu game
-        |> Player.handle_debug_keys game
-        |> Player.tick game
-        |> update_spawned_vengeful_spirits game
-        |> update_enemies game
-        |> update_npcs game
-        |> update_environment game
-        |> Camera.tick game
-      else
-        state |> update_frame_inputs |> Menu.update_pause_menu game |> Player.handle_debug_keys game)
-    else (
-      let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
-      match state'.pause_menu with
-      | Some menu ->
-        (match game.mode with
-        | CLASSIC -> ()
-        | DEMO
-        | STEEL_SOLE ->
-          let time, current_time =
-            if List.length game.progress.purple_pens_found = 0 then
-              ("", Progress.get_total_game_time state.frame.idx)
-            else (
-              let frames_at_last_pen =
-                (* take the first because newest entries are pushed to the front *)
-                List.hd game.progress.purple_pens_found |> fst
-              in
-              ( fmt " in %s" (Progress.get_total_game_time frames_at_last_pen),
-                Progress.get_total_game_time state.frame.idx ))
-          in
-          let pen_progress = Progress.get_row state game "Purple Pens" in
-          game.interaction.corner_text <-
-            Some
-              {
-                content =
-                  fmt "%d / %d purple pens found%s, %d dunks, %d c-dashes --- %s" pen_progress.found
-                    pen_progress.total time game.progress.steel_sole.dunks
-                    game.progress.steel_sole.c_dashes current_time;
-                visible = PAUSE_MENU_OPEN;
-                scale = 1.;
-              });
-        state'
-      | None ->
-        if state.debug.enabled && Env.development then (
-          let show_triggers ?(color = Raylib.Color.blue) (triggers : trigger list) =
-            add_debug_rects state (List.map (fun (r : trigger) -> (color, r.dest)) triggers)
-          in
-          let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
-            add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
-          in
-
-          show_triggers game.room.triggers.lore;
-          show_triggers game.room.triggers.cutscene;
-          show_triggers game.room.triggers.d_nail;
-
-          (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
-          add_debug_rects state
-            (List.map
-               (fun (p : platform) -> (Raylib.Color.orange, p.sprite.dest))
-               game.room.platforms);
-
-          add_debug_rects state
-            [
-              ( (if game.room.respawn.in_trigger_now then
-                   Raylib.Color.red
-                 else
-                   Raylib.Color.green),
-                { pos = game.room.respawn.target; w = 100.; h = 100. } );
-            ];
-
-          add_debug_rects state
-            (List.map (fun (rect, _) -> (Raylib.Color.orange, rect)) game.room.conveyor_belts);
-
-          add_debug_rects state
-            (List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors);
-
-          add_debug_rects state
-            (List.map
-               (fun (r : rect) -> (Raylib.Color.red, r))
-               (game.room.spikes
-               @ game.room.hazards
-               @ (game.room.platform_spikes |> String.Map.to_list |> List.map snd))));
-
-        (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
-           so this skips position updates to prevent the ghost from falling through floors
-        *)
-        if game.room_changed_last_frame then (
-          game.room_changed_last_frame <- false;
-          state')
-        else
-          state'
-          |> reset_frame game
+      if state.debug.paused then (
+        game.player.ghost.hardfall_time <- None;
+        if key_pressed state.controls DEBUG_2 then
+          state
+          |> update_frame_inputs
+          |> Menu.update_pause_menu game
           |> Player.handle_debug_keys game
           |> Player.tick game
           |> update_spawned_vengeful_spirits game
           |> update_enemies game
           |> update_npcs game
           |> update_environment game
-          |> update_interaction_text game
           |> Camera.tick game
-          |> maybe_save_game game)
+        else
+          state
+          |> update_frame_inputs
+          |> Menu.update_pause_menu game
+          |> Player.handle_debug_keys game)
+      else (
+        let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
+        match state'.pause_menu with
+        | Some menu ->
+          (match game.mode with
+          | CLASSIC -> ()
+          | DEMO
+          | STEEL_SOLE ->
+            let time, current_time =
+              if List.length game.progress.purple_pens_found = 0 then
+                ("", Progress.get_total_game_time state.frame.idx)
+              else (
+                let frames_at_last_pen =
+                  (* take the first because newest entries are pushed to the front *)
+                  List.hd game.progress.purple_pens_found |> fst
+                in
+                ( fmt " in %s" (Progress.get_total_game_time frames_at_last_pen),
+                  Progress.get_total_game_time state.frame.idx ))
+            in
+            let pen_progress = Progress.get_row state game "Purple Pens" in
+            game.interaction.corner_text <-
+              Some
+                {
+                  content =
+                    fmt "%d / %d purple pens found%s, %d dunks, %d c-dashes --- %s"
+                      pen_progress.found pen_progress.total time game.progress.steel_sole.dunks
+                      game.progress.steel_sole.c_dashes current_time;
+                  visible = PAUSE_MENU_OPEN;
+                  scale = 1.;
+                });
+          state'
+        | None ->
+          if state.debug.enabled && Env.development then (
+            let show_triggers ?(color = Raylib.Color.blue) (triggers : trigger list) =
+              add_debug_rects state (List.map (fun (r : trigger) -> (color, r.dest)) triggers)
+            in
+            let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
+              add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
+            in
+
+            show_triggers game.room.triggers.lore;
+            show_triggers game.room.triggers.cutscene;
+            show_triggers game.room.triggers.d_nail;
+
+            (* show_respawn_triggers ~color:(Raylib.Color.red) game.room.triggers.respawn; *)
+            add_debug_rects state
+              (List.map
+                 (fun (p : platform) -> (Raylib.Color.orange, p.sprite.dest))
+                 game.room.platforms);
+
+            add_debug_rects state
+              [
+                ( (if game.room.respawn.in_trigger_now then
+                     Raylib.Color.red
+                   else
+                     Raylib.Color.green),
+                  { pos = game.room.respawn.target; w = 100.; h = 100. } );
+              ];
+
+            add_debug_rects state
+              (List.map (fun (rect, _) -> (Raylib.Color.orange, rect)) game.room.conveyor_belts);
+
+            add_debug_rects state
+              (List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors);
+
+            add_debug_rects state
+              (List.map
+                 (fun (r : rect) -> (Raylib.Color.red, r))
+                 (game.room.spikes
+                 @ game.room.hazards
+                 @ (game.room.platform_spikes |> String.Map.to_list |> List.map snd))));
+
+          (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
+             so this skips position updates to prevent the ghost from falling through floors
+          *)
+          if game.room_changed_last_frame then (
+            game.room_changed_last_frame <- false;
+            state')
+          else
+            state'
+            |> reset_frame game
+            |> Player.handle_debug_keys game
+            |> Player.tick game
+            |> update_spawned_vengeful_spirits game
+            |> update_enemies game
+            |> update_npcs game
+            |> update_environment game
+            |> update_interaction_text game
+            |> Camera.tick game
+            |> maybe_save_game game))

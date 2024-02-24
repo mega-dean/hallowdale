@@ -283,8 +283,12 @@ let get_text_margins menu_choice =
   let main_menu_values = (500., 360., 0.) in
   let pause_menu_values = (250., 220., 300.) in
   let weapon_menu_values = (250., 120., 300.) in
+  let rebind_control_values = (250., 20., 300.) in
   let margin_x, margin_y_top, cursor_padding =
     match menu_choice with
+    | REBIND_KEYBOARD_MENU _
+    | REBIND_GAMEPAD_MENU _
+    | REBIND_CONTROLS_MENU _ -> rebind_control_values
     | CHANGE_WEAPON_MENU _ -> weapon_menu_values
     | PAUSE_MENU _
     | CHANGE_GHOST_MENU _
@@ -456,7 +460,7 @@ let random_fragment_vx ?(direction : direction option = None) () =
     | None -> (-250., 250.)
     | Some LEFT -> (-500., 0.)
     | Some RIGHT -> (0., 500.)
-    | Some d -> failwithf "random_fragment_vx invalid direction %s" (Show.direction d)
+    | Some d -> failwithf "random_fragment_vx invalid direction %s" (Controls.show_direction d)
   in
   Random.float_between min max *. window_scale
 
@@ -468,7 +472,7 @@ let random_fragment_vy ?(direction : direction option = None) () =
       (-800., 200.)
     | Some UP -> (-500., 0.)
     | Some DOWN -> (0., 500.)
-    | Some d -> failwithf "random_fragment_vy invalid direction %s" (Show.direction d)
+    | Some d -> failwithf "random_fragment_vy invalid direction %s" (Controls.show_direction d)
   in
   Random.float_between min max *. window_scale
 

@@ -30,7 +30,13 @@ let pause_menu ~allow_save ghost_count : menu =
     |> List.filter_somes)
 
 let settings_menu () : menu =
-  make_menu [ SETTINGS_MENU MUSIC; SETTINGS_MENU SOUND_EFFECTS; SETTINGS_MENU BACK ]
+  make_menu
+    [
+      SETTINGS_MENU MUSIC;
+      SETTINGS_MENU SOUND_EFFECTS;
+      SETTINGS_MENU REBIND_CONTROLS;
+      SETTINGS_MENU BACK;
+    ]
 
 let music_menu () : menu =
   make_menu
@@ -47,6 +53,48 @@ let sound_effects_menu () : menu =
       CHANGE_AUDIO_SETTING (SOUND_EFFECTS, DECREASE);
       CHANGE_AUDIO_SETTING (SOUND_EFFECTS, BACK);
     ]
+
+let rebind_controls_menu () : menu =
+  make_menu
+    [ REBIND_CONTROLS_MENU KEYBOARD; REBIND_CONTROLS_MENU GAMEPAD; REBIND_CONTROLS_MENU BACK ]
+
+let rebind_keyboard_menu () : menu =
+  make_menu
+    [
+      REBIND_KEYBOARD_MENU (REBIND_ACTION (ARROW UP));
+      REBIND_KEYBOARD_MENU (REBIND_ACTION (ARROW DOWN));
+      REBIND_KEYBOARD_MENU (REBIND_ACTION (ARROW LEFT));
+      REBIND_KEYBOARD_MENU (REBIND_ACTION (ARROW RIGHT));
+      REBIND_KEYBOARD_MENU (REBIND_ACTION INTERACT);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION PAUSE);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION OPEN_MAP);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION JUMP);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION NAIL);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION FOCUS);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION CAST);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION DASH);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION C_DASH);
+      REBIND_KEYBOARD_MENU (REBIND_ACTION D_NAIL);
+      REBIND_KEYBOARD_MENU BACK;
+    ]
+
+let rebind_gamepad_menu () : menu =
+  make_menu [
+    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW UP));
+    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW DOWN));
+    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW LEFT));
+    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW RIGHT));
+    REBIND_GAMEPAD_MENU (REBIND_ACTION INTERACT);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION PAUSE);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION OPEN_MAP);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION JUMP);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION NAIL);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION FOCUS);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION CAST);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION DASH);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION C_DASH);
+    REBIND_GAMEPAD_MENU (REBIND_ACTION D_NAIL);
+    REBIND_GAMEPAD_MENU BACK ]
 
 let get_save_file_choices save_slots : menu_choice list =
   let saved_games = List.filter (fun save -> not save.new_game) save_slots in
@@ -142,13 +190,7 @@ let update_pause_menu (game : game) (state : state) : state =
     match choice with
     | MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
     | SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
-    | BACK -> go_back ()
-  in
-
-  let handle_progress_menu choice =
-    match choice with
-    | MUSIC -> state.pause_menu <- Some (MENU (music_menu ()))
-    | SOUND_EFFECTS -> state.pause_menu <- Some (MENU (sound_effects_menu ()))
+    | REBIND_CONTROLS -> state.pause_menu <- Some (MENU (rebind_controls_menu ()))
     | BACK -> go_back ()
   in
 
@@ -159,7 +201,26 @@ let update_pause_menu (game : game) (state : state) : state =
     | SOUND_EFFECTS, INCREASE -> Audio.increase_sound_effects_volume state
     | SOUND_EFFECTS, DECREASE -> Audio.decrease_sound_effects_volume state
     | _, BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
-    | BACK, _ -> failwith "invalid change audio menu"
+    | _, _ -> failwith "invalid change audio menu"
+  in
+
+  let handle_rebind_controls_menu (choice : rebind_menu_choice) =
+    match choice with
+    | KEYBOARD -> state.pause_menu <- Some (MENU (rebind_keyboard_menu ()))
+    | GAMEPAD -> state.pause_menu <- Some (MENU (rebind_gamepad_menu ()))
+    | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
+  in
+
+  let handle_rebind_keyboard_menu (choice : rebind_action_menu_choice) =
+    match choice with
+    | REBIND_ACTION action -> state.rebinding_action <- Some (KEY, action, state.frame.idx)
+    | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
+  in
+
+  let handle_rebind_gamepad_menu (choice : rebind_action_menu_choice) =
+    match choice with
+    | REBIND_ACTION action -> state.rebinding_action <- Some (BUTTON, action, state.frame.idx)
+    | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
   in
 
   if state.frame_inputs.pause.pressed then (
@@ -241,11 +302,14 @@ let update_pause_menu (game : game) (state : state) : state =
       | CHANGE_GHOST_MENU choice -> handle_change_ghost_menu choice
       | SETTINGS_MENU choice -> handle_settings_menu choice
       | CHANGE_AUDIO_SETTING choice -> handle_audio_setting_menu choice
+      | REBIND_CONTROLS_MENU choice -> handle_rebind_controls_menu choice
+      | REBIND_KEYBOARD_MENU choice -> handle_rebind_keyboard_menu choice
+      | REBIND_GAMEPAD_MENU choice -> handle_rebind_gamepad_menu choice
       | MAIN_MENU _
       | SELECT_GAME_MODE _
       | SAVE_FILES_MENU _
       | CONFIRM_DELETE_MENU _ ->
-        failwithf "invalid pause menu: %s" (Show.menu_choice (Some game) menu_choice)));
+        failwithf "invalid pause menu: %s" (Show.menu_choice state (Some game) menu_choice)));
   state
 
 let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state) : state =
@@ -258,8 +322,7 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
       | Some slot -> slot
     in
     if save_slot.new_game then
-      state.context <-
-        MAIN_MENU (select_game_mode_menu save_slot.file save_file_idx, save_slots)
+      state.context <- MAIN_MENU (select_game_mode_menu save_slot.file save_file_idx, save_slots)
     else (
       let game = Game.load state save_slot.file save_file_idx in
       (match game.mode with
@@ -327,6 +390,9 @@ let update_main_menu (menu : menu) (save_slots : save_slot list) (state : state)
     | SELECT_GAME_MODE choice -> handle_game_mode_menu choice
     | SAVE_FILES_MENU choice -> handle_save_files_menu choice
     | CONFIRM_DELETE_MENU choice -> handle_delete_file_menu choice
+    | REBIND_CONTROLS_MENU _
+    | REBIND_KEYBOARD_MENU _
+    | REBIND_GAMEPAD_MENU _
     | PAUSE_MENU _
     | CHANGE_WEAPON_MENU _
     | CHANGE_GHOST_MENU _

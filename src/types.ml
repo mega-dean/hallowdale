@@ -10,6 +10,7 @@ type direction =
   | DOWN
   | LEFT
   | RIGHT
+[@@deriving ord]
 
 let opposite_of direction =
   match direction with
@@ -390,6 +391,43 @@ type weapon = {
   cooldown_scale : float;
 }
 
+type game_action =
+  (* actions *)
+  | CAST
+  | C_DASH
+  | DASH
+  | D_NAIL
+  | FOCUS
+  | INTERACT
+  | JUMP
+  | NAIL
+  | PAUSE
+  | OPEN_MAP
+  (* directions *)
+  | ARROW of direction
+  (* debug *)
+  | DEBUG_UP
+  | DEBUG_DOWN
+  | DEBUG_LEFT
+  | DEBUG_RIGHT
+  | DEBUG_1
+  | DEBUG_2
+  | DEBUG_3
+  | DEBUG_4
+  | DEBUG_5
+[@@deriving ord]
+
+module Game_action' = struct
+  type t = game_action
+
+  let compare a b = compare_game_action a b
+end
+
+module Game_action = struct
+  include Game_action'
+  module Map = Map.Make (Game_action')
+end
+
 type main_menu_choice =
   | START_GAME
   | QUIT
@@ -432,6 +470,16 @@ type change_ghost_menu_choice =
 type settings_menu_choice =
   | MUSIC
   | SOUND_EFFECTS
+  | REBIND_CONTROLS
+  | BACK
+
+type rebind_menu_choice =
+  | KEYBOARD
+  | GAMEPAD
+  | BACK
+
+type rebind_action_menu_choice =
+  | REBIND_ACTION of game_action
   | BACK
 
 type change_setting_choice =
@@ -444,6 +492,9 @@ type menu_choice =
   | CHANGE_WEAPON_MENU of change_weapon_menu_choice
   | CHANGE_GHOST_MENU of change_ghost_menu_choice
   | SETTINGS_MENU of settings_menu_choice
+  | REBIND_CONTROLS_MENU of rebind_menu_choice
+  | REBIND_KEYBOARD_MENU of rebind_action_menu_choice
+  | REBIND_GAMEPAD_MENU of rebind_action_menu_choice
   | CHANGE_AUDIO_SETTING of (settings_menu_choice * change_setting_choice)
   | MAIN_MENU of main_menu_choice
   | SELECT_GAME_MODE of select_game_mode_choice
@@ -1545,6 +1596,15 @@ type pause_menu =
   | WORLD_MAP of world_map
   | PROGRESS
 
+type control_type =
+  | KEY
+  | BUTTON
+
+type controls = {
+  mutable keyboard : Raylib.Key.t Game_action.Map.t;
+  mutable gamepad : Raylib.GamepadButton.t Game_action.Map.t;
+}
+
 type state = {
   mutable context : state_context;
   world : world;
@@ -1555,6 +1615,8 @@ type state = {
   mutable save_pos : vector option;
   mutable pause_menu : pause_menu option;
   frame_inputs : frame_inputs;
+  controls : controls;
+  mutable rebinding_action : (control_type * game_action * int) option;
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
   global : global_cache;
