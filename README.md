@@ -63,15 +63,6 @@ the total.
 This is a "New Game +" mode like Steel Sole but without the damage respawns, so you can play this if
 you just want to run around the map and find the purple pens.
 
-### Configuration
-
-There is currently no menu for rebinding keys, but they can be overridden by placing a file at
-`config/key_overrides.json` and restarting the game. Gamepad buttons can be rebound with a file at
-`config/button_overrides.json`, using button names for a Playstation controller. See
-`config/key_overrides.json.example` and `config/button_overrides.json.example` for examples.
-
-None of the other settings (like fps) are configurable yet.
-
 ### Controls
 
 Most of the controls match the default Hollow Knight controls, but there are a few differences:
@@ -106,7 +97,7 @@ Most of the controls match the default Hollow Knight controls, but there are a f
 - Interact - L1
 - Open map - select
 - Pause - start
-- Movement - d-pad or left stick (although the stick doesn't work for menus because of a bug)
+- Movement - d-pad or left stick
 
 ### Development
 

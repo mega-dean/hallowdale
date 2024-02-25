@@ -686,8 +686,12 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
 let update_frame_inputs (state : state) : state =
   let update_frame_input ?(direction = false) key (input : frame_input) =
     input.released <- key_released state.controls ~direction key;
+    input.pressed <-
+      (if direction && input.down then
+         false
+       else
+         key_pressed state.controls ~direction key);
     input.down <- key_down state.controls ~direction key;
-    input.pressed <- key_pressed state.controls ~direction key;
     if input.pressed then
       input.down_since <- Some { at = state.frame.time }
     else if not input.down then
