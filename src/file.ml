@@ -20,11 +20,10 @@ let maybe_read (filename : string) : string option =
   else
     None
 
-let write (filename : string) (contents : string) : bool =
+let write (filename : string) (contents : string) =
   let ch = open_out filename in
   let s = Printf.fprintf ch "%s\n" contents in
-  close_out ch;
-  true
+  close_out ch
 
 let read_config file_name (convert : string -> 'a) : 'a =
   let full_path = make_root_path [ "config"; Printf.sprintf "%s.json" file_name ] in
@@ -38,3 +37,23 @@ let delete_save idx =
     fmt "%s%sdeleted-%d_%s" saves_dir Filename.dir_sep (Unix.time () |> Float.to_int) save_file
   in
   Sys.rename path new_path
+
+let copy_file src dest =
+  let contents = read src in
+  write dest contents
+
+let delete_bindings filename =
+  let path = make_root_path [ "config"; filename ] in
+  let blank_file = make_root_path [ "config"; "blank-config.json" ] in
+  if Sys.file_exists path then (
+    let new_path =
+      make_root_path [ "config"; fmt "deleted-%d_%s" (Unix.time () |> Float.to_int) filename ]
+    in
+    Sys.rename path new_path;
+    copy_file blank_file path
+  )
+  else
+    failwithf "could not find bindings file %s to remove" path
+
+let delete_keyboard_bindings () = delete_bindings "key_overrides.json"
+let delete_gamepad_bindings () = delete_bindings "button_overrides.json"

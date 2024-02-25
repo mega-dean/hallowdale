@@ -239,11 +239,7 @@ let init () : state =
     pause_menu = None;
     save_pos = None;
     world;
-    controls =
-      {
-        keyboard = key_bindings |> Game_action.Map.of_list;
-        gamepad = gamepad_bindings |> Game_action.Map.of_list;
-      };
+    controls = initialize_controls ();
     rebinding_action = None;
     camera =
       {
@@ -759,28 +755,45 @@ let tick (state : state) =
     (* TODO the music stutters at room transitions
        - maybe need to check difference in state.frame.time and seek forward
     *)
+    let find_existing_binding (type a) (value : a) (action_map : a Game_action.Map.t) :
+        game_action option =
+      let res = ref None in
+      let find (action : game_action) value' =
+        if value = value' then
+          res := Some action
+      in
+      Game_action.Map.iter find action_map;
+      !res
+    in
     match state.rebinding_action with
-    | Some (KEY, action, idx_pressed) ->
-      (match Raylib.get_key_pressed () with
-      | Raylib.Key.Null -> ()
-      | key ->
-        state.controls.keyboard <-
-          Game_action.Map.update action (fun _ -> Some key) state.controls.keyboard;
-        state.rebinding_action <- None
-      );
-      if state.frame.idx > idx_pressed + 144 then
-        state.rebinding_action <- None;
-      state
-    | Some (BUTTON, action, idx_pressed) ->
-      (match get_pressed_button () with
-      | None -> ()
-      | Some button ->
-        state.controls.gamepad <-
-          Game_action.Map.update action (fun _ -> Some button) state.controls.gamepad;
-        state.rebinding_action <- None
-      );
-      if state.frame.idx > idx_pressed + 144 then
-        state.rebinding_action <- None;
+    | Some (control_type, action) ->
+      (match control_type with
+      | KEY -> (
+        match Raylib.get_key_pressed () with
+        | Raylib.Key.Null -> ()
+        | key ->
+          (match find_existing_binding key state.controls.keyboard with
+          | None -> ()
+          | Some binding ->
+            let old_key = Game_action.Map.find action state.controls.keyboard in
+            state.controls.keyboard <-
+              Game_action.Map.update binding (fun _ -> Some old_key) state.controls.keyboard);
+          state.controls.keyboard <-
+            Game_action.Map.update action (fun _ -> Some key) state.controls.keyboard;
+          state.rebinding_action <- None)
+      | BUTTON -> (
+        match get_pressed_button () with
+        | None -> ()
+        | Some button ->
+          (match find_existing_binding button state.controls.gamepad with
+          | None -> ()
+          | Some binding ->
+            let old_button = Game_action.Map.find action state.controls.gamepad in
+            state.controls.gamepad <-
+              Game_action.Map.update binding (fun _ -> Some old_button) state.controls.gamepad);
+          state.controls.gamepad <-
+            Game_action.Map.update action (fun _ -> Some button) state.controls.gamepad;
+          state.rebinding_action <- None));
       state
     | None ->
       Audio.play_game_music game;

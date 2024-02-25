@@ -480,6 +480,7 @@ type rebind_menu_choice =
 
 type rebind_action_menu_choice =
   | REBIND_ACTION of game_action
+  | RESET_BINDINGS
   | BACK
 
 type change_setting_choice =
@@ -1615,8 +1616,8 @@ type state = {
   mutable save_pos : vector option;
   mutable pause_menu : pause_menu option;
   frame_inputs : frame_inputs;
-  controls : controls;
-  mutable rebinding_action : (control_type * game_action * int) option;
+  mutable controls : controls;
+  mutable rebinding_action : (control_type * game_action) option;
   mutable debug : debug;
   (* these are all configs that are eager-loaded from json on startup *)
   global : global_cache;

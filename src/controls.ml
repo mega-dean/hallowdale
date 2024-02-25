@@ -85,7 +85,7 @@ let get_action action_name =
   | "DEBUG_RIGHT" -> DEBUG_RIGHT
   | _ -> failwithf "bad override action_name: %s" action_name
 
-let overridden_keybinds : (game_action * Raylib.Key.t) list =
+let overridden_keybinds () : (game_action * Raylib.Key.t) list =
   let keybinds_json : (string * string) list =
     try File.read_config "key_overrides" Json_j.keybinds_file_of_string with
     | Sys_error _ -> []
@@ -231,7 +231,7 @@ let default_keybinds : (game_action * Raylib.Key.t) list =
       (DEBUG_RIGHT, Raylib.Key.Null);
     ]
 
-let overridden_gamepad_buttons : (game_action * Raylib.GamepadButton.t) list =
+let overridden_gamepad_buttons () : (game_action * Raylib.GamepadButton.t) list =
   let keybinds_json : (string * string) list =
     try File.read_config "button_overrides" Json_j.keybinds_file_of_string with
     | Sys_error _ -> []
@@ -307,11 +307,17 @@ let make_bindings
   in
   List.map build_binding (all_game_actions @ debug_game_actions)
 
-let key_bindings : (game_action * Raylib.Key.t) list =
-  make_bindings "key" default_keybinds overridden_keybinds
+let key_bindings () : (game_action * Raylib.Key.t) list =
+  make_bindings "key" default_keybinds (overridden_keybinds ())
 
-let gamepad_bindings : (game_action * Raylib.GamepadButton.t) list =
-  make_bindings "gamepad button" default_gamepad_buttons overridden_gamepad_buttons
+let gamepad_bindings () : (game_action * Raylib.GamepadButton.t) list =
+  make_bindings "gamepad button" default_gamepad_buttons (overridden_gamepad_buttons ())
+
+let initialize_controls () =
+  {
+    keyboard = key_bindings () |> Game_action.Map.of_list;
+    gamepad = gamepad_bindings () |> Game_action.Map.of_list;
+  }
 
 let show_key key =
   match key with

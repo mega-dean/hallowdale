@@ -561,6 +561,7 @@ let menu_choice ?(save_slots = []) state (game_opt : game option) (choice : menu
       | DEBUG_DOWN -> "DEBUG_DOWN"
       | DEBUG_LEFT -> "DEBUG_LEFT"
       | DEBUG_RIGHT -> "DEBUG_RIGHT")
+    | RESET_BINDINGS -> "Reset to default bindings"
     | BACK -> "Back"
   in
   match choice with

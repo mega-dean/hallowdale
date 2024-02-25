@@ -75,26 +75,30 @@ let rebind_keyboard_menu () : menu =
       REBIND_KEYBOARD_MENU (REBIND_ACTION DASH);
       REBIND_KEYBOARD_MENU (REBIND_ACTION C_DASH);
       REBIND_KEYBOARD_MENU (REBIND_ACTION D_NAIL);
+      REBIND_KEYBOARD_MENU RESET_BINDINGS;
       REBIND_KEYBOARD_MENU BACK;
     ]
 
 let rebind_gamepad_menu () : menu =
-  make_menu [
-    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW UP));
-    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW DOWN));
-    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW LEFT));
-    REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW RIGHT));
-    REBIND_GAMEPAD_MENU (REBIND_ACTION INTERACT);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION PAUSE);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION OPEN_MAP);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION JUMP);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION NAIL);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION FOCUS);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION CAST);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION DASH);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION C_DASH);
-    REBIND_GAMEPAD_MENU (REBIND_ACTION D_NAIL);
-    REBIND_GAMEPAD_MENU BACK ]
+  make_menu
+    [
+      REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW UP));
+      REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW DOWN));
+      REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW LEFT));
+      REBIND_GAMEPAD_MENU (REBIND_ACTION (ARROW RIGHT));
+      REBIND_GAMEPAD_MENU (REBIND_ACTION INTERACT);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION PAUSE);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION OPEN_MAP);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION JUMP);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION NAIL);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION FOCUS);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION CAST);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION DASH);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION C_DASH);
+      REBIND_GAMEPAD_MENU (REBIND_ACTION D_NAIL);
+      REBIND_GAMEPAD_MENU RESET_BINDINGS;
+      REBIND_GAMEPAD_MENU BACK;
+    ]
 
 let get_save_file_choices save_slots : menu_choice list =
   let saved_games = List.filter (fun save -> not save.new_game) save_slots in
@@ -213,13 +217,19 @@ let update_pause_menu (game : game) (state : state) : state =
 
   let handle_rebind_keyboard_menu (choice : rebind_action_menu_choice) =
     match choice with
-    | REBIND_ACTION action -> state.rebinding_action <- Some (KEY, action, state.frame.idx)
+    | REBIND_ACTION action -> state.rebinding_action <- Some (KEY, action)
+    | RESET_BINDINGS ->
+      File.delete_keyboard_bindings ();
+      state.controls <- Controls.initialize_controls ()
     | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
   in
 
   let handle_rebind_gamepad_menu (choice : rebind_action_menu_choice) =
     match choice with
-    | REBIND_ACTION action -> state.rebinding_action <- Some (BUTTON, action, state.frame.idx)
+    | REBIND_ACTION action -> state.rebinding_action <- Some (BUTTON, action)
+    | RESET_BINDINGS ->
+      File.delete_gamepad_bindings ();
+      state.controls <- Controls.initialize_controls ()
     | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
   in
 

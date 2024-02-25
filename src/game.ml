@@ -110,12 +110,9 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
   in
   save_file.progress.frame_idx <- state.frame.idx;
   let contents = Json_j.string_of_save_file save_file |> Yojson.Safe.prettify in
-  let written = File.write (File.save_file_path game.save_file_slot) contents in
-  if written then (
-    game.save_file <- save_file;
-    after_fn state)
-  else
-    failwith "error when trying to save"
+  File.write (File.save_file_path game.save_file_slot) contents;
+  game.save_file <- save_file;
+  after_fn state
 
 let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
   {
