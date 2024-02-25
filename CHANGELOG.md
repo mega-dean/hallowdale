@@ -25,10 +25,13 @@
   - Buddy
   - Luis Guzman
   - Russell Borchert
+  - Lava Britta
+  - Hickey
 - add orbiting projectiles
 - add homing projectiles
 - add autosaving before boss fights
 - prevent saving during boss fights and cutscenes
+- add menu for rebinding controls
 
 ## [0.0.10] - 2024-01-16
 

@@ -50,10 +50,17 @@ let delete_bindings filename =
       make_root_path [ "config"; fmt "deleted-%d_%s" (Unix.time () |> Float.to_int) filename ]
     in
     Sys.rename path new_path;
-    copy_file blank_file path
-  )
+    copy_file blank_file path)
   else
     failwithf "could not find bindings file %s to remove" path
 
 let delete_keyboard_bindings () = delete_bindings "key_overrides.json"
 let delete_gamepad_bindings () = delete_bindings "button_overrides.json"
+
+let save_keyboard_bindings content =
+  delete_bindings "key_overrides.json";
+  write (make_root_path [ "config"; "key_overrides.json" ]) content
+
+let save_gamepad_bindings content =
+  delete_bindings "button_overrides.json";
+  write (make_root_path [ "config"; "button_overrides.json" ]) content

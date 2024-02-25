@@ -82,6 +82,7 @@ module String = struct
 
   let join strs = String.concat ", " strs
   let join_lines strs = String.concat "\n" strs
+  let join_lines_with join_str strs = String.concat (fmt "\n%c" join_str) strs
   let to_int s = int_of_string s
 end
 

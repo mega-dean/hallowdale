@@ -43,7 +43,10 @@ let show_game_action k =
   | PAUSE -> "PAUSE"
   | OPEN_MAP -> "OPEN_MAP"
   (* directions *)
-  | ARROW direction -> fmt "ARROW (%s)" (show_direction direction)
+  | ARROW UP -> "UP"
+  | ARROW DOWN -> "DOWN"
+  | ARROW LEFT -> "LEFT"
+  | ARROW RIGHT -> "RIGHT"
   (* debug *)
   | DEBUG_1 -> "DEBUG_1"
   | DEBUG_2 -> "DEBUG_2"
@@ -243,14 +246,14 @@ let overridden_gamepad_buttons () : (game_action * Raylib.GamepadButton.t) list 
       | "[down]" -> Raylib.GamepadButton.Left_face_down
       | "[left]" -> Raylib.GamepadButton.Left_face_left
       | "[right]" -> Raylib.GamepadButton.Left_face_right
-      | "x" -> Raylib.GamepadButton.Right_face_down
-      | "square" -> Raylib.GamepadButton.Right_face_left
-      | "circle" -> Raylib.GamepadButton.Right_face_right
-      | "triangle" -> Raylib.GamepadButton.Right_face_up
-      | "r1" -> Raylib.GamepadButton.Right_trigger_1
-      | "r2" -> Raylib.GamepadButton.Right_trigger_2
-      | "l1" -> Raylib.GamepadButton.Left_trigger_1
-      | "l2" -> Raylib.GamepadButton.Left_trigger_1
+      | "X" -> Raylib.GamepadButton.Right_face_down
+      | "Square" -> Raylib.GamepadButton.Right_face_left
+      | "Circle" -> Raylib.GamepadButton.Right_face_right
+      | "Triangle" -> Raylib.GamepadButton.Right_face_up
+      | "R1" -> Raylib.GamepadButton.Right_trigger_1
+      | "R2" -> Raylib.GamepadButton.Right_trigger_2
+      | "L1" -> Raylib.GamepadButton.Left_trigger_1
+      | "L2" -> Raylib.GamepadButton.Left_trigger_1
       | "[start]" -> Raylib.GamepadButton.Middle_left
       | "[select]" -> Raylib.GamepadButton.Middle_right
       | _ -> failwithf "bad override gamepad button name: %s" key_name
@@ -370,15 +373,15 @@ let show_key key =
   | Raylib.Key.Apostrophe -> "'"
   | Raylib.Key.Left_shift -> "Left shift"
   | Raylib.Key.Right_shift -> "Right shift"
-  | Raylib.Key.Escape -> "Escape"
-  | Raylib.Key.Space -> "Space"
+  | Raylib.Key.Escape -> "[escape]"
+  | Raylib.Key.Space -> "[space]"
   | Raylib.Key.Null -> "Null"
-  | Raylib.Key.Comma -> "Comma"
-  | Raylib.Key.Minus -> "Minus"
-  | Raylib.Key.Period -> "Period"
-  | Raylib.Key.Equal -> "Equal"
-  | Raylib.Key.Backslash -> "Backslash"
-  | Raylib.Key.Enter -> "Enter"
+  | Raylib.Key.Comma -> ","
+  | Raylib.Key.Minus -> "-"
+  | Raylib.Key.Period -> "."
+  | Raylib.Key.Equal -> "="
+  | Raylib.Key.Backslash -> "\\"
+  | Raylib.Key.Enter -> "[enter]"
   | Raylib.Key.Backspace -> "Backspace"
   | Raylib.Key.Insert -> "Insert"
   | Raylib.Key.Delete -> "Delete"

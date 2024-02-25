@@ -772,27 +772,55 @@ let tick (state : state) =
         match Raylib.get_key_pressed () with
         | Raylib.Key.Null -> ()
         | key ->
+          let replaced_bindings =
+            ref (File.read_config "key_overrides" Json_j.keybinds_file_of_string)
+          in
+          let new_bindings = ref [] in
           (match find_existing_binding key state.controls.keyboard with
           | None -> ()
           | Some binding ->
             let old_key = Game_action.Map.find action state.controls.keyboard in
+            new_bindings := (show_game_action binding, show_key old_key) :: !new_bindings;
             state.controls.keyboard <-
               Game_action.Map.update binding (fun _ -> Some old_key) state.controls.keyboard);
           state.controls.keyboard <-
             Game_action.Map.update action (fun _ -> Some key) state.controls.keyboard;
+          new_bindings := (show_game_action action, show_key key) :: !new_bindings;
+          let replace (k, v) = replaced_bindings := List.replace_assoc k v !replaced_bindings in
+          List.iter replace !new_bindings;
+          let contents =
+            Json_j.string_of_keybinds_file !replaced_bindings
+            |> String.split_on_char '('
+            |> String.join_lines_with '('
+          in
+          File.save_keyboard_bindings contents;
           state.rebinding_action <- None)
       | BUTTON -> (
         match get_pressed_button () with
         | None -> ()
         | Some button ->
+          let replaced_bindings =
+            ref (File.read_config "button_overrides" Json_j.keybinds_file_of_string)
+          in
+          let new_bindings = ref [] in
           (match find_existing_binding button state.controls.gamepad with
           | None -> ()
           | Some binding ->
             let old_button = Game_action.Map.find action state.controls.gamepad in
+            new_bindings := (show_game_action binding, show_button old_button) :: !new_bindings;
             state.controls.gamepad <-
               Game_action.Map.update binding (fun _ -> Some old_button) state.controls.gamepad);
           state.controls.gamepad <-
             Game_action.Map.update action (fun _ -> Some button) state.controls.gamepad;
+          new_bindings := (show_game_action action, show_button button) :: !new_bindings;
+          let replace (k, v) = replaced_bindings := List.replace_assoc k v !replaced_bindings in
+          List.iter replace !new_bindings;
+          let contents =
+            Json_j.string_of_keybinds_file !replaced_bindings
+            |> String.split_on_char '('
+            |> String.join_lines_with '('
+          in
+          File.save_gamepad_bindings contents;
           state.rebinding_action <- None));
       state
     | None ->
