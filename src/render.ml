@@ -6,10 +6,10 @@ module Rectangle = Raylib.Rectangle
 type text_config = Interaction.text_config
 
 let font_size = Config.scale.font_size
-let line_height ?(font_scale = 1.) () = (font_size |> Int.to_float) *. font_scale
+let line_height ?(font_scale = 1.) () = font_size *. font_scale
 
 let measure_text ?(font_scale = 1.) s =
-  Raylib.measure_text s ((font_size |> Int.to_float) *. font_scale |> Float.to_int)
+  Raylib.measure_text s (font_size *. font_scale |> Float.to_int)
 
 module Draw = struct
   open Raylib
@@ -28,8 +28,7 @@ module Draw = struct
   let text ?(color = Color.white) ?(font_scale = 1.) (content : string) (pos : vector) =
     draw_text_ex (get_font_default ()) content
       (Raylib.Vector2.create pos.x pos.y)
-      ((font_size |> Int.to_float) *. font_scale)
-      Config.text.spacing color
+      (font_size *. font_scale) Config.text.spacing color
 end
 
 let debug_shape_outline
@@ -330,8 +329,24 @@ let get_lines ?(_debug = false) ?(font_scale = 1.) (w : float) (words : string l
     let segment_w = measure segment.content in
     let current_line = List.last lines in
     let change_color color =
+      let start_content =
+        (* this is needed to adjust spacing between colored words because Raylib.measure_text does
+           not return "expected" ratios for different font sizes
+           eg. `measure_text str 18` /. `measure_text str 24` is less than 0.75
+           - this is probably because the default font is intended just for debugging, and real games
+             use fonts
+        *)
+        if 12. < font_size && font_size <= 14. then
+          " "
+        else if 14. < font_size && font_size <= 16. then
+          "  "
+        else if 16. < font_size && font_size <= 19. then
+          "   "
+        else
+          ""
+      in
       ( add_segment_to_last_line lines segment,
-        new_segment ~color "" 0. (segment_w +. current_line.w) )
+        new_segment ~color start_content 0. (segment_w +. current_line.w) )
     in
     match word with
     | "{{white}}" -> change_color Raylib.Color.raywhite
@@ -351,8 +366,8 @@ let get_lines ?(_debug = false) ?(font_scale = 1.) (w : float) (words : string l
     | "{{darkpink}}" -> change_color (Raylib.Color.create 146 24 118 255)
     | "{{gray}}" -> change_color Raylib.Color.gray
     | _ ->
-      (* subtracting 25 because archives text  *)
-      if word_w +. segment_w +. current_line.w > w -. 25. then
+      (* subtracting archives_text_padding fixes text in archives *)
+      if word_w +. segment_w +. current_line.w > w -. Config.text.archives_extra_text_padding then
         (start_new_line lines segment, new_segment ~color:segment.color word word_w 0.)
       else
         add_word_to_segment
@@ -403,7 +418,7 @@ let tick (state : state) =
   in
 
   let draw_cursor (config : text_config) (choice_idx : int) =
-    let choice_offset = choice_idx * Config.scale.paragraph_spacing |> Int.to_float in
+    let choice_offset = (choice_idx |> Int.to_float) *. Config.scale.paragraph_spacing in
     let left_x = camera_x +. config.margin_x +. config.cursor_padding in
     let right_x = camera_x +. Config.window.w -. config.margin_x -. config.cursor_padding in
     let y = camera_y +. config.margin_y_top +. config.padding.y +. choice_offset in
@@ -411,7 +426,6 @@ let tick (state : state) =
     Draw.text "*" { x = right_x; y }
   in
 
-  (* TODO colored words look fine at window_scale 1.0 and 0.5, but not at 0.8 *)
   let display_paragraph
       ?(force_spaces = false)
       ?(y_offset = 0.)
@@ -464,7 +478,7 @@ let tick (state : state) =
         let pos =
           {
             x = segment.dest.pos.x +. camera_x +. config.margin_x +. padding_x;
-            y = dest_y +. ((line_idx * font_size |> Int.to_float) *. font_scale);
+            y = dest_y +. ((line_idx |> Int.to_float) *. font_size *. font_scale);
           }
         in
 
@@ -473,7 +487,7 @@ let tick (state : state) =
       List.iter display_segment line.segments
     in
 
-    let paragraph_offset = paragraph_idx * Config.scale.paragraph_spacing |> Int.to_float in
+    let paragraph_offset = (paragraph_idx |> Int.to_float) *. Config.scale.paragraph_spacing in
     let y_offset' = paragraph_offset +. config.margin_y_top +. config.padding.y +. y_offset in
     let lines =
       let w = text_box_width config -. (2. *. config.padding.x) in
@@ -605,9 +619,7 @@ let tick (state : state) =
     (match game.interaction.corner_text with
     | None -> ()
     | Some tt ->
-      let dest =
-        { x = camera_x; y = camera_y +. (Config.window.h -. (font_size |> Int.to_float)) }
-      in
+      let dest = { x = camera_x; y = camera_y +. (Config.window.h -. font_size) } in
       let alpha =
         match tt.visible with
         | UNTIL_UNSET
@@ -698,8 +710,8 @@ let tick (state : state) =
       | Some (label, dest) ->
         let w = measure_text label in
         let pos = align (CENTER, TOP_INSIDE) dest (w |> Int.to_float) (line_height ()) in
-        Raylib.draw_text label (pos.x |> Float.to_int) (pos.y |> Float.to_int) font_size
-          Color.raywhite
+        Raylib.draw_text label (pos.x |> Float.to_int) (pos.y |> Float.to_int)
+          (font_size |> Float.to_int) Color.raywhite
     in
 
     let draw_projectile (p : projectile) =

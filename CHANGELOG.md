@@ -32,6 +32,7 @@
 - add autosaving before boss fights
 - prevent saving during boss fights and cutscenes
 - add menu for rebinding controls
+- fix text spacing
 
 ## [0.0.10] - 2024-01-16
 

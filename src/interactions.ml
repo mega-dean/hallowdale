@@ -204,7 +204,7 @@ let get_steps
                   (DIALOGUE
                      ( "Annie's Boobs",
                        fmt
-                         "You have {{purple}} %d purple pens {{white}} - come back when you have \
+                         "You have {{purple}} %d purple pens. {{white}} Come back when you have \
                           {{purple}} %d."
                          purple_pens_found next_upgrade_amount ));
               ])

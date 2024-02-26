@@ -1644,7 +1644,7 @@ let tick (game : game) (state : state) =
           in
           match general_step with
           | SHAKE_SCREEN amount -> state.camera.shake <- amount
-          | DEBUG s -> tmp "%s" s
+          | DEBUG s -> print "%s" s
           | INITIALIZE_INTERACTIONS options -> (
             game.interaction.can_skip <- true;
             game.player.ghost.entity.v <- Zero.vector ();

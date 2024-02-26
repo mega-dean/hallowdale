@@ -14,8 +14,8 @@ type scale_config = {
   room : float;
   damage : float;
   npc : float;
-  font_size : int;
-  paragraph_spacing : int;
+  font_size : float;
+  paragraph_spacing : float;
 }
 
 let scale =
@@ -39,7 +39,7 @@ let scale =
     damage = (room_scale |> Int.to_float) *. window_scale;
     npc = npc *. window_scale;
     font_size = Env.font_size;
-    paragraph_spacing = Env.font_size * 2;
+    paragraph_spacing = Env.font_size *. 2.;
   }
 
 type world_map_config = {
@@ -268,6 +268,7 @@ type text = {
   short_margin_y_bottom : float;
   outline_offset_y : float;
   outline_h : float;
+  archives_extra_text_padding : float;
   (* focus needs a separate config because there is text above the outline *)
   focus_outline_offset_y : float;
   focus_outline_bottom_offset_y : float;
@@ -322,6 +323,7 @@ let text =
     short_margin_y_bottom = 350. *. window_scale;
     outline_offset_y = window.h /. 4.;
     outline_h = 100. *. window.scale;
+    archives_extra_text_padding = 25. *. window.scale;
     focus_outline_offset_y = 50. *. window_scale;
     focus_outline_bottom_offset_y = outline_offset_y +. (200. *. window.scale);
     base_config;

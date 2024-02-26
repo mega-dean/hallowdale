@@ -48,7 +48,7 @@ let max_width, max_height =
 
 let min_width, min_height = (max_width /. 2., max_height /. 2.)
 
-let (window_w, window_h, window_scale, font_size) : float * float * float * int =
+let (window_w, window_h, window_scale, font_size) : float * float * float * float =
   let monitor_w, monitor_h =
     (* Raylib.set_config_flags [ Raylib.ConfigFlags.Window_resizable ]; *)
     (* need to run this before get_monitor_w/h *)
@@ -67,7 +67,9 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * int 
         [
           0.5;
           (* 0.6; *)
+          (* 0.65; *)
           0.7;
+          (* 0.75; *)
           (* 0.8; *)
           (* 0.9; *)
           1.;
@@ -81,7 +83,4 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * int 
   in
   if verbose then
     print "window scale: %f" window_scale;
-  ( max_width *. window_scale,
-    max_height *. window_scale,
-    window_scale,
-    24. *. window_scale |> Float.to_int )
+  (max_width *. window_scale, max_height *. window_scale, window_scale, 24. *. window_scale)
