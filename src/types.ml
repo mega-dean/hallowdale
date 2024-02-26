@@ -1469,7 +1469,7 @@ type room = {
   mutable loose_projectiles : projectile list;
   (* everything below is built from object layers *)
   triggers : triggers;
-  floors : rect list;
+  floors : (rect * rect list) list;
   platforms : platform list;
   (* key is the platform.id, which is just the platform's coordinates as a string *)
   platform_spikes : rect String.Map.t;

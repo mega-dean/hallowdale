@@ -58,9 +58,7 @@ let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
   Draw.rect_lines (rect |> rect_to_Rect) size color
 
 let debug_rect' color (rect : rect) =
-  let transparent_color =
-    Raylib.Color.create (Raylib.Color.r color) (Raylib.Color.g color) (Raylib.Color.b color) 100
-  in
+  let transparent_color = Raylib.Color.(create (r color) (g color) (b color)) 100 in
   Draw.rect rect transparent_color
 
 let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =

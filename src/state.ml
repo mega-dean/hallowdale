@@ -598,8 +598,8 @@ let update_enemies (game : game) (state : state) =
       let trigger = make_stub_trigger BOSS_KILLED "boss-killed" (Show.enemy_id enemy.id) in
       Player.maybe_begin_interaction state game trigger
     in
-    if Enemy.is_dead enemy then (
-      if enemy.on_killed.start_boss_killed_interaction then (
+    if Enemy.is_dead enemy then
+      if enemy.on_killed.start_boss_killed_interaction then
         if enemy.on_killed.multiple_enemies then (
           let all_bosses_dead =
             let living_bosses =
@@ -612,7 +612,7 @@ let update_enemies (game : game) (state : state) =
           if all_bosses_dead then
             begin_boss_interaction ())
         else
-          begin_boss_interaction ()))
+          begin_boss_interaction ()
   in
   List.iter
     (fun (enemy : enemy) ->
@@ -903,7 +903,9 @@ let tick (state : state) =
               (List.map (fun (rect, _) -> (Raylib.Color.orange, rect)) game.room.conveyor_belts);
 
             add_debug_rects state
-              (List.map (fun (r : rect) -> (Raylib.Color.orange, r)) game.room.floors);
+              (List.map
+                 (fun (r : rect) -> (Raylib.Color.orange, r))
+                 (List.map snd game.room.floors |> List.concat));
 
             add_debug_rects state
               (List.map

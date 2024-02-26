@@ -148,9 +148,13 @@ let get_conveyor_belt_collision (room : room) (entity : entity) : (collision * v
 
 let get_floor_collisions (room : room) (entity : entity) : collision list =
   let layers = List.filter (fun (l : layer) -> l.config.collides_with_ghost) room.layers in
+  let floors =
+    let in_area (area, _floors) = Option.is_some (Collision.between_rects entity.dest area) in
+    List.filter in_area room.floors |> List.map snd |> List.concat
+  in
   get_tile_collisions layers entity
   @ get_platform_collisions entity room.platforms
-  @ get_rect_collisions entity room.floors
+  @ get_rect_collisions entity floors
 
 let get_collisions name room entity =
   let layers = List.filter (fun (l : layer) -> l.name = name) room.layers in

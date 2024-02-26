@@ -695,6 +695,27 @@ let init (params : room_params) : room =
       []
   in
 
+  let partitioned_floors =
+    (* Entity.get_floor_collisions checks all partitions, so 3x3 results
+       in (9 + (rects in partition)) checks per frame per enemy, which is fewer
+       than 4x4 (16 + (rects in partition)) checks per frame per enemy
+    *)
+    let dim' = 3 in
+    let dim = dim' |> Int.to_float in
+    let w = (json_room.w_in_tiles |> Int.to_float) *. Config.window.dest_tile_size /. dim in
+    let h = (json_room.h_in_tiles |> Int.to_float) *. Config.window.dest_tile_size /. dim in
+    let make_partition idx =
+      let x = w *. (idx mod dim' |> Int.to_float) in
+      let y = h *. (idx / dim' |> Int.to_float) in
+      { pos = { x; y }; w; h }
+    in
+    let find_floors_in partition =
+      let in_partition floor = Option.is_some (Collision.between_rects floor partition) in
+      (partition, List.filter in_partition !floors)
+    in
+    List.map find_floors_in (List.map make_partition (Int.range (dim' * dim')))
+  in
+
   {
     area;
     id = room_id;
@@ -705,7 +726,7 @@ let init (params : room_params) : room =
     exits = params.exits;
     respawn = { in_trigger_now = false; target = clone_vector params.respawn_pos };
     platforms = !platforms;
-    floors = !floors;
+    floors = partitioned_floors;
     triggers =
       {
         camera = !camera_triggers;
