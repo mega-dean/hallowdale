@@ -1,6 +1,5 @@
 open Utils
 open Types
-open Controls
 
 let parse_name name : ghost_id =
   match name with
@@ -23,14 +22,6 @@ let read_config () : ghosts_file =
       x_offset = config.x_offset;
       y_offset = config.y_offset;
     }
-  in
-  let parse_ghost_texture
-      ((ghost_id_str, ghost_poses) : string * (string * Json_t.texture_config) list) :
-      ghost_id * texture_config list =
-    let texture_configs : texture_config list =
-      List.map (parse_texture_config ghost_id_str) ghost_poses
-    in
-    (parse_name ghost_id_str, texture_configs)
   in
   let load_textures name textures =
     let parse_texture_config' (s, tc) : string * texture_config =
@@ -258,7 +249,7 @@ let get_spell_sprite (player : player) : (sprite * time) option =
   find_child get_sprite player.children
 
 let get_current_slash (player : player) : slash option =
-  let get_slash ((child_kind, child) : ghost_child_kind * ghost_child) =
+  let get_slash ((child_kind, _child) : ghost_child_kind * ghost_child) =
     match child_kind with
     | NAIL slash -> Some slash
     | _ -> None
@@ -344,13 +335,13 @@ let animate_and_despawn_children frame_time ghost : unit =
   let advance (child_kind : ghost_child_kind) (child : ghost_child) =
     match child.sprite.texture.animation_src with
     | ONCE _ -> (
-      match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
+      match Sprite.advance_or_despawn frame_time child.sprite with
       | None ->
         remove_child ghost child_kind;
         make_c_dash_child ~full:true ghost
-      | Some sprite -> ( (* already advanced *) ))
+      | Some _sprite -> ( (* already advanced *) ))
     | PARTICLE _ -> (
-      match Sprite.advance_or_despawn frame_time child.sprite.texture child.sprite with
+      match Sprite.advance_or_despawn frame_time child.sprite with
       | None -> remove_child ghost child_kind
       | _ -> ( (* already advanced *) ))
     | STILL _
@@ -397,7 +388,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
       if Enemy.is_alive enemy then
         if enemy.json.dream_nail.vulnerable then (
           match Collision.between_rects dream_nail_dest enemy.entity.sprite.dest with
-          | Some c ->
+          | Some _c ->
             (* TODO add dream nail sound *)
             if game.player.history.dream_nail.started > Enemy.took_damage_at enemy DREAM_NAIL then (
               let text = List.sample state.global.honda_quotes in
@@ -440,7 +431,7 @@ let check_dream_nail_collisions (state : state) (game : game) =
     let resolve_trigger (trigger : trigger) =
       match Collision.between_rects dream_nail_dest trigger.dest with
       | None -> ()
-      | Some c -> maybe_begin_interaction state game trigger
+      | Some _c -> maybe_begin_interaction state game trigger
     in
     List.iter resolve_enemy game.room.enemies;
     List.iter resolve_trigger game.room.triggers.d_nail
@@ -545,7 +536,6 @@ let resolve_slash_collisions (state : state) (game : game) =
             (tile_group : tile_group)
             (collision : collision)
             ~(broken : bool)
-            idx
             (entity : entity) =
           let new_fragment = Entity.clone entity in
           let new_pos, new_v =
@@ -602,7 +592,7 @@ let resolve_slash_collisions (state : state) (game : game) =
             Audio.play_sound state "alarmswitch";
             Audio.play_sound state "punch");
           layer.spawned_fragments <-
-            List.mapi (spawn_fragment tile_group collision ~broken:true) tile_group.fragments
+            List.map (spawn_fragment tile_group collision ~broken:true) tile_group.fragments
             @ layer.spawned_fragments;
           let idx = List.nth tile_group.tile_idxs 0 in
           (match List.assoc_opt idx game.room.idx_configs with
@@ -648,7 +638,7 @@ let resolve_slash_collisions (state : state) (game : game) =
                   let make_random_fragment _n = List.sample tile_group.fragments in
                   let random_fragments = List.init (Random.int_between 2 4) make_random_fragment in
                   layer.spawned_fragments <-
-                    List.mapi (spawn_fragment tile_group coll ~broken:false) random_fragments
+                    List.map (spawn_fragment tile_group coll ~broken:false) random_fragments
                     @ layer.spawned_fragments;
                   door_health.hits <- door_health.hits - 1;
                   Audio.play_sound state "alarmswitch";
@@ -672,10 +662,9 @@ let resolve_slash_collisions (state : state) (game : game) =
             lever.trigger.full_name
         | Some l -> l
       in
-      let new_tile_groups : tile_group list ref = ref [] in
       match Collision.between_slash_and_sprite slash lever.sprite with
       | None -> ()
-      | Some collision ->
+      | Some _collision ->
         if lever.sprite.texture = state.global.textures.door_lever then (
           Audio.play_sound state "nail-hit-metal";
           Audio.play_sound state "punch");
@@ -809,7 +798,7 @@ let set_pose
       (player.ghost.head_textures.look_down, bodies.focus)
     | TAKE_DAMAGE_AND_RESPAWN -> (player.ghost.head_textures.take_damage, bodies.take_damage)
     | DIE -> (player.ghost.head_textures.take_damage, bodies.take_damage)
-    | TAKE_DAMAGE (damage, direction) ->
+    | TAKE_DAMAGE (_damage, _direction) ->
       (* from recoiling upwards *)
       player.ghost.entity.current_floor <- None;
       (player.ghost.head_textures.take_damage, bodies.take_damage)
@@ -876,8 +865,7 @@ let set_pose
   in
   set_ghost_textures player.ghost ~head_texture ~body_texture
 
-let past_cooldown ?(debug = false) pose_frames frame_time : bool =
-  pose_frames.blocked_until.at < frame_time
+let past_cooldown pose_frames frame_time : bool = pose_frames.blocked_until.at < frame_time
 
 let spawn_vengeful_spirit
     ?(start = None)
@@ -917,7 +905,7 @@ let spawn_vengeful_spirit
       match d with
       | LEFT -> false
       | RIGHT -> true
-      | _ -> failwithf "spawn_vengeful_spirit invalid direction: %s" (show_direction d))
+      | _ -> failwithf "spawn_vengeful_spirit invalid direction: %s" (Controls.show_direction d))
   in
   let vengeful_spirit : sprite =
     {
@@ -984,7 +972,7 @@ let cancel_action (state : state) (game : game) (action_kind : ghost_action_kind
   in
   action.doing_until.at <- state.frame.time
 
-let start_action ?(debug = false) (state : state) (game : game) (action_kind : ghost_action_kind) =
+let start_action (state : state) (game : game) (action_kind : ghost_action_kind) =
   let cooldown_scale = ref 1.0 in
   let is_dream_nail = ref false in
   let action : ghost_action =
@@ -1307,7 +1295,7 @@ let as_party_ghost (player : player) : party_ghost = { ghost = player.ghost; in_
 let find_party_ghost (id : ghost_id) party : party_ghost option =
   List.find_opt (fun (party_ghost : party_ghost) -> party_ghost.ghost.id = id) party
 
-let swap_current_ghost ?(in_cutscene = false) (state : state) (game : game) target_ghost_id =
+let swap_current_ghost ?(in_cutscene = false) (game : game) target_ghost_id =
   match find_party_ghost target_ghost_id game.party with
   | None -> failwithf "bad ghost_id '%s' in swap_current_ghost" (Show.ghost_id target_ghost_id)
   | Some target_ghost ->
@@ -1368,8 +1356,6 @@ let toggle_ability ghost ability_name = change_ability ~debug:true ghost ability
 let acquire_weapon (state : state) (game : game) weapon_name =
   match String.Map.find_opt weapon_name state.global.weapons with
   | Some weapon_config ->
-    let current_weapon_names = game.player.weapons |> String.Map.to_list |> List.map fst in
-    (* if not (List.mem weapon_name current_weapon_names) then *)
     game.player.weapons <-
       String.Map.update weapon_name (fun _ -> Some weapon_config) game.player.weapons
   | None -> failwithf "acquire_weapon bad weapon name: %s" weapon_name
@@ -1412,7 +1398,7 @@ let handle_debug_keys (game : game) (state : state) =
   if not Env.development then
     state
   else (
-    let show_camera_location () =
+    let _show_camera_location () =
       let camera =
         match state.camera.subject with
         | FIXED v -> v
@@ -1422,12 +1408,12 @@ let handle_debug_keys (game : game) (state : state) =
       print "camera subject at: %s" (Show.vector camera);
       print "camera at: %f, %f" (Raylib.Vector2.x v) (Raylib.Vector2.y v)
     in
-    let show_ghost_location () =
+    let _show_ghost_location () =
       print "ghost %s at %s"
         (Show.ghost_id game.player.ghost.id)
         (Show.vector game.player.ghost.entity.dest.pos)
     in
-    let show_full_ghost_location () =
+    let _show_full_ghost_location () =
       let room_location = List.assoc game.room.id state.world in
       print "================\nghost global pos: %s"
         (Show.vector (Room.get_global_pos game.player.ghost.entity.dest.pos room_location));
@@ -1455,16 +1441,16 @@ let handle_debug_keys (game : game) (state : state) =
       state.debug.safe_ss <- not state.debug.safe_ss;
       print "set debug.safe_ss: %b" state.debug.safe_ss
     in
-    if key_down state.controls DEBUG_UP then
+    if Controls.key_down state.controls DEBUG_UP then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
-    else if key_down state.controls DEBUG_DOWN then
+    else if Controls.key_down state.controls DEBUG_DOWN then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y +. dv
-    else if key_down state.controls DEBUG_RIGHT then
+    else if Controls.key_down state.controls DEBUG_RIGHT then
       game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x +. dv
-    else if key_down state.controls DEBUG_LEFT then
+    else if Controls.key_down state.controls DEBUG_LEFT then
       game.player.ghost.entity.dest.pos.x <- game.player.ghost.entity.dest.pos.x -. dv
-    else if holding_shift () then (
-      if key_pressed state.controls DEBUG_1 then (
+    else if Controls.holding_shift () then (
+      if Controls.key_pressed state.controls DEBUG_1 then (
         (* game.ghost.soul.current <- game.ghost.soul.max *)
         (* swap_current_ghost_in_cutscene state game ANNIE *)
         (* show_camera_location () *)
@@ -1473,7 +1459,7 @@ let handle_debug_keys (game : game) (state : state) =
         show_ghost_positions ();
         (* game.player.health.current <- 1; *)
         ())
-      else if key_pressed state.controls DEBUG_2 then (
+      else if Controls.key_pressed state.controls DEBUG_2 then (
         (* toggle_ability game.ghost "mantis_claw" *)
         (* game.player.health.current <- game.player.health.current - 1; *)
         (* toggle_ability game.player "Dream Wielder"; *)
@@ -1487,18 +1473,18 @@ let handle_debug_keys (game : game) (state : state) =
          *     last_decremented = { at = 0. };
          *   }; *)
         ())
-      else if key_pressed state.controls DEBUG_3 then (
+      else if Controls.key_pressed state.controls DEBUG_3 then (
         (* print "player water is_some: %b" (Option.is_some game.player.current.water) *)
         toggle_ability game.player "howling_wraiths";
         (* toggle_ability game.player "shade_soul";
          * toggle_ability game.player "descending_dark";
          * toggle_ability game.player "abyss_shriek"; *)
         ())
-      else if key_pressed state.controls DEBUG_4 then (
+      else if Controls.key_pressed state.controls DEBUG_4 then (
         toggle_ability game.player "desolate_dive";
         (* toggle_ability game.player "ismas_tear" *)
         ()))
-    else if key_pressed state.controls DEBUG_1 then
+    else if Controls.key_pressed state.controls DEBUG_1 then
       state.debug.paused <- not state.debug.paused;
     state)
 
@@ -1518,7 +1504,7 @@ let tick (game : game) (state : state) =
       | DASH -> (state.frame_inputs.dash, game.player.history.dash.config.input_buffer.seconds)
       | CAST -> (state.frame_inputs.cast, game.player.history.cast_vs.config.input_buffer.seconds)
       | C_DASH -> (state.frame_inputs.c_dash, game.player.history.c_dash.config.input_buffer.seconds)
-      | _ -> failwithf "bad key in pressed_or_buffered': %s" (show_game_action game_action)
+      | _ -> failwithf "bad key in pressed_or_buffered': %s" (Controls.show_game_action game_action)
     in
     let input_buffered () =
       match input.down_since with
@@ -1583,7 +1569,7 @@ let tick (game : game) (state : state) =
              not every frame *)
           if not game.room.respawn.in_trigger_now then (
             let new_respawn_pos =
-              let head, tail = respawn_trigger.targets in
+              let head, _tail = respawn_trigger.targets in
               let nearest = ref head in
               let distance = ref (get_distance !nearest game.player.ghost.entity.dest.pos) in
               let find_nearest target =
@@ -1664,7 +1650,7 @@ let tick (game : game) (state : state) =
             game.player.ghost.entity.v <- Zero.vector ();
             if options.remove_nail then (
               match get_current_slash game.player with
-              | Some slash -> game.player.children <- Ghost_child_kind.Map.empty
+              | Some _slash -> game.player.children <- Ghost_child_kind.Map.empty
               | None -> ());
             match options.autosave_pos with
             | None -> ()
@@ -1910,7 +1896,7 @@ let tick (game : game) (state : state) =
             party_ghost.ghost.entity.v.x <- vx;
             party_ghost.ghost.entity.current_floor <- None
           | SET_POSE pose -> set_interaction_pose pose
-          | MAKE_CURRENT_GHOST -> swap_current_ghost ~in_cutscene:true state game ghost_id
+          | MAKE_CURRENT_GHOST -> swap_current_ghost ~in_cutscene:true game ghost_id
           | ENTITY entity_step ->
             (match entity_step with
             | HIDE ->
@@ -2094,7 +2080,7 @@ let tick (game : game) (state : state) =
 
     let this_frame =
       let cast_spell spell_kind =
-        start_action ~debug:true state game (CAST spell_kind);
+        start_action state game (CAST spell_kind);
         true
       in
       if trying_cast then (
@@ -2153,7 +2139,7 @@ let tick (game : game) (state : state) =
             else (
               match get_dive_sprite game.player with
               | None -> false
-              | Some dive_sprite ->
+              | Some _dive_sprite ->
                 continue_action state game (CAST DESOLATE_DIVE);
                 true)
           else if game.player.current.is_dive_hopping then
@@ -2381,12 +2367,11 @@ let tick (game : game) (state : state) =
             cancel_action state game FLAP)
         else
           set_pose' (AIRBORNE new_vy)
-      | Some water ->
+      | Some _water ->
         if is_doing game.player FLAP state.frame.time then
           cancel_action state game FLAP)
-    | Some (floor, floor_v) ->
+    | Some (_floor, _floor_v) ->
       if is_doing game.player FLAP state.frame.time then
-        (* TODO need a check like this for current_wall too (to prevent extra height from buffering jump off wallslide) *)
         cancel_action state game FLAP
       else if pressed_or_buffered JUMP then
         set_pose' (PERFORMING JUMP)
@@ -2417,7 +2402,7 @@ let tick (game : game) (state : state) =
       | None -> ()
       | Some slash -> (
         continue_action state game (ATTACK slash.direction);
-        match Sprite.advance_or_despawn state.frame.time slash.sprite.texture slash.sprite with
+        match Sprite.advance_or_despawn state.frame.time slash.sprite with
         | None -> remove_child game.player (NAIL slash)
         | Some _ -> ()))
   in
@@ -2531,7 +2516,7 @@ let tick (game : game) (state : state) =
       in
       if List.length collisions' = 0 && not game.player.current.is_taking_hazard_damage then (
         match List.nth_opt platform_spike_collisions 0 with
-        | Some spike_collision -> start_action state game (TAKE_DAMAGE (1, UP))
+        | Some _spike_collision -> start_action state game (TAKE_DAMAGE (1, UP))
         | None -> (
           let projectile_collisions =
             if is_vulnerable state game then
@@ -2540,7 +2525,7 @@ let tick (game : game) (state : state) =
               []
           in
           match List.nth_opt projectile_collisions 0 with
-          | Some (collision, projectile) ->
+          | Some (_collision, projectile) ->
             state.camera.shake <- 1.;
             (* arbitrary direction *)
             start_action state game (TAKE_DAMAGE (projectile.damage, UP))
@@ -2671,7 +2656,7 @@ let tick (game : game) (state : state) =
             match List.length floor_collisions with
             | 0 -> None
             | 1 -> up_floor_collision
-            | n ->
+            | _n ->
               if List.for_all (fun c -> c.collided_from = UP) floor_collisions then
                 up_floor_collision
               else
@@ -2725,7 +2710,7 @@ let tick (game : game) (state : state) =
     Entity.apply_collisions ~floor_v game.player.ghost.entity floor_collisions;
     (match up_floor_collision with
     | None -> ()
-    | Some coll ->
+    | Some _coll ->
       let started_hardfalling : time =
         match game.player.ghost.hardfall_time with
         | None -> { at = state.frame.time }
@@ -2789,7 +2774,7 @@ let tick (game : game) (state : state) =
     Entity.apply_v state.frame.dt game.player.ghost.entity;
     (match game.player.ghost.entity.current_floor with
     | None -> ()
-    | Some (floor, v) ->
+    | Some (_floor, v) ->
       let e = game.player.ghost.entity in
       let dt = state.frame.dt in
       (* only need to update x here because conveyor belts are only horizontal *)
@@ -2800,7 +2785,7 @@ let tick (game : game) (state : state) =
         let vy = game.player.ghost.entity.v.y in
         let ascending = vy < 0. in
         let dvy = Config.physics.gravity *. state.frame.dt in
-        if key_up state.controls JUMP && ascending then
+        if Controls.key_up state.controls JUMP && ascending then
           (vy *. Config.physics.jump_damping) +. dvy
         else (
           match game.player.current.wall with

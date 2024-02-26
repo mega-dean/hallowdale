@@ -97,7 +97,7 @@ module Tile = struct
 
   let scale_dest_size w h = (w *. Config.scale.room, h *. Config.scale.room)
 
-  let dest_xy ?(parallax = None) offset_x offset_y tile_w tile_h idx width : float * float =
+  let dest_xy ?(parallax = None) offset_x offset_y idx width : float * float =
     let scale_dest_position dest =
       match parallax with
       | None ->
@@ -161,11 +161,10 @@ module JsonRoom = struct
       { pos = { x = right; y = top }; w = rect_size; h = room_location.h };
     ]
 
-  let src_xy (json_room : t) idx width : vector = Tile.src_pos idx width
+  let src_xy idx width : vector = Tile.src_pos idx width
 
-  (* TODO too many args, add labels *)
-  let dest_xy (json_room : t) ?(parallax = None) offset_x offset_y idx width : float * float =
-    Tile.dest_xy offset_x offset_y json_room.tile_w json_room.tile_h idx width ~parallax
+  let dest_xy ?(parallax = None) offset_x offset_y idx width : float * float =
+    Tile.dest_xy offset_x offset_y idx width ~parallax
 
   let dest_wh (json_room : t) () : float * float =
     Tile.scale_dest_size json_room.tile_w json_room.tile_h
@@ -173,7 +172,6 @@ module JsonRoom = struct
   let look_up_platform (json_room : t) platform_textures_by_name (gid' : int) :
       string * texture * platform_kind option =
     let gid = Tile.raw_gid gid' in
-    let bits = Tile.transformation_bits gid' in
     let platforms_tileset_source =
       List.find
         (fun (source : Json_t.tileset_source) ->
@@ -280,13 +278,9 @@ let get_object_collision (json_tileset : Json_t.tileset) (firstgid : int) (id : 
         (List.length collision.objectgroup.objects)
         firstgid id
 
-let load_tiles
-    (room : Json_t.room)
-    (json_tileset : Json_t.tileset)
-    image
-    (tileset_source : Json_t.tileset_source) : texture array =
+let load_tiles (json_tileset : Json_t.tileset) image : texture array =
   let load_tile idx : texture =
-    let src = JsonRoom.src_xy room idx json_tileset.columns in
+    let src = JsonRoom.src_xy idx json_tileset.columns in
     {
       ident = fmt "tile %d" idx;
       image;
@@ -324,7 +318,7 @@ let load_tilesets (room : Json_t.room) : (string * tileset) list =
     | None -> None
     | Some json ->
       let image = load_tiled_asset (File.make_path [ "tilesets"; json.source ]) in
-      Some (source'.source, { json; image; tiles = load_tiles room json image source' })
+      Some (source'.source, { json; image; tiles = load_tiles json image })
   in
   List.filter_map load_tileset room.tileset_sources
 

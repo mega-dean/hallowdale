@@ -188,7 +188,7 @@ let get_steps
           in
           let purple_pens_found = List.length game.progress.purple_pens_found in
           let last_upgrade = game.progress.last_upgrade_claimed in
-          match List.find_opt (fun (amount, reward) -> amount > last_upgrade) rewards with
+          match List.find_opt (fun (amount, _reward) -> amount > last_upgrade) rewards with
           | None -> [ STEP (DIALOGUE ("Annie's Boobs", "I have no more rewards for you.")) ]
           | Some (next_upgrade_amount, reward) ->
             if purple_pens_found >= next_upgrade_amount then
@@ -277,7 +277,7 @@ let get_steps
                  ]);
           ]
         @ clear_screen_fade config.screen_fade_half 1.
-      | lore -> read_sign @ [ STEP (TEXT [ get_lore () ]) ])
+      | _lore -> read_sign @ [ STEP (TEXT [ get_lore () ]) ])
     | "ability" -> (
       let quote = Some (get_lore ()) in
       match trigger.name_suffix with
@@ -1569,12 +1569,6 @@ let get_steps
       autosave_pos' := Some game.player.ghost.entity.dest.pos;
       match trigger.name_suffix with
       | "final-sequence" ->
-        let other_ghosts =
-          List.filter_map
-            (fun (p : party_ghost) ->
-              if p.ghost.id = game.player.ghost.id || not p.in_party then None else Some p.ghost.id)
-            game.party
-        in
         [
           STEP (SET_SCREEN_FADE (make_screen_fade ~show_ghost:true (0, 255) 0.5));
           STEP (SET_FIXED_CAMERA (210, 61));

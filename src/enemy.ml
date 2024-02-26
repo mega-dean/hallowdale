@@ -302,7 +302,7 @@ let should_turn (enemy : enemy) frame_time =
         false
       else
         true
-    | multiple_collisions -> true)
+    | _multiple_collisions -> true)
 
 let face_ghost (enemy : enemy) ~ghost_pos =
   enemy.entity.sprite.facing_right <- ghost_pos.x > rect_center_x enemy.entity.dest
@@ -1298,12 +1298,12 @@ module Borchert_actions = struct
       | SHOOT ->
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
-        let projectile_v = get_attr enemy "computer_projectile_v" in
+        let vx' = get_attr enemy "computer_projectile_v" in
         let x_alignment, vx =
           if (get_rect_center enemy.entity.dest).x > get_frame_prop "ghost_x" then
-            (LEFT_OUTSIDE, -500.)
+            (LEFT_OUTSIDE, -.vx')
           else
-            (RIGHT_OUTSIDE, 500.)
+            (RIGHT_OUTSIDE, vx')
         in
         enemy.projectiles <-
           spawn_projectile ~projectile_texture_name:"computer-projectile"
@@ -2039,7 +2039,7 @@ module Buddy_actions = struct
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
     let make_paintball ?(scale = 1.5) ?(gravity_multiplier = 1.) ~projectile_pos ~v color =
-      spawn_projectile enemy ~projectile_texture_name:(fmt "%s-projectile" color) ~scale:1.5
+      spawn_projectile enemy ~projectile_texture_name:(fmt "%s-projectile" color) ~scale
         ~gravity_multiplier ~reset_texture:false ~collide_with_floors:true ~projectile_pos ~v
         UNTIL_FLOOR_COLLISION frame_time
     in
@@ -2710,6 +2710,7 @@ module Frog_actions = struct
     | _ -> failwithf "Frog_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = frame_time in
     let get_frame_prop s = get_prop s frame_props in
     let pose_name =
       match action with
@@ -2888,6 +2889,7 @@ module Electricity_actions = struct
     | _ -> failwithf "Electricity_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = frame_props in
     let pose_name =
       match action with
       | SHOCK ->
@@ -2915,7 +2917,9 @@ module Electricity : M = struct
 
   type args = { frame_time : float }
 
-  let get_args state game : args = { frame_time = state.frame.time }
+  let get_args state game : args =
+    let _ = game in
+    { frame_time = state.frame.time }
 
   let choose_behavior enemy args =
     let last_shock = action_started_at enemy "shock" in
@@ -2940,6 +2944,7 @@ module Fish_actions = struct
     | _ -> failwithf "Fish_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = frame_time in
     let pose_name =
       match action with
       | CHANGE_DIRECTION ->
@@ -2971,7 +2976,9 @@ module Fish : M = struct
 
   type args = { frame_time : float }
 
-  let get_args state game : args = { frame_time = state.frame.time }
+  let get_args state game : args =
+    let _ = game in
+    { frame_time = state.frame.time }
 
   let choose_behavior enemy args =
     let last_direction_change = action_started_at enemy "change_direction" in
@@ -3003,6 +3010,7 @@ module Penguin_actions = struct
     | _ -> failwithf "Penguin_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = (frame_props, frame_time) in
     let move_enemy () =
       let walk_vx = get_attr enemy "walk_vx" in
       if enemy.entity.sprite.facing_right then
@@ -3172,6 +3180,7 @@ module Bird_actions = struct
     | _ -> failwithf "Bird_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = frame_time in
     let pose_name =
       match action with
       | CHANGE_DIRECTION ->
@@ -3246,6 +3255,7 @@ module Bat_actions = struct
     | _ -> failwithf "Bat_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = frame_time in
     (match action with
     | MOVE -> ()
     | CHANGE_DIRECTION ->
@@ -3259,7 +3269,9 @@ module Bat : M = struct
 
   type args = { frame_time : float }
 
-  let get_args state (game : game) : args = { frame_time = state.frame.time }
+  let get_args state (game : game) : args =
+    let _ = game in
+    { frame_time = state.frame.time }
 
   let choose_behavior (enemy : enemy) args =
     let frame_time = args.frame_time in
@@ -3314,6 +3326,7 @@ module Manicorn_actions = struct
     | _ -> failwithf "Manicorn_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = (frame_props, frame_time) in
     let pose_name =
       match action with
       | STANDING ->
@@ -3426,6 +3439,7 @@ module Hippie_actions = struct
     | _ -> failwithf "Hippie_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = (frame_props, frame_time) in
     let pose_name =
       match action with
       | CHARGE_BITE ->
@@ -3700,10 +3714,7 @@ let create_from_rects
       | _ -> failwithf "%s bad enemy_config.kind '%s'" enemy_name enemy_config.kind
     in
     let on_killed =
-      {
-        interaction_name = (if cutscene_name = "" then None else Some cutscene_name);
-        multiple_enemies;
-      }
+      { start_boss_killed_interaction = not (cutscene_name = ""); multiple_enemies }
     in
     if List.mem cutscene_name finished_interactions then
       None

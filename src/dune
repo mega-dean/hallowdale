@@ -2,6 +2,6 @@
   (name hallowdale)
   (libraries yojson atdgen raylib unix)
   (preprocess (pps ppx_deriving.ord))
-  (flags (:standard -w -26-27-32-30))
+  (flags (:standard -w -30))
   )
 

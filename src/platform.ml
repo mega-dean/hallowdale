@@ -14,7 +14,7 @@ let set_texture (platform : platform) texture_cache name =
   in
   platform.sprite.texture <- texture
 
-let start_rotating (platform : platform) game texture_cache =
+let start_rotating (platform : platform) texture_cache =
   platform.sprite.texture <- texture_cache.rotating_platform;
   platform.kind <- Some (ROTATABLE ROTATING_NOW)
 

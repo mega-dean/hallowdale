@@ -62,12 +62,11 @@ let advance_animation (current_clock : float) (sprite : sprite) =
 type particle_animation = { should_despawn : bool }
 
 (* this always advances the animation, and returns None when the animation should despawn *)
-let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : sprite option =
-  let advance_particle_animation (current_clock : float) next_texture (sprite : sprite) :
-      particle_animation =
+let advance_or_despawn (current_clock : float) (sprite : sprite) : sprite option =
+  let advance_particle_animation (current_clock : float) (sprite : sprite) : particle_animation =
     match sprite.texture.animation_src with
     | STILL _ -> { should_despawn = false }
-    | LOOPED animation ->
+    | LOOPED _animation ->
       advance_animation current_clock sprite;
       { should_despawn = false }
     | ONCE animation
@@ -76,7 +75,7 @@ let advance_or_despawn (current_clock : float) next_texture (sprite : sprite) : 
       let should_despawn = animation.frame_idx = List.length animation.frames in
       { should_despawn }
   in
-  let particle = advance_particle_animation current_clock next_texture sprite in
+  let particle = advance_particle_animation current_clock sprite in
   if particle.should_despawn then None else Some sprite
 
 let texture_path_to_string (texture_path : texture_path) : string =
@@ -146,13 +145,10 @@ let build_texture_from_path ?(particle = false) ?(once = false) (path : texture_
   in
   build_texture ~particle ~once texture_config image
 
-let build_texture_from_config
-    ?(particle = false)
-    ?(once = false)
-    ?(debug = false)
-    (texture_config : texture_config) : texture =
+let build_texture_from_config ?(particle = false) ?(once = false) (texture_config : texture_config)
+    : texture =
   let path = texture_path_to_string texture_config.path in
-  let image = load_image ~debug path in
+  let image = load_image path in
   build_texture ~particle ~once texture_config image
 
 let build_static_texture ?(asset_dir = NPCS) name =

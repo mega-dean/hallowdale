@@ -53,7 +53,6 @@ let debug_shape_outline
       (Raylib.Vector2.create next_point.x next_point.y)
       size color
   in
-  let points' = List.map Show.vector points |> String.join in
   List.iteri draw_edge points
 
 let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
@@ -174,8 +173,7 @@ let draw_tiled_layer
     let render_tile (idx : int) (gid : int) =
       if gid <> 0 && not (List.mem idx layer.destroyed_tiles) then (
         let x, y =
-          Tiled.JsonRoom.dest_xy ~parallax room.json layer.json.offset_x layer.json.offset_y idx
-            layer.json.w
+          Tiled.JsonRoom.dest_xy ~parallax layer.json.offset_x layer.json.offset_y idx layer.json.w
         in
         let texture, transformations =
           let animation_offset =
@@ -253,7 +251,7 @@ let draw_fg_tiles room camera_x camera_y state : unit =
   draw_tiles room camera_x camera_y state
     (List.filter (fun (layer : layer) -> layer.config.render.fg) room.layers)
 
-let draw_floating_platforms (room : room) state : unit =
+let draw_floating_platforms (room : room) : unit =
   List.iter
     (fun (platform : platform) -> draw_sprite ~tint:room.area.tint platform.sprite)
     room.platforms
@@ -406,7 +404,6 @@ let tick (state : state) =
 
   let draw_cursor (config : text_config) (choice_idx : int) =
     let choice_offset = choice_idx * Config.scale.paragraph_spacing |> Int.to_float in
-    let line_spacing = line_height () *. (choice_idx |> Int.to_float) in
     let left_x = camera_x +. config.margin_x +. config.cursor_padding in
     let right_x = camera_x +. Config.window.w -. config.margin_x -. config.cursor_padding in
     let y = camera_y +. config.margin_y_top +. config.padding.y +. choice_offset in
@@ -594,7 +591,9 @@ let tick (state : state) =
         match save_slots' with
         | None -> (List.map (Show.menu_choice state game_opt) menu.choices, config')
         | Some save_slots ->
-          ( List.map (Show.menu_choice ~save_slots state game_opt) (Menu.get_save_file_choices save_slots),
+          ( List.map
+              (Show.menu_choice ~save_slots state game_opt)
+              (Menu.get_save_file_choices save_slots),
             { config' with centered = false } )
       in
       draw_text_bg_box config;
@@ -650,7 +649,7 @@ let tick (state : state) =
 
   match state.context with
   | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
-  | MAIN_MENU (menu, save_slots) -> show_main_menu menu None
+  | MAIN_MENU (menu, _save_slots) -> show_main_menu menu None
   | RETURN_TO_MAIN_MENU _
   | RELOAD_LAST_SAVED_GAME _ ->
     state
@@ -755,7 +754,7 @@ let tick (state : state) =
         draw_velocity game.player.ghost.entity;
         (match game.player.ghost.entity.current_floor with
         | None -> ()
-        | Some (floor, v) -> debug_rect ~r:0 ~g:0 ~b:200 floor);
+        | Some (floor, _v) -> debug_rect ~r:0 ~g:0 ~b:200 floor);
         (match game.player.current.wall with
         | None -> ()
         | Some wall -> debug_rect ~r:150 ~g:0 ~b:150 wall);
@@ -1152,10 +1151,9 @@ let tick (state : state) =
     draw_party_ghosts game.party;
     let screen_faded = maybe_show_screen_fade ~under_ghost:true in
     draw_player game.player;
-    let entity_shape = shape_of_rect game.player.ghost.entity.dest in
     if not screen_faded then (
       let enemy_projectiles = draw_enemies game.room.enemies in
-      draw_floating_platforms game.room state.frame.idx;
+      draw_floating_platforms game.room;
       draw_object_trigger_indicators ();
       draw_loose_projectiles ();
       (match game.reflection_x with

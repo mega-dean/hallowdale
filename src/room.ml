@@ -80,7 +80,7 @@ let init (params : room_params) : room =
       rects := dest :: !rects
     in
 
-    let make_conveyor_belt idx (coll_rect : Json_t.coll_rect) =
+    let make_conveyor_belt (coll_rect : Json_t.coll_rect) =
       let dest = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       conveyor_belts :=
         (dest, (coll_rect.name |> float_of_string) *. Config.window.scale) :: !conveyor_belts
@@ -127,7 +127,6 @@ let init (params : room_params) : room =
     in
 
     let collect_targets (coll_rect : Json_t.coll_rect) =
-      let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       match coll_rect.name with
       | "target" -> targets := (coll_rect.id, { x = coll_rect.x; y = coll_rect.y }) :: !targets
       | _ -> ()
@@ -211,12 +210,12 @@ let init (params : room_params) : room =
         (* y_offset is to align the lever with the floor, so the trigger rect
            doesn't need to be the exact size of the lever
         *)
-        let direction, transformation, y_offset =
+        let transformation, y_offset =
           match name_suffix with
           | "up" ->
             let lever_h = (get_src params.lever_texture).h in
-            (UP, 0, lever_h -. coll_rect.h)
-          | "down" -> (DOWN, 2, 0.)
+            (0, lever_h -. coll_rect.h)
+          | "down" -> (2, 0.)
           | "left"
           | "right" ->
             failwithf "horizontal levers aren't supported (%s)" name_suffix
@@ -352,7 +351,7 @@ let init (params : room_params) : room =
       | "hazard" -> List.iter (add_object_rect hazards) json.objects
       | "floors" -> List.iter (add_object_rect floors) json.objects
       | "platforms" -> List.iteri make_platform json.objects
-      | "conveyor-belts" -> List.iteri make_conveyor_belt json.objects
+      | "conveyor-belts" -> List.iter make_conveyor_belt json.objects
       | "respawns"
       | "triggers" ->
         (* using separate layers for "cameras" and "respawns" so the "triggers" layer is
@@ -734,8 +733,7 @@ let init (params : room_params) : room =
   }
 
 let reset_tile_groups (room : room) =
-  let get_layer_tile_groups ?(debug = false) (room : room) (removed_door_idxs : int list) :
-      layer list =
+  let get_layer_tile_groups (room : room) (removed_door_idxs : int list) : layer list =
     let get_rectangle_tile_groups (json_layer : Json_t.tile_layer) (layer_name : string) :
         tile_group list =
       let tile_w, tile_h = (room.json.tile_w, room.json.tile_h) in
@@ -752,10 +750,7 @@ let reset_tile_groups (room : room) =
       in
       let partition_rects idx tile_gid =
         if not (List.mem idx removed_idxs) then (
-          let x, y =
-            Tiled.Tile.dest_xy json_layer.offset_x json_layer.offset_y tile_w tile_h idx
-              json_layer.w
-          in
+          let x, y = Tiled.Tile.dest_xy json_layer.offset_x json_layer.offset_y idx json_layer.w in
           let get_rectangle_tile_group () : tile_group =
             let idxs = ref [ idx ] in
             let mark_idx_as_nonzero i' =

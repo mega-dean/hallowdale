@@ -72,12 +72,12 @@ module String = struct
 
   let maybe_trim_before c str : string =
     match split_at_first_opt c str with
-    | Some prefix, rest -> rest
+    | Some _prefix, rest -> rest
     | None, _ -> str
 
   let maybe_trim_after c str : string =
     match split_at_first_opt c str with
-    | Some prefix, rest -> prefix
+    | Some prefix, _rest -> prefix
     | None, _ -> str
 
   let join strs = String.concat ", " strs
@@ -186,8 +186,8 @@ module List = struct
     type 'a t = 'a * 'a list
 
     let length ((_, rest) : 'a t) : int = List.length rest + 1
-    let hd ((head, rest) : 'a t) = head
-    let tl ((head, rest) : 'a t) = rest
+    let hd ((head, _rest) : 'a t) = head
+    let tl ((_head, rest) : 'a t) = rest
     let mem (x : 'a) ((head, rest) : 'a t) = x = head || List.mem x rest
 
     let assoc_opt (k : 'a) (xs : ('a * 'b) t) =

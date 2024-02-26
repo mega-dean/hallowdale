@@ -194,7 +194,6 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
   state.context <- IN_PROGRESS game
 
 let create
-    (state : state)
     (mode : game_mode)
     (save_file : Json_t.save_file)
     (global : global_cache)
@@ -297,7 +296,7 @@ let create
   }
 
 let init state mode (save_file : Json_t.save_file) save_file_idx =
-  let game = create state mode save_file state.global state.area_musics state.world save_file_idx in
+  let game = create mode save_file state.global state.area_musics state.world save_file_idx in
   (* update the camera when a file is loaded so the ghost doesn't start too far offscreen *)
   let _ = Camera.tick game state in
   state.camera.update_instantly <- true;

@@ -51,7 +51,7 @@ let project_point_onto_line (line : line) (point : vector) : vector =
 *)
 let between_shapes (s1 : shape) (s2 : shape) : bool =
   (* return value is true when _not_ overlapping *)
-  let edge_has_separating_axis ((point, line) : vector * line) : line option =
+  let edge_has_separating_axis ((_point, line) : vector * line) : line option =
     let normal = get_normal line in
     let first xs = List.nth xs 0 in
 
@@ -159,7 +159,7 @@ let with_entity (entity : entity) (r2 : rect) : collision option = between_rects
 let between_entities (entity1 : entity) (entity2 : entity) : bool =
   match with_entity entity1 entity2.dest with
   | None -> false
-  | Some c ->
+  | Some _c ->
     let get_aligned_shape (entity : entity) =
       match entity.sprite.collision with
       | Some (SHAPE shape) -> align_shape_with_parent_sprite entity.sprite shape
@@ -202,21 +202,19 @@ let between_slash_and_enemy (slash : slash) (enemy : enemy) : collision option =
 
 let with_enemy (entity : entity) (enemy : enemy) : bool =
   let entity_shape = shape_of_rect entity.dest in
-  let shapes' =
+  let shapes =
     List.map (align_shape_with_parent_sprite enemy.entity.sprite) enemy.collision_shapes
   in
-  let shapes = List.map Show.shape_points shapes' |> String.join in
-  between_entities entity enemy.entity || List.exists (between_shapes entity_shape) shapes'
+  between_entities entity enemy.entity || List.exists (between_shapes entity_shape) shapes
 
 let between_sprite_and_enemy (sprite : sprite) (enemy : enemy) : collision option =
   let sprite_shape = shape_of_rect sprite.dest in
-  let shapes' =
+  let shapes =
     List.map (align_shape_with_parent_sprite enemy.entity.sprite) enemy.collision_shapes
   in
-  let shapes = List.map Show.shape_points shapes' |> String.join in
   if
     between_shapes sprite_shape (shape_of_rect enemy.entity.dest)
-    || List.exists (between_shapes sprite_shape) shapes'
+    || List.exists (between_shapes sprite_shape) shapes
   then (
     let collided_from =
       let sprite_center = get_rect_center sprite.dest in

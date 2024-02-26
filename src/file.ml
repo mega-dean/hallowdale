@@ -22,7 +22,7 @@ let maybe_read (filename : string) : string option =
 
 let write (filename : string) (contents : string) =
   let ch = open_out filename in
-  let s = Printf.fprintf ch "%s\n" contents in
+  Printf.fprintf ch "%s\n" contents;
   close_out ch
 
 let read_config file_name (convert : string -> 'a) : 'a =
@@ -57,10 +57,9 @@ let delete_bindings filename =
 let delete_keyboard_bindings () = delete_bindings "key_overrides.json"
 let delete_gamepad_bindings () = delete_bindings "button_overrides.json"
 
-let save_keyboard_bindings content =
-  delete_bindings "key_overrides.json";
-  write (make_root_path [ "config"; "key_overrides.json" ]) content
+let save_bindings filename content =
+  delete_bindings filename;
+  write (make_root_path [ "config"; filename ]) content
 
-let save_gamepad_bindings content =
-  delete_bindings "button_overrides.json";
-  write (make_root_path [ "config"; "button_overrides.json" ]) content
+let save_keyboard_bindings content = save_bindings "key_overrides.json" content
+let save_gamepad_bindings content = save_bindings "button_overrides.json" content

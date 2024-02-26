@@ -43,7 +43,7 @@ type image = Raylib.Texture.t
 
 let load_tiled_asset path = Raylib.load_texture (File.make_assets_path [ "tiled"; path ])
 
-let load_image ?(debug = false) path : image =
+let load_image path : image =
   let full_path = File.make_assets_path [ path ] in
   if Sys.file_exists full_path then
     Raylib.load_texture full_path
@@ -199,7 +199,7 @@ type sprite = {
 }
 
 let align_shape_with_parent (dest : rect) (facing_right : bool) (shape : shape) : shape =
-  let adjust_point point_idx (point : vector) : vector =
+  let adjust_point (point : vector) : vector =
     let x =
       if facing_right then
         dest.pos.x +. point.x
@@ -209,7 +209,7 @@ let align_shape_with_parent (dest : rect) (facing_right : bool) (shape : shape) 
     let y = dest.pos.y +. point.y in
     { x; y }
   in
-  let adjusted_points : vector list = List.mapi adjust_point (get_points shape) in
+  let adjusted_points : vector list = List.map adjust_point (get_points shape) in
   make_shape adjusted_points
 
 let align_shape_with_parent_sprite (sprite : sprite) (shape : shape) : shape =
@@ -741,7 +741,7 @@ module Interaction = struct
 end
 
 type enemy_on_killed = {
-  interaction_name : string option;
+  start_boss_killed_interaction : bool;
   (* this means there are multiple enemies that all need to die before the interaction starts
      - this is pretty specific and will mostly be false, but it will at least be used for Sisters of Battle and Watcher Knights *)
   multiple_enemies : bool;
@@ -1061,7 +1061,7 @@ let align_to_bottom parent_dest child_w child_h =
     { x = -.pos'.x; y = -.pos'.y })
 
 (* ghost will only have one NAIL child at a time, so slashes don't really need to be comparable *)
-let compare_slash a b = 0
+let compare_slash _a _b = 0
 
 (* - used for things that are "attached" to the ghost, ie their position depends on ghost
    - so spawned_vengeful_spirits are not children, but dive and shreik are

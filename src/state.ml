@@ -1,6 +1,5 @@
 open Utils
 open Types
-open Controls
 
 (* this function initializes state and sets game_context to MAIN_MENU *)
 let init () : state =
@@ -119,7 +118,7 @@ let init () : state =
   let platforms : (string * texture) list =
     let load_platform_texture name =
       ( name,
-        Sprite.build_texture_from_config ~debug:true
+        Sprite.build_texture_from_config
           {
             path = { asset_dir = TILED; character_name = "platforms"; pose_name = name };
             count = 1;
@@ -176,7 +175,7 @@ let init () : state =
 
   let (lore, honda_quotes) : string String.Map.t * string list =
     let lore_file = File.read_config "lore" Json_j.lore_file_of_string in
-    let honda_lines, lore_lines = List.partition (fun (k, v) -> k = "honda") lore_file in
+    let honda_lines, lore_lines = List.partition (fun (k, _v) -> k = "honda") lore_file in
     (lore_lines |> List.to_string_map, List.map snd honda_lines)
   in
 
@@ -239,7 +238,7 @@ let init () : state =
     pause_menu = None;
     save_pos = None;
     world;
-    controls = initialize_controls ();
+    controls = Controls.load ();
     rebinding_action = None;
     camera =
       {
@@ -365,9 +364,9 @@ let update_environment (game : game) (state : state) =
     List.map (fun l -> l.spawned_fragments) game.room.layers |> List.flatten
   in
   let update_lever lever =
-    match Sprite.advance_or_despawn state.frame.time lever.sprite.texture lever.sprite with
+    match Sprite.advance_or_despawn state.frame.time lever.sprite with
     | None -> lever.sprite.texture <- state.global.textures.door_lever
-    | Some lever_sprite -> ()
+    | Some _lever_sprite -> ()
   in
   let update_projectile' projectile =
     let keep_spawned = update_projectile projectile game state in
@@ -382,7 +381,7 @@ let update_environment (game : game) (state : state) =
       platform.kind <- Some (DISAPPEARABLE (TOUCHED Config.platform.disappearable_touched_time))
     | Some (ROTATABLE UPRIGHT) ->
       platform.kind <- Some (ROTATABLE (TOUCHED Config.platform.rotatable_touched_time))
-    | Some (LOCKED_DOOR (key, state')) ->
+    | Some (LOCKED_DOOR (key, _state)) ->
       let unlocked =
         if key = "monkey-gas" then
           game.player.abilities.howling_wraiths
@@ -429,7 +428,7 @@ let update_environment (game : game) (state : state) =
       let locked_door =
         match key with
         | None -> false
-        | Some k -> true
+        | Some _k -> true
       in
       let new_platform_kind s =
         if locked_door then
@@ -444,7 +443,7 @@ let update_environment (game : game) (state : state) =
           ~continue:(fun new_f ->
             shake_platform ();
             platform.kind <- new_platform_kind (TOUCHED new_f))
-          ~change:(fun new_f ->
+          ~change:(fun _new_f ->
             game.room.progress.removed_platform_ids <-
               platform.id :: game.room.progress.removed_platform_ids;
             if not locked_door then
@@ -453,7 +452,7 @@ let update_environment (game : game) (state : state) =
             platform.kind <-
               new_platform_kind (INVISIBLE Config.platform.disappearable_invisible_time))
           f
-      | INVISIBLE f -> ()
+      | INVISIBLE _f -> ()
     in
 
     let handle_temporary_platform (state' : disappearable_state) =
@@ -472,7 +471,7 @@ let update_environment (game : game) (state : state) =
           ~continue:(fun new_f ->
             shake_platform ();
             platform.kind <- Some (DISAPPEARABLE (TOUCHED new_f)))
-          ~change:(fun new_f ->
+          ~change:(fun _new_f ->
             Entity.unset_removed_floor game.player.ghost.entity platform.sprite.dest;
             platform.sprite.dest.pos.x <- -.platform.sprite.dest.pos.x;
             platform.kind <-
@@ -481,7 +480,7 @@ let update_environment (game : game) (state : state) =
       | INVISIBLE f ->
         decrement_time
           ~continue:(fun new_f -> platform.kind <- Some (DISAPPEARABLE (INVISIBLE new_f)))
-          ~change:(fun new_f ->
+          ~change:(fun _new_f ->
             platform.sprite.dest.pos.x <- platform.original_x;
             platform.kind <- Some (DISAPPEARABLE VISIBLE))
           f
@@ -495,18 +494,16 @@ let update_environment (game : game) (state : state) =
           ~continue:(fun new_f ->
             shake_platform ();
             platform.kind <- Some (ROTATABLE (TOUCHED new_f)))
-          ~change:(fun new_f -> Platform.start_rotating platform game state.global.textures)
+          ~change:(fun _new_f -> Platform.start_rotating platform state.global.textures)
           f
       | ROTATING_NOW -> (
-        match
-          Sprite.advance_or_despawn state.frame.time platform.sprite.texture platform.sprite
-        with
+        match Sprite.advance_or_despawn state.frame.time platform.sprite with
         | None -> Platform.finish_rotating platform game state.global.textures
-        | Some s -> ())
+        | Some _s -> ())
       | UPSIDE_DOWN f ->
         decrement_time
           ~continue:(fun new_f -> platform.kind <- Some (ROTATABLE (UPSIDE_DOWN new_f)))
-          ~change:(fun new_f -> Platform.reset_rotation platform game state.global.textures)
+          ~change:(fun _new_f -> Platform.reset_rotation platform game state.global.textures)
           f
     in
     match platform.kind with
@@ -536,7 +533,7 @@ let update_interaction_text (game : game) (state : state) =
         match state.pause_menu with
         | Some _ -> ()
         | None -> unset ())
-      | UNTIL (duration, end_time) ->
+      | UNTIL (_duration, end_time) ->
         if state.frame.time > end_time.at then
           unset ())
   in
@@ -574,10 +571,8 @@ let update_enemies (game : game) (state : state) =
     if enemy.status.active && not interacting then
       Enemy.choose_behavior enemy state game;
     Sprite.advance_animation state.frame.time enemy.entity.sprite;
-    let advance_or_despawn (sprite : sprite) =
-      Sprite.advance_or_despawn state.frame.time sprite.texture sprite
-    in
-    enemy.damage_sprites <- List.filter_map advance_or_despawn enemy.damage_sprites;
+    enemy.damage_sprites <-
+      List.filter_map (Sprite.advance_or_despawn state.frame.time) enemy.damage_sprites;
     if Enemy.is_alive enemy then (
       match Player.get_spell_sprite game.player with
       | None -> ()
@@ -604,9 +599,7 @@ let update_enemies (game : game) (state : state) =
       Player.maybe_begin_interaction state game trigger
     in
     if Enemy.is_dead enemy then (
-      match enemy.on_killed.interaction_name with
-      | None -> ()
-      | Some name ->
+      if enemy.on_killed.start_boss_killed_interaction then (
         if enemy.on_killed.multiple_enemies then (
           let all_bosses_dead =
             let living_bosses =
@@ -619,7 +612,7 @@ let update_enemies (game : game) (state : state) =
           if all_bosses_dead then
             begin_boss_interaction ())
         else
-          begin_boss_interaction ())
+          begin_boss_interaction ()))
   in
   List.iter
     (fun (enemy : enemy) ->
@@ -685,13 +678,13 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
 
 let update_frame_inputs (state : state) : state =
   let update_frame_input ?(direction = false) key (input : frame_input) =
-    input.released <- key_released state.controls ~direction key;
+    input.released <- Controls.key_released state.controls ~direction key;
     input.pressed <-
       (if direction && input.down then
          false
        else
-         key_pressed state.controls ~direction key);
-    input.down <- key_down state.controls ~direction key;
+         Controls.key_pressed state.controls ~direction key);
+    input.down <- Controls.key_down state.controls ~direction key;
     if input.pressed then
       input.down_since <- Some { at = state.frame.time }
     else if not input.down then
@@ -727,15 +720,15 @@ let maybe_save_game game state =
 let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
 
 let tick (state : state) =
-  if not (holding_shift ()) then (
-    if key_pressed state.controls DEBUG_3 then
+  if Env.development && not (Controls.holding_shift ()) then (
+    if Controls.key_pressed state.controls DEBUG_3 then
       if state.debug.show_frame_inputs then (
         state.debug.show_frame_inputs <- false;
         print " disabled show_frame_inputs at %d\n\\----------------------/\n" state.frame.idx)
       else (
         state.debug.show_frame_inputs <- true;
         print "\n/----------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
-    if key_pressed state.controls DEBUG_4 then
+    if Controls.key_pressed state.controls DEBUG_4 then
       if state.debug.enabled then (
         state.debug.enabled <- false;
         print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
@@ -748,7 +741,7 @@ let tick (state : state) =
   | MAIN_MENU (menu, save_slots) ->
     Audio.play_menu_music state;
     state |> update_frame_inputs |> Menu.update_main_menu menu save_slots
-  | RETURN_TO_MAIN_MENU game ->
+  | RETURN_TO_MAIN_MENU _game ->
     state.context <- MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     state
   | RELOAD_LAST_SAVED_GAME game ->
@@ -769,6 +762,17 @@ let tick (state : state) =
       Game_action.Map.iter find action_map;
       !res
     in
+    let update_bindings action input new_bindings replaced_bindings show_control save_bindings =
+      new_bindings := (Controls.show_game_action action, show_control input) :: !new_bindings;
+      let replace (k, v) = replaced_bindings := List.replace_assoc k v !replaced_bindings in
+      List.iter replace !new_bindings;
+      let contents =
+        Json_j.string_of_keybinds_file !replaced_bindings
+        |> String.split_on_char '('
+        |> String.join_lines_with '('
+      in
+      save_bindings contents
+    in
     match state.rebinding_action with
     | Some (control_type, action) ->
       (match control_type with
@@ -784,23 +788,17 @@ let tick (state : state) =
           | None -> ()
           | Some binding ->
             let old_key = Game_action.Map.find action state.controls.keyboard in
-            new_bindings := (show_game_action binding, show_key old_key) :: !new_bindings;
+            new_bindings :=
+              (Controls.show_game_action binding, Controls.show_key old_key) :: !new_bindings;
             state.controls.keyboard <-
               Game_action.Map.update binding (fun _ -> Some old_key) state.controls.keyboard);
           state.controls.keyboard <-
             Game_action.Map.update action (fun _ -> Some key) state.controls.keyboard;
-          new_bindings := (show_game_action action, show_key key) :: !new_bindings;
-          let replace (k, v) = replaced_bindings := List.replace_assoc k v !replaced_bindings in
-          List.iter replace !new_bindings;
-          let contents =
-            Json_j.string_of_keybinds_file !replaced_bindings
-            |> String.split_on_char '('
-            |> String.join_lines_with '('
-          in
-          File.save_keyboard_bindings contents;
+          update_bindings action key new_bindings replaced_bindings Controls.show_key
+            File.save_keyboard_bindings;
           state.rebinding_action <- None)
       | BUTTON -> (
-        match get_pressed_button () with
+        match Controls.get_pressed_button () with
         | None -> ()
         | Some button ->
           let replaced_bindings =
@@ -811,20 +809,14 @@ let tick (state : state) =
           | None -> ()
           | Some binding ->
             let old_button = Game_action.Map.find action state.controls.gamepad in
-            new_bindings := (show_game_action binding, show_button old_button) :: !new_bindings;
+            new_bindings :=
+              (Controls.show_game_action binding, Controls.show_button old_button) :: !new_bindings;
             state.controls.gamepad <-
               Game_action.Map.update binding (fun _ -> Some old_button) state.controls.gamepad);
           state.controls.gamepad <-
             Game_action.Map.update action (fun _ -> Some button) state.controls.gamepad;
-          new_bindings := (show_game_action action, show_button button) :: !new_bindings;
-          let replace (k, v) = replaced_bindings := List.replace_assoc k v !replaced_bindings in
-          List.iter replace !new_bindings;
-          let contents =
-            Json_j.string_of_keybinds_file !replaced_bindings
-            |> String.split_on_char '('
-            |> String.join_lines_with '('
-          in
-          File.save_gamepad_bindings contents;
+          update_bindings action button new_bindings replaced_bindings Controls.show_button
+            File.save_gamepad_bindings;
           state.rebinding_action <- None));
       state
     | None ->
@@ -832,7 +824,7 @@ let tick (state : state) =
 
       if state.debug.paused then (
         game.player.ghost.hardfall_time <- None;
-        if key_pressed state.controls DEBUG_2 then
+        if Controls.key_pressed state.controls DEBUG_2 then
           state
           |> update_frame_inputs
           |> Menu.update_pause_menu game
@@ -851,7 +843,7 @@ let tick (state : state) =
       else (
         let state' = state |> update_frame_inputs |> Menu.update_pause_menu game in
         match state'.pause_menu with
-        | Some menu ->
+        | Some _menu ->
           (match game.mode with
           | CLASSIC -> ()
           | DEMO
@@ -884,7 +876,7 @@ let tick (state : state) =
             let show_triggers ?(color = Raylib.Color.blue) (triggers : trigger list) =
               add_debug_rects state (List.map (fun (r : trigger) -> (color, r.dest)) triggers)
             in
-            let show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
+            let _show_respawn_triggers ?(color = Raylib.Color.blue) triggers =
               add_debug_rects state (List.map (fun (_, r) -> (color, r.dest)) triggers)
             in
 

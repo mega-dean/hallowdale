@@ -1,6 +1,5 @@
 open Utils
 open Types
-open Controls
 
 let option (to_str : 'a -> string) (v : 'a option) =
   match v with
@@ -113,7 +112,7 @@ let asset_dir (asset_dir : asset_dir) =
 let attack_direction (d : direction option) : string =
   match d with
   | None -> "not attacking"
-  | Some d -> fmt "attacking %s" (show_direction d)
+  | Some d -> fmt "attacking %s" (Controls.show_direction d)
 
 let ghost_id id =
   match id with
@@ -140,7 +139,7 @@ let ghost_action_config (config : ghost_action_config) =
 
 let ghost_action_kind id =
   match id with
-  | ATTACK d -> fmt "ATTACK (%s)" (show_direction d)
+  | ATTACK d -> fmt "ATTACK (%s)" (Controls.show_direction d)
   | CAST spell -> fmt "CAST (%s)" (spell_kind spell)
   | C_DASH -> "C_DASH"
   | C_DASH_CHARGE -> "C_DASH_CHARGE"
@@ -156,7 +155,8 @@ let ghost_action_kind id =
   | HARDFALL -> "HARDFALL"
   | JUMP -> "JUMP"
   | SHADE_DASH -> "SHADE_DASH"
-  | TAKE_DAMAGE (damage, direction') -> fmt "TAKE_DAMAGE (%d, %s)" damage (show_direction direction')
+  | TAKE_DAMAGE (damage, direction') ->
+    fmt "TAKE_DAMAGE (%d, %s)" damage (Controls.show_direction direction')
   | TAKE_DAMAGE_AND_RESPAWN -> "TAKE_DAMAGE_AND_RESPAWN"
   | WALL_KICK -> "WALL_KICK"
 
@@ -168,7 +168,7 @@ let ghost_pose pose =
   | PERFORMING action_kind -> fmt "PERFORMING %s" (ghost_action_kind action_kind)
   | READING -> "READING"
   | SWIMMING _ -> "SWIMMING"
-  | WALKING d -> fmt "WALKING (%s)" (show_direction d)
+  | WALKING d -> fmt "WALKING (%s)" (Controls.show_direction d)
   | WALL_SLIDING _r -> "WALL_SLIDING"
 
 let ghost_location (g : player) =
@@ -530,13 +530,20 @@ let menu_choice ?(save_slots = []) state (game_opt : game option) (choice : menu
   let rebind_game_action_choice ~keyboard (choice : rebind_action_menu_choice) =
     match choice with
     | REBIND_ACTION action -> (
-        let binding =
-          if keyboard then
-            (get_key state.controls action |> show_key)
-          else
-            (get_button state.controls action |> show_button)
+      let binding =
+        if keyboard then
+          Controls.get_key state.controls action |> Controls.show_key
+        else
+          Controls.get_button state.controls action |> Controls.show_button
+      in
+      let show_control s =
+        let color =
+          match state.rebinding_action with
+          | None -> "{{white}}"
+          | Some (_, action') -> if action = action' then "{{blue}}" else "{{white}}"
         in
-        let show_control s = fmt "%s: %s" s binding in
+        fmt "%s: %s %s" s color binding
+      in
       match action with
       (* actions *)
       | CAST -> show_control "Cast"
@@ -550,7 +557,7 @@ let menu_choice ?(save_slots = []) state (game_opt : game option) (choice : menu
       | PAUSE -> show_control "Pause"
       | OPEN_MAP -> show_control "Open Map"
       (* directions *)
-      | ARROW direction' -> show_control (show_direction direction')
+      | ARROW direction' -> show_control (Controls.show_direction direction')
       (* debug *)
       | DEBUG_1 -> "DEBUG_1"
       | DEBUG_2 -> "DEBUG_2"

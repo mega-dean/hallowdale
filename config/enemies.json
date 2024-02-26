@@ -484,7 +484,7 @@
             "attrs": [
                 ["distance_threshold", 400],
                 ["wires_projectile_vx", 800],
-                ["computer_projectile_v", 800],
+                ["computer_projectile_v", 500],
                 ["orbit_radius", 400],
                 ["charge_dive_vy", -100],
                 ["dash_vx", 700],

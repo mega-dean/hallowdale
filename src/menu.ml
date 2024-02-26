@@ -101,7 +101,6 @@ let rebind_gamepad_menu () : menu =
     ]
 
 let get_save_file_choices save_slots : menu_choice list =
-  let saved_games = List.filter (fun save -> not save.new_game) save_slots in
   let delete_save_files =
     let maybe_delete_save_file idx =
       let slot = List.nth save_slots idx in
@@ -186,7 +185,7 @@ let update_pause_menu (game : game) (state : state) : state =
     match choice with
     | USE_GHOST ghost_id ->
       if game.player.ghost.id <> ghost_id then
-        Player.swap_current_ghost state game ghost_id
+        Player.swap_current_ghost game ghost_id
     | BACK -> go_back ()
   in
 
@@ -220,7 +219,7 @@ let update_pause_menu (game : game) (state : state) : state =
     | REBIND_ACTION action -> state.rebinding_action <- Some (KEY, action)
     | RESET_BINDINGS ->
       File.delete_keyboard_bindings ();
-      state.controls <- Controls.initialize_controls ()
+      state.controls <- Controls.load ()
     | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
   in
 
@@ -229,7 +228,7 @@ let update_pause_menu (game : game) (state : state) : state =
     | REBIND_ACTION action -> state.rebinding_action <- Some (BUTTON, action)
     | RESET_BINDINGS ->
       File.delete_gamepad_bindings ();
-      state.controls <- Controls.initialize_controls ()
+      state.controls <- Controls.load ()
     | BACK -> state.pause_menu <- Some (MENU (settings_menu ()))
   in
 
