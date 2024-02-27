@@ -590,7 +590,8 @@ let update_enemies (game : game) (state : state) =
               (HOWLING_WRAITHS, UP)
           in
           ignore
-            (Enemy.maybe_take_damage ~collision_direction state enemy action_started damage_kind
+            (Enemy.maybe_take_damage ~collision_direction state game enemy action_started
+               damage_kind
                (Player.get_damage game.player damage_kind)
                collision)));
 
@@ -659,8 +660,8 @@ let update_spawned_vengeful_spirits (game : game) (state : state) =
         | Some collision ->
           let collision_direction = if projectile.entity.v.x > 0. then RIGHT else LEFT in
           ignore
-            (Enemy.maybe_take_damage ~collision_direction state enemy vs_start_time VENGEFUL_SPIRIT
-               projectile.damage collision))
+            (Enemy.maybe_take_damage ~collision_direction state game enemy vs_start_time
+               VENGEFUL_SPIRIT projectile.damage collision))
     in
     List.iter maybe_damage_enemy game.room.enemies
   in

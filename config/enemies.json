@@ -1104,6 +1104,29 @@
             ]
         }],
 
+        [ "FROG_BOMB", {
+            "kind": "enemy",
+            "health": 1,
+            "w": 28,
+            "h": 33,
+            "gravity_multiplier": 0.0,
+            "dream_nail": {
+                "vulnerable": false
+            },
+            "attrs": [],
+            "unscaled_attrs": [],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 3,
+                    "y_offset": 5
+                }],
+                ["explosion", {
+                    "count": 9,
+                    "duration": 0.1
+                }]
+            ]
+        }],
+
         [ "ELECTRICITY", {
             "kind": "enemy",
             "health": 1,

@@ -460,7 +460,7 @@ let resolve_slash_collisions (state : state) (game : game) =
         | Some collision ->
           Audio.play_sound state "high-punch";
           if
-            Enemy.maybe_take_damage state enemy game.player.history.nail.started NAIL
+            Enemy.maybe_take_damage state game enemy game.player.history.nail.started NAIL
               (get_damage game.player NAIL) collision
           then (
             (match collision.collided_from with
@@ -2483,6 +2483,39 @@ let tick (game : game) (state : state) =
         if Enemy.is_dead enemy then
           None
         else if Collision.with_enemy player.ghost.entity enemy then (
+          (match enemy.id with
+          | FROG_BOMB ->
+            let dummy_collision =
+              { center = Zero.vector (); other_rect = Zero.rect (); collided_from = UP }
+            in
+            ignore
+              (Enemy.maybe_take_damage state game enemy { at = state.frame.time } NAIL 1
+                 dummy_collision)
+          | BAT
+          | BIRD
+          | ELECTRICITY
+          | FISH
+          | FLYING_HIPPIE
+          | FLYING_HIPPIE_2
+          | FROG
+          | HIPPIE
+          | HUMBUG
+          | MANICORN
+          | MANICORN_2
+          | MANICORN_3
+          | PENGUIN
+          | BORCHERT
+          | BUDDY
+          | DEAN
+          | DUNCAN
+          | HICKEY
+          | JOSHUA
+          | LAVA_BRITTA
+          | LAVA_BRITTA_2
+          | LOCKER_BOY
+          | LUIS_GUZMAN
+          | VICE_DEAN_LAYBOURNE ->
+            ());
           let direction : direction =
             if rect_center_x enemy.entity.dest > rect_center_x player.ghost.entity.dest then
               LEFT

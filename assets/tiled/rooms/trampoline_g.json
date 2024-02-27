@@ -1572,6 +1572,72 @@
                  "width":26,
                  "x":432,
                  "y":248
+                }, 
+                {
+                 "height":28,
+                 "id":106,
+                 "name":"enemy:FROG_BOMB",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":389,
+                 "y":819
+                }, 
+                {
+                 "height":28,
+                 "id":107,
+                 "name":"enemy:FROG_BOMB",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":482,
+                 "y":818
+                }, 
+                {
+                 "height":28,
+                 "id":108,
+                 "name":"enemy:FROG_BOMB",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":450,
+                 "y":1460
+                }, 
+                {
+                 "height":28,
+                 "id":109,
+                 "name":"enemy:FROG_BOMB",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":84,
+                 "y":976
+                }, 
+                {
+                 "height":28,
+                 "id":110,
+                 "name":"enemy:FROG_BOMB",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":497,
+                 "y":356
+                }, 
+                {
+                 "height":28,
+                 "id":111,
+                 "name":"enemy:FROG_BOMB",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":26,
+                 "x":255,
+                 "y":163
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2975,7 +3041,7 @@
          "y":0
         }],
  "nextlayerid":21,
- "nextobjectid":106,
+ "nextobjectid":112,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

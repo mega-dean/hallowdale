@@ -21,6 +21,7 @@ let parse_name context name : enemy_id =
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
   | "FLYING_HIPPIE_2" -> FLYING_HIPPIE_2
   | "FROG" -> FROG
+  | "FROG_BOMB" -> FROG_BOMB
   | "HIPPIE" -> HIPPIE
   | "HUMBUG" -> HUMBUG
   | "MANICORN" -> MANICORN
@@ -157,9 +158,18 @@ let took_damage_at (enemy : enemy) (damage_kind : damage_kind) =
   | None -> Zero.time ()
   | Some time -> time
 
+let make_frog_explosion enemy frame_time =
+  let explosion_scale = 4. in
+  let projectile_duration = TIME_LEFT { seconds = 0.8 } in
+  spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale ~pogoable:true
+    ~v:(Zero.vector ())
+    ~projectile_pos:(RELATIVE (CENTER, CENTER))
+    ~damage:2 projectile_duration frame_time
+
 let maybe_take_damage
     ?(collision_direction : direction option)
     (state : state)
+    (game : game)
     (enemy : enemy)
     (ghost_action_started : time)
     (damage_kind : damage_kind)
@@ -183,6 +193,19 @@ let maybe_take_damage
       (* this is just undoing the changes above, because the enemy isn't quite dead yet *)
       enemy.status.active <- true;
       set_prop enemy "death_recoil" 1.
+    | FROG_BOMB ->
+      state.camera.shake <- 1.;
+      let projectile = make_frog_explosion enemy state.frame.time in
+      let new_explosions = ref [ projectile ] in
+      let check_frog_collision (target_enemy : enemy) =
+        if target_enemy.id = FROG_BOMB && target_enemy <> enemy then
+          if Collision.between_entities projectile.entity target_enemy.entity then (
+            new_explosions := make_frog_explosion target_enemy state.frame.time :: !new_explosions;
+            Entity.hide target_enemy.entity)
+      in
+      List.iter check_frog_collision game.room.enemies;
+      game.room.loose_projectiles <- !new_explosions @ game.room.loose_projectiles;
+      Entity.hide enemy.entity
     | DUNCAN
     | LAVA_BRITTA
     | LAVA_BRITTA_2
@@ -2805,14 +2828,7 @@ module Frog : M = struct
         in
         if should_explode then (
           args.state.camera.shake <- 1.;
-          let projectile =
-            let explosion_scale = 4. in
-            let projectile_duration = TIME_LEFT { seconds = 0.8 } in
-            spawn_projectile enemy ~projectile_texture_name:"explosion" ~scale:explosion_scale
-              ~pogoable:true ~v:(Zero.vector ())
-              ~projectile_pos:(RELATIVE (CENTER, CENTER))
-              ~damage:2 projectile_duration args.frame_time
-          in
+          let projectile = make_frog_explosion enemy frame_time in
           (* this will only catch collisions on the first frame of the
              explosion, so a frog can move into an explosion without dying
           *)
@@ -2933,6 +2949,35 @@ module Electricity : M = struct
     in
     if last_shock.at < args.frame_time -. shock_duration then
       Action.start_and_log enemy SHOCK ~frame_time:args.frame_time
+end
+
+module Frog_bomb_actions = struct
+  type t = NOTHING
+
+  let to_string (action : t) : string =
+    match action with
+    | NOTHING -> "nothing"
+
+  let from_string (s : string) : t =
+    match s with
+    | "nothing" -> NOTHING
+    | _ -> failwithf "Frog_bomb_actions.from_string: %s" s
+
+  let set (_enemy : enemy) ?(frame_props = String.Map.empty) (_action : t) ~frame_time =
+    let _ = (frame_props, frame_time) in
+    ()
+end
+
+module Frog_bomb : M = struct
+  module Action = Make_loggable (Frog_bomb_actions)
+
+  type args = { frame_time : float }
+
+  let get_args state game : args =
+    let _ = game in
+    { frame_time = state.frame.time }
+
+  let choose_behavior _enemy _args = ()
 end
 
 module Fish_actions = struct
@@ -3648,6 +3693,7 @@ let get_module (id : enemy_id) : (module M) =
   | DUNCAN -> (module Duncan)
   | LOCKER_BOY -> (module Locker_boy)
   | FROG -> (module Frog)
+  | FROG_BOMB -> (module Frog_bomb)
   | ELECTRICITY -> (module Electricity)
   | FISH -> (module Fish)
   | PENGUIN -> (module Penguin)
@@ -3697,6 +3743,7 @@ let create_from_rects
       | FISH
       | FLYING_HIPPIE
       | FROG
+      | FROG_BOMB
       | HICKEY
       | HIPPIE
       | HUMBUG
@@ -3756,6 +3803,7 @@ let create_from_rects
       | FLYING_HIPPIE
       | FLYING_HIPPIE_2
       | FROG
+      | FROG_BOMB
       | HIPPIE
       | HUMBUG
       | MANICORN
@@ -3843,6 +3891,7 @@ let create_from_rects
       | FLYING_HIPPIE
       | FISH
       | FROG
+      | FROG_BOMB
       | ELECTRICITY
       | PENGUIN
       | VICE_DEAN_LAYBOURNE
