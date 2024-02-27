@@ -888,6 +888,58 @@
             ]
         }],
 
+        [ "HUMBUG", {
+            "kind": "enemy",
+            "health": 25,
+            "scale": 1.4,
+            "w": 35,
+            "h": 25,
+            "gravity_multiplier": 0.0,
+            "dream_nail": {},
+            "attrs": [
+                ["dive_v", 800.0],
+                ["target_offset", 400.0],
+                ["aggro_distance", 600.0],
+                ["max_chase_v", 300.0],
+                ["chase_dv", 3.0],
+                ["max_v", 30.0]
+            ],
+            "unscaled_attrs": [
+                ["direction_change_max_dt", 3.0],
+                ["dive_charge_duration", 0.8],
+                ["dive_duration", 4.0],
+                ["dive_cooldown_duration", 0.8]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "count": 2,
+                    "duration": 0.4,
+                    "x_offset": 4,
+                    "y_offset": 14
+                }],
+                ["chasing", {
+                    "count": 2,
+                    "duration": 0.2,
+                    "x_offset": 4,
+                    "y_offset": 14
+                }],
+                ["charge-diving", {
+                    "count": 2,
+                    "duration": 0.04,
+                    "x_offset": 4,
+                    "y_offset": 9
+                }],
+                ["diving", {
+                    "x_offset": 4,
+                    "y_offset": 9
+                }],
+                ["dead", {
+                    "x_offset": 13,
+                    "y_offset": -5
+                }]
+            ]
+        }],
+
         [ "FLYING_HIPPIE", {
             "kind": "enemy",
             "health": 15,

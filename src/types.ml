@@ -366,6 +366,7 @@ type enemy_id =
   | FLYING_HIPPIE_2
   | FROG
   | HIPPIE
+  | HUMBUG
   | MANICORN
   | MANICORN_2
   | MANICORN_3

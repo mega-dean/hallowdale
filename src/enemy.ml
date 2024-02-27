@@ -13,20 +13,23 @@ let get_wounded_attr (enemy : enemy) attr : string =
 
 let parse_name context name : enemy_id =
   match name with
+  (* enemies *)
   | "BAT" -> BAT
   | "BIRD" -> BIRD
-  | "DUNCAN" -> DUNCAN
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
   | "FLYING_HIPPIE_2" -> FLYING_HIPPIE_2
   | "FROG" -> FROG
   | "HIPPIE" -> HIPPIE
-  | "LOCKER_BOY" -> LOCKER_BOY
+  | "HUMBUG" -> HUMBUG
   | "MANICORN" -> MANICORN
   | "MANICORN_2" -> MANICORN_2
   | "MANICORN_3" -> MANICORN_3
   | "PENGUIN" -> PENGUIN
+  (* bosses *)
+  | "DUNCAN" -> DUNCAN
+  | "LOCKER_BOY" -> LOCKER_BOY
   | "JOSHUA" -> JOSHUA
   | "VICE_DEAN_LAYBOURNE" -> VICE_DEAN_LAYBOURNE
   | "LUIS_GUZMAN" -> LUIS_GUZMAN
@@ -195,6 +198,7 @@ let maybe_take_damage
     | DEAN
     | PENGUIN
     | HIPPIE
+    | HUMBUG
     | FLYING_HIPPIE
     | FLYING_HIPPIE_2
     | BIRD
@@ -3238,6 +3242,157 @@ module Bird : M = struct
       Action.handle_drifting enemy CHANGE_DIRECTION ~ghost_pos:args.ghost_pos ~frame_time
 end
 
+module Humbug_actions = struct
+  type t =
+    | CHANGE_DIRECTION
+    | CHASE
+    | CHARGE_DIVE
+    | DIVE
+    | DIVE_COOLDOWN
+
+  let to_string (action : t) : string =
+    match action with
+    | CHANGE_DIRECTION -> "change_direction"
+    | CHASE -> "chase"
+    | CHARGE_DIVE -> "charge-dive"
+    | DIVE -> "dive"
+    | DIVE_COOLDOWN -> "dive-cooldown"
+
+  let from_string (s : string) : t =
+    match s with
+    | "change_direction" -> CHANGE_DIRECTION
+    | "chase" -> CHASE
+    | "charge-dive" -> CHARGE_DIVE
+    | "dive" -> DIVE
+    | "dive-cooldown" -> DIVE_COOLDOWN
+    | _ -> failwithf "Humbug_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = frame_time in
+    let pose_name =
+      match action with
+      | CHANGE_DIRECTION ->
+        let rand_vx = get_prop "random_vx" frame_props in
+        let rand_vy = get_prop "random_vy" frame_props in
+        let new_vx =
+          if enemy.initial_pos.x > enemy.entity.dest.pos.x then (
+            enemy.entity.sprite.facing_right <- true;
+            rand_vx)
+          else (
+            enemy.entity.sprite.facing_right <- false;
+            -1. *. rand_vx)
+        in
+        let new_vy =
+          if enemy.initial_pos.y > enemy.entity.dest.pos.y then
+            rand_vy
+          else
+            -1. *. rand_vy
+        in
+        enemy.entity.v.x <- new_vx;
+        enemy.entity.v.y <- new_vy;
+        "idle"
+      | CHASE ->
+        let new_vx = get_prop "new_vx" frame_props in
+        let new_vy = get_prop "new_vy" frame_props in
+        enemy.entity.v.x <- new_vx;
+        enemy.entity.v.y <- new_vy;
+        "chasing"
+      | CHARGE_DIVE ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "charge-diving"
+      | DIVE ->
+        let dive_vx = get_prop "dive_vx" frame_props in
+        let dive_vy = get_prop "dive_vy" frame_props in
+        enemy.entity.v.x <- dive_vx;
+        enemy.entity.v.y <- dive_vy;
+        "diving"
+      | DIVE_COOLDOWN ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "idle"
+    in
+    set_pose enemy pose_name
+end
+
+module Humbug : M = struct
+  module Action = Make_loggable (Humbug_actions)
+
+  type args = {
+    frame_time : float;
+    ghost_pos : vector;
+  }
+
+  let get_args state (game : game) : args =
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
+
+  let choose_behavior (enemy : enemy) args =
+    let ghost_pos = args.ghost_pos in
+    let frame_time = args.frame_time in
+    let handle_chasing () =
+      let offset = get_attr enemy "target_offset" in
+      let target_pos_x =
+        if args.ghost_pos.x > rect_center_x enemy.entity.dest then
+          args.ghost_pos.x -. offset
+        else
+          args.ghost_pos.x +. offset
+      in
+      let target_pos_y =
+        if args.ghost_pos.y > rect_center_y enemy.entity.dest then
+          args.ghost_pos.y -. offset
+        else
+          args.ghost_pos.y +. offset
+      in
+      let new_vx, new_vy = chase_to enemy target_pos_x target_pos_y in
+      match enemy.last_performed with
+      | None -> failwith "unreachable"
+      | Some (action_name, action_time) -> (
+        match Action.from_string action_name with
+        | CHANGE_DIRECTION
+        | CHASE ->
+          face_ghost enemy ~ghost_pos;
+          let last_dive = action_started_at enemy "dive" in
+          let dive_duration = get_attr enemy "dive_duration" in
+          if frame_time -. last_dive.at > dive_duration then
+            Action.start_and_log enemy CHARGE_DIVE ~frame_time
+          else
+            Action.set enemy CHASE ~frame_time
+              ~frame_props:([ ("new_vx", new_vx); ("new_vy", new_vy) ] |> List.to_string_map)
+        | CHARGE_DIVE ->
+          face_ghost enemy ~ghost_pos;
+          let dx = rect_center_x enemy.entity.dest -. ghost_pos.x in
+          let dy = rect_center_y enemy.entity.dest -. ghost_pos.y in
+          let angle = atan (dy /. dx) in
+          let v = get_attr enemy "dive_v" in
+          let dive_vx, dive_vy =
+            if dx < 0. then
+              (v *. cos angle, v *. sin angle)
+            else
+              (-.v *. cos angle, -.v *. sin angle)
+          in
+          tmp "dive vx: %f, vy: %f" dive_vx dive_vy;
+          Action.handle_charging enemy ~charge_attr:"dive_charge_duration" ~ghost_pos ~action_time
+            ~charge_action:CHARGE_DIVE ~action:DIVE ~frame_time ~get_frame_props:(fun () ->
+              [ ("dive_vx", dive_vx); ("dive_vy", dive_vy) ])
+        | DIVE ->
+          let still_diving = still_airborne enemy ~frame_time ~action_time in
+          if not still_diving then
+            Action.start_and_log enemy DIVE_COOLDOWN ~frame_time
+        | DIVE_COOLDOWN ->
+          face_ghost enemy ~ghost_pos;
+          tmp "DIVE_COOLDOWN";
+          let duration = get_attr enemy "dive_cooldown_duration" in
+          let still_cooling_down = frame_time -. action_time.at > duration in
+          if not still_cooling_down then
+            Action.start_and_log enemy CHASE ~frame_time
+              ~frame_props:[ ("new_vx", new_vx); ("new_vy", new_vy) ])
+    in
+    if get_bool_prop enemy "is_chasing" then
+      handle_chasing ()
+    else
+      Action.handle_drifting enemy CHANGE_DIRECTION ~ghost_pos:args.ghost_pos ~frame_time
+end
+
 module Bat_actions = struct
   type t =
     | MOVE
@@ -3497,6 +3652,7 @@ let get_module (id : enemy_id) : (module M) =
   | FISH -> (module Fish)
   | PENGUIN -> (module Penguin)
   | HIPPIE -> (module Hippie)
+  | HUMBUG -> (module Humbug)
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2 ->
     (module Flying_hippie)
@@ -3543,6 +3699,7 @@ let create_from_rects
       | FROG
       | HICKEY
       | HIPPIE
+      | HUMBUG
       | JOSHUA
       | LAVA_BRITTA
       | LOCKER_BOY
@@ -3600,6 +3757,7 @@ let create_from_rects
       | FLYING_HIPPIE_2
       | FROG
       | HIPPIE
+      | HUMBUG
       | MANICORN
       | MANICORN_2
       | MANICORN_3
@@ -3680,6 +3838,7 @@ let create_from_rects
         "MANICORN"
       | MANICORN
       | HIPPIE
+      | HUMBUG
       | JOSHUA
       | FLYING_HIPPIE
       | FISH
