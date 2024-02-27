@@ -386,6 +386,7 @@ let enemy_id (e : enemy_id) : string =
   | FROG_BOMB -> "FROG_BOMB"
   | HICKEY -> "HICKEY"
   | HIPPIE -> "HIPPIE"
+  | HOPPING_HIPPIE -> "HOPPING_HIPPIE"
   | HUMBUG -> "HUMBUG"
   | JOSHUA -> "JOSHUA"
   | LAVA_BRITTA -> "LAVA_BRITTA"

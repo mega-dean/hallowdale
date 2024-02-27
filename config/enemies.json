@@ -3,7 +3,7 @@
         // bosses
         [ "DUNCAN", {
             "kind": "boss",
-            "health": 5,
+            "health": 100,
             "scale": 2.5,
             // "damage": 5,
             "w": 19,
@@ -59,7 +59,7 @@
 
         [ "LOCKER_BOY", {
             "kind": "multi-boss",
-            "health": 5,
+            "health": 85,
             "scale": 1.5,
             "w": 22,
             "h": 40,
@@ -829,7 +829,7 @@
         // enemies
         [ "PENGUIN", {
             "kind": "enemy",
-            "health": 150,
+            "health": 15,
             "scale": 1.5,
             "w": 11,
             "h": 19,
@@ -1288,7 +1288,7 @@
 
         [ "MANICORN_3", {
             "kind": "multi-boss",
-            "health": 5,
+            "health": 600,
             "damage": 1,
             "scale": 2.5,
             "w": 22,
@@ -1382,7 +1382,7 @@
 
         [ "HIPPIE", {
             "kind": "enemy",
-            "health": 200,
+            "health": 20,
             "scale": 1.2,
             "w": 28,
             "h": 30,
@@ -1416,6 +1416,32 @@
                 ["charge-bite", {
                     "x_offset": 5,
                     "y_offset": 2
+                }],
+                ["dead", {
+                    "x_offset": 4,
+                    "y_offset": -20
+                }]
+            ]
+        }],
+
+        [ "HOPPING_HIPPIE", {
+            "kind": "enemy",
+            "health": 20,
+            "scale": 1.2,
+            "w": 28,
+            "h": 30,
+            "dream_nail": {},
+            "attrs": [
+                ["hop_vx", 400.0],
+                ["hop_vy", -600.0],
+                ["turn_dx", 250.0]
+            ],
+            "unscaled_attrs": [
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 6,
+                    "y_offset": 6
                 }],
                 ["dead", {
                     "x_offset": 4,

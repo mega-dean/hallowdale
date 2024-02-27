@@ -2499,6 +2499,7 @@ let tick (game : game) (state : state) =
           | FLYING_HIPPIE_2
           | FROG
           | HIPPIE
+          | HOPPING_HIPPIE
           | HUMBUG
           | MANICORN
           | MANICORN_2

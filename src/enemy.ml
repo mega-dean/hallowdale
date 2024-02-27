@@ -23,6 +23,7 @@ let parse_name context name : enemy_id =
   | "FROG" -> FROG
   | "FROG_BOMB" -> FROG_BOMB
   | "HIPPIE" -> HIPPIE
+  | "HOPPING_HIPPIE" -> HOPPING_HIPPIE
   | "HUMBUG" -> HUMBUG
   | "MANICORN" -> MANICORN
   | "MANICORN_2" -> MANICORN_2
@@ -221,6 +222,7 @@ let maybe_take_damage
     | DEAN
     | PENGUIN
     | HIPPIE
+    | HOPPING_HIPPIE
     | HUMBUG
     | FLYING_HIPPIE
     | FLYING_HIPPIE_2
@@ -605,6 +607,75 @@ module Duncan : M = struct
           dx /. airtime
         in
         Action.start_and_log enemy JUMP ~frame_time ~frame_props:[ ("random_jump_vx", jump_vx) ])
+end
+
+module Hopping_hippie_actions = struct
+  type t =
+    | HOP
+    | TURN
+    | LANDED
+
+  let to_string (action : t) : string =
+    match action with
+    | HOP -> "hop"
+    | TURN -> "turn"
+    | LANDED -> "landed"
+
+  let from_string (s : string) : t =
+    match s with
+    | "hop" -> HOP
+    | "turn" -> TURN
+    | "landed" -> LANDED
+    | _ -> failwithf "Hopping_Hippie_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let _ = (frame_props, frame_time) in
+    let pose_name =
+      match action with
+      | LANDED ->
+        enemy.entity.v.x <- 0.;
+        enemy.entity.v.y <- 0.;
+        "idle"
+      | TURN ->
+        enemy.entity.sprite.facing_right <- not enemy.entity.sprite.facing_right;
+        enemy.entity.v.x <- -.enemy.entity.v.x;
+        "idle"
+      | HOP ->
+        move_forward enemy (get_attr enemy "hop_vx");
+        enemy.entity.v.y <- get_attr enemy "hop_vy";
+        enemy.entity.current_floor <- None;
+        "idle"
+    in
+    set_pose enemy pose_name
+end
+
+module Hopping_hippie : M = struct
+  module Action = Make_loggable (Hopping_hippie_actions)
+
+  type args = {
+    frame_time : float;
+    ghost_pos : vector;
+  }
+
+  let get_args state game : args =
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    match enemy.entity.current_floor with
+    | None ->
+      let last_turn = action_started_at enemy "turn" in
+      if List.length enemy.floor_collisions_this_frame > 0 && frame_time -. last_turn.at > 0.5 then
+        Action.start_and_log enemy TURN ~frame_time
+    | Some (floor, _) ->
+      let should_turn =
+        let enemy_x = rect_center_x enemy.entity.dest in
+        let dx = get_attr enemy "turn_dx" in
+        let last_turn = action_started_at enemy "turn" in
+        (enemy_x < floor.pos.x +. dx || enemy_x > floor.pos.x +. floor.w -. dx)
+        && frame_time -. last_turn.at > 0.5
+      in
+      Action.start_and_log enemy (if should_turn then TURN else HOP) ~frame_time
 end
 
 module Luis_guzman_actions = struct
@@ -3415,7 +3486,6 @@ module Humbug : M = struct
             else
               (-.v *. cos angle, -.v *. sin angle)
           in
-          tmp "dive vx: %f, vy: %f" dive_vx dive_vy;
           Action.handle_charging enemy ~charge_attr:"dive_charge_duration" ~ghost_pos ~action_time
             ~charge_action:CHARGE_DIVE ~action:DIVE ~frame_time ~get_frame_props:(fun () ->
               [ ("dive_vx", dive_vx); ("dive_vy", dive_vy) ])
@@ -3425,7 +3495,6 @@ module Humbug : M = struct
             Action.start_and_log enemy DIVE_COOLDOWN ~frame_time
         | DIVE_COOLDOWN ->
           face_ghost enemy ~ghost_pos;
-          tmp "DIVE_COOLDOWN";
           let duration = get_attr enemy "dive_cooldown_duration" in
           let still_cooling_down = frame_time -. action_time.at > duration in
           if not still_cooling_down then
@@ -3698,6 +3767,7 @@ let get_module (id : enemy_id) : (module M) =
   | FISH -> (module Fish)
   | PENGUIN -> (module Penguin)
   | HIPPIE -> (module Hippie)
+  | HOPPING_HIPPIE -> (module Hopping_hippie)
   | HUMBUG -> (module Humbug)
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2 ->
@@ -3746,6 +3816,7 @@ let create_from_rects
       | FROG_BOMB
       | HICKEY
       | HIPPIE
+      | HOPPING_HIPPIE
       | HUMBUG
       | JOSHUA
       | LAVA_BRITTA
@@ -3805,6 +3876,7 @@ let create_from_rects
       | FROG
       | FROG_BOMB
       | HIPPIE
+      | HOPPING_HIPPIE
       | HUMBUG
       | MANICORN
       | MANICORN_2
@@ -3886,6 +3958,7 @@ let create_from_rects
         "MANICORN"
       | MANICORN
       | HIPPIE
+      | HOPPING_HIPPIE
       | HUMBUG
       | JOSHUA
       | FLYING_HIPPIE
