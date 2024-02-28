@@ -102,7 +102,7 @@ let save ?(after_fn = ignore) (game : game) (state : state) =
       room_name = Room.get_filename game.room;
       abilities = game.player.abilities;
       progress = clone_game_progress game.progress;
-      weapons = game.player.weapons |> String.Map.to_list |> List.map fst;
+      weapons = game.player.weapons |> String.Map.bindings |> List.map fst;
       current_weapon = game.player.current_weapon.name;
       max_health = game.player.health.max;
       max_soul = game.player.soul.max;

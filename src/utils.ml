@@ -179,8 +179,11 @@ module List = struct
     | Some x -> x
 
   let to_array xs = Array.of_list xs
-  let to_string_map xs = String.Map.of_list xs
-  let to_int_map xs = Int.Map.of_list xs
+
+  let to_string_map xs : 'a String.Map.t =
+    fold_left (fun m (k, v) -> String.Map.add k v m) String.Map.empty xs
+
+  let to_int_map xs : 'a Int.Map.t = fold_left (fun m (k, v) -> Int.Map.add k v m) Int.Map.empty xs
 
   module Non_empty = struct
     type 'a t = 'a * 'a list

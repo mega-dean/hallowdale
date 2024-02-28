@@ -1364,7 +1364,7 @@ let equip_weapon (player : player) weapon_name =
   match String.Map.find_opt weapon_name player.weapons with
   | None ->
     failwithf "can't equip %s, not in player.weapons: %s" weapon_name
-      (player.weapons |> String.Map.to_list |> List.map fst |> String.join)
+      (player.weapons |> String.Map.bindings |> List.map fst |> String.join)
   | Some weapon_config ->
     player.current_weapon <-
       (let config = weapon_config.tint in

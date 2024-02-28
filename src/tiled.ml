@@ -230,7 +230,7 @@ module JsonRoom = struct
     match String.Map.find_opt texture_name platform_textures_by_name with
     | None ->
       failwithf "could not find platform %s, keys: %s" texture_name
-        (platform_textures_by_name |> String.Map.to_list |> List.map fst |> String.join)
+        (platform_textures_by_name |> String.Map.bindings |> List.map fst |> String.join)
     | Some t -> (texture_name, t, platform_kind)
 
   let look_up_tile (json_room : t) ?(animation_offset = 0) room_cache (gid' : int) : texture * int =

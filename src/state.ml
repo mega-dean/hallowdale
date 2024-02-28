@@ -913,7 +913,7 @@ let tick (state : state) =
                  (fun (r : rect) -> (Raylib.Color.red, r))
                  (game.room.spikes
                  @ game.room.hazards
-                 @ (game.room.platform_spikes |> String.Map.to_list |> List.map snd))));
+                 @ (game.room.platform_spikes |> String.Map.bindings |> List.map snd))));
 
           (* when transitioning into a large room, state.frame.dt can be a lot larger than (1/fps),
              so this skips position updates to prevent the ghost from falling through floors

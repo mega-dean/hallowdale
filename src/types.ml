@@ -1205,7 +1205,7 @@ type player = {
 
 let get_nail_damage (player : player) =
   player.weapons
-  |> String.Map.to_list
+  |> String.Map.bindings
   |> List.map snd
   |> List.map (fun (w : Json_t.weapon) -> w.damage)
   |> List.fold_left ( + ) 0

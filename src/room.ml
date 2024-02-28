@@ -396,7 +396,7 @@ let init (params : room_params) : room =
             match String.split_at_first_opt '|' json.name with
             | Some interaction_name, layer_name -> (
               let finished name =
-                Interactions.cutscene_finished (params.progress_by_room |> String.Map.to_list) name
+                Interactions.cutscene_finished (params.progress_by_room |> String.Map.bindings) name
               in
               match interaction_name.[0] with
               | '!' -> (layer_name, finished (Str.string_after interaction_name 1))
@@ -820,7 +820,7 @@ let reset_tile_groups (room : room) =
                   (!idxs |> List.uniq)
                 |> List.uniq
               in
-              let keys = Int.Map.to_list room.cache.jug_fragments_by_gid |> List.map fst in
+              let keys = Int.Map.bindings room.cache.jug_fragments_by_gid |> List.map fst in
               match List.find_opt (fun raw_gid -> List.mem raw_gid keys) all_raw_gids with
               | None -> (None, [])
               | Some raw_gid -> (

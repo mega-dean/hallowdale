@@ -37,7 +37,7 @@ type t = {
 }
 
 let count_lore state prefix =
-  let lore = state.global.lore |> String.Map.to_list in
+  let lore = state.global.lore |> String.Map.bindings in
   List.filter (fun (name, _) -> String.starts_with ~prefix:(fmt "%s:" prefix) name) lore
   |> List.length
 
@@ -52,8 +52,8 @@ let get_row (state : state) (game : game) ?(suffix = "") name : row =
   let found, total, percentage =
     match name with
     | "Weapons" ->
-      ( game.player.weapons |> String.Map.to_list |> List.length,
-        state.global.weapons |> String.Map.to_list |> List.length,
+      ( game.player.weapons |> String.Map.bindings |> List.length,
+        state.global.weapons |> String.Map.bindings |> List.length,
         weapon_percent )
     | "Dreamer Items" ->
       (game.progress.dreamer_items_found, count_lore state "dreamer", dreamer_item_percent)

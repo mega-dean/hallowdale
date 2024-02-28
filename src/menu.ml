@@ -153,7 +153,7 @@ let update_pause_menu (game : game) (state : state) : state =
       game.interaction.text <- None
     | CHANGE_WEAPON ->
       state.pause_menu <-
-        Some (MENU (change_weapon_menu (game.player.weapons |> String.Map.to_list |> List.map fst)))
+        Some (MENU (change_weapon_menu (game.player.weapons |> String.Map.bindings |> List.map fst)))
     | CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
     | PROGRESS -> state.pause_menu <- Some PROGRESS
     | SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))

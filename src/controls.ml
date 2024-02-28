@@ -318,8 +318,14 @@ let load_gamepad_bindings () : (game_action * Raylib.GamepadButton.t) list =
 
 let load () =
   {
-    keyboard = load_key_bindings () |> Game_action.Map.of_list;
-    gamepad = load_gamepad_bindings () |> Game_action.Map.of_list;
+    keyboard =
+      List.fold_left
+        (fun m (k, v) -> Game_action.Map.add k v m)
+        Game_action.Map.empty (load_key_bindings ());
+    gamepad =
+      List.fold_left
+        (fun m (k, v) -> Game_action.Map.add k v m)
+        Game_action.Map.empty (load_gamepad_bindings ());
   }
 
 let show_key key =
