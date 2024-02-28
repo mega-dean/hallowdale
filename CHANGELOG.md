@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.0.11] - 2024-01-16
+## [0.0.14] - 2024-01-16
 
 - add keys and locked doors
 - add tram pass
@@ -114,7 +114,7 @@
 
 - demo release
 
-[0.0.11]: https://github.com/mega-dean/hallowdale/compare/v0.0.10...v0.0.11
+[0.0.14]: https://github.com/mega-dean/hallowdale/compare/v0.0.10...v0.0.14
 [0.0.10]: https://github.com/mega-dean/hallowdale/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/mega-dean/hallowdale/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/mega-dean/hallowdale/compare/v0.0.7...v0.0.8

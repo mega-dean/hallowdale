@@ -11,8 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - macos
-          # - ubuntu
+          - macos
+          - ubuntu
           - windows
         ocaml-compiler:
           - 4.13
