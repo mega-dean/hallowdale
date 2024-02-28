@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.11] - 2024-01-16
+
 - add keys and locked doors
 - add tram pass
 - add warp from teacher's lounge to cpu wing
@@ -18,6 +20,9 @@
   - HIPPIE
   - MANICORN
   - BAT
+  - FROG_BOMB
+  - HOPPING_HIPPIE
+  - HUMBUG
 - add new bosses:
   - Joshua
   - Dean
@@ -109,6 +114,7 @@
 
 - demo release
 
+[0.0.11]: https://github.com/mega-dean/hallowdale/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/mega-dean/hallowdale/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/mega-dean/hallowdale/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/mega-dean/hallowdale/compare/v0.0.7...v0.0.8
