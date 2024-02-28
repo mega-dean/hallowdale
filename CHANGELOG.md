@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
+## [0.0.15] - 2024-02-28
+
 - show current key/button for new abilities
 - remove demo mode
 
-## [0.0.14] - 2024-01-16
+## [0.0.14] - 2024-02-27
 
 - add keys and locked doors
 - add tram pass
@@ -117,6 +119,7 @@
 
 - demo release
 
+[0.0.15]: https://github.com/mega-dean/hallowdale/compare/v0.0.14...v0.0.15
 [0.0.14]: https://github.com/mega-dean/hallowdale/compare/v0.0.10...v0.0.14
 [0.0.10]: https://github.com/mega-dean/hallowdale/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/mega-dean/hallowdale/compare/v0.0.8...v0.0.9
