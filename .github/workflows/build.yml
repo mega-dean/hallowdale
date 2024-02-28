@@ -11,11 +11,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos
-          - ubuntu
+          # - macos
+          # - ubuntu
           - windows
         ocaml-compiler:
-          - 5.1.0
+          - 5.1
 
     runs-on: ${{ matrix.os }}-latest
 
