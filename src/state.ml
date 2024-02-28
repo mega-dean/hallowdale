@@ -755,9 +755,8 @@ let tick (state : state) =
     state.context <- IN_PROGRESS saved_game_before_dying;
     state
   | IN_PROGRESS game -> (
-    (* TODO the music stutters at room transitions
-       - maybe need to check difference in state.frame.time and seek forward
-    *)
+    Audio.play_game_music game;
+
     let find_existing_binding (type a) (value : a) (action_map : a Game_action.Map.t) :
         game_action option =
       let res = ref None in
@@ -826,8 +825,6 @@ let tick (state : state) =
           state.rebinding_action <- None));
       state
     | None ->
-      Audio.play_game_music game;
-
       if state.debug.paused then (
         game.player.ghost.hardfall_time <- None;
         if Option.is_some (Controls.key_pressed state.controls DEBUG_2) then
