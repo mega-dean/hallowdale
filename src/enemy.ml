@@ -251,6 +251,7 @@ let maybe_take_damage
       ghost_action_started > took_damage_at enemy damage_kind
   in
   if hit then (
+    Audio.play_sound state "high-punch";
     enemy.history <-
       Enemy_action.Map.update (TOOK_DAMAGE damage_kind)
         (fun _ -> Some { at = state.frame.time })
