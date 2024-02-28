@@ -1110,9 +1110,13 @@ let get_steps
             (DIALOGUE
                ( current_ghost_name,
                  "Oh my god! Joshua was {{red}} racist! {{white}} That came out of nowhere!" ));
+          STEP (SET_FIXED_CAMERA (32, 50));
+          STEP (SET_IGNORE_CAMERA_TRIGGERS true);
+          STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
           CURRENT_GHOST (ENTITY UNSET_FLOOR);
           ENEMY (JOSHUA, ENTITY UNSET_FLOOR);
+          STEP (WAIT 1.);
         ]
       | MANICORN_3 ->
         game.in_boss_fight <- true;

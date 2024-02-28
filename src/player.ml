@@ -1058,6 +1058,7 @@ let start_action (state : state) (game : game) (action_kind : ghost_action_kind)
       game.player.soul.current <- game.player.soul.current - soul_per_cast;
       match spell_kind with
       | VENGEFUL_SPIRIT ->
+        Audio.play_sound state "vengeful-spirit";
         Entity.recoil_backwards game.player.ghost.entity
           {
             speed = Config.action.vengeful_spirit_recoil;

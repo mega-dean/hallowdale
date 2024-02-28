@@ -164,6 +164,8 @@
                     "y_offset": 6
                 }],
                 ["projectile", {
+                    "count": 6,
+                    "duration": 0.03
                 }],
                 ["clipping", {
                     "count": 6,

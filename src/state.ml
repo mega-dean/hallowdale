@@ -170,6 +170,7 @@ let init () : state =
         "menu-close";
         "menu-expand";
         "dash";
+        "vengeful-spirit";
       ]
   in
 
