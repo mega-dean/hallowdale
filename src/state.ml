@@ -153,6 +153,9 @@ let init () : state =
       }
   in
 
+  (* TODO this should get saved to the save file instead of resetting every time *)
+  let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
+
   let sounds =
     List.map Audio.load_sound
       [
@@ -163,6 +166,7 @@ let init () : state =
         "glass-break";
         "break";
         "spray";
+        "death-spray";
         "alarmswitch";
         "cancel";
         "click";
@@ -171,7 +175,17 @@ let init () : state =
         "menu-expand";
         "dash";
         "vengeful-spirit";
+        "fire_thrown";
+        "monkey-gas";
+        "hardfall";
       ]
+  in
+
+  let continuous_sounds =
+    let load_continuous_sound name =
+      (name, Audio.load_continuous_sound name settings.music_volume)
+    in
+    List.map load_continuous_sound [ "fire"; "spray" ]
   in
 
   let (lore, honda_quotes) : string String.Map.t * string list =
@@ -203,6 +217,7 @@ let init () : state =
           world_map;
         };
       sounds = sounds |> List.to_string_map;
+      continuous_sounds = continuous_sounds |> List.to_string_map;
     }
   in
 
@@ -213,27 +228,24 @@ let init () : state =
 
   print_with_line "done_initializing_state";
 
-  (* TODO this should get saved to the save file instead of resetting every time *)
-  let settings = { music_volume = 0.5; sound_effects_volume = 0.5 } in
-
   let area_musics : area_music list =
     [
-      (* TODO these loop times are not very precise *)
-      Audio.load_music "as-i-lay-me-down" ~intro:72.128 ~loop:171.947
+      Audio.load_area_music "as-i-lay-me-down" ~intro:72.128 ~loop:171.947
         [ FORGOTTEN_CLASSROOMS; INFECTED_CLASSROOMS ]
         settings.music_volume;
-      Audio.load_music "daybreak" [ AC_REPAIR_ANNEX ] settings.music_volume;
-      Audio.load_music "greendale" [ LIBRARY; MEOW_MEOW_BEENZ; VENTWAYS ] settings.music_volume;
-      Audio.load_music "kiss-from-a-rose" ~intro:22.255 ~loop:73.545 [ CITY_OF_CHAIRS; OUTLANDS ]
+      Audio.load_area_music "daybreak" [ AC_REPAIR_ANNEX ] settings.music_volume;
+      Audio.load_area_music "greendale" [ LIBRARY; MEOW_MEOW_BEENZ; VENTWAYS ] settings.music_volume;
+      Audio.load_area_music "kiss-from-a-rose" ~intro:22.255 ~loop:73.545
+        [ CITY_OF_CHAIRS; OUTLANDS ] settings.music_volume;
+      Audio.load_area_music "mash-theme" ~loop:75.451 [ BASEMENT; COMPUTER_WING ]
         settings.music_volume;
-      Audio.load_music "mash-theme" ~loop:75.451 [ BASEMENT; COMPUTER_WING ] settings.music_volume;
-      Audio.load_music "somewhere-out-there" ~intro:35.306 ~loop:93.553 [ TRAMPOLINEPATH ]
+      Audio.load_area_music "somewhere-out-there" ~intro:35.306 ~loop:93.553 [ TRAMPOLINEPATH ]
         settings.music_volume;
     ]
   in
 
   {
-    menu_music = (Audio.load_music "opening" [] settings.music_volume).music;
+    menu_music = (Audio.load_area_music "opening" [] settings.music_volume).music;
     area_musics;
     context = MAIN_MENU (Menu.main_menu (), Game.load_all_save_slots ());
     pause_menu = None;

@@ -70,7 +70,8 @@ type animation_src =
   | LOOPED of animation
   | PARTICLE of animation
   | (* this is used for c-dash crystals, which animate once and then stay on-screen *)
-    ONCE of animation
+    ONCE of
+      animation
 
 let get_frame (a : animation) : animation_frame =
   List.nth a.frames (a.frame_idx mod List.length a.frames)
@@ -660,7 +661,8 @@ module Interaction = struct
     | (* this isn't using (PARTY (SET_POSE ...)) because it uses the real Ghost.set_pose
          instead of the simpler one for party_ghosts during interactions
       *)
-      SET_POSE of ghost_pose
+      SET_POSE of
+        ghost_pose
     | ADD_ITEM of item_kind
     | ENTITY of entity_step
     | PARTY of party_ghost_step
@@ -706,7 +708,8 @@ module Interaction = struct
     | PLAIN of bool * string list
     | ABILITY of ability_text
     | (* this is a separate variant because the focus dialogue is the only one with top_paragraphs *)
-      FOCUS_ABILITY of ability_text
+      FOCUS_ABILITY of
+        ability_text
     | DIALOGUE of string * string
     | MENU of menu * save_slot list option
 
@@ -1528,8 +1531,9 @@ type global_cache = {
   (* TODO collision_shapes : (string * shape) list; *)
   enemy_configs : (enemy_id * Json_t.enemy_config) list;
   npc_configs : (npc_id * Json_t.npc_config) list;
-  (* TODO could add sound_id instead of using strings *)
   sounds : Raylib.Sound.t String.Map.t;
+  (* these are sound effects that loop continuously *)
+  continuous_sounds : music String.Map.t;
 }
 
 type debug = {

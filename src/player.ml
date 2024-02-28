@@ -848,8 +848,8 @@ let set_pose
       player.ghost.entity.sprite.dest.pos.x <-
         (if wall_to_the_left then
            wall.pos.x +. wall.w
-         else
-           wall.pos.x -. (Config.ghost.width *. Config.scale.ghost));
+        else
+          wall.pos.x -. (Config.ghost.width *. Config.scale.ghost));
       update_vx 0.;
       player.current.can_dash <- true;
       player.current.can_flap <- true;
@@ -1000,6 +1000,7 @@ let start_action (state : state) (game : game) (action_kind : ghost_action_kind)
       is_dream_nail := true;
       game.player.history.dream_nail
     | HARDFALL ->
+      Audio.play_sound state "hardfall";
       state.camera.shake <- 1.;
       game.player.history.hardfall
     | C_DASH_WALL_COOLDOWN ->
@@ -1015,8 +1016,7 @@ let start_action (state : state) (game : game) (action_kind : ghost_action_kind)
       game.player.children <- Ghost_child_kind.Map.remove C_DASH_WHOOSH game.player.children;
       game.player.history.c_dash_cooldown
     | C_DASH ->
-      (* TODO this probably won't work as a sound, needs to be a music stream that repeats *)
-      (* Audio.play_sound state "spray"; *)
+      Audio.play_continuous_sound state "spray";
       (* TODO maybe only should track this stuff when game_mode is STEEL_SOLE *)
       if game.room.area.id <> COMPUTER_WING then
         (* not counting these in COMPUTER_WING since there are some rooms that require it  *)
@@ -1034,6 +1034,7 @@ let start_action (state : state) (game : game) (action_kind : ghost_action_kind)
         game.player.shared_textures.c_dash_whoosh;
       game.player.history.c_dash
     | C_DASH_CHARGE ->
+      Audio.play_sound state "fire_thrown";
       game.player.current.is_charging_c_dash <- true;
       make_c_dash_child game.player;
       game.player.history.charge_c_dash
@@ -1068,7 +1069,6 @@ let start_action (state : state) (game : game) (action_kind : ghost_action_kind)
         spawn_vengeful_spirit state game;
         game.player.history.cast_vs
       | DESOLATE_DIVE ->
-        (* TODO probably should set is_diving in this fn (like how c-dash does it) *)
         let w, h = (game.player.ghost.entity.dest.w *. 5., game.player.ghost.entity.dest.h *. 5.) in
         let child =
           make_ghost_child game.player DIVE (CENTER, BOTTOM_INSIDE)
@@ -1077,12 +1077,13 @@ let start_action (state : state) (game : game) (action_kind : ghost_action_kind)
         add_child game.player DIVE child;
         game.player.history.cast_dive
       | HOWLING_WRAITHS ->
+        Audio.play_sound state "monkey-gas";
         spawn_child game.player WRAITHS (CENTER, TOP_OUTSIDE) ~scale:Config.ghost.wraiths_scale
           game.player.shared_textures.howling_wraiths;
         game.player.history.cast_wraiths)
     | DIE ->
       Audio.play_sound state "break";
-      Audio.play_sound state "spray";
+      Audio.play_sound state "death-spray";
       game.player.history.die
     | TAKE_DAMAGE_AND_RESPAWN ->
       (match game.mode with
@@ -1229,12 +1230,12 @@ let continue_action (state : state) (game : game) (action_kind : ghost_action_ki
       | None -> failwith "unreachable"
       | Some timer ->
         if timer.left.seconds < -1.5 then (
-          Audio.stop_sound state "spray";
+          Audio.stop_sound state "death-spray";
           respawn_ghost game;
           game.player.health.current <- game.player.health.max;
           state.context <- RELOAD_LAST_SAVED_GAME game;
           state.screen_fade <- None)))
-  | C_DASH
+  | C_DASH -> Audio.play_continuous_sound state "spray"
   | C_DASH_CHARGE
   | SHADE_DASH
   | TAKE_DAMAGE_AND_RESPAWN
@@ -1441,9 +1442,7 @@ let handle_debug_keys (game : game) (state : state) =
       state.debug.safe_ss <- not state.debug.safe_ss;
       print "set debug.safe_ss: %b" state.debug.safe_ss
     in
-    let pressed key =
-      Option.is_some (Controls.key_pressed state.controls key)
-    in
+    let pressed key = Option.is_some (Controls.key_pressed state.controls key) in
     if Controls.key_down state.controls DEBUG_UP then
       game.player.ghost.entity.dest.pos.y <- game.player.ghost.entity.dest.pos.y -. dv
     else if Controls.key_down state.controls DEBUG_DOWN then
@@ -1497,6 +1496,9 @@ type handled_action = { this_frame : bool }
 let in_water (player : player) : bool = Option.is_some player.current.water
 
 let tick (game : game) (state : state) =
+  (* TODO maybe find a better place for this *)
+  if game.player.current.is_diving then
+    Audio.play_continuous_sound state "fire";
   let stop_wall_sliding = ref false in
 
   let pressed_or_buffered (game_action : game_action) =
@@ -1778,7 +1780,7 @@ let tick (game : game) (state : state) =
           | PLAY_SOUND_EFFECT name -> Audio.play_sound state name
           | STOP_MUSIC -> Audio.stop_music game.music.music.t
           | PLAY_END_CREDITS_MUSIC ->
-            game.music <- Audio.load_music "ending" [] state.settings.music_volume
+            game.music <- Audio.load_area_music "ending" [] state.settings.music_volume
           | RETURN_TO_MAIN_MENU -> state.context <- RETURN_TO_MAIN_MENU game
           | RELOAD_GAME ->
             state.screen_fade <- Some (make_screen_fade (255, 0) 2.);

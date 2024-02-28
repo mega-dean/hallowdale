@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- add continuous sound effects for c-dash and dive
+
 ## [0.0.15] - 2024-02-28
 
 - show current key/button for new abilities
