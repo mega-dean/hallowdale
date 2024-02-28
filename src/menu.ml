@@ -6,12 +6,16 @@ let main_menu () : menu = make_menu [ MAIN_MENU START_GAME; MAIN_MENU QUIT ]
 
 let select_game_mode_menu save_file save_file_idx : menu =
   make_menu
-    [
-      SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx));
-      SELECT_GAME_MODE (USE_MODE (DEMO, save_file, save_file_idx));
-      SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx));
-      SELECT_GAME_MODE BACK;
-    ]
+    ([
+       Some (SELECT_GAME_MODE (USE_MODE (CLASSIC, save_file, save_file_idx)));
+       (if Env.development then
+          Some (SELECT_GAME_MODE (USE_MODE (DEMO, save_file, save_file_idx)))
+       else
+         None);
+       Some (SELECT_GAME_MODE (USE_MODE (STEEL_SOLE, save_file, save_file_idx)));
+       Some (SELECT_GAME_MODE BACK);
+     ]
+    |> List.filter_somes)
 
 let pause_menu ~allow_save ghost_count : menu =
   make_menu
@@ -153,7 +157,8 @@ let update_pause_menu (game : game) (state : state) : state =
       game.interaction.text <- None
     | CHANGE_WEAPON ->
       state.pause_menu <-
-        Some (MENU (change_weapon_menu (game.player.weapons |> String.Map.bindings |> List.map fst)))
+        Some
+          (MENU (change_weapon_menu (game.player.weapons |> String.Map.bindings |> List.map fst)))
     | CHANGE_GHOST -> state.pause_menu <- Some (MENU (change_ghost_menu game.party))
     | PROGRESS -> state.pause_menu <- Some PROGRESS
     | SETTINGS -> state.pause_menu <- Some (MENU (settings_menu ()))

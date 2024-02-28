@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - show current key/button for new abilities
+- remove demo mode
 
 ## [0.0.14] - 2024-01-16
 
