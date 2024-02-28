@@ -80,6 +80,15 @@ let get_steps
       failwithf "unknown '%s' interaction: %s" trigger.name_prefix trigger.name_suffix
     in
 
+    let key_or_button action =
+      match state.frame_inputs.control_type with
+      | KEYBOARD ->
+        fmt "{{blue}} [%s] {{white}}" (Controls.get_key state.controls action |> Controls.show_key)
+      | GAMEPAD ->
+        fmt "{{blue}} [%s] {{white}}"
+          (Controls.get_button state.controls action |> Controls.show_button)
+    in
+
     let unhide_and_unfreeze ?(direction : direction = LEFT) ghost_id (x, y) =
       [
         PARTY_GHOST (ghost_id, ENTITY (UNHIDE_AT (x, y, 0., 0.)));
@@ -236,7 +245,7 @@ let get_steps
                    [
                      "Collect LIFE VAPOR by striking enemies.";
                      "Once enough LIFE VAPOR is collected";
-                     "Hold (A)";
+                     fmt "Hold %s" (key_or_button FOCUS);
                      "to focus LIFE VAPOR and HEAL.";
                    ] ));
           ]
@@ -285,28 +294,29 @@ let get_steps
         get_ability_steps "mothwing_cloak" 0. 2. ~quote
           [ "Taken the"; "Scootenanny Chair." ]
           [
-            "Press [ZR] to scootenanny forwards.";
+            fmt "Press %s to scootenanny forwards." (key_or_button DASH);
             "Use the chair to scootenanny quickly along the ground or through the air.";
           ]
       | "double-bouncies" ->
         get_ability_steps "monarch_wings" 0. 4. ~quote
           [ "Consumed the"; "Double Bouncies." ]
           [
-            "Press (B) while in the air to double bounce.";
+            fmt "Press %s while in the air to double bounce." (key_or_button JUMP);
             "Use the ethereal bounce to sail above enemies and discover new paths.";
           ]
       | "reverse-danny-thomas" ->
         get_ability_steps "mantis_claw" 0. 8. ~quote
           [ "Learned the"; "Reverse Danny Thomas." ]
           [
-            "Press (B) while sliding against a wall to jump again.";
+            fmt "Press %s while sliding against a wall to jump again." (key_or_button JUMP);
             "Jump from wall to wall to reach new areas.";
           ]
       | "computer-heart" ->
         get_ability_steps "crystal_heart" 0. 5. ~quote
           [ "Consumed the"; "Computer Heart." ]
           [
-            "Hold [ZL] while on the ground or clinging to a wall to concentrate the force.";
+            fmt "Hold %s while on the ground or clinging to a wall to concentrate the force."
+              (key_or_button C_DASH);
             "Release the button to blast forwards and fly through the air.";
           ]
         @ [ STEP (HIDE_LAYER "temporary-floors") ]
@@ -318,25 +328,25 @@ let get_steps
         get_ability_steps "shade_cloak" 0. 7. ~quote
           [ "Consumed the"; "Pierce Hologram." ]
           [
-            "Press [ZR] to scootenanny forwards, cloaked in hologram.";
+            fmt "Press %s to scootenanny forwards, cloaked in hologram." (key_or_button DASH);
             "Use the hologram to scootenanny through enemies and their attacks without taking \
              damage.";
           ]
       | "monkey-gas" ->
         get_ability_steps "howling_wraiths" 0. 6. ~quote
           [ "Consumed the"; "Monkey Knockout Gas." ]
-          [ "Tap (A) while holding UP"; "to unleash the Knockout Gas." ]
+          [ fmt "Tap %s while holding UP" (key_or_button CAST); "to unleash the Knockout Gas." ]
       | "honda-nail" ->
         get_ability_steps "dream_nail" 0. 9. [ "Taken the"; "Honda Nail." ] ~quote
           [
-            "Hold (X) to charge and slash with the nail.";
+            fmt "Hold %s to charge and slash with the nail." (key_or_button NAIL);
             "Cut through the veil between dreams and waking.";
           ]
       | "sealy-select" ->
         get_ability_steps "shade_soul" 0. 1. ~quote
           [ "Consumed the"; "Hypoallergenic Sealy Select." ]
           [
-            "Tap (A)";
+            fmt "Tap %s" (key_or_button CAST);
             "to unleash a more powerful Cushion.";
             "This spell consumes the same amount of LIFE VAPOR,";
             "with increased power.";
@@ -344,11 +354,14 @@ let get_steps
       | "torvins-flesh-of-fire" ->
         get_ability_steps "descending_dark" 0. 3. ~quote
           [ "Learned"; "Torvin's Flesh of Fire." ]
-          [ "Tap (A) while holding DOWN"; "to strike the earth with a burst of white-hot flame." ]
+          [
+            fmt "Tap %s while holding DOWN" (key_or_button CAST);
+            "to strike the earth with a burst of white-hot flame.";
+          ]
       | "vapors-of-magmarath" ->
         get_ability_steps "abyss_shriek" 0. 6. ~quote
           [ "Consumed the"; "Vapors of Magmarath." ]
-          [ "Tap (A) while holding UP"; "to unleash the Vapors." ]
+          [ fmt "Tap %s while holding UP" (key_or_button CAST); "to unleash the Vapors." ]
       | _ -> fail ())
     | "boss-fight" -> (
       (* this doesn't include bosses from the final cutscene sequence, since those aren't
@@ -777,7 +790,7 @@ let get_steps
         @ get_ability_steps "vengeful_spirit" 0. 1.
             [ "Consumed the"; "Vengeful Cushion" ]
             [
-              "Tap (A)";
+              fmt "Tap %s" (key_or_button CAST);
               "to unleash the Cushion.";
               "Spells will deplete LIFE VAPOR.";
               "Replenish LIFE VAPOR by striking enemies.";
@@ -896,7 +909,7 @@ let get_steps
         @ get_ability_steps "desolate_dive" 0. 3.
             [ "Consumed the"; "Troy and Abed Intimidation Stance." ]
             [
-              "Tap (A) while";
+              fmt "Tap %s while" (key_or_button CAST);
               "holding DOWN to strike the earth with a burst of intimidation.";
               "Spells will deplete LIFE VAPOR.";
               "Replenish LIFE VAPOR by striking enemies.";

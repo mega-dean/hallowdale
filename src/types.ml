@@ -950,8 +950,13 @@ type frame_input = {
   mutable down_since : time option;
 }
 
+type control_type =
+  | KEYBOARD
+  | GAMEPAD
+
 (* this is updated every frame based on which keys are pressed *)
 type frame_inputs = {
+  mutable control_type : control_type;
   (* directions *)
   up : frame_input;
   down : frame_input;
@@ -1599,10 +1604,6 @@ type pause_menu =
   | MENU of menu
   | WORLD_MAP of world_map
   | PROGRESS
-
-type control_type =
-  | KEY
-  | BUTTON
 
 type controls = {
   mutable keyboard : Raylib.Key.t Game_action.Map.t;

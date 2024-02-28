@@ -253,6 +253,7 @@ let init () : state =
     frame = { idx = 0; dt = 0.; time = 0.; timeout = Int.max_int };
     frame_inputs =
       {
+        control_type = (* this is updated every frame when buttons/keys are pressed *) KEYBOARD;
         up = { pressed = false; down = false; released = false; down_since = None };
         down = { pressed = false; down = false; released = false; down_since = None };
         left = { pressed = false; down = false; released = false; down_since = None };
@@ -289,16 +290,16 @@ let update_projectile (projectile : projectile) (game : game) (state : state) : 
       {
         x =
           (if rect_center_x projectile.entity.dest < rect_center_x game.player.ghost.entity.dest
-           then
+          then
              projectile.entity.v.x +. dv
-           else
-             projectile.entity.v.x -. dv);
+          else
+            projectile.entity.v.x -. dv);
         y =
           (* don't take rect_center_y of ghost so it aims the projectile at the ghost's head *)
           (if rect_center_y projectile.entity.dest < game.player.ghost.entity.dest.pos.y then
              projectile.entity.v.y +. dv
-           else
-             projectile.entity.v.y -. dv);
+          else
+            projectile.entity.v.y -. dv);
       });
   let collisions =
     match projectile.orbiting with
@@ -564,8 +565,8 @@ let update_enemies (game : game) (state : state) =
         ~gravity_multiplier_override:
           (if Enemy.is_dead enemy then
              Some enemy.json.death_gravity_multiplier
-           else
-             None)
+          else
+            None)
         game.room state.frame.dt enemy.entity;
     Entity.maybe_unset_current_floor enemy.entity game.room;
     if enemy.status.active && not interacting then
@@ -683,8 +684,12 @@ let update_frame_inputs (state : state) : state =
     input.pressed <-
       (if direction && input.down then
          false
-       else
-         Controls.key_pressed state.controls ~direction key);
+      else (
+        match Controls.key_pressed state.controls ~direction key with
+        | Some control_type ->
+          state.frame_inputs.control_type <- control_type;
+          true
+        | None -> false));
     input.down <- Controls.key_down state.controls ~direction key;
     if input.pressed then
       input.down_since <- Some { at = state.frame.time }
@@ -722,14 +727,14 @@ let add_debug_rects state rects = state.debug.rects <- rects @ state.debug.rects
 
 let tick (state : state) =
   if Env.development && not (Controls.holding_shift ()) then (
-    if Controls.key_pressed state.controls DEBUG_3 then
+    if Option.is_some (Controls.key_pressed state.controls DEBUG_3) then
       if state.debug.show_frame_inputs then (
         state.debug.show_frame_inputs <- false;
         print " disabled show_frame_inputs at %d\n\\----------------------/\n" state.frame.idx)
       else (
         state.debug.show_frame_inputs <- true;
         print "\n/----------------------\\\n show_frame_inputs debug at %d" state.frame.idx);
-    if Controls.key_pressed state.controls DEBUG_4 then
+    if Option.is_some (Controls.key_pressed state.controls DEBUG_4) then
       if state.debug.enabled then (
         state.debug.enabled <- false;
         print " disabled debug at %d\n\\----------------------/\n" state.frame.idx)
@@ -777,7 +782,7 @@ let tick (state : state) =
     match state.rebinding_action with
     | Some (control_type, action) ->
       (match control_type with
-      | KEY -> (
+      | KEYBOARD -> (
         match Raylib.get_key_pressed () with
         | Raylib.Key.Null -> ()
         | key ->
@@ -798,7 +803,7 @@ let tick (state : state) =
           update_bindings action key new_bindings replaced_bindings Controls.show_key
             File.save_keyboard_bindings;
           state.rebinding_action <- None)
-      | BUTTON -> (
+      | GAMEPAD -> (
         match Controls.get_pressed_button () with
         | None -> ()
         | Some button ->
@@ -825,7 +830,7 @@ let tick (state : state) =
 
       if state.debug.paused then (
         game.player.ghost.hardfall_time <- None;
-        if Controls.key_pressed state.controls DEBUG_2 then
+        if Option.is_some (Controls.key_pressed state.controls DEBUG_2) then
           state
           |> update_frame_inputs
           |> Menu.update_pause_menu game
@@ -895,8 +900,8 @@ let tick (state : state) =
               [
                 ( (if game.room.respawn.in_trigger_now then
                      Raylib.Color.red
-                   else
-                     Raylib.Color.green),
+                  else
+                    Raylib.Color.green),
                   { pos = game.room.respawn.target; w = 100.; h = 100. } );
               ];
 

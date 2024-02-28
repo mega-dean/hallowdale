@@ -521,7 +521,7 @@ let menu_choice ?(save_slots = []) state (game_opt : game option) (choice : menu
     match choice with
     | MUSIC -> "Music"
     | SOUND_EFFECTS -> "Sound Effects"
-    | REBIND_CONTROLS -> "Rebind Controls"
+    | REBIND_CONTROLS -> "Controls"
     | BACK -> "Back"
   in
   let rebind_menu_choice (choice : rebind_menu_choice) =

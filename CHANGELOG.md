@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- show current key/button for new abilities
+
 ## [0.0.14] - 2024-01-16
 
 - add keys and locked doors

@@ -216,7 +216,7 @@ let update_pause_menu (game : game) (state : state) : state =
 
   let handle_rebind_keyboard_menu (choice : rebind_action_menu_choice) =
     match choice with
-    | REBIND_ACTION action -> state.rebinding_action <- Some (KEY, action)
+    | REBIND_ACTION action -> state.rebinding_action <- Some (KEYBOARD, action)
     | RESET_BINDINGS ->
       File.delete_keyboard_bindings ();
       state.controls <- Controls.load ()
@@ -225,7 +225,7 @@ let update_pause_menu (game : game) (state : state) : state =
 
   let handle_rebind_gamepad_menu (choice : rebind_action_menu_choice) =
     match choice with
-    | REBIND_ACTION action -> state.rebinding_action <- Some (BUTTON, action)
+    | REBIND_ACTION action -> state.rebinding_action <- Some (GAMEPAD, action)
     | RESET_BINDINGS ->
       File.delete_gamepad_bindings ();
       state.controls <- Controls.load ()

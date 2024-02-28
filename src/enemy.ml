@@ -1467,8 +1467,8 @@ module Borchert : M = struct
                   y =
                     (if Random.bool () then
                        boss_area.pos.y
-                     else
-                       boss_area.pos.y +. boss_area.h -. enemy.entity.dest.h);
+                    else
+                      boss_area.pos.y +. boss_area.h -. enemy.entity.dest.h);
                 }
               in
               let too_close =
@@ -2575,10 +2575,10 @@ module Vice_dean_laybourne : M = struct
       match Action.from_string action_name with
       | IDLE_MOVING ->
         face_ghost enemy ~ghost_pos;
-        maybe_continue' "idle-moving" "idle_duration"
+        maybe_continue' "idle-moving" (get_wounded_attr enemy "idle_duration")
       | IDLE ->
         face_ghost enemy ~ghost_pos;
-        maybe_continue' "idle" "idle_duration"
+        maybe_continue' "idle" (get_wounded_attr enemy "idle_duration")
       | LAND -> maybe_continue' "land" "land_duration"
       | JUMP ->
         (match String.Map.find_opt "should_dive" enemy.status.props with

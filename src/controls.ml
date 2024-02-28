@@ -533,14 +533,13 @@ let key_down ?(direction = false) (controls : controls) k =
   Raylib.is_key_down (get_key controls k)
   || check_gamepad_input controls Raylib.is_gamepad_button_down direction k
 
-let key_pressed ?(direction = false) (controls : controls) k =
-  Raylib.is_key_pressed (get_key controls k)
-  || (* TODO this isn't really correct: when the left stick is held in a direction, it is
-        registering as being pressed every frame
-        - need to check whether or not it was down the previous frame in State.update_frame_inputs
-        - I think this only affects menus, but might have other problems
-     *)
-  check_gamepad_input controls Raylib.is_gamepad_button_pressed direction k
+let key_pressed ?(direction = false) (controls : controls) k : control_type option =
+  if Raylib.is_key_pressed (get_key controls k) then
+    Some KEYBOARD
+  else if check_gamepad_input controls Raylib.is_gamepad_button_pressed direction k then
+    Some GAMEPAD
+  else
+    None
 
 let key_released ?(direction = false) (controls : controls) k =
   Raylib.is_key_released (get_key controls k)

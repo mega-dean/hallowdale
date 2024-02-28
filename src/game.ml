@@ -129,8 +129,8 @@ let initialize_steel_sole ~with_keys (save_file : Json_t.save_file) =
                "Laybourne's Breathprint";
                "Kentucky Fried Chicken Eleven Herbs and Space Experience Pass";
              ]
-           else
-             []);
+          else
+            []);
         by_room =
           [
             ( "forgotten_a",
