@@ -787,7 +787,9 @@ let tick (state : state) =
         | Raylib.Key.Null -> ()
         | key ->
           let replaced_bindings =
-            ref (File.read_config "key_overrides" Json_j.keybinds_file_of_string)
+            ref
+              (try File.read_config "key_overrides" Json_j.keybinds_file_of_string with
+              | Sys_error _ -> [])
           in
           let new_bindings = ref [] in
           (match find_existing_binding key state.controls.keyboard with
@@ -808,7 +810,9 @@ let tick (state : state) =
         | None -> ()
         | Some button ->
           let replaced_bindings =
-            ref (File.read_config "button_overrides" Json_j.keybinds_file_of_string)
+            ref
+              (try File.read_config "button_overrides" Json_j.keybinds_file_of_string with
+              | Sys_error _ -> [])
           in
           let new_bindings = ref [] in
           (match find_existing_binding button state.controls.gamepad with
