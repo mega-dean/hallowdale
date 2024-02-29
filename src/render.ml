@@ -117,8 +117,8 @@ let draw_sprite ?(debug = false) ?(tint = Color.white) ?(render_offset = None) (
             x =
               (if sprite.facing_right then
                  sprite.dest.pos.x +. offset.x
-               else
-                 sprite.dest.pos.x -. offset.x);
+              else
+                sprite.dest.pos.x -. offset.x);
             y = offset.y +. sprite.dest.pos.y;
           };
       }
@@ -174,11 +174,17 @@ let draw_tiled_layer
         in
         let texture, transformations =
           let animation_offset =
-            if layer.config.animated then
+            if layer.config.animated then (
               (* TODO this should probably just use an animated sprite instead of
                  this weird animation_offset for the tile gid
               *)
-              4 * state.frame.idx / Config.window.fps mod 8
+              let speed =
+                match layer.name with
+                | "fast-conveyor-belt" -> 40
+                | "slow-conveyor-belt" -> 20
+                | _ -> 4
+              in
+              speed * state.frame.idx / Config.window.fps mod 8)
             else
               0
           in

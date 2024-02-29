@@ -1526,7 +1526,7 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":23,
+ "nextlayerid":24,
  "nextobjectid":58,
  "orientation":"orthogonal",
  "renderorder":"right-down",
@@ -1548,6 +1548,10 @@
         {
          "firstgid":13641,
          "source":"..\/tilesets\/jugs.json"
+        }, 
+        {
+         "firstgid":18921,
+         "source":"..\/tilesets\/acid.json"
         }],
  "tilewidth":12,
  "type":"map",

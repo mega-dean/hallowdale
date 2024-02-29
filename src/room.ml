@@ -432,6 +432,9 @@ let init (params : room_params) : room =
               (* these layers are still needed to render the tiles, but collisions are checked based on objects now *)
               | "hazard" -> [ "fg" ]
               | "acid" -> [ "animated"; "hazard" ]
+              (* "fast" is > 400 *)
+              | "fast-conveyor-belt" -> [ "animated"; "fg" ]
+              | "slow-conveyor-belt" -> [ "animated"; "fg" ]
               | "water" -> [ "animated"; "fg" ]
               | "boss-doors" -> [ "collides" ]
               | "lever-doors" -> [ "collides"; "permanently_removable" ]
