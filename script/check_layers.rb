@@ -96,10 +96,10 @@ end
 
 unused_purple_pens = purple_pens_in_lore - pen_names
 
-if unused_purple_pens.any?
-  puts "\n#{unused_purple_pens.count} unused purple pens:"
-  puts unused_purple_pens.join(', ')
-end
+# if unused_purple_pens.any?
+#   puts "\n#{unused_purple_pens.count} unused purple pens:"
+#   puts unused_purple_pens.join(', ')
+# end
 
 pen_counts = {}
 

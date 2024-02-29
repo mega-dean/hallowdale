@@ -1341,6 +1341,7 @@ type room_id =
   | CITY_B
   | CITY_D
   | CITY_E
+  | CITY_F
   (* COMPUTER_WING *)
   | CPU_A
   | CPU_B

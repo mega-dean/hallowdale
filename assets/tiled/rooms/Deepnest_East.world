@@ -426,6 +426,13 @@
             "width": 1800,
             "x": 3456,
             "y": 2808
+        },
+        {
+            "fileName": "city_f.json",
+            "height": 648,
+            "width": 1416,
+            "x": 3240,
+            "y": -72
         }
     ],
     "onlyShowAdjacentMaps": false,

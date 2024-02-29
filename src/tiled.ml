@@ -20,6 +20,7 @@ let parse_room_filename source file_name : area_id * room_id =
   | "city_b" -> (CITY_OF_CHAIRS, CITY_B)
   | "city_d" -> (CITY_OF_CHAIRS, CITY_D)
   | "city_e" -> (CITY_OF_CHAIRS, CITY_E)
+  | "city_f" -> (CITY_OF_CHAIRS, CITY_F)
   | "computer_a" -> (COMPUTER_WING, CPU_A)
   | "computer_b" -> (COMPUTER_WING, CPU_B)
   | "computer_c" -> (COMPUTER_WING, CPU_C)
