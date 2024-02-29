@@ -175,8 +175,12 @@
     // npc dialogue
     ["talk:Professor Holly", "Hello my precious {{blue}} blueberries."],
     ["talk:Hilda", "I live in the village. I love {{orange}} Abed."],
-    ["talk:Frankie", "In terms of hierarchy, I'm a big believer in it. Someone needs to say \"I'm in charge\" and that person is me. That's my decision."],
+    ["talk:Frankie", "In terms of hierarchy, I'm a big believer in it. Someone needs to say \"I'm in charge\" and that person is me. That's {{orange}} my {{white}} decision."],
     ["talk:Jerry", "Yeah, right, \"learning\". Learn everything. Learn until you're dead."],
+    ["talk:Sophie B.", "Damn! I wish I had some {{blue}} ice cream."],
+    ["talk:Gilbert", "He once sat on me in church just so he could see better."],
+    ["talk:Rich", "I train seeing-eye dogs, and today was {{green}} graduation. {{white}} I couldn't leave without shaking all their little paws!"],
+    ["talk:Mike", "Dude, my {{red}} life {{white}} is a gym!"],
 
     // keys
     ["key:Laybourne's Breathprint", "No more {{green}} palm fronds, {{white}} Troy. Now we are the pharaohs."],

@@ -4,19 +4,28 @@ open Types
 let parse_name context name : npc_id =
   match name with
   | "ANNIES_BOOBS" -> ANNIES_BOOBS
-  | "SHIRLEY" -> SHIRLEY
-  | "NEIL" -> NEIL
-  | "CHANG" -> CHANG
-  | "VICKI" -> VICKI
-  | "LEONARD" -> LEONARD
-  | "GARRETT" -> GARRETT
-  | "JERRY" -> JERRY
   | "BLACKSMITH_WIFE" -> BLACKSMITH_WIFE
-  | "HILDA" -> HILDA
+  | "CHANG" -> CHANG
   | "FRANKIE" -> FRANKIE
+  | "GARRETT" -> GARRETT
+  | "GILBERT" -> GILBERT
+  | "HILDA" -> HILDA
   | "HUMAN_BEING" -> HUMAN_BEING
+  | "JERRY" -> JERRY
+  | "LEONARD" -> LEONARD
+  | "LESLIE" -> LESLIE
+  | "MIKE" -> MIKE
+  | "NEIL" -> NEIL
+  | "OLD_MAN" -> OLD_MAN
   | "POTTERY_TEACHER" -> POTTERY_TEACHER
+  | "RICH" -> RICH
+  | "SHIRLEY" -> SHIRLEY
+  | "SOPHIE_B" -> SOPHIE_B
+  | "TOWNSPERSON" -> TOWNSPERSON
+  | "TOWN_LADY" -> TOWN_LADY
   | "TROY_AND_ABED_IN_A_BUBBLE" -> TROY_AND_ABED_IN_A_BUBBLE
+  | "VAUGHN" -> VAUGHN
+  | "VICKI" -> VICKI
   | _ -> failwithf "Npc.parse_name: found unrecognized npc name '%s' in %s" name context
 
 let create_from_rects

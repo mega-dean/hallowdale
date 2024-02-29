@@ -347,14 +347,23 @@ type npc_id =
   | CHANG
   | FRANKIE
   | GARRETT
+  | GILBERT
   | HILDA
   | HUMAN_BEING
   | JERRY
   | LEONARD
+  | LESLIE
+  | MIKE
   | NEIL
+  | OLD_MAN
   | POTTERY_TEACHER
+  | RICH
   | SHIRLEY
+  | SOPHIE_B
+  | TOWNSPERSON
+  | TOWN_LADY
   | TROY_AND_ABED_IN_A_BUBBLE
+  | VAUGHN
   | VICKI
 
 type enemy_id =

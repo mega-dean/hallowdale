@@ -89,6 +89,17 @@ let get_steps
           (Controls.get_button state.controls action |> Controls.show_button)
     in
 
+    let current_ghost_name =
+      match game.player.ghost.id with
+      | TROY -> "Troy"
+      | ABED -> "Abed"
+      | JEFF -> "Jeff"
+      | ANNIE -> "Annie"
+      | BRITTA
+      | LAVA_BRITTA ->
+        "Britta"
+    in
+
     let unhide_and_unfreeze ?(direction : direction = LEFT) ghost_id (x, y) =
       [
         PARTY_GHOST (ghost_id, ENTITY (UNHIDE_AT (x, y, 0., 0.)));
@@ -217,6 +228,13 @@ let get_steps
                           {{purple}} %d."
                          purple_pens_found next_upgrade_amount ));
               ])
+        | "Vaughn" ->
+          [
+            STEP (DIALOGUE (current_ghost_name, "What makes Frisbee {{green}} \"ultimate\"?"));
+            STEP
+              (DIALOGUE
+                 ("Vaughn", "Man, if I had a nickel for every time I wish someone asked me that..."));
+          ]
         | name -> [ STEP (DIALOGUE (name, get_lore ())) ]
       in
       let facing =
@@ -1092,16 +1110,6 @@ let get_steps
           STEP (HIDE_LAYER "boss-doors");
         ]
       | JOSHUA ->
-        let current_ghost_name =
-          match game.player.ghost.id with
-          | TROY -> "Troy"
-          | ABED -> "Abed"
-          | JEFF -> "Jeff"
-          | ANNIE -> "Annie"
-          | BRITTA
-          | LAVA_BRITTA ->
-            "Britta"
-        in
         [
           STEP (WAIT 0.7);
           CURRENT_GHOST (SET_POSE IDLE);

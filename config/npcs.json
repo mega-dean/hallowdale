@@ -139,6 +139,107 @@
             ]
         }],
 
+        [ "LESLIE", {
+            "w": 31,
+            "h": 41,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 10,
+                    "y_offset": 6
+                }]
+            ]
+        }],
+
+        [ "SOPHIE_B", {
+            "w": 23,
+            "h": 37,
+            "texture_configs": [
+                ["idle", {
+                    "count": 6,
+                    "duration": 0.3,
+                    "x_offset": 4,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
+        [ "TOWNSPERSON", {
+            "w": 23,
+            "h": 40,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 3,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
+        [ "TOWN_LADY", {
+            "w": 18,
+            "h": 31,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 4,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
+        [ "OLD_MAN", {
+            "w": 17,
+            "h": 24,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 2,
+                    "y_offset": 1
+                }]
+            ]
+        }],
+
+        [ "MIKE", {
+            "w": 16,
+            "h": 37,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 3,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
+        [ "GILBERT", {
+            "w": 17,
+            "h": 36,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 4,
+                    "y_offset": 3
+                }]
+            ]
+        }],
+
+        [ "RICH", {
+            "w": 17,
+            "h": 43,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 3,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
+        [ "VAUGHN", {
+            "w": 17,
+            "h": 39,
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 2,
+                    "y_offset": 2
+                }]
+            ]
+        }],
+
         [ "TROY_AND_ABED_IN_A_BUBBLE", {
             "w": 59,
             "h": 63,

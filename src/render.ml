@@ -559,6 +559,11 @@ let tick (state : state) =
         | "Frankie"
         | "Vicki"
         | "Leonard"
+        | "Sophie B."
+        | "Gilbert"
+        | "Rich"
+        | "Vaughn"
+        | "Mike"
         | "Garrett" ->
           "{{purple}}"
         | "Chang"
@@ -1162,8 +1167,8 @@ let tick (state : state) =
     draw_skybox game.room.area.tint;
     draw_bg_tiles game.room camera_x camera_y state;
     draw_levers ();
-    draw_npcs game.room.npcs;
     draw_solid_tiles game.room camera_x camera_y state;
+    draw_npcs game.room.npcs;
     draw_party_ghosts game.party;
     let screen_faded = maybe_show_screen_fade ~under_ghost:true in
     draw_player game.player;
