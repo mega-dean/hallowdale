@@ -1,37 +1,40 @@
 
 ############ draws auto:floors to floors ############
-automapping/floors-reset.tmj
-automapping/camera-draw-ref.tmj
-automapping/camera-cleanup.tmj
-automapping/floors-draw-tops.tmj
-automapping/floors-draw-sides.tmj
-automapping/floors-draw-hanging-shadows.tmj
-automapping/floors-draw-top-corners.tmj
+# automapping/floors-reset.tmj
+# automapping/camera-draw-ref.tmj
+# automapping/camera-cleanup.tmj
+# automapping/floors-draw-tops.tmj
+# automapping/floors-draw-sides.tmj
+# automapping/floors-draw-hanging-shadows.tmj
+# automapping/floors-draw-top-corners.tmj
 
 
 ############ map auto:walls to auto:iso ############
 # these were applied manually when creating the auto:iso layers in each room, but
 # they are not idempotent so they should only be used for new rooms
 
-automapping/draw-auto-iso.tmj
-automapping/draw-auto-iso-corners.tmj
-automapping/extend-auto-iso-corners.tmj
+# automapping/draw-auto-iso.tmj
+# automapping/draw-auto-iso-corners.tmj
+# automapping/extend-auto-iso-corners.tmj
 
 
 ############ draw auto:iso to bg-iso-walls ############
-automapping/reset-bg-iso-walls.tmj
-automapping/apply-bg-iso-walls.tmj
+# automapping/reset-bg-iso-walls.tmj
+# automapping/apply-bg-iso-walls.tmj
 
 
 ############ draw hanging shadows ############
-automapping/reset-shadows.tmj
-automapping/draw-hanging-shadows.tmj
+# automapping/reset-shadows.tmj
+# automapping/draw-hanging-shadows.tmj
 
 
 [trampoline_*]
 automapping/bg-draw-grass-corners.tmj
 automapping/bg-draw-grass-edges.tmj
 automapping/bg-fill-grass.tmj
+automapping/reset-decorations.tmj
+automapping/draw-flowers.tmj
+# automapping/draw-decorations.tmj
 
 [outlands_*]
 automapping/bg-draw-fence-corners.tmj
