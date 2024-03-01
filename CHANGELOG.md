@@ -4,6 +4,8 @@
 
 - add continuous sound effects for c-dash and dive
 - add animated conveyor belts
+- add NPCs to outlands/mmb
+- fix tile seams
 
 ## [0.0.15] - 2024-02-28
 

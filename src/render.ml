@@ -58,7 +58,7 @@ let debug_rect_outline ?(size = 2.) ?(color = Color.raywhite) (rect : rect) =
   Draw.rect_lines (rect |> rect_to_Rect) size color
 
 let debug_rect' color (rect : rect) =
-  let transparent_color = Raylib.Color.(create (r color) (g color) (b color)) 100 in
+  let transparent_color = Raylib.Color.(create (r color) (g color) (b color) (a color)) in
   Draw.rect rect transparent_color
 
 let debug_rect ?(r = 0) ?(g = 200) ?(b = 200) ?(a = 100) (rect : rect) =
@@ -78,13 +78,13 @@ let draw_texture
     let r = get_src t in
     match transformation_bits with
     | 0 -> (r, 0.)
-    | 1 -> ({ r with h = -1. *. r.h }, 90.)
-    | 2 -> ({ r with h = -1. *. r.h }, 0.)
+    | 1 -> ({ r with h = -.r.h }, 90.)
+    | 2 -> ({ r with h = -.r.h }, 0.)
     | 3 -> (r, 270.)
-    | 4 -> ({ r with w = -1. *. r.w }, 0.)
+    | 4 -> ({ r with w = -.r.w }, 0.)
     | 5 -> (r, 90.)
-    | 6 -> ({ r with w = -1. *. r.w; h = -1. *. r.h }, 0.)
-    | 7 -> ({ r with w = -1. *. r.w }, 90.)
+    | 6 -> ({ r with w = -.r.w; h = -.r.h }, 0.)
+    | 7 -> ({ r with w = -.r.w }, 90.)
     | _n -> (r, 0.)
   in
   let dest' =

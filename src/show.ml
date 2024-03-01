@@ -551,12 +551,12 @@ let menu_choice ?(save_slots = []) state (game_opt : game option) (choice : menu
           Controls.get_button state.controls action |> Controls.show_button
       in
       let show_control s =
-        let color =
+        let binding' =
           match state.rebinding_action with
-          | None -> "{{white}}"
-          | Some (_, action') -> if action = action' then "{{blue}}" else "{{white}}"
+          | None -> binding
+          | Some (_, action') -> if action = action' then "{{blue}} press new key" else binding
         in
-        fmt "%s: %s %s" s color binding
+        fmt "%s: %s" s binding'
       in
       match action with
       (* actions *)
