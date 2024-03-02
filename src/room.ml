@@ -286,7 +286,17 @@ let init (params : room_params) : room =
            - maybe "interactable_triggers" (since now some triggers aren't interactable)
         *)
         lore_triggers := get_object_trigger ~label:(Some "Enter") (WARP target) :: !lore_triggers
-      | "info" -> lore_triggers := get_object_trigger ~label:(Some "Read") INFO :: !lore_triggers
+      | "info" ->
+        let label =
+          if name_suffix = "focus" then
+            Some
+              (fmt "Read (use %s)"
+                 (Interactions.key_or_button' params.control_type params.controls ~color:false
+                    INTERACT))
+          else
+            Some "Read"
+        in
+        lore_triggers := get_object_trigger ~label INFO :: !lore_triggers
       | "talk" -> lore_triggers := get_object_trigger ~label:(Some "Talk") INFO :: !lore_triggers
       | "npc" ->
         npc_rects :=
@@ -921,6 +931,8 @@ let change_current_room
         raindrop_texture = state.global.textures.raindrop;
         respawn_pos = ghost_start_pos;
         platforms = state.global.textures.platforms;
+        control_type = state.frame_inputs.control_type;
+        controls = state.controls;
       }
   in
   let hide_party_ghosts () =

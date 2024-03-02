@@ -2,6 +2,20 @@ open Utils
 open Types
 open Types.Interaction
 
+let key_or_button' control_type controls ?(color = true) action =
+  let s =
+    match control_type with
+    | KEYBOARD -> Controls.get_key controls action |> Controls.show_key
+    | GAMEPAD -> Controls.get_button controls action |> Controls.show_button
+  in
+  if color then
+    fmt "{{blue}} [%s] {{white}}" s
+  else
+    fmt "[%s]" s
+
+let key_or_button state ?(color = true) action =
+  key_or_button' state.frame_inputs.control_type state.controls ~color action
+
 let cutscene_finished
     (progress_by_room : (string * Json_t.room_progress) list)
     (cutscene_name : string) : bool =
@@ -80,15 +94,6 @@ let get_steps
       failwithf "unknown '%s' interaction: %s" trigger.name_prefix trigger.name_suffix
     in
 
-    let key_or_button action =
-      match state.frame_inputs.control_type with
-      | KEYBOARD ->
-        fmt "{{blue}} [%s] {{white}}" (Controls.get_key state.controls action |> Controls.show_key)
-      | GAMEPAD ->
-        fmt "{{blue}} [%s] {{white}}"
-          (Controls.get_button state.controls action |> Controls.show_button)
-    in
-
     let current_ghost_name =
       match game.player.ghost.id with
       | TROY -> "Troy"
@@ -114,7 +119,10 @@ let get_steps
         CURRENT_GHOST (SET_POSE (AIRBORNE (-1.)));
         CURRENT_GHOST (ENTITY FREEZE);
         STEP (WAIT 1.);
+        STEP
+          (CORNER_TEXT (fmt "Press %s to advance text" (key_or_button state ~color:false INTERACT)));
         STEP (CENTERED_TEXT [ "Give me some rope, tie me to dream." ]);
+        STEP UNSET_CORNER_TEXT;
         STEP
           (CENTERED_TEXT
              [ "Give me some rope, tie me to dream."; "Give me the hope to run out of steam." ]);
@@ -161,7 +169,7 @@ let get_steps
         STEP (WAIT 0.5);
         CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
         STEP (WAIT 1.);
-        STEP (TEXT [ fmt "Found a key: {{blue}} %s" trigger.name_suffix; get_lore () ]);
+        STEP (CENTERED_TEXT [ fmt "Found a key: {{blue}} %s" trigger.name_suffix; get_lore () ]);
         CURRENT_GHOST (ADD_ITEM (KEY trigger.name_suffix));
       ]
     | "increase-health" ->
@@ -180,30 +188,30 @@ let get_steps
         | "annies-boobs" -> (
           let rewards : (int * reward) list =
             [
-              (20, INCREASE_MAX_SOUL);
-              ( 30,
+              (2, INCREASE_MAX_SOUL);
+              ( 3,
                 ABILITY
                   ( "Soul Catcher",
-                    "increases the amount of LIFE VAPOR gained when striking an enemy." ) );
-              (40, ABILITY ("Quick Focus", "increases the speed of focusing LIFE VAPOR."));
-              (50, INCREASE_MAX_SOUL);
-              ( 60,
+                    "Increases the amount of LIFE VAPOR gained when striking an enemy." ) );
+              (4, ABILITY ("Quick Focus", "Increases the speed of focusing LIFE VAPOR."));
+              (5, INCREASE_MAX_SOUL);
+              ( 6,
                 ABILITY
                   ( "Soul Catcher",
-                    "increases the amount of LIFE VAPOR gained when striking an enemy." ) );
-              ( 70,
+                    "Increases the amount of LIFE VAPOR gained when striking an enemy." ) );
+              ( 7,
                 ABILITY
                   ( "Dream Wielder",
-                    "charge the Honda Nail faster and collect more LIFE VAPOR when striking foes."
+                    "Charge the Honda Nail faster and collect more LIFE VAPOR when striking foes."
                   ) );
               (80, INCREASE_MAX_SOUL);
               ( 90,
                 ABILITY
                   ( "Soul Catcher",
-                    "increases the amount of LIFE VAPOR gained when striking an enemy." ) );
-              (100, ABILITY ("Deep Focus", "heals two masks when focusing."));
-              (110, ABILITY ("Shaman Stone", "increases the power of spells."));
-              (120, ABILITY ("Spell Twister", "reduces the LIFE VAPOR cost of casting spells."));
+                    "Increases the amount of LIFE VAPOR gained when striking an enemy." ) );
+              (100, ABILITY ("Deep Focus", "Heals two masks when focusing."));
+              (110, ABILITY ("Shaman Stone", "Increases the power of spells."));
+              (120, ABILITY ("Spell Twister", "Reduces the LIFE VAPOR cost of casting spells."));
             ]
           in
           let purple_pens_found = List.length game.progress.purple_pens_found in
@@ -216,7 +224,7 @@ let get_steps
                 CURRENT_GHOST (SET_POSE (PERFORMING DIVE_COOLDOWN));
                 STEP (WAIT 1.);
                 CURRENT_GHOST (CLAIM_REWARD (next_upgrade_amount, reward));
-                STEP (TEXT [ "Claimed a reward:"; Show.reward reward ]);
+                STEP (CENTERED_TEXT [ "~~~ Claimed a reward ~~~"; Show.reward reward ]);
               ]
             else
               [
@@ -263,7 +271,7 @@ let get_steps
                    [
                      "Collect LIFE VAPOR by striking enemies.";
                      "Once enough LIFE VAPOR is collected";
-                     fmt "Hold %s" (key_or_button FOCUS);
+                     fmt "Hold %s" (key_or_button state FOCUS);
                      "to focus LIFE VAPOR and HEAL.";
                    ] ));
           ]
@@ -312,21 +320,21 @@ let get_steps
         get_ability_steps "mothwing_cloak" 0. 2. ~quote
           [ "Taken the"; "Scootenanny Chair." ]
           [
-            fmt "Press %s to scootenanny forwards." (key_or_button DASH);
+            fmt "Press %s to scootenanny forwards." (key_or_button state DASH);
             "Use the chair to scootenanny quickly along the ground or through the air.";
           ]
       | "double-bouncies" ->
         get_ability_steps "monarch_wings" 0. 4. ~quote
           [ "Consumed the"; "Double Bouncies." ]
           [
-            fmt "Press %s while in the air to double bounce." (key_or_button JUMP);
+            fmt "Press %s while in the air to double bounce." (key_or_button state JUMP);
             "Use the ethereal bounce to sail above enemies and discover new paths.";
           ]
       | "reverse-danny-thomas" ->
         get_ability_steps "mantis_claw" 0. 8. ~quote
           [ "Learned the"; "Reverse Danny Thomas." ]
           [
-            fmt "Press %s while sliding against a wall to jump again." (key_or_button JUMP);
+            fmt "Press %s while sliding against a wall to jump again." (key_or_button state JUMP);
             "Jump from wall to wall to reach new areas.";
           ]
       | "computer-heart" ->
@@ -334,7 +342,7 @@ let get_steps
           [ "Consumed the"; "Computer Heart." ]
           [
             fmt "Hold %s while on the ground or clinging to a wall to concentrate the force."
-              (key_or_button C_DASH);
+              (key_or_button state C_DASH);
             "Release the button to blast forwards and fly through the air.";
           ]
         @ [ STEP (HIDE_LAYER "temporary-floors") ]
@@ -346,25 +354,27 @@ let get_steps
         get_ability_steps "shade_cloak" 0. 7. ~quote
           [ "Consumed the"; "Pierce Hologram." ]
           [
-            fmt "Press %s to scootenanny forwards, cloaked in hologram." (key_or_button DASH);
+            fmt "Press %s to scootenanny forwards, cloaked in hologram." (key_or_button state DASH);
             "Use the hologram to scootenanny through enemies and their attacks without taking \
              damage.";
           ]
       | "monkey-gas" ->
         get_ability_steps "howling_wraiths" 0. 6. ~quote
           [ "Consumed the"; "Monkey Knockout Gas." ]
-          [ fmt "Tap %s while holding UP" (key_or_button CAST); "to unleash the Knockout Gas." ]
+          [
+            fmt "Tap %s while holding UP" (key_or_button state CAST); "to unleash the Knockout Gas.";
+          ]
       | "honda-nail" ->
         get_ability_steps "dream_nail" 0. 9. [ "Taken the"; "Honda Nail." ] ~quote
           [
-            fmt "Hold %s to charge and slash with the nail." (key_or_button NAIL);
+            fmt "Hold %s to charge and slash with the nail." (key_or_button state NAIL);
             "Cut through the veil between dreams and waking.";
           ]
       | "sealy-select" ->
         get_ability_steps "shade_soul" 0. 1. ~quote
           [ "Consumed the"; "Hypoallergenic Sealy Select." ]
           [
-            fmt "Tap %s" (key_or_button CAST);
+            fmt "Tap %s" (key_or_button state CAST);
             "to unleash a more powerful Cushion.";
             "This spell consumes the same amount of LIFE VAPOR,";
             "with increased power.";
@@ -373,13 +383,13 @@ let get_steps
         get_ability_steps "descending_dark" 0. 3. ~quote
           [ "Learned"; "Torvin's Flesh of Fire." ]
           [
-            fmt "Tap %s while holding DOWN" (key_or_button CAST);
+            fmt "Tap %s while holding DOWN" (key_or_button state CAST);
             "to strike the earth with a burst of white-hot flame.";
           ]
       | "vapors-of-magmarath" ->
         get_ability_steps "abyss_shriek" 0. 6. ~quote
           [ "Consumed the"; "Vapors of Magmarath." ]
-          [ fmt "Tap %s while holding UP" (key_or_button CAST); "to unleash the Vapors." ]
+          [ fmt "Tap %s while holding UP" (key_or_button state CAST); "to unleash the Vapors." ]
       | _ -> fail ())
     | "boss-fight" -> (
       (* this doesn't include bosses from the final cutscene sequence, since those aren't
@@ -647,8 +657,8 @@ let get_steps
             STEP
               (DIALOGUE
                  ( "Abed",
-                   "You're not really playing, Shirley. You're a merchant, and more power to you. \
-                    But don't withhold power from others just to make {{green}} money." ));
+                   "You're not really playing, Shirley. You're a {{green}} merchant, {{white}} and \
+                    more power to you. But don't withhold power from others just to make money." ));
             PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
             PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
             CURRENT_GHOST (PARTY (WALK_TO 195));
@@ -811,7 +821,7 @@ let get_steps
         @ get_ability_steps "vengeful_spirit" 0. 1.
             [ "Consumed the"; "Vengeful Cushion" ]
             [
-              fmt "Tap %s" (key_or_button CAST);
+              fmt "Tap %s" (key_or_button state CAST);
               "to unleash the Cushion.";
               "Spells will deplete LIFE VAPOR.";
               "Replenish LIFE VAPOR by striking enemies.";
@@ -866,13 +876,14 @@ let get_steps
         [
           PARTY_GHOST (ANNIE, ENTITY (UNHIDE_AT (157, 31, 0., 0.)));
           PARTY_GHOST (JEFF, ENTITY (UNHIDE_AT (156, 33, 0., 0.)));
+          NPC (CHANG, ENTITY UNHIDE);
+          NPC (CHANG, ENTITY (SET_FACING LEFT));
           STEP (HIDE_LAYER "boss-doors");
           STEP (WAIT 0.5);
           CURRENT_GHOST (SET_POSE IDLE);
           CURRENT_GHOST (PARTY (WALK_TO 160));
           PARTY_GHOST (JEFF, ENTITY (SET_FACING RIGHT));
           PARTY_GHOST (ANNIE, ENTITY (SET_FACING RIGHT));
-          (* TODO center this text box so it doesn't overlap the ghosts or chang *)
           STEP (DIALOGUE ("Chang", "Winger, Perry, and Edison..."));
           STEP (SET_FIXED_CAMERA (169, 42));
           STEP (WAIT 1.5);
@@ -930,7 +941,7 @@ let get_steps
         @ get_ability_steps "desolate_dive" 0. 3.
             [ "Consumed the"; "Troy and Abed Intimidation Stance." ]
             [
-              fmt "Tap %s while" (key_or_button CAST);
+              fmt "Tap %s while" (key_or_button state CAST);
               "holding DOWN to strike the earth with a burst of intimidation.";
               "Spells will deplete LIFE VAPOR.";
               "Replenish LIFE VAPOR by striking enemies.";
@@ -1026,8 +1037,8 @@ let get_steps
             STEP
               (DIALOGUE
                  ( "Troy",
-                   "Sorry Britta, Abed knows best. But I'll always remember you as kinda slowing \
-                    us down and complaining a lot." ));
+                   "Sorry Britta, Abed knows best. But I'll always remember you as {{red}} kinda \
+                    slowing us down {{white}} and {{red}} complaining a lot." ));
             PARTY_GHOST (BRITTA, SET_POSE CRAWLING);
             PARTY_GHOST (TROY, WALK_TO 124);
             PARTY_GHOST (TROY, ENTITY HIDE);
@@ -1569,7 +1580,7 @@ let get_steps
                       fmt "Percentage: %.02f%s" percentage "%";
                       fmt "Time: %s" total_time;
                     ]));
-              STEP (WAIT 2.);
+              STEP (WAIT 4.);
               (* TODO fade out music *)
               STEP RETURN_TO_MAIN_MENU;
             ]
@@ -1667,7 +1678,7 @@ let get_steps
             STEP (SET_FIXED_CAMERA (31, 10));
             STEP (WAIT 2.);
             STEP (DIALOGUE ("Neil", "Stay back!"));
-            ENEMY (HICKEY, SET_POSE "walking");
+            ENEMY (HICKEY, SET_POSE "scream");
             STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
             NTH_ENEMY (0, MANICORN, SET_POSE "punch");

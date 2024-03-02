@@ -16,13 +16,15 @@ let play_sound state sound_name =
     Raylib.set_sound_volume sound state.settings.sound_effects_volume;
     Raylib.play_sound sound)
 
-let play_music music =
+let play_music volume music =
+  Raylib.set_music_volume music.t volume;
   if Raylib.get_music_time_played music.t > music.loop_end.at then
     Raylib.seek_music_stream music.t (Float.bound 0.1 music.loop_start.at Float.max_float);
   Raylib.update_music_stream music.t
 
 let play_continuous_sound state sound_name =
-  play_music (String.Map.find sound_name state.global.continuous_sounds)
+  play_music state.settings.sound_effects_volume
+    (String.Map.find sound_name state.global.continuous_sounds)
 
 let get_area_music area_id area_musics = List.find (fun am -> List.mem area_id am.areas) area_musics
 let get_new_volume initial change = Float.bound 0. (initial +. change) 1.
@@ -40,8 +42,8 @@ let increase_music_volume state game = change_music_volume 0.1 state game
 let decrease_music_volume state game = change_music_volume (-0.1) state game
 let increase_sound_effects_volume state = change_sound_effects_volume 0.1 state
 let decrease_sound_effects_volume state = change_sound_effects_volume (-0.1) state
-let play_menu_music state = play_music state.menu_music
-let play_game_music game = play_music game.music.music
+let play_menu_music state = play_music state.settings.music_volume state.menu_music
+let play_game_music state game = play_music state.settings.music_volume game.music.music
 let stop_music music = Raylib.stop_music_stream music
 let reset_music music = Raylib.seek_music_stream music.t 0.
 

@@ -387,7 +387,7 @@
                 {
                  "height":28,
                  "id":52,
-                 "name":"mirrored-npc:CHANG",
+                 "name":"hidden-npc:CHANG",
                  "rotation":0,
                  "type":"",
                  "visible":true,

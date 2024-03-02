@@ -1781,7 +1781,10 @@ let tick (game : game) (state : state) =
           | STOP_MUSIC -> Audio.stop_music game.music.music.t
           | PLAY_END_CREDITS_MUSIC ->
             game.music <- Audio.load_area_music "ending" [] state.settings.music_volume
-          | RETURN_TO_MAIN_MENU -> state.context <- RETURN_TO_MAIN_MENU game
+          | RETURN_TO_MAIN_MENU ->
+            reset_camera ();
+            state.screen_fade <- None;
+            state.context <- RETURN_TO_MAIN_MENU game
           | RELOAD_GAME ->
             state.screen_fade <- Some (make_screen_fade (255, 0) 2.);
             reset_camera ();
@@ -1825,6 +1828,7 @@ let tick (game : game) (state : state) =
             let text : string list =
               [ fmt "Found a dreamer item: {{blue}} %s" item_name; ""; dreamer_item_text ]
             in
+            game.player.health.current <- game.player.health.max;
             game.progress.dreamer_items_found <- game.progress.dreamer_items_found + 1;
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;
@@ -1946,7 +1950,7 @@ let tick (game : game) (state : state) =
             player.health.current <- player.health.max;
             game.interaction.speaker_name <- None;
             game.interaction.use_dashes_in_archives <- Some false;
-            game.interaction.text <- Some (PLAIN (false, [ str ]))
+            game.interaction.text <- Some (PLAIN (true, [ str ]))
           | ADD_ITEM item_kind -> add_item item_kind
           | ENTITY entity_step -> handle_entity_step player.ghost.entity entity_step
           | PARTY party_step ->

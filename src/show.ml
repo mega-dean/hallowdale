@@ -610,7 +610,7 @@ let interaction_config (config : Interaction.config) : string =
 
 let reward (reward : Interaction.reward) : string =
   match reward with
-  | Interaction.INCREASE_MAX_SOUL -> "increased maximum {{blue}} LIFE VAPOR."
+  | Interaction.INCREASE_MAX_SOUL -> "Maximum {{blue}} LIFE VAPOR {{white}} increased."
   | Interaction.ABILITY (name, desc) -> fmt "{{blue}} %s: {{white}} %s" name desc
 
 let projectile_despawn (despawn : projectile_despawn) : string =

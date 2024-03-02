@@ -8,37 +8,12 @@ An homage to Hollow Knight.
 ![main menu screenshot](./assets/main-menu-screenshot.png)
 ![world map screenshot](./assets/npcs/shared/world-map.png)
 
-
-### Release Versions
-
-The versions are not using semantic versioning, even though it is the same format:
-
-- v0.0.\_ -> unstable/demo/pre-release, mostly for testing, major bugs are expected
-- v0.\_.\_ -> these should be stable and playable out-of-the-box but with content missing, bugs are expected
-- v1.\_.\_ -> released
-
 ### Instructions
 
-Either use the github release or download from https://mega-dean.itch.io/hallowdale .
-
-#### Linux
-
-This is built on Ubuntu and has been tested on Pop!_OS, so it probably works on most Debian-based
-distributions. It may work on other distributions that have OpenGL installed since it depends on
-Raylib, but I haven't tested this.
-
-#### MacOS
-
-I've tested on an M1 Macbook Air and it works, but it's not great (sluggish controls, jittery, audio
-clipping).
-
-The executable isn't notarized by Apple so it can't be run directly. After
-attempting to run it and dismissing the "this may be malware" warning, you can go to the Security
-page in System Preferences to whitelist it specifically.
-
-#### Windows
-
-Untested - please create an Issue if you run into any problems.
+- Download the latest Github release, or from https://mega-dean.itch.io/hallowdale
+- Unzip the archive
+- Run the executable in the `dist/` folder
+-- The executable is unsigned, so for Windows and MacOS you will need to allow the program to run
 
 ### Game modes
 
@@ -86,6 +61,8 @@ Most of the controls match the default Hollow Knight controls, but there are a f
 - Movement - arrow keys
 
 #### Gamepad
+
+The game uses Playstation controller names for buttons, but any gamepad supported by Raylib should work.
 
 - Jump - x
 - Attack - square

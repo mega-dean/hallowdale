@@ -110,19 +110,5 @@
             "b": 60,
             "a": 255
         }
-    }],
-    ["Quantum Spanner", {
-        "pickup_text": "Oi Govna!",
-        "damage": 3,
-        "scale_x": 2.0,
-        "scale_y": 1.6,
-        "swing_speed": 1.0,
-        "text_color": "blue",
-        "tint": {
-            "r": 125,
-            "g": 165,
-            "b": 255,
-            "a": 255
-        }
     }]
 ]

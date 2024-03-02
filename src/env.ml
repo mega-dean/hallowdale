@@ -63,7 +63,7 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
     Float.min w_ratio h_ratio
   in
   let window_scale =
-    if false && development then
+    if development then
       List.last
         [
           0.5;
@@ -74,7 +74,7 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
           (* 0.8; *)
           (* 0.9; *)
           1.;
-          1.5;
+          (* 1.5; *)
         ]
     else if window_ratio < 0.5 then
       failwith "monitor too small :("

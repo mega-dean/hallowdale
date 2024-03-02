@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - support larger window sizes
+- add some in-game control instructions
 
 ## [0.1.0] - 2024-03-01
 

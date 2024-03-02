@@ -768,7 +768,7 @@ let tick (state : state) =
     state.context <- IN_PROGRESS saved_game_before_dying;
     state
   | IN_PROGRESS game -> (
-    Audio.play_game_music game;
+    Audio.play_game_music state game;
 
     let find_existing_binding (type a) (value : a) (action_map : a Game_action.Map.t) :
         game_action option =

@@ -1451,6 +1451,11 @@ type idx_config =
   | PURPLE_PEN of string * trigger option
   | DOOR_HITS of int
 
+type controls = {
+  mutable keyboard : Raylib.Key.t Game_action.Map.t;
+  mutable gamepad : Raylib.GamepadButton.t Game_action.Map.t;
+}
+
 type room_params = {
   file_name : string;
   progress_by_room : Json_t.room_progress String.Map.t;
@@ -1462,6 +1467,8 @@ type room_params = {
   raindrop_texture : texture;
   respawn_pos : vector;
   platforms : texture String.Map.t;
+  control_type : control_type;
+  controls : controls;
 }
 
 type room = {
@@ -1611,11 +1618,6 @@ type pause_menu =
   | MENU of menu
   | WORLD_MAP of world_map
   | PROGRESS
-
-type controls = {
-  mutable keyboard : Raylib.Key.t Game_action.Map.t;
-  mutable gamepad : Raylib.GamepadButton.t Game_action.Map.t;
-}
 
 type state = {
   mutable context : state_context;

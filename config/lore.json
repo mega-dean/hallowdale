@@ -151,6 +151,10 @@
     ["ability:torvins-flesh-of-fire", "Well, Hector, that's called {{green}} \"self-defense\"."],
     ["ability:vapors-of-magmarath", "My same-sex celebrity crush is Nathan Fillion."],
 
+    // including these here so the progress calculation is correct
+    ["ability:vengeful-cushion", "(cutscene)"],
+    ["ability:intimidation-stance", "(cutscene)"],
+
     // honda nail dialogues
     ["honda", "... someone just told me that Honda has released some kind of super vehicle called the Honda Fit..."],
     ["honda", "... it's a small car with a big personality that can handle anything life throws at you....."],

@@ -193,13 +193,8 @@ let start ?(is_new_game = true) (state : state) (game : game) (save_file : Json_
     | Not_found -> ());
   state.context <- IN_PROGRESS game
 
-let create
-    (mode : game_mode)
-    (save_file : Json_t.save_file)
-    (global : global_cache)
-    (area_musics : area_music list)
-    (world : world)
-    (save_file_slot : int) : game =
+let create (mode : game_mode) (save_file : Json_t.save_file) (state : state) (save_file_slot : int)
+    : game =
   let start_pos =
     { x = save_file.ghost_x *. Config.window.scale; y = save_file.ghost_y *. Config.window.scale }
   in
@@ -221,11 +216,12 @@ let create
     }
   in
 
-  let idle_texture = global.textures.ghost_bodies.idle in
+  let idle_texture = state.global.textures.ghost_bodies.idle in
   let shared_ghost_textures = Player.load_shared_textures ghosts_file.shared_textures in
   let make_ghost (party_ghost : party_ghost) : player =
     Player.init party_ghost.ghost.id idle_texture party_ghost.ghost.head_textures
-      ghosts_file.actions (clone_vector start_pos) save_file global.weapons shared_ghost_textures
+      ghosts_file.actions (clone_vector start_pos) save_file state.global.weapons
+      shared_ghost_textures
   in
 
   let party : party_ghost list =
@@ -238,7 +234,7 @@ let create
   in
 
   let _, room_id = Tiled.parse_room_filename "Game.init" save_file.room_name in
-  let room_location = List.assoc room_id world in
+  let room_location = List.assoc room_id state.world in
   let exits = Tiled.JsonRoom.get_exits room_location in
   let room =
     Room.init
@@ -246,23 +242,25 @@ let create
         file_name = save_file.room_name;
         progress_by_room = save_file.progress.by_room |> List.to_string_map;
         exits;
-        enemy_configs = global.enemy_configs;
-        npc_configs = global.npc_configs;
-        pickup_indicator_texture = global.textures.pickup_indicator;
-        lever_texture = global.textures.door_lever;
-        raindrop_texture = global.textures.raindrop;
+        enemy_configs = state.global.enemy_configs;
+        npc_configs = state.global.npc_configs;
+        pickup_indicator_texture = state.global.textures.pickup_indicator;
+        lever_texture = state.global.textures.door_lever;
+        raindrop_texture = state.global.textures.raindrop;
         respawn_pos =
           {
             x = save_file.respawn_x *. Config.window.scale;
             y = save_file.respawn_y *. Config.window.scale;
           };
-        platforms = global.textures.platforms;
+        platforms = state.global.textures.platforms;
+        control_type = state.frame_inputs.control_type;
+        controls = state.controls;
       }
   in
 
   Room.reset_tile_groups room;
 
-  let music = Audio.get_area_music room.area.id area_musics in
+  let music = Audio.get_area_music room.area.id state.area_musics in
 
   let current_ghost_id = Player.parse_name save_file.ghost_id in
   let party_ghost = Option.get (Player.find_party_ghost current_ghost_id party) in
@@ -296,7 +294,7 @@ let create
   }
 
 let init state mode (save_file : Json_t.save_file) save_file_idx =
-  let game = create mode save_file state.global state.area_musics state.world save_file_idx in
+  let game = create mode save_file state save_file_idx in
   (* update the camera when a file is loaded so the ghost doesn't start too far offscreen *)
   let _ = Camera.tick game state in
   state.camera.update_instantly <- true;
