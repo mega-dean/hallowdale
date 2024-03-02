@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2024-03-01
+
 - add continuous sound effects for c-dash and dive
 - add animated conveyor belts
 - add NPCs to outlands/mmb
@@ -126,6 +128,7 @@
 
 - demo release
 
+[0.1.0]: https://github.com/mega-dean/hallowdale/compare/v0.0.15...v0.1.0
 [0.0.15]: https://github.com/mega-dean/hallowdale/compare/v0.0.14...v0.0.15
 [0.0.14]: https://github.com/mega-dean/hallowdale/compare/v0.0.10...v0.0.14
 [0.0.10]: https://github.com/mega-dean/hallowdale/compare/v0.0.9...v0.0.10
