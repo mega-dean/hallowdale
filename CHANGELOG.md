@@ -7,6 +7,7 @@
 - add NPCs to outlands/mmb
 - fix tile seams
 - add BLACKSMITH enemy
+- add falling boulders during DUNCAN fight
 
 ## [0.0.15] - 2024-02-28
 

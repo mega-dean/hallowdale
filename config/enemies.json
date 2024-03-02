@@ -13,6 +13,7 @@
             "attrs": [
                 ["jump_vy", -1200.0],
                 ["walk_vx", 400.0],
+                ["boulder_dy", 200.0],
                 ["projectile_vx", 600.0]
             ],
             "unscaled_attrs": [
@@ -46,6 +47,10 @@
                     "count": 6,
                     "duration": 0.1
                 }],
+                ["boulder", {
+                    "count": 4,
+                    "duration": 0.1
+                }],
                 ["scavenging", {
                     "count": 4,
                     "duration": 0.2,
@@ -69,7 +74,7 @@
                 ["wall_perch_left_x", 4032.0],
                 ["wall_perch_right_x", 5436.0],
                 ["projectile_vx", 700.0],
-                ["dash_vx", 600.0],
+                ["dash_vx", 800.0],
                 ["dive_vy", 1250.0],
                 ["dive_y", 777.0]
             ],

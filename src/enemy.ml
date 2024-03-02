@@ -553,14 +553,33 @@ module Duncan_actions = struct
           BOSS_AREA_X (get_frame_prop "boss_area_left", get_frame_prop "boss_area_right")
         in
         let projectile_vx = get_attr enemy "projectile_vx" in
-        let spawn x_alignment vx_mult =
+        let spawn_fire left =
+          let x_alignment, vx_mult = if left then (LEFT_INSIDE, 1.) else (RIGHT_INSIDE, -1.) in
           let vx = projectile_vx *. vx_mult in
           let v = { x = vx; y = 0. } in
-          spawn_projectile ~scale:3.5 enemy
+          spawn_projectile enemy ~scale:3.5
             ~projectile_pos:(RELATIVE (x_alignment, BOTTOM_INSIDE))
             ~v projectile_duration frame_time
         in
-        enemy.projectiles <- [ spawn LEFT_INSIDE 1.; spawn RIGHT_INSIDE (-1.) ] @ enemy.projectiles;
+        let spawn_boulder idx =
+          spawn_projectile enemy ~scale:1.2 ~gravity_multiplier:0.2 ~draw_on_top:true
+            ~projectile_texture_name:"boulder"
+            ~projectile_pos:
+              (ABSOLUTE
+                 {
+                   x = get_frame_prop (fmt "boulder_x_%d" idx);
+                   y = get_frame_prop (fmt "boulder_y_%d" idx);
+                 })
+            ~v:(Zero.vector ())
+            (TIME_LEFT { seconds = 4. })
+            frame_time
+        in
+        let fire = [ spawn_fire true; spawn_fire false ] in
+        let new_projectiles =
+          let count = get_frame_prop "boulder_count" in
+          fire @ List.map spawn_boulder (Int.range (count |> Float.to_int))
+        in
+        enemy.projectiles <- new_projectiles @ enemy.projectiles;
         "idle"
       | JUMP ->
         enemy.entity.v.x <- get_frame_prop ~default:(Some enemy.entity.v.x) "random_jump_vx";
@@ -598,14 +617,29 @@ module Duncan : M = struct
         (* this is incorrect for the first jump (off the vending machine), but it's close enough *)
         landed.at -. jumped.at
       in
-      if jumped.at > landed.at then
+      if jumped.at > landed.at then (
+        let boulder_props =
+          let count = if is_wounded enemy then 10 else 3 in
+          let boulders =
+            let dy = get_attr enemy "boulder_dy" in
+            List.concat_map
+              (fun idx ->
+                [
+                  (fmt "boulder_x_%d" idx, Random.x_in args.boss_area);
+                  (fmt "boulder_y_%d" idx, args.boss_area.pos.y -. (dy *. (idx |> Int.to_float)));
+                ])
+              (Int.range count)
+          in
+          [ ("boulder_count", count |> Int.to_float) ] @ boulders
+        in
         Action.start_and_log enemy LANDED ~frame_time
           ~frame_props:
-            [
-              ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.);
-              ("boss_area_left", args.boss_area.pos.x);
-              ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
-            ]
+            ([
+               ("facing_right", if args.ghost_pos.x > enemy.entity.dest.pos.x then 1. else 0.);
+               ("boss_area_left", args.boss_area.pos.x);
+               ("boss_area_right", args.boss_area.pos.x +. args.boss_area.w);
+             ]
+            @ boulder_props))
       else if frame_time -. landed.at > get_attr enemy "jump_wait_time" then (
         let target_x = Random.x_in args.boss_area in
         let jump_vx =

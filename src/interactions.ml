@@ -402,8 +402,8 @@ let get_steps
           STEP
             (DIALOGUE
                ( "Duncan",
-                 "You stay back, Britta! I'm not afraid to push a girl into make-believe lava! In \
-                  fact, it's been my primary strategy." ));
+                 "You stay back, Britta! I'm not afraid to push a girl into make-believe {{red}} \
+                  lava! {{white}} In fact, it's been my primary strategy." ));
           STEP
             (DIALOGUE
                ("Britta", "I'm staying in the game so I can talk to Abed. I'm worried about him."));
@@ -418,7 +418,10 @@ let get_steps
                  "Don't regress to primal behavior just because it's allowed - we're Human Beings, \
                   not the editors of Teen Vogue." ));
           STEP (WAIT 1.3);
-          STEP (DIALOGUE ("Britta", "They're setting a terrible example for today's young women."));
+          STEP
+            (DIALOGUE
+               ( "Britta",
+                 "They're setting a {{red}} terrible example {{white}} for today's young women." ));
           STEP
             (DIALOGUE ("Duncan", "Well I'm sorry Britta, but it's either you or me. And I'm me."));
           STEP (UNHIDE_LAYER "boss-doors");
@@ -570,7 +573,7 @@ let get_steps
           STEP (WAIT 1.6);
           STEP SET_GHOST_CAMERA;
           STEP (WAIT 0.7);
-          STEP (DIALOGUE ("Jeff", "Eh, too easy - could be a trap..."));
+          STEP (DIALOGUE ("Jeff", "Eh, too easy - could be a {{red}} trap..."));
         ]
       | "lockers" -> [ STEP (FLOATING_TEXT ("... lockers ...", 1.)) ]
       | "lockers-lockers-lockers" ->
@@ -612,7 +615,7 @@ let get_steps
               (DIALOGUE
                  ( "Shirley",
                    "Friends! Welcome to Shirley Island, where all your dreams come true if you \
-                    dream of standing on a table and pissing in a jar." ));
+                    dream of standing on a table and {{gold}} pissing {{white}} in a jar." ));
             STEP (DIALOGUE ("Shirley", "Where's Britta?"));
             STEP (DIALOGUE ("Abed", "She didn't make it."));
             STEP (DIALOGUE ("Shirley", "Oh, that's too bad..."));
@@ -949,12 +952,9 @@ let get_steps
             STEP (DIALOGUE ("Hickey", "I'm criminology professor Buzz Hickey."));
             STEP
               (DIALOGUE ("Hickey", "And this... this is just a little something I threw together."));
-            ENEMY (HICKEY, SET_POSE "walking");
+            ENEMY (HICKEY, SET_POSE "scream");
             STEP (SHAKE_SCREEN 1.);
             STEP (WAIT 1.);
-            STEP (SHAKE_SCREEN 1.);
-            STEP (WAIT 1.);
-            STEP (SHAKE_SCREEN 1.);
             STEP (SET_FIXED_CAMERA (175, 42));
             STEP (WAIT 1.1);
             PARTY_GHOST (ABED, ENTITY (SET_FACING LEFT));
