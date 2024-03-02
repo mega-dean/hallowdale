@@ -53,6 +53,7 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
     (* Raylib.set_config_flags [ Raylib.ConfigFlags.Window_resizable ]; *)
     (* need to run this before get_monitor_w/h *)
     Raylib.init_window 100 100 "hallowdale";
+    Raylib.toggle_borderless_windowed ();
     let monitor = Raylib.get_current_monitor () in
     (Raylib.get_monitor_width monitor, Raylib.get_monitor_height monitor)
   in
@@ -62,7 +63,7 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
     Float.min w_ratio h_ratio
   in
   let window_scale =
-    if development then
+    if false && development then
       List.last
         [
           0.5;
@@ -73,11 +74,10 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
           (* 0.8; *)
           (* 0.9; *)
           1.;
+          1.5;
         ]
     else if window_ratio < 0.5 then
       failwith "monitor too small :("
-    else if window_ratio > 1. then
-      1.
     else
       window_ratio
   in

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- support larger window sizes
+
 ## [0.1.0] - 2024-03-01
 
 - add continuous sound effects for c-dash and dive

@@ -676,10 +676,21 @@ let tick (state : state) =
     state
   | IN_PROGRESS game ->
     let draw_skybox tint =
-      (* TODO could add some parallax scrolling here, but this won't be visible very often *)
       let src = get_src state.global.textures.skybox in
-      let dest = { pos = { x = camera_x; y = camera_y }; w = src.w; h = src.h } in
-      draw_texture ~tint state.global.textures.skybox dest 0
+      let repeat_x = (Config.window.w /. src.w) +. 1. |> Float.to_int in
+      let repeat_y = (Config.window.h /. src.h) +. 1. |> Float.to_int in
+      let draw y x =
+        let dest =
+          {
+            pos = { x = camera_x +. (x *. src.w); y = camera_y +. (y *. src.h) };
+            w = src.w;
+            h = src.h;
+          }
+        in
+        draw_texture ~tint state.global.textures.skybox dest 0
+      in
+      let draw_row y = List.iter (draw y) (Float.range repeat_x) in
+      List.iter draw_row (Float.range repeat_y)
     in
     let draw_world_map world_map =
       let dest =
