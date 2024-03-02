@@ -113,14 +113,6 @@ type texture = {
   coll_offset : vector;
 }
 
-let animation_loop_duration (texture : texture) : float =
-  match texture.animation_src with
-  | STILL _ -> failwith "can't get animation_loop_duration for STILL"
-  | ONCE animation
-  | PARTICLE animation
-  | LOOPED animation ->
-    (get_frame animation).duration.seconds *. (List.length animation.frames |> Int.to_float)
-
 let get_src (texture : texture) : rect =
   match texture.animation_src with
   | STILL frame_src -> frame_src
@@ -370,6 +362,7 @@ type enemy_id =
   (* enemies *)
   | BAT
   | BIRD
+  | BLACKSMITH
   | ELECTRICITY
   | FISH
   | FLYING_HIPPIE

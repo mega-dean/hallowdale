@@ -376,6 +376,7 @@ let enemy_id (e : enemy_id) : string =
   match e with
   | BAT -> "BAT"
   | BIRD -> "BIRD"
+  | BLACKSMITH -> "BLACKSMITH"
   | BORCHERT -> "BORCHERT"
   | BUDDY -> "BUDDY"
   | DEAN -> "DEAN"

@@ -651,7 +651,7 @@ let init (params : room_params) : room =
       | FORGOTTEN_CLASSROOMS -> Raylib.Color.create 107 157 255 255
       | CITY_OF_CHAIRS -> Raylib.Color.create 107 107 205 255
       | INFECTED_CLASSROOMS -> Raylib.Color.create 107 60 40 255
-      | TRAMPOLINEPATH -> Raylib.Color.create 50 220 50 255
+      | TRAMPOLINEPATH -> Raylib.Color.create 50 180 50 255
       | BASEMENT -> Raylib.Color.create 50 20 50 255
       | MEOW_MEOW_BEENZ -> Raylib.Color.create 221 221 140 255
       | OUTLANDS -> Raylib.Color.create 121 121 40 255

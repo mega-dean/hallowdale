@@ -890,6 +890,73 @@
             ]
         }],
 
+        [ "BLACKSMITH", {
+            "kind": "enemy",
+            "health": 80,
+            "scale": 1.2,
+            "w": 39,
+            "h": 39,
+            "dream_nail": {},
+            "attrs": [
+                ["aggro_distance", 700.0],
+                ["min_projectile_vx", 400.0],
+                ["max_projectile_vx", 1000.0],
+                ["min_projectile_vy", -1200.0],
+                ["max_projectile_vy", -400.0],
+                ["lunge_vx", 700.0],
+                ["walk_vx", 200.0]
+            ],
+            "unscaled_attrs": [
+                ["lunge_duration", 1.2],
+                ["walk_duration", 1.0],
+                ["charge_duration", 0.5]
+            ],
+            "texture_configs": [
+                ["idle", {
+                    "x_offset": 10,
+                    "y_offset": 3
+                }],
+                ["walking", {
+                    "count": 2,
+                    "duration": 0.2,
+                    "x_offset": 10,
+                    "y_offset": 5
+                }],
+                ["throw", {
+                    "count": 4,
+                    "duration": 0.1,
+                    "x_offset": 10,
+                    "y_offset": 14
+                }],
+                ["lunge", {
+                    "count": 2,
+                    "duration": 0.1,
+                    "x_offset": 10,
+                    "y_offset": 7
+                }],
+                ["charge-throw", {
+                    "count": 2,
+                    "duration": 0.02,
+                    "x_offset": 10,
+                    "y_offset": 14
+                }],
+                ["charge-lunge", {
+                    "count": 2,
+                    "duration": 0.02,
+                    "x_offset": 10,
+                    "y_offset": 9
+                }],
+                ["projectile", {
+                    "count": 4,
+                    "duration": 0.06
+                }],
+                ["dead", {
+                    "x_offset": 13,
+                    "y_offset": -17
+                }]
+            ]
+        }],
+
         [ "HUMBUG", {
             "kind": "enemy",
             "health": 25,

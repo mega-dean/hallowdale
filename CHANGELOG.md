@@ -6,6 +6,7 @@
 - add animated conveyor belts
 - add NPCs to outlands/mmb
 - fix tile seams
+- add BLACKSMITH enemy
 
 ## [0.0.15] - 2024-02-28
 

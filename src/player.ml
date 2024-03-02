@@ -2498,6 +2498,7 @@ let tick (game : game) (state : state) =
                  dummy_collision)
           | BAT
           | BIRD
+          | BLACKSMITH
           | ELECTRICITY
           | FISH
           | FLYING_HIPPIE

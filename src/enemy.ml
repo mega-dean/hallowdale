@@ -16,6 +16,7 @@ let parse_name context name : enemy_id =
   (* enemies *)
   | "BAT" -> BAT
   | "BIRD" -> BIRD
+  | "BLACKSMITH" -> BLACKSMITH
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
@@ -65,19 +66,26 @@ let last_damage (enemy : enemy) : time =
   Enemy_action.Map.iter check_history enemy.history;
   { at = !damage }
 
-let set_pose (enemy : enemy) (pose_name : string) : unit =
+let animation_loop_duration (texture : texture) : float =
+  match texture.animation_src with
+  | STILL _ -> failwith "can't get animation_loop_duration for STILL"
+  | ONCE animation
+  | PARTICLE animation
+  | LOOPED animation ->
+    (* subtract 1 because animations skip the first frame *)
+    (get_frame animation).duration.seconds *. (List.length animation.frames - 1 |> Int.to_float)
+
+let set_pose ?(reset_texture = false) (enemy : enemy) (pose_name : string) : unit =
   match String.Map.find_opt pose_name enemy.textures with
   | None ->
     failwithf "could not find pose '%s' configured in enemies.json for %s" pose_name
       (Show.enemy enemy)
   | Some texture ->
+    if reset_texture then Sprite.reset_animation_ texture;
     Entity.update_sprite_texture
       ~scale:(enemy.json.scale *. Config.scale.enemy)
       enemy.entity texture
 
-(* this can't take an enemy arg like the other functions because it uses current_props
-   for "single-frame"/"temporary" props
-*)
 let get_prop ?(default = None) key props : float =
   match (String.Map.find_opt key props, default) with
   | None, None -> failwithf "could not find enemy prop '%s' for enemy" key
@@ -99,11 +107,7 @@ let get_attr (enemy : enemy) key : float =
 
 let get_projectile_texture ?(reset_texture = true) (enemy : enemy) name =
   match String.Map.find_opt name enemy.textures with
-  | Some t ->
-    if reset_texture then
-      Sprite.reset_animation t
-    else
-      t
+  | Some t -> if reset_texture then Sprite.reset_animation t else t
   | None -> failwithf "could not find projectile '%s' for %s" name (Show.enemy_name enemy)
 
 type projectile_pos =
@@ -227,6 +231,7 @@ let maybe_take_damage
     | FLYING_HIPPIE
     | FLYING_HIPPIE_2
     | BIRD
+    | BLACKSMITH
     | BAT
     | MANICORN
     | MANICORN_2
@@ -1326,6 +1331,7 @@ module Borchert_actions = struct
     | _ -> failwithf "Borchert_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let reset_texture = ref false in
     let get_frame_prop ?(default = None) prop_name = get_prop ~default prop_name frame_props in
     let teleport () =
       match String.Map.find_opt "new_x" frame_props with
@@ -1387,6 +1393,7 @@ module Borchert_actions = struct
         enemy.entity.v.y <- 0.;
         "dash"
       | VANISH ->
+        reset_texture := true;
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
         enemy.entity.current_floor <- None;
@@ -1414,7 +1421,7 @@ module Borchert_actions = struct
           :: enemy.projectiles;
         "shoot"
     in
-    set_pose enemy pose_name
+    set_pose ~reset_texture:!reset_texture enemy pose_name
 end
 
 module Borchert : M = struct
@@ -2651,9 +2658,11 @@ module Locker_boy_actions = struct
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let get_frame_prop prop_name = get_prop prop_name frame_props in
+    let reset_texture = ref false in
     let pose_name : string =
       match action with
       | VANISH ->
+        reset_texture := true;
         enemy.entity.v.x <- 0.;
         enemy.entity.v.y <- 0.;
         "vanish"
@@ -2708,7 +2717,7 @@ module Locker_boy_actions = struct
           ];
         "wall-perch"
     in
-    set_pose enemy pose_name
+    set_pose ~reset_texture:!reset_texture enemy pose_name
 end
 
 module Locker_boy : M = struct
@@ -3597,6 +3606,7 @@ module Manicorn_actions = struct
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
     let _ = (frame_props, frame_time) in
+    let reset_texture = ref false in
     let pose_name =
       match action with
       | STANDING ->
@@ -3609,6 +3619,7 @@ module Manicorn_actions = struct
         enemy.entity.v.x <- 0.;
         "charge-punch"
       | PUNCH ->
+        reset_texture := true;
         move_forward enemy (get_attr enemy "punch_vx");
         "punch"
       | CHARGE_KICK ->
@@ -3626,7 +3637,7 @@ module Manicorn_actions = struct
         move_forward enemy (get_attr enemy "dash_vx");
         "dash"
     in
-    set_pose enemy pose_name
+    set_pose ~reset_texture:!reset_texture enemy pose_name
 end
 
 module Manicorn : M = struct
@@ -3684,6 +3695,134 @@ module Manicorn : M = struct
           face_ghost enemy ~ghost_pos;
           Action.set enemy WALK ~frame_time)
       | STANDING -> maybe_start_action ())
+end
+
+module Blacksmith_actions = struct
+  type t =
+    | IDLE
+    | WALK
+    | CHARGE_THROW
+    | THROW
+    | CHARGE_LUNGE
+    | LUNGE
+
+  let to_string (action : t) : string =
+    match action with
+    | IDLE -> "idle"
+    | WALK -> "walking"
+    | CHARGE_THROW -> "charge-throw"
+    | THROW -> "throw"
+    | CHARGE_LUNGE -> "charge-lunge"
+    | LUNGE -> "lunge"
+
+  let from_string (s : string) : t =
+    match s with
+    | "idle" -> IDLE
+    | "walking" -> WALK
+    | "charge-throw" -> CHARGE_THROW
+    | "throw" -> THROW
+    | "charge-lunge" -> CHARGE_LUNGE
+    | "lunge" -> LUNGE
+    | _ -> failwithf "Blacksmith_actions.from_string: %s" s
+
+  let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
+    let get_frame_prop s = get_prop s frame_props in
+    let reset_texture = ref false in
+    let pose_name =
+      match action with
+      | IDLE ->
+        enemy.entity.v.x <- 0.;
+        "idle"
+      | WALK ->
+        move_forward enemy (get_attr enemy "walk_vx");
+        "walking"
+      | CHARGE_THROW ->
+        enemy.entity.v.x <- 0.;
+        "charge-throw"
+      | THROW ->
+        reset_texture := true;
+        enemy.entity.v.x <- 0.;
+        enemy.projectiles <-
+          spawn_projectile ~scale:1.7 enemy ~gravity_multiplier:1.5 ~collide_with_floors:true
+            ~projectile_pos:(RELATIVE (IN_FRONT enemy.entity.sprite.facing_right, CENTER))
+            ~v:{ x = get_frame_prop "projectile_vx"; y = get_frame_prop "projectile_vy" }
+            UNTIL_FLOOR_COLLISION frame_time
+          :: enemy.projectiles;
+        "throw"
+      | CHARGE_LUNGE ->
+        enemy.entity.v.x <- 0.;
+        "charge-lunge"
+      | LUNGE ->
+        move_forward enemy (get_attr enemy "lunge_vx");
+        "lunge"
+    in
+    set_pose ~reset_texture:!reset_texture enemy pose_name
+end
+
+module Blacksmith : M = struct
+  module Action = Make_loggable (Blacksmith_actions)
+
+  type args = {
+    frame_time : float;
+    ghost_pos : vector;
+  }
+
+  let get_args state (game : game) : args =
+    { frame_time = state.frame.time; ghost_pos = get_rect_center game.player.ghost.entity.dest }
+
+  let choose_behavior (enemy : enemy) args =
+    let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
+    let maybe_start_action () =
+      Action.maybe_aggro enemy ~ghost_pos ~frame_time (Some IDLE) (fun () ->
+          match Random.weighted [ (2000., `THROW); (1., `LUNGE) ] with
+          | `THROW -> Action.start_and_log enemy CHARGE_THROW ~frame_time
+          | `LUNGE -> Action.start_and_log enemy CHARGE_LUNGE ~frame_time)
+    in
+    let handle_charge ?(get_frame_props = fun () -> []) action_time charge_action action =
+      Action.handle_charging enemy ~ghost_pos ~action_time ~charge_action ~action ~frame_time
+        ~get_frame_props
+    in
+    match enemy.last_performed with
+    | None -> maybe_start_action ()
+    | Some (action_name, action_time) -> (
+      match Action.from_string action_name with
+      | CHARGE_THROW ->
+        let vx =
+          Random.float_between
+            (get_attr enemy "min_projectile_vx")
+            (get_attr enemy "max_projectile_vx")
+        in
+        let vy =
+          Random.float_between
+            (get_attr enemy "min_projectile_vy")
+            (get_attr enemy "max_projectile_vy")
+        in
+        handle_charge action_time CHARGE_THROW THROW ~get_frame_props:(fun () ->
+            [
+              ("projectile_vx", if enemy.entity.sprite.facing_right then vx else -.vx);
+              ("projectile_vy", vy);
+            ])
+      | THROW ->
+        let throw_duration = animation_loop_duration (String.Map.find "throw" enemy.textures) in
+        let still_throwing =
+          Action.still_doing enemy "throw" ~duration:throw_duration ~frame_time
+        in
+        if not still_throwing then
+          Action.start_and_log enemy WALK ~frame_time
+      | CHARGE_LUNGE -> handle_charge action_time CHARGE_LUNGE LUNGE
+      | LUNGE ->
+        let duration = get_attr enemy "lunge_duration" in
+        let still_lunging = Action.still_doing enemy "lunge" ~duration ~frame_time in
+        Action.maybe_continue enemy ~continue_action:LUNGE ~stop_action:WALK ~frame_time
+          still_lunging
+      | WALK ->
+        if args.frame_time -. action_time.at > get_attr enemy "walk_duration" then
+          maybe_start_action ()
+        else (
+          face_ghost enemy ~ghost_pos;
+          Action.set enemy WALK ~frame_time)
+      | IDLE -> maybe_start_action ())
 end
 
 module Hippie_actions = struct
@@ -3774,6 +3913,7 @@ let get_module (id : enemy_id) : (module M) =
   | FLYING_HIPPIE_2 ->
     (module Flying_hippie)
   | BIRD -> (module Bird)
+  | BLACKSMITH -> (module Blacksmith)
   | BAT -> (module Bat)
   | MANICORN
   | MANICORN_2
@@ -3806,6 +3946,7 @@ let create_from_rects
       match id with
       | BAT
       | BIRD
+      | BLACKSMITH
       | BORCHERT
       | BUDDY
       | DEAN
@@ -3870,6 +4011,7 @@ let create_from_rects
       match id with
       | BAT
       | BIRD
+      | BLACKSMITH
       | ELECTRICITY
       | FISH
       | FLYING_HIPPIE
@@ -3976,6 +4118,7 @@ let create_from_rects
       | LAVA_BRITTA
       | HICKEY
       | BIRD
+      | BLACKSMITH
       | BAT
       | DUNCAN
       | LOCKER_BOY ->
