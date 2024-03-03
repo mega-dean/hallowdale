@@ -69,6 +69,10 @@ jobs:
           mv artifacts/ubuntu-$OUT_DIR/main.exe $OUT_DIR/dist/hallowdale-linux
           mv artifacts/macos-$OUT_DIR/main.exe $OUT_DIR/dist/hallowdale-macos
           sudo chmod a+x $OUT_DIR/dist/hallowdale-linux $OUT_DIR/dist/hallowdale-macos
+          sha256sum $OUT_DIR/dist/hallowdale-windows.exe > $OUT_DIR/dist/sha256-checksum-windows
+          sha256sum $OUT_DIR/dist/hallowdale-linux > $OUT_DIR/dist/sha256-checksum-linux
+          sha256sum $OUT_DIR/dist/hallowdale-macos > $OUT_DIR/dist/sha256-checksum-windows
+
 
       - name: copy everything else into ${{ env.OUT_DIR }}/
         run: |

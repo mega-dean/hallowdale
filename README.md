@@ -10,10 +10,15 @@ An homage to Hollow Knight.
 
 ### Instructions
 
-- Download the latest Github release, or from https://mega-dean.itch.io/hallowdale
+- Download the archive from the latest Github release, or from https://mega-dean.itch.io/hallowdale
 - Unzip the archive
-- Run the executable in the `dist/` folder
--- The executable is unsigned, so for Windows and MacOS you will need to allow the program to run
+- Run the executable in the `dist/` folder for your operating system
+
+### Verification
+
+The executable is unsigned, so for Windows and MacOS you will need to manually allow the program to
+run. A sha256 checksum of the `.tar.gz` file is generated during the build process and included in
+`./dist/` so you can verify the executable is built from the code in this repo.
 
 ### Game modes
 
@@ -33,18 +38,13 @@ the map without them. All of the purple pens can be collected without using them
 the Computer Wing area, so c-dashes that are started in that area are allowed and not counted towards
 the total.
 
-#### Demo
-
-This is a "New Game +" mode like Steel Sole but without the damage respawns, so you can play this if
-you just want to run around the map and find the purple pens.
-
 ### Controls
 
-Most of the controls match the default Hollow Knight controls, but there are a few differences:
-
-- no Inventory button yet
-- additional Interact button, instead of pressing up/down
-- cannot tap Focus to cast
+- Most of the controls match the default Hollow Knight controls, but there are a few differences:
+-- no Inventory button
+-- additional Interact button, instead of pressing up/down
+-- cannot tap Focus to cast
+- Select menu options with the Jump key/button
 
 #### Keyboard
 
@@ -110,3 +110,6 @@ rm src/json_* && atdgen -t src/json.atd && atdgen -j src/json.atd
 - creators of original Hawkthorne game
 - creators of Hollow Knight
 - creators of Community
+- @raysan5 for making [Raylib](https://github.com/raysan5/raylib)
+- @tjammer for making [raylib-ocaml](https://github.com/tjammer/raylib-ocaml)
+- @bjorn for making [Tiled](https://github.com/mapeditor/tiled)
