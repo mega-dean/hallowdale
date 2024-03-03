@@ -1,15 +1,14 @@
 
-automapping/fix-terrain-tile-seams.tmj
-
 ############ draws auto:floors to floors ############
-# automapping/floors-reset.tmj
-# automapping/camera-draw-ref.tmj
-# automapping/camera-cleanup.tmj
-# automapping/floors-draw-tops.tmj
-# automapping/floors-draw-sides.tmj
-# automapping/floors-draw-hanging-shadows.tmj
-# automapping/floors-draw-top-corners.tmj
+automapping/floors-reset.tmj
+automapping/camera-draw-ref.tmj
+automapping/camera-cleanup.tmj
+automapping/floors-draw-tops.tmj
+automapping/floors-draw-sides.tmj
+automapping/floors-draw-hanging-shadows.tmj
+automapping/floors-draw-top-corners.tmj
 
+automapping/fix-terrain-tile-seams.tmj
 
 ############ map auto:walls to auto:iso ############
 # these were applied manually when creating the auto:iso layers in each room, but

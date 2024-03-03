@@ -1074,6 +1074,17 @@
                  "width":24,
                  "x":2616,
                  "y":588
+                }, 
+                {
+                 "height":26,
+                 "id":88,
+                 "name":"door-warp:computer_f@25,14",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":132,
+                 "x":732,
+                 "y":636
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1827,7 +1838,7 @@
          "y":0
         }],
  "nextlayerid":28,
- "nextobjectid":88,
+ "nextobjectid":89,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

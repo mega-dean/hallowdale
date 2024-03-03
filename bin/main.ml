@@ -20,7 +20,7 @@ let () =
    *   (Config.window.min_width |> Float.to_int)
    *   (Config.window.min_height |> Float.to_int); *)
   Raylib.init_audio_device ();
-  Raylib.set_exit_key Raylib.Key.Backspace;
+  Raylib.set_exit_key Raylib.Key.Null;
 
   if Env.development then
     Raylib.set_window_position 340 400
