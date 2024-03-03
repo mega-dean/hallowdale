@@ -716,6 +716,13 @@ module Interaction = struct
     bottom_paragraphs : string list;
   }
 
+  type menu_config = {
+    menu : menu;
+    (* save_slots is None for pause menu *)
+    save_slots : save_slot list option;
+    in_save_file_menu : bool;
+  }
+
   type text_kind =
     | PLAIN of bool * string list
     | ABILITY of ability_text
@@ -723,7 +730,7 @@ module Interaction = struct
       FOCUS_ABILITY of
         ability_text
     | DIALOGUE of string * string
-    | MENU of menu * save_slot list option
+    | MENU of menu_config
 
   type non_blocking_text_visible =
     (* duration, end_time *)

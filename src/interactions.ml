@@ -160,7 +160,24 @@ let get_steps
     | "warp" -> [ STEP (WARP trigger.kind) ]
     | "door-warp" -> [ STEP (DOOR_WARP trigger.kind) ]
     | "weapon" ->
-      fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_ITEM (WEAPON trigger.name_suffix)) ]
+      let steps =
+        fade_screen_with_dramatic_pause [ CURRENT_GHOST (ADD_ITEM (WEAPON trigger.name_suffix)) ]
+      in
+      if game.player.weapons |> String.Map.bindings |> List.length = 1 then
+        steps
+        @ [
+            STEP
+              (TEXT
+                 [
+                   "Equip weapons from the pause menu.";
+                   "Different weapons have different size and swing speed.";
+                   "Weapon damage is based the number of weapons found, so each weapon does the \
+                    same amount of damage. You can see the current damage on the Progress page in \
+                    the pause menu.";
+                 ]);
+          ]
+      else
+        steps
     | "purple-pen" ->
       remove_nail := false;
       [ STEP (PURPLE_PEN_TEXT (get_lore ())) ]

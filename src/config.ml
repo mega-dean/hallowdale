@@ -289,7 +289,8 @@ let get_text_margins menu_choice =
     match menu_choice with
     | REBIND_KEYBOARD_MENU _
     | REBIND_GAMEPAD_MENU _
-    | REBIND_CONTROLS_MENU _ -> rebind_control_values
+    | REBIND_CONTROLS_MENU _ ->
+      rebind_control_values
     | CHANGE_WEAPON_MENU _ -> weapon_menu_values
     | PAUSE_MENU _
     | CHANGE_GHOST_MENU _
@@ -449,11 +450,10 @@ let other =
 let lever_shape =
   make_shape
     [
-      { x = 10. *. scale.room; y = 0. *. scale.room };
-      { x = 5. *. scale.room; y = 8. *. scale.room };
-      { x = 7. *. scale.room; y = 40. *. scale.room };
+      { x = 6. *. scale.room; y = 0. *. scale.room };
+      { x = 12. *. scale.room; y = 0. *. scale.room };
       { x = 12. *. scale.room; y = 40. *. scale.room };
-      { x = 15. *. scale.room; y = 8. *. scale.room };
+      { x = 6. *. scale.room; y = 40. *. scale.room };
     ]
 
 let random_fragment_vx ?(direction : direction option = None) () =

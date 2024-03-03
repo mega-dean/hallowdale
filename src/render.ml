@@ -500,6 +500,19 @@ let tick (state : state) =
     List.iteri (display_line config y_offset') lines
   in
 
+  let draw_corner_text (text : Interaction.non_blocking_text) =
+    let dest = { x = camera_x; y = camera_y +. (Config.window.h -. font_size) } in
+    let alpha =
+      match text.visible with
+      | UNTIL_UNSET
+      | PAUSE_MENU_OPEN ->
+        255
+      | UNTIL (duration, end_time) ->
+        255. *. ((end_time.at -. state.frame.time) /. duration) |> Float.to_int
+    in
+    Draw.text ~color:(Color.create 255 255 255 alpha) text.content dest
+  in
+
   let maybe_draw_text (game_opt : game option) (interaction_text : Interaction.text_kind option) =
     (* TODO add offset_x based on ghost.id, and make ability-outlines.png a grid of images *)
     let draw_outline ?(offset_y = 0.) (ability_text : Interaction.ability_text) =
@@ -608,36 +621,40 @@ let tick (state : state) =
         | None -> false
       in
       List.iteri (display_paragraph ~force_spaces config) lines
-    | Some (MENU (menu, save_slots')) ->
-      let config' : text_config = Config.get_menu_text_config (List.nth menu.choices 0) in
+    | Some (MENU menu_config) ->
+      let config' : text_config =
+        Config.get_menu_text_config (List.nth menu_config.menu.choices 0)
+      in
       let menu_choices, config =
-        match save_slots' with
-        | None -> (List.map (Show.menu_choice state game_opt) menu.choices, config')
+        match menu_config.save_slots with
+        | None -> (List.map (Show.menu_choice state game_opt) menu_config.menu.choices, config')
         | Some save_slots ->
-          ( List.map
-              (Show.menu_choice ~save_slots state game_opt)
-              (Menu.get_save_file_choices save_slots),
-            { config' with centered = false } )
+          if List.for_all (fun s -> s.new_game) save_slots then
+            draw_corner_text
+              {
+                content =
+                  fmt "Press %s to select menu option"
+                    (Interactions.key_or_button ~color:false state JUMP);
+                visible = UNTIL_UNSET;
+                scale = 1.;
+              };
+          if menu_config.in_save_file_menu then
+            ( List.map
+                (Show.menu_choice ~save_slots state game_opt)
+                (Menu.get_save_file_choices save_slots),
+              { config' with centered = false } )
+          else
+            (List.map (Show.menu_choice state game_opt) menu_config.menu.choices, config')
       in
       draw_text_bg_box config;
       List.iteri (display_paragraph ~force_spaces:true config) menu_choices;
-      draw_cursor config menu.current_choice_idx
+      draw_cursor config menu_config.menu.current_choice_idx
   in
 
   let draw_other_text game =
     (match game.interaction.corner_text with
     | None -> ()
-    | Some tt ->
-      let dest = { x = camera_x; y = camera_y +. (Config.window.h -. font_size) } in
-      let alpha =
-        match tt.visible with
-        | UNTIL_UNSET
-        | PAUSE_MENU_OPEN ->
-          255
-        | UNTIL (duration, end_time) ->
-          255. *. ((end_time.at -. state.frame.time) /. duration) |> Float.to_int
-      in
-      Draw.text ~color:(Color.create 255 255 255 alpha) tt.content dest);
+    | Some text -> draw_corner_text text);
 
     match game.interaction.floating_text with
     | None -> ()
@@ -648,7 +665,7 @@ let tick (state : state) =
       display_paragraph ~force_spaces:true ~font_scale:text.scale config ~y_offset:0. 0 text.content
   in
 
-  let show_main_menu menu save_slots =
+  let show_main_menu menu_config =
     Raylib.begin_drawing ();
     (* TODO bg image for main menu *)
     Raylib.clear_background (Color.create 0 0 0 255);
@@ -658,7 +675,7 @@ let tick (state : state) =
     let x, y = (camera_x +. x', camera_y +. Config.other.main_menu_y_offset) in
     let dest = { pos = { x; y }; w; h } in
     draw_texture state.global.textures.main_menu dest 0;
-    maybe_draw_text None (Some (MENU (menu, save_slots)));
+    maybe_draw_text None (Some (MENU menu_config));
     if Env.development then
       Raylib.draw_fps
         (camera_x +. Config.window.w -. 100. |> Float.to_int)
@@ -669,8 +686,10 @@ let tick (state : state) =
   in
 
   match state.context with
-  | SAVE_FILES (menu, save_slots) -> show_main_menu menu (Some save_slots)
-  | MAIN_MENU (menu, _save_slots) -> show_main_menu menu None
+  | SAVE_FILES (menu, save_slots) ->
+    show_main_menu { menu; save_slots = Some save_slots; in_save_file_menu = true }
+  | MAIN_MENU (menu, save_slots) ->
+    show_main_menu { menu; save_slots = Some save_slots; in_save_file_menu = false }
   | RETURN_TO_MAIN_MENU _
   | RELOAD_LAST_SAVED_GAME _ ->
     state
@@ -1224,8 +1243,10 @@ let tick (state : state) =
        | Some (WORLD_MAP world_map) ->
          draw_world_map world_map;
          None
-       | Some (MENU pause_menu) -> Some (MENU (pause_menu, None))
+       | Some (MENU pause_menu) ->
+         Some (MENU { menu = pause_menu; save_slots = None; in_save_file_menu = false })
      in
+
      maybe_draw_text (Some game) interaction_text);
     draw_other_text game;
     if Env.development then (
