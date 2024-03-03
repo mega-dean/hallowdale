@@ -541,7 +541,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":142,
          "x":0,
          "y":0
@@ -594,7 +594,7 @@
          "parallaxx":0.9,
          "parallaxy":0.9,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":142,
          "x":0,
          "y":0

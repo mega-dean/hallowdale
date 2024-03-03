@@ -15,17 +15,26 @@ let parse_name context name : enemy_id =
   match name with
   (* enemies *)
   | "BAT" -> BAT
+  | "BAT_2" -> BAT_2
   | "BIRD" -> BIRD
+  | "BIRD_2" -> BIRD_2
   | "BLACKSMITH" -> BLACKSMITH
+  | "BLACKSMITH_2" -> BLACKSMITH_2
   | "ELECTRICITY" -> ELECTRICITY
   | "FISH" -> FISH
+  | "FISH_2" -> FISH_2
   | "FLYING_HIPPIE" -> FLYING_HIPPIE
   | "FLYING_HIPPIE_2" -> FLYING_HIPPIE_2
   | "FROG" -> FROG
   | "FROG_BOMB" -> FROG_BOMB
+  | "GOAT" -> GOAT
+  | "GOAT_2" -> GOAT_2
   | "HIPPIE" -> HIPPIE
+  | "HIPPIE_2" -> HIPPIE_2
   | "HOPPING_HIPPIE" -> HOPPING_HIPPIE
+  | "HOPPING_HIPPIE_2" -> HOPPING_HIPPIE_2
   | "HUMBUG" -> HUMBUG
+  | "HUMBUG_2" -> HUMBUG_2
   | "MANICORN" -> MANICORN
   | "MANICORN_2" -> MANICORN_2
   | "MANICORN_3" -> MANICORN_3
@@ -225,18 +234,27 @@ let maybe_take_damage
     | JOSHUA
     | DEAN
     | PENGUIN
+    | GOAT
+    | GOAT_2
     | HIPPIE
+    | HIPPIE_2
     | HOPPING_HIPPIE
+    | HOPPING_HIPPIE_2
     | HUMBUG
+    | HUMBUG_2
     | FLYING_HIPPIE
     | FLYING_HIPPIE_2
     | BIRD
+    | BIRD_2
     | BLACKSMITH
+    | BLACKSMITH_2
     | BAT
+    | BAT_2
     | MANICORN
     | MANICORN_2
     | MANICORN_3
-    | FISH ->
+    | FISH
+    | FISH_2 ->
       set_pose enemy "dead";
       enemy.entity.v.x <- 0.;
       enemy.entity.x_recoil <-
@@ -285,6 +303,50 @@ let maybe_take_damage
     true)
   else
     false
+
+let handle_collision state game (enemy : enemy) =
+  match enemy.id with
+  | FROG_BOMB ->
+    let dummy_collision =
+      { center = Zero.vector (); other_rect = Zero.rect (); collided_from = UP }
+    in
+    ignore (maybe_take_damage state game enemy { at = state.frame.time } NAIL 1 dummy_collision)
+  | BAT
+  | BAT_2
+  | BIRD
+  | BIRD_2
+  | BLACKSMITH
+  | BLACKSMITH_2
+  | ELECTRICITY
+  | FISH
+  | FISH_2
+  | FLYING_HIPPIE
+  | FLYING_HIPPIE_2
+  | FROG
+  | GOAT
+  | GOAT_2
+  | HIPPIE
+  | HIPPIE_2
+  | HOPPING_HIPPIE
+  | HOPPING_HIPPIE_2
+  | HUMBUG
+  | HUMBUG_2
+  | MANICORN
+  | MANICORN_2
+  | MANICORN_3
+  | PENGUIN
+  | BORCHERT
+  | BUDDY
+  | DEAN
+  | DUNCAN
+  | HICKEY
+  | JOSHUA
+  | LAVA_BRITTA
+  | LAVA_BRITTA_2
+  | LOCKER_BOY
+  | LUIS_GUZMAN
+  | VICE_DEAN_LAYBOURNE ->
+    ()
 
 let get_boss_area game =
   match game.room.boss_area with
@@ -3809,7 +3871,7 @@ module Blacksmith : M = struct
     let ghost_pos = args.ghost_pos in
     let maybe_start_action () =
       Action.maybe_aggro enemy ~ghost_pos ~frame_time (Some IDLE) (fun () ->
-          match Random.weighted [ (2000., `THROW); (1., `LUNGE) ] with
+          match Random.weighted [ (2., `THROW); (1., `LUNGE) ] with
           | `THROW -> Action.start_and_log enemy CHARGE_THROW ~frame_time
           | `LUNGE -> Action.start_and_log enemy CHARGE_LUNGE ~frame_time)
     in
@@ -3938,17 +4000,34 @@ let get_module (id : enemy_id) : (module M) =
   | FROG -> (module Frog)
   | FROG_BOMB -> (module Frog_bomb)
   | ELECTRICITY -> (module Electricity)
-  | FISH -> (module Fish)
-  | PENGUIN -> (module Penguin)
-  | HIPPIE -> (module Hippie)
-  | HOPPING_HIPPIE -> (module Hopping_hippie)
-  | HUMBUG -> (module Humbug)
+  | FISH
+  | FISH_2 ->
+    (module Fish)
+  | GOAT
+  | GOAT_2
+  | PENGUIN ->
+    (module Penguin)
+  | HIPPIE
+  | HIPPIE_2 ->
+    (module Hippie)
+  | HOPPING_HIPPIE
+  | HOPPING_HIPPIE_2 ->
+    (module Hopping_hippie)
+  | HUMBUG
+  | HUMBUG_2 ->
+    (module Humbug)
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2 ->
     (module Flying_hippie)
-  | BIRD -> (module Bird)
-  | BLACKSMITH -> (module Blacksmith)
-  | BAT -> (module Bat)
+  | BIRD
+  | BIRD_2 ->
+    (module Bird)
+  | BLACKSMITH
+  | BLACKSMITH_2 ->
+    (module Blacksmith)
+  | BAT
+  | BAT_2 ->
+    (module Bat)
   | MANICORN
   | MANICORN_2
   | MANICORN_3 ->
@@ -3991,6 +4070,7 @@ let create_from_rects
       | FROG
       | FROG_BOMB
       | HICKEY
+      | GOAT
       | HIPPIE
       | HOPPING_HIPPIE
       | HUMBUG
@@ -4004,6 +4084,14 @@ let create_from_rects
         1
       | FLYING_HIPPIE_2
       | LAVA_BRITTA_2
+      | GOAT_2
+      | BAT_2
+      | BIRD_2
+      | BLACKSMITH_2
+      | FISH_2
+      | HIPPIE_2
+      | HOPPING_HIPPIE_2
+      | HUMBUG_2
       | MANICORN_2 ->
         2
       | MANICORN_3 -> 3
@@ -4044,17 +4132,26 @@ let create_from_rects
     let collision_shapes =
       match id with
       | BAT
+      | BAT_2
       | BIRD
+      | BIRD_2
       | BLACKSMITH
+      | BLACKSMITH_2
       | ELECTRICITY
       | FISH
+      | FISH_2
       | FLYING_HIPPIE
       | FLYING_HIPPIE_2
       | FROG
       | FROG_BOMB
+      | GOAT
+      | GOAT_2
       | HIPPIE
+      | HIPPIE_2
       | HOPPING_HIPPIE
+      | HOPPING_HIPPIE_2
       | HUMBUG
+      | HUMBUG_2
       | MANICORN
       | MANICORN_2
       | MANICORN_3
@@ -4133,7 +4230,16 @@ let create_from_rects
       | MANICORN_2
       | MANICORN_3 ->
         "MANICORN"
+      | GOAT_2 -> "GOAT"
+      | BAT_2 -> "BAT"
+      | BIRD_2 -> "BIRD"
+      | BLACKSMITH_2 -> "BLACKSMITH"
+      | FISH_2 -> "FISH"
+      | HIPPIE_2 -> "HIPPIE"
+      | HOPPING_HIPPIE_2 -> "HOPPING_HIPPIE"
+      | HUMBUG_2 -> "HUMBUG"
       | MANICORN
+      | GOAT
       | HIPPIE
       | HOPPING_HIPPIE
       | HUMBUG

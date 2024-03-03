@@ -361,17 +361,26 @@ type npc_id =
 type enemy_id =
   (* enemies *)
   | BAT
+  | BAT_2
   | BIRD
+  | BIRD_2
   | BLACKSMITH
+  | BLACKSMITH_2
   | ELECTRICITY
   | FISH
+  | FISH_2
   | FLYING_HIPPIE
   | FLYING_HIPPIE_2
   | FROG
   | FROG_BOMB
+  | GOAT
+  | GOAT_2
   | HIPPIE
+  | HIPPIE_2
   | HOPPING_HIPPIE
+  | HOPPING_HIPPIE_2
   | HUMBUG
+  | HUMBUG_2
   | MANICORN
   | MANICORN_2
   | MANICORN_3
