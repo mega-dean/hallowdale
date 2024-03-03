@@ -53,14 +53,19 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
     (* Raylib.set_config_flags [ Raylib.ConfigFlags.Window_resizable ]; *)
     (* need to run this before get_monitor_w/h *)
     Raylib.init_window 100 100 "hallowdale";
-    Raylib.toggle_borderless_windowed ();
+    (* TODO figure out why the Windows build is using raylib 0.5.1 instead of 1.2.1
+       Raylib.toggle_borderless_windowed ();
+    *)
     let monitor = Raylib.get_current_monitor () in
     (Raylib.get_monitor_width monitor, Raylib.get_monitor_height monitor)
   in
-  let window_ratio =
+  let window_ratio, adjust_for_title_bar =
     let w_ratio = (monitor_w |> Int.to_float) /. max_width in
     let h_ratio = (monitor_h |> Int.to_float) /. max_height in
-    Float.min w_ratio h_ratio
+    if w_ratio < h_ratio then
+      (w_ratio, false)
+    else
+      (h_ratio, true)
   in
   let window_scale =
     if development then
@@ -78,6 +83,9 @@ let (window_w, window_h, window_scale, font_size) : float * float * float * floa
         ]
     else if window_ratio < 0.5 then
       failwith "monitor too small :("
+    else if adjust_for_title_bar then
+      (* TODO this is approximate, and can be removed when toggle_borderless_windowed is fixed *)
+      window_ratio *. 0.9
     else
       window_ratio
   in

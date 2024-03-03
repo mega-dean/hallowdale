@@ -2,10 +2,17 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-03-03
+
+- disable borderless window
+
+## [0.2.0] - 2024-03-03
+
 - support larger window sizes
 - add some in-game control instructions
 - add level 2 enemies
 - add enemies to map
+- add checksums
 
 ## [0.1.0] - 2024-03-01
 
@@ -133,6 +140,8 @@
 
 - demo release
 
+[0.3.0]: https://github.com/mega-dean/hallowdale/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/mega-dean/hallowdale/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mega-dean/hallowdale/compare/v0.0.15...v0.1.0
 [0.0.15]: https://github.com/mega-dean/hallowdale/compare/v0.0.14...v0.0.15
 [0.0.14]: https://github.com/mega-dean/hallowdale/compare/v0.0.10...v0.0.14
