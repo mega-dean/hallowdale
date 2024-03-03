@@ -2347,7 +2347,7 @@
                 {
                  "height":24,
                  "id":144,
-                 "name":"enemy:FLYING_HIPPIE",
+                 "name":"enemy:HUMBUG",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -2358,7 +2358,7 @@
                 {
                  "height":24,
                  "id":145,
-                 "name":"enemy:FLYING_HIPPIE",
+                 "name":"enemy:HUMBUG",
                  "rotation":0,
                  "type":"",
                  "visible":true,

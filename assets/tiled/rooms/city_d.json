@@ -514,6 +514,28 @@
                  "width":15,
                  "x":855,
                  "y":499
+                }, 
+                {
+                 "height":24,
+                 "id":76,
+                 "name":"enemy:BIRD_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1068,
+                 "y":204
+                }, 
+                {
+                 "height":24,
+                 "id":77,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":720,
+                 "y":84
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1559,7 +1581,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":76,
+ "nextobjectid":78,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

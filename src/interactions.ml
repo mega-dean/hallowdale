@@ -1137,12 +1137,12 @@ let get_steps
           ENEMY (JOSHUA, ENTITY UNSET_FLOOR);
           STEP (WAIT 1.);
         ]
-      | MANICORN_3 ->
+      | MANICORN_BOSS ->
         game.in_boss_fight <- true;
         [
           STEP (SET_IGNORE_CAMERA_TRIGGERS true);
           STEP (WAIT 1.);
-          ENEMY (MANICORN_3, ENTITY HIDE);
+          ENEMY (MANICORN_BOSS, ENTITY HIDE);
           CURRENT_GHOST (PARTY (WALK_TO 68));
           CURRENT_GHOST (ENTITY (SET_FACING RIGHT));
           STEP (DIALOGUE ("Annie", "Yes! Ha ha ha!"));
@@ -1201,6 +1201,8 @@ let get_steps
         *)
         game.in_boss_fight <- true;
         [
+          ENEMY (LAVA_BRITTA, ENTITY (SET_VX 0.));
+          ENEMY (LAVA_BRITTA, SET_POSE "charge-lunge");
           STEP (WAIT 1.);
           NPC (SHIRLEY, ENTITY (MOVE_TO (195, 68)));
           NPC (SHIRLEY, ENTITY (SET_FACING LEFT));
@@ -1260,6 +1262,8 @@ let get_steps
       | LAVA_BRITTA_2 ->
         game.in_boss_fight <- true;
         [
+          ENEMY (LAVA_BRITTA_2, ENTITY (SET_VX 0.));
+          ENEMY (LAVA_BRITTA_2, SET_POSE "charge-lunge");
           STEP (WAIT 1.);
           ENEMY (LAVA_BRITTA_2, WALK_TO 46);
           STEP (WAIT 1.);
@@ -1353,10 +1357,10 @@ let get_steps
         ]
       | HICKEY ->
         [
+          ENEMY (HICKEY, ENTITY (SET_VX 0.));
           ENEMY (HICKEY, SET_POSE "dying");
           STEP (WAIT 0.5);
           ENEMY (HICKEY, SET_POSE "dead");
-          ENEMY (HICKEY, ENTITY (SET_VX 0.));
           STEP (WAIT 1.);
           STEP
             (DIALOGUE ("Hickey", "Unbelievable! When this game is over, I'm gonna shove you back."));
@@ -1703,7 +1707,7 @@ let get_steps
             STEP (SHAKE_SCREEN 2.);
             ENEMY (LAVA_BRITTA, ENTITY UNHIDE);
             ENEMY (LAVA_BRITTA, SET_POSE "megaphone");
-            ENEMY (MANICORN_3, ENTITY UNHIDE);
+            ENEMY (MANICORN_BOSS, ENTITY UNHIDE);
             STEP (WAIT 2.);
             STEP (WAIT 2.);
             STEP
@@ -1773,9 +1777,6 @@ let get_steps
             NPC (LEONARD, ENTITY UNSET_FLOOR);
             STEP (WAIT 1.);
             NPC (LEONARD, ENTITY HIDE);
-            (* Boss fight
-
-            *)
             STEP (SET_FIXED_CAMERA (60, 80));
             PARTY_GHOST (JEFF, ENTITY (SET_FACING LEFT));
             STEP (DIALOGUE ("Jeff", "Hey, seat feet! {{blue}} Chair {{white}} to dance?"));
@@ -1792,7 +1793,7 @@ let get_steps
             STEP (UNHIDE_LAYER "boss-doors");
             STEP SET_GHOST_CAMERA;
             PARTY_GHOST (JEFF, ENTITY HIDE);
-            ENEMY (MANICORN_3, ENTITY UNFREEZE);
+            ENEMY (MANICORN_BOSS, ENTITY UNFREEZE);
             ENEMY (HICKEY, ENTITY FREEZE);
           ]
       | _ -> fail ())

@@ -235,6 +235,61 @@
                  "width":17,
                  "x":160,
                  "y":304
+                }, 
+                {
+                 "height":24,
+                 "id":18,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2148,
+                 "y":252
+                }, 
+                {
+                 "height":24,
+                 "id":19,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1440,
+                 "y":288
+                }, 
+                {
+                 "height":24,
+                 "id":20,
+                 "name":"enemy:GOAT",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1764,
+                 "y":288
+                }, 
+                {
+                 "height":24,
+                 "id":21,
+                 "name":"enemy:GOAT_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":504,
+                 "y":300
+                }, 
+                {
+                 "height":24,
+                 "id":22,
+                 "name":"enemy:GOAT",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":876,
+                 "y":300
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -719,7 +774,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":18,
+ "nextobjectid":23,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

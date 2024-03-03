@@ -38,6 +38,7 @@ let parse_name context name : enemy_id =
   | "MANICORN" -> MANICORN
   | "MANICORN_2" -> MANICORN_2
   | "MANICORN_3" -> MANICORN_3
+  | "MANICORN_BOSS" -> MANICORN_BOSS
   | "PENGUIN" -> PENGUIN
   (* bosses *)
   | "DUNCAN" -> DUNCAN
@@ -253,6 +254,7 @@ let maybe_take_damage
     | MANICORN
     | MANICORN_2
     | MANICORN_3
+    | MANICORN_BOSS
     | FISH
     | FISH_2 ->
       set_pose enemy "dead";
@@ -334,6 +336,7 @@ let handle_collision state game (enemy : enemy) =
   | MANICORN
   | MANICORN_2
   | MANICORN_3
+  | MANICORN_BOSS
   | PENGUIN
   | BORCHERT
   | BUDDY
@@ -783,12 +786,10 @@ module Hopping_hippie : M = struct
         let last_landed = get_prop ~default:(Some 0.) "landed" enemy.status.props in
         frame_time -. last_landed < get_attr enemy "land_duration"
       in
-      if List.length enemy.floor_collisions_this_frame > 0 then
-        (
-          set_prop enemy "landed" frame_time;
-          if enemy.level = 2 then
-            face_ghost enemy ~ghost_pos
-        )
+      if List.length enemy.floor_collisions_this_frame > 0 then (
+        set_prop enemy "landed" frame_time;
+        if enemy.level = 2 then
+          face_ghost enemy ~ghost_pos)
       else (
         let (action, frame_props) : Action.t * (string * float) list =
           if should_stay_landed then
@@ -4056,7 +4057,8 @@ let get_module (id : enemy_id) : (module M) =
     (module Bat)
   | MANICORN
   | MANICORN_2
-  | MANICORN_3 ->
+  | MANICORN_3
+  | MANICORN_BOSS ->
     (module Manicorn)
   | JOSHUA -> (module Joshua)
   | DEAN -> (module Dean)
@@ -4120,7 +4122,9 @@ let create_from_rects
       | HUMBUG_2
       | MANICORN_2 ->
         2
-      | MANICORN_3 -> 3
+      | MANICORN_3
+      | MANICORN_BOSS ->
+        3
     in
 
     let texture_configs : texture_config ne_list =
@@ -4181,6 +4185,7 @@ let create_from_rects
       | MANICORN
       | MANICORN_2
       | MANICORN_3
+      | MANICORN_BOSS
       | PENGUIN
       | BORCHERT
       | BUDDY
@@ -4254,7 +4259,8 @@ let create_from_rects
       | FLYING_HIPPIE_2 -> "FLYING_HIPPIE"
       | LAVA_BRITTA_2 -> "LAVA_BRITTA"
       | MANICORN_2
-      | MANICORN_3 ->
+      | MANICORN_3
+      | MANICORN_BOSS ->
         "MANICORN"
       | GOAT_2 -> "GOAT"
       | BAT_2 -> "BAT"

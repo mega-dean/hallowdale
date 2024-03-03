@@ -582,6 +582,28 @@
                  "width":20,
                  "x":1502,
                  "y":412
+                }, 
+                {
+                 "height":24,
+                 "id":43,
+                 "name":"enemy:FISH",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":528,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":45,
+                 "name":"enemy:FISH",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":348,
+                 "y":312
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1015,7 +1037,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":43,
+ "nextobjectid":46,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

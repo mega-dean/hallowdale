@@ -366,6 +366,50 @@
                  "width":72,
                  "x":48,
                  "y":708
+                }, 
+                {
+                 "height":24,
+                 "id":42,
+                 "name":"enemy:FLYING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":132,
+                 "y":528
+                }, 
+                {
+                 "height":24,
+                 "id":43,
+                 "name":"enemy:FLYING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":60,
+                 "y":504
+                }, 
+                {
+                 "height":24,
+                 "id":44,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":168,
+                 "y":240
+                }, 
+                {
+                 "height":24,
+                 "id":45,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":276,
+                 "y":360
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1437,7 +1481,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":42,
+ "nextobjectid":46,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

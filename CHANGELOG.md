@@ -5,6 +5,7 @@
 - support larger window sizes
 - add some in-game control instructions
 - add level 2 enemies
+- add enemies to map
 
 ## [0.1.0] - 2024-03-01
 

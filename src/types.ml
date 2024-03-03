@@ -384,6 +384,7 @@ type enemy_id =
   | MANICORN
   | MANICORN_2
   | MANICORN_3
+  | MANICORN_BOSS
   | PENGUIN
   (* bosses *)
   | BORCHERT

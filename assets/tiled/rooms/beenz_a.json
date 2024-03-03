@@ -1111,6 +1111,94 @@
                  "width":72,
                  "x":936,
                  "y":1164
+                }, 
+                {
+                 "height":24,
+                 "id":81,
+                 "name":"enemy:FLYING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":276,
+                 "y":564
+                }, 
+                {
+                 "height":24,
+                 "id":82,
+                 "name":"enemy:FLYING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":744,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":83,
+                 "name":"enemy:FLYING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":636,
+                 "y":492
+                }, 
+                {
+                 "height":24,
+                 "id":84,
+                 "name":"enemy:FLYING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":780,
+                 "y":924
+                }, 
+                {
+                 "height":24,
+                 "id":85,
+                 "name":"enemy:HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1248,
+                 "y":564
+                }, 
+                {
+                 "height":24,
+                 "id":86,
+                 "name":"enemy:BLACKSMITH_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1224,
+                 "y":360
+                }, 
+                {
+                 "height":24,
+                 "id":87,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1320,
+                 "y":732
+                }, 
+                {
+                 "height":24,
+                 "id":88,
+                 "name":"enemy:HOPPING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":492,
+                 "y":1188
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2296,7 +2384,7 @@
          "y":0
         }],
  "nextlayerid":20,
- "nextobjectid":81,
+ "nextobjectid":89,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

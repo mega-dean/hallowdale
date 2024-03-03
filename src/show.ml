@@ -408,6 +408,7 @@ let enemy_id (e : enemy_id) : string =
   | MANICORN -> "MANICORN"
   | MANICORN_2 -> "MANICORN_2"
   | MANICORN_3 -> "MANICORN_3"
+  | MANICORN_BOSS -> "MANICORN_BOSS"
   | PENGUIN -> "PENGUIN"
   | VICE_DEAN_LAYBOURNE -> "VICE_DEAN_LAYBOURNE"
 

@@ -1019,6 +1019,61 @@
                  "width":72,
                  "x":2724,
                  "y":48
+                }, 
+                {
+                 "height":24,
+                 "id":83,
+                 "name":"enemy:BLACKSMITH",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":312,
+                 "y":324
+                }, 
+                {
+                 "height":24,
+                 "id":84,
+                 "name":"enemy:BLACKSMITH_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":384,
+                 "y":588
+                }, 
+                {
+                 "height":24,
+                 "id":85,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2460,
+                 "y":588
+                }, 
+                {
+                 "height":24,
+                 "id":86,
+                 "name":"enemy:MANICORN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2412,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":87,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2616,
+                 "y":588
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1772,7 +1827,7 @@
          "y":0
         }],
  "nextlayerid":28,
- "nextobjectid":83,
+ "nextobjectid":88,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

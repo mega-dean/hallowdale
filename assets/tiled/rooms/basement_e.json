@@ -733,8 +733,8 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":2304,
-                 "y":336
+                 "x":1668,
+                 "y":360
                 }, 
                 {
                  "height":24,
@@ -744,8 +744,19 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":1716,
-                 "y":360
+                 "x":2304,
+                 "y":336
+                }, 
+                {
+                 "height":24,
+                 "id":42,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2760,
+                 "y":252
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1232,7 +1243,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":42,
+ "nextobjectid":43,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

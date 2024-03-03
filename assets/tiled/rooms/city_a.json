@@ -229,6 +229,94 @@
                  "width":20,
                  "x":843,
                  "y":76
+                }, 
+                {
+                 "height":24,
+                 "id":52,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":552,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":53,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1176,
+                 "y":300
+                }, 
+                {
+                 "height":24,
+                 "id":54,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1752,
+                 "y":288
+                }, 
+                {
+                 "height":24,
+                 "id":55,
+                 "name":"enemy:BIRD_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":936,
+                 "y":120
+                }, 
+                {
+                 "height":24,
+                 "id":56,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2928,
+                 "y":168
+                }, 
+                {
+                 "height":24,
+                 "id":57,
+                 "name":"enemy:GOAT",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2304,
+                 "y":336
+                }, 
+                {
+                 "height":24,
+                 "id":59,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1848,
+                 "y":180
+                }, 
+                {
+                 "height":24,
+                 "id":60,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2172,
+                 "y":156
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1044,7 +1132,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":52,
+ "nextobjectid":61,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

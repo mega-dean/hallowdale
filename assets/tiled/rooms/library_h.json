@@ -1010,6 +1010,83 @@
                  "width":20,
                  "x":518,
                  "y":735
+                }, 
+                {
+                 "height":24,
+                 "id":56,
+                 "name":"enemy:GOAT",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":84,
+                 "y":132
+                }, 
+                {
+                 "height":24,
+                 "id":57,
+                 "name":"enemy:GOAT",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":372,
+                 "y":576
+                }, 
+                {
+                 "height":24,
+                 "id":58,
+                 "name":"enemy:GOAT",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":408,
+                 "y":732
+                }, 
+                {
+                 "height":24,
+                 "id":59,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":48,
+                 "y":1092
+                }, 
+                {
+                 "height":24,
+                 "id":60,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":516,
+                 "y":900
+                }, 
+                {
+                 "height":24,
+                 "id":61,
+                 "name":"enemy:MANICORN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":72,
+                 "y":924
+                }, 
+                {
+                 "height":24,
+                 "id":62,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":540,
+                 "y":180
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2072,7 +2149,7 @@
          "y":0
         }],
  "nextlayerid":21,
- "nextobjectid":56,
+ "nextobjectid":63,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

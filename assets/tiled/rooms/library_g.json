@@ -464,25 +464,25 @@
                  "y":360
                 }, 
                 {
-                 "height":48,
+                 "height":24,
                  "id":17,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":24,
-                 "x":2304,
-                 "y":228
-                }, 
-                {
-                 "height":72,
-                 "id":20,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":276,
                  "x":2328,
+                 "y":276
+                }, 
+                {
+                 "height":48,
+                 "id":20,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":300,
+                 "x":2304,
                  "y":228
                 }, 
                 {
@@ -886,6 +886,138 @@
                  "width":17,
                  "x":3040,
                  "y":593
+                }, 
+                {
+                 "height":24,
+                 "id":59,
+                 "name":"enemy:GOAT_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2448,
+                 "y":204
+                }, 
+                {
+                 "height":24,
+                 "id":60,
+                 "name":"enemy:HUMBUG_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2508,
+                 "y":384
+                }, 
+                {
+                 "height":24,
+                 "id":62,
+                 "name":"enemy:HUMBUG_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1632,
+                 "y":120
+                }, 
+                {
+                 "height":24,
+                 "id":63,
+                 "name":"enemy:HUMBUG_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1740,
+                 "y":144
+                }, 
+                {
+                 "height":24,
+                 "id":64,
+                 "name":"enemy:HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1956,
+                 "y":540
+                }, 
+                {
+                 "height":24,
+                 "id":65,
+                 "name":"enemy:HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":924,
+                 "y":540
+                }, 
+                {
+                 "height":24,
+                 "id":66,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":828,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":67,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":936,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":68,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1044,
+                 "y":276
+                }, 
+                {
+                 "height":24,
+                 "id":69,
+                 "name":"enemy:HOPPING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2892,
+                 "y":588
+                }, 
+                {
+                 "height":24,
+                 "id":70,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":672,
+                 "y":300
+                }, 
+                {
+                 "height":24,
+                 "id":71,
+                 "name":"enemy:HOPPING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":576,
+                 "y":300
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1466,7 +1598,7 @@
          "y":0
         }],
  "nextlayerid":17,
- "nextobjectid":59,
+ "nextobjectid":72,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

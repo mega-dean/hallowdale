@@ -1221,34 +1221,12 @@
                 {
                  "height":30,
                  "id":130,
-                 "name":"hidden-enemy:MANICORN_3",
+                 "name":"hidden-enemy:MANICORN_BOSS",
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":16,
                  "x":500,
-                 "y":1134
-                }, 
-                {
-                 "height":30,
-                 "id":131,
-                 "name":"hidden-enemy:MANICORN_3",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":589,
-                 "y":1134
-                }, 
-                {
-                 "height":30,
-                 "id":132,
-                 "name":"hidden-enemy:MANICORN_3",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":682,
                  "y":1134
                 }, 
                 {
@@ -1283,6 +1261,28 @@
                  "width":234,
                  "x":2118,
                  "y":764
+                }, 
+                {
+                 "height":30,
+                 "id":140,
+                 "name":"hidden-enemy:MANICORN_BOSS",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":608,
+                 "y":1134
+                }, 
+                {
+                 "height":30,
+                 "id":141,
+                 "name":"hidden-enemy:MANICORN_BOSS",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":692,
+                 "y":1134
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2917,7 +2917,7 @@
          "y":0
         }],
  "nextlayerid":24,
- "nextobjectid":140,
+ "nextobjectid":142,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

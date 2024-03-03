@@ -314,6 +314,61 @@
                  "width":76,
                  "x":903,
                  "y":85
+                }, 
+                {
+                 "height":24,
+                 "id":25,
+                 "name":"enemy:HUMBUG_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":300,
+                 "y":360
+                }, 
+                {
+                 "height":24,
+                 "id":26,
+                 "name":"enemy:HUMBUG_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":768,
+                 "y":348
+                }, 
+                {
+                 "height":24,
+                 "id":27,
+                 "name":"enemy:BLACKSMITH",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1116,
+                 "y":528
+                }, 
+                {
+                 "height":24,
+                 "id":29,
+                 "name":"enemy:BLACKSMITH",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1092,
+                 "y":204
+                }, 
+                {
+                 "height":24,
+                 "id":30,
+                 "name":"enemy:HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1176,
+                 "y":348
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1157,7 +1212,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":25,
+ "nextobjectid":31,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

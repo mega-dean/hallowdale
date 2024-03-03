@@ -357,6 +357,7 @@
          "y":0
         }, 
         {
+         "color":"#658faf",
          "draworder":"topdown",
          "id":12,
          "name":"triggers",
@@ -371,6 +372,39 @@
                  "width":20,
                  "x":2115,
                  "y":280
+                }, 
+                {
+                 "height":24,
+                 "id":35,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1704,
+                 "y":456
+                }, 
+                {
+                 "height":24,
+                 "id":36,
+                 "name":"enemy:BIRD",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1860,
+                 "y":252
+                }, 
+                {
+                 "height":24,
+                 "id":37,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1320,
+                 "y":360
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -438,6 +472,7 @@
          "y":0
         }, 
         {
+         "color":"#6c9e83",
          "draworder":"topdown",
          "id":5,
          "name":"floors",
@@ -680,18 +715,18 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":36,
-                 "x":1440,
-                 "y":384
+                 "width":252,
+                 "x":1188,
+                 "y":420
                 }, 
                 {
-                 "height":72,
+                 "height":36,
                  "id":25,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":252,
+                 "width":288,
                  "x":1188,
                  "y":384
                 }, 
@@ -1336,7 +1371,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":35,
+ "nextobjectid":38,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

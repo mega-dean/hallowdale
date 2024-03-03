@@ -626,6 +626,127 @@
                  "width":20,
                  "x":1311,
                  "y":113
+                }, 
+                {
+                 "height":24,
+                 "id":63,
+                 "name":"enemy:GOAT_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":540,
+                 "y":1440
+                }, 
+                {
+                 "height":24,
+                 "id":64,
+                 "name":"enemy:GOAT_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1380,
+                 "y":1440
+                }, 
+                {
+                 "height":24,
+                 "id":65,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":360,
+                 "y":132
+                }, 
+                {
+                 "height":24,
+                 "id":66,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":660,
+                 "y":936
+                }, 
+                {
+                 "height":24,
+                 "id":67,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1284,
+                 "y":756
+                }, 
+                {
+                 "height":24,
+                 "id":68,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1236,
+                 "y":432
+                }, 
+                {
+                 "height":24,
+                 "id":69,
+                 "name":"enemy:MANICORN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":984,
+                 "y":108
+                }, 
+                {
+                 "height":24,
+                 "id":70,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1032,
+                 "y":1068
+                }, 
+                {
+                 "height":24,
+                 "id":71,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":312,
+                 "y":888
+                }, 
+                {
+                 "height":24,
+                 "id":72,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":480,
+                 "y":636
+                }, 
+                {
+                 "height":24,
+                 "id":73,
+                 "name":"enemy:PENGUIN",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":660,
+                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -926,8 +1047,8 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":228,
-                 "x":60,
+                 "width":216,
+                 "x":72,
                  "y":660
                 }, 
                 {
@@ -2991,7 +3112,7 @@
          "y":0
         }],
  "nextlayerid":23,
- "nextobjectid":63,
+ "nextobjectid":74,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

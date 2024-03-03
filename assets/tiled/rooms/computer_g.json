@@ -228,6 +228,50 @@
                  "width":17,
                  "x":76,
                  "y":316
+                }, 
+                {
+                 "height":24,
+                 "id":87,
+                 "name":"enemy:FLYING_HIPPIE",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2760,
+                 "y":120
+                }, 
+                {
+                 "height":24,
+                 "id":88,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":2172,
+                 "y":120
+                }, 
+                {
+                 "height":24,
+                 "id":89,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1932,
+                 "y":108
+                }, 
+                {
+                 "height":24,
+                 "id":90,
+                 "name":"enemy:HUMBUG",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":396,
+                 "y":204
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1363,7 +1407,7 @@
          "y":0
         }],
  "nextlayerid":19,
- "nextobjectid":87,
+ "nextobjectid":91,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
