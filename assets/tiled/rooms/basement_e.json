@@ -727,17 +727,6 @@
                 }, 
                 {
                  "height":24,
-                 "id":39,
-                 "name":"enemy:MANICORN",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":24,
-                 "x":1656,
-                 "y":360
-                }, 
-                {
-                 "height":24,
                  "id":40,
                  "name":"enemy:MANICORN_2",
                  "rotation":0,
@@ -746,6 +735,17 @@
                  "width":24,
                  "x":2304,
                  "y":336
+                }, 
+                {
+                 "height":24,
+                 "id":41,
+                 "name":"enemy:HOPPING_HIPPIE_2",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":1716,
+                 "y":360
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1232,7 +1232,7 @@
          "y":0
         }],
  "nextlayerid":18,
- "nextobjectid":41,
+ "nextobjectid":42,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

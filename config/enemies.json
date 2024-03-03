@@ -1807,11 +1807,13 @@
             "h": 30,
             "dream_nail": {},
             "attrs": [
-                ["hop_vx", 400.0],
+                ["min_hop_vx", 400.0],
+                ["max_hop_vx", 400.0],
                 ["hop_vy", -600.0],
                 ["turn_dx", 250.0]
             ],
             "unscaled_attrs": [
+                ["land_duration", 0.0]
             ],
             "texture_configs": [
                 ["idle", {
@@ -1828,17 +1830,19 @@
         [ "HOPPING_HIPPIE_2", {
             "kind": "enemy",
             "health": 130,
-            "scale": 4,
-            "gravity_multiplier": 2,
+            "scale": 3,
+            "gravity_multiplier": 4,
             "w": 28,
             "h": 30,
             "dream_nail": {},
             "attrs": [
-                ["hop_vx", 400.0],
-                ["hop_vy", -1200.0],
+                ["min_hop_vx", 200.0],
+                ["max_hop_vx", 600.0],
+                ["hop_vy", -2200.0],
                 ["turn_dx", 250.0]
             ],
             "unscaled_attrs": [
+                ["land_duration", 0.6]
             ],
             "texture_configs": [
                 ["idle", {

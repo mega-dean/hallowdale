@@ -731,7 +731,8 @@ module Hopping_hippie_actions = struct
     | _ -> failwithf "Hopping_Hippie_actions.from_string: %s" s
 
   let set (enemy : enemy) ?(frame_props = String.Map.empty) (action : t) ~frame_time =
-    let _ = (frame_props, frame_time) in
+    let _ = frame_time in
+    let get_frame_prop s = get_prop s frame_props in
     let pose_name =
       match action with
       | LANDED ->
@@ -743,7 +744,7 @@ module Hopping_hippie_actions = struct
         enemy.entity.v.x <- -.enemy.entity.v.x;
         "idle"
       | HOP ->
-        move_forward enemy (get_attr enemy "hop_vx");
+        move_forward enemy (get_frame_prop "hop_vx");
         enemy.entity.v.y <- get_attr enemy "hop_vy";
         enemy.entity.current_floor <- None;
         "idle"
@@ -764,6 +765,7 @@ module Hopping_hippie : M = struct
 
   let choose_behavior (enemy : enemy) args =
     let frame_time = args.frame_time in
+    let ghost_pos = args.ghost_pos in
     match enemy.entity.current_floor with
     | None ->
       let last_turn = action_started_at enemy "turn" in
@@ -777,7 +779,31 @@ module Hopping_hippie : M = struct
         (enemy_x < floor.pos.x +. dx || enemy_x > floor.pos.x +. floor.w -. dx)
         && frame_time -. last_turn.at > 0.5
       in
-      Action.start_and_log enemy (if should_turn then TURN else HOP) ~frame_time
+      let should_stay_landed =
+        let last_landed = get_prop ~default:(Some 0.) "landed" enemy.status.props in
+        frame_time -. last_landed < get_attr enemy "land_duration"
+      in
+      if List.length enemy.floor_collisions_this_frame > 0 then
+        (
+          set_prop enemy "landed" frame_time;
+          if enemy.level = 2 then
+            face_ghost enemy ~ghost_pos
+        )
+      else (
+        let (action, frame_props) : Action.t * (string * float) list =
+          if should_stay_landed then
+            (LANDED, [])
+          else if should_turn then
+            (TURN, [])
+          else
+            ( HOP,
+              [
+                ( "hop_vx",
+                  Random.float_between (get_attr enemy "min_hop_vx") (get_attr enemy "max_hop_vx")
+                );
+              ] )
+        in
+        Action.start_and_log enemy action ~frame_time ~frame_props)
 end
 
 module Luis_guzman_actions = struct
