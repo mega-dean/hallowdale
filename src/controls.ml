@@ -197,7 +197,7 @@ let default_keybinds : (game_action * Raylib.Key.t) list =
     (C_DASH, Raylib.Key.S);
     (D_NAIL, Raylib.Key.D);
     (CAST, Raylib.Key.F);
-    (INTERACT, Raylib.Key.Left_shift);
+    (INTERACT, Raylib.Key.V);
     (* menus *)
     (OPEN_MAP, Raylib.Key.Tab);
     (PAUSE, Raylib.Key.Escape);

@@ -205,18 +205,18 @@ let get_steps
         | "annies-boobs" -> (
           let rewards : (int * reward) list =
             [
-              (2, INCREASE_MAX_SOUL);
-              ( 3,
+              (20, INCREASE_MAX_SOUL);
+              ( 30,
                 ABILITY
                   ( "Soul Catcher",
                     "Increases the amount of LIFE VAPOR gained when striking an enemy." ) );
-              (4, ABILITY ("Quick Focus", "Increases the speed of focusing LIFE VAPOR."));
-              (5, INCREASE_MAX_SOUL);
-              ( 6,
+              (40, ABILITY ("Quick Focus", "Increases the speed of focusing LIFE VAPOR."));
+              (50, INCREASE_MAX_SOUL);
+              ( 60,
                 ABILITY
                   ( "Soul Catcher",
                     "Increases the amount of LIFE VAPOR gained when striking an enemy." ) );
-              ( 7,
+              ( 70,
                 ABILITY
                   ( "Dream Wielder",
                     "Charge the Honda Nail faster and collect more LIFE VAPOR when striking foes."

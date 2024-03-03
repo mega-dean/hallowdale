@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2024-03-03
+
+- last-minute fixes and cleanup
+
 ## [0.3.0] - 2024-03-03
 
 - disable borderless window
@@ -140,6 +144,7 @@
 
 - demo release
 
+[1.0.0]: https://github.com/mega-dean/hallowdale/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/mega-dean/hallowdale/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mega-dean/hallowdale/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mega-dean/hallowdale/compare/v0.0.15...v0.1.0
