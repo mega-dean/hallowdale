@@ -30,4 +30,5 @@ let () =
 
   Raylib.set_target_fps Config.window.fps;
   Random.self_init ();
+  File.maybe_create_saves_dir ();
   State.init () |> loop

@@ -718,7 +718,7 @@ let set_pose
     (frame_time : float) =
   let player = game.player in
   let update_vx multiplier =
-    let mult = if player.ghost.entity.sprite.facing_right then multiplier else -1. *. multiplier in
+    let mult = if player.ghost.entity.sprite.facing_right then multiplier else -.multiplier in
     player.ghost.entity.v.x <- mult *. Config.ghost.vx
   in
   (* TODO bad name *)
@@ -922,7 +922,7 @@ let spawn_vengeful_spirit
       else
         Config.action.vengeful_spirit_vx
     in
-    if facing_right then vx else -1. *. vx
+    if facing_right then vx else -.vx
   in
   let projectile : projectile =
     {
@@ -2804,7 +2804,7 @@ let tick (game : game) (state : state) =
           | None -> vy +. dvy)
       in
       (* no max_vy applied when ascending, only descending *)
-      Float.bound (-1. *. Float.max_float) vy' Config.ghost.max_vy
+      Float.bound (-.Float.max_float) vy' Config.ghost.max_vy
     in
     let exiting = Room.handle_transitions state game in
     if not exiting then (

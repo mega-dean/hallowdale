@@ -7,6 +7,11 @@ let save_file_path idx = make_root_path [ "saves"; fmt "%d.json" idx ]
 let mkdir (dir : string) : unit = Sys.mkdir dir 0o775
 let ls (dir : string) : string list = Sys.readdir dir |> Array.to_list
 
+let maybe_create_saves_dir () =
+  let saves_dir_path = make_root_path ["saves"] in
+  if not (Sys.file_exists saves_dir_path) then
+    mkdir saves_dir_path
+
 let read (filename : string) : string =
   let ch = open_in_bin filename in
   let s = really_input_string ch (in_channel_length ch) in

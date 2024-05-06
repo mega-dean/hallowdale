@@ -7,7 +7,7 @@ let get_normal (line : line) : line =
   else if line.a = 0. then
     { a = 1.; b = 0.; c = 0. }
   else (
-    let slope = -1. *. (line.a /. line.b) in
+    let slope = -.(line.a /. line.b) in
     { a = 1. /. slope; b = 1.; c = 0. })
 
 (* from https://math.stackexchange.com/a/4604660 *)
@@ -20,9 +20,9 @@ let project_point_onto_line (line : line) (point : vector) : vector =
     if line.b = 0. then (
       if line.a = 0. then
         failwith "cannot project onto zero vector";
-      { x = -1. *. (line.c /. line.a); y = 0. })
+      { x = -.(line.c /. line.a); y = 0. })
     else
-      { x = 0.; y = -1. *. (line.c /. line.b) }
+      { x = 0.; y = -.(line.c /. line.b) }
   in
   let (v : vector) =
     if line.a = 0. then
@@ -30,7 +30,7 @@ let project_point_onto_line (line : line) (point : vector) : vector =
     else if line.b = 0. then
       { x = 0.; y = 1. }
     else
-      { x = line.b; y = -1. *. line.a }
+      { x = line.b; y = -.line.a }
   in
   let s : float = dot (subtract_points point p0) v /. dot v v in
   let scaled_v = scale v s in

@@ -70,7 +70,7 @@ let init (params : room_params) : room =
     let get_object_rect ?(hidden = false) (coll_rect : Json_t.coll_rect) =
       let rect = scale_room_rect coll_rect.x coll_rect.y coll_rect.w coll_rect.h in
       if hidden then
-        { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } }
+        { rect with pos = { x = -.rect.pos.x; y = -.rect.pos.y } }
       else
         rect
     in
@@ -160,7 +160,7 @@ let init (params : room_params) : room =
       let get_object_trigger ?(hidden = false) ?(label = None) kind : trigger =
         let dest : rect =
           if hidden then
-            { rect with pos = { x = -1. *. rect.pos.x; y = -1. *. rect.pos.y } }
+            { rect with pos = { x = -.rect.pos.x; y = -.rect.pos.y } }
           else
             rect
         in

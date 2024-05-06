@@ -41,8 +41,8 @@ let freeze (entity : entity) = entity.frozen <- true
 let unfreeze (entity : entity) = entity.frozen <- false
 
 let move_offscreen (entity : entity) =
-  entity.dest.pos.x <- -1. *. abs_float entity.dest.pos.x;
-  entity.dest.pos.y <- -1. *. abs_float entity.dest.pos.y
+  entity.dest.pos.x <- -.abs_float entity.dest.pos.x;
+  entity.dest.pos.y <- -.abs_float entity.dest.pos.y
 
 let move_onscreen (entity : entity) =
   entity.dest.pos.x <- abs_float entity.dest.pos.x;
@@ -218,7 +218,7 @@ let apply_collisions
           entity.frozen <- true)
         else (
           entity.v.x <- entity.v.x *. 0.3;
-          entity.v.y <- entity.v.y *. -1. *. entity.config.bounce)
+          entity.v.y <- entity.v.y *. -.entity.config.bounce)
     | DOWN ->
       if ascending entity || Option.is_some entity.y_recoil then (
         entity.v.y <- 0.;
@@ -321,7 +321,7 @@ let set_facing_right (entity : entity) (direction : direction) =
 
 (* this uses Config.ghost.vx, which works fine for npcs in cutscenes *)
 let update_vx (entity : entity) multiplier =
-  let mult = if entity.sprite.facing_right then multiplier else -1. *. multiplier in
+  let mult = if entity.sprite.facing_right then multiplier else -.multiplier in
   entity.v.x <- mult *. Config.ghost.vx
 
 let walk_ghost ?(update_facing = true) (entity : entity) (direction : direction) : unit =

@@ -199,10 +199,10 @@ let maybe_take_damage
       let v =
         let v' = get_attr enemy "death_recoil_v" in
         match collision.collided_from with
-        | UP -> { x = 0.; y = -1. *. v' }
+        | UP -> { x = 0.; y = -.v' }
         | DOWN -> { x = 0.; y = v' }
         | RIGHT -> { x = v'; y = 0. }
-        | LEFT -> { x = -1. *. v'; y = 0. }
+        | LEFT -> { x = -.v'; y = 0. }
       in
       enemy.entity.v <- v;
       (* this is just undoing the changes above, because the enemy isn't quite dead yet *)
@@ -600,7 +600,7 @@ module Duncan_actions = struct
         if enemy.entity.sprite.facing_right then
           enemy.entity.v.x <- walk_vx
         else
-          enemy.entity.v.x <- -1. *. walk_vx
+          enemy.entity.v.x <- -.walk_vx
       in
       match action with
       | WALK_DEAD ->
@@ -1076,7 +1076,7 @@ module Joshua_actions = struct
         if enemy.entity.sprite.facing_right then
           enemy.entity.v.x <- dash_vx
         else
-          enemy.entity.v.x <- -1. *. dash_vx;
+          enemy.entity.v.x <- -.dash_vx;
         "dash"
       | CHARGE_DASH ->
         enemy.entity.v.x <- 0.;
@@ -1710,7 +1710,7 @@ module Lava_britta_actions = struct
         if enemy.entity.sprite.facing_right then
           enemy.entity.v.x <- walk_vx
         else
-          enemy.entity.v.x <- -1. *. walk_vx
+          enemy.entity.v.x <- -.walk_vx
       in
       match action with
       | WALK ->
@@ -2797,7 +2797,7 @@ module Locker_boy_actions = struct
             get_frame_prop "boss_area_left")
           else (
             enemy.entity.sprite.facing_right <- false;
-            enemy.entity.v.x <- -1. *. get_attr enemy "dash_vx";
+            enemy.entity.v.x <- -.get_attr enemy "dash_vx";
             get_frame_prop "boss_area_right")
         in
         Entity.unhide enemy.entity;
@@ -2948,7 +2948,7 @@ module Frog_actions = struct
       | HOMING ->
         let min_v, max_v =
           let v' = get_attr enemy "homing_v" in
-          (-1. *. v', v')
+          (-.v', v')
         in
         let dv = get_frame_prop "random_homing_dv" in
         let larger v = Float.bound min_v (v +. dv) max_v in
@@ -3209,13 +3209,13 @@ module Fish_actions = struct
             rand_vx)
           else (
             enemy.entity.sprite.facing_right <- false;
-            -1. *. rand_vx)
+            -.rand_vx)
         in
         let new_vy =
           if enemy.initial_pos.y > enemy.entity.dest.pos.y then
             rand_vy
           else
-            -1. *. rand_vy
+            -.rand_vy
         in
         enemy.entity.v.x <- new_vx;
         enemy.entity.v.y <- new_vy;
@@ -3269,7 +3269,7 @@ module Penguin_actions = struct
       if enemy.entity.sprite.facing_right then
         enemy.entity.v.x <- walk_vx
       else
-        enemy.entity.v.x <- -1. *. walk_vx
+        enemy.entity.v.x <- -.walk_vx
     in
     let pose_name =
       match action with
@@ -3330,13 +3330,13 @@ module Flying_hippie_actions = struct
             rand_vx)
           else (
             enemy.entity.sprite.facing_right <- false;
-            -1. *. rand_vx)
+            -.rand_vx)
         in
         let new_vy =
           if enemy.initial_pos.y > enemy.entity.dest.pos.y then
             rand_vy
           else
-            -1. *. rand_vy
+            -.rand_vy
         in
         enemy.entity.v.x <- new_vx;
         enemy.entity.v.y <- new_vy;
@@ -3445,13 +3445,13 @@ module Bird_actions = struct
             rand_vx)
           else (
             enemy.entity.sprite.facing_right <- false;
-            -1. *. rand_vx)
+            -.rand_vx)
         in
         let new_vy =
           if enemy.initial_pos.y > enemy.entity.dest.pos.y then
             rand_vy
           else
-            -1. *. rand_vy
+            -.rand_vy
         in
         enemy.entity.v.x <- new_vx;
         enemy.entity.v.y <- new_vy;
@@ -3529,13 +3529,13 @@ module Humbug_actions = struct
             rand_vx)
           else (
             enemy.entity.sprite.facing_right <- false;
-            -1. *. rand_vx)
+            -.rand_vx)
         in
         let new_vy =
           if enemy.initial_pos.y > enemy.entity.dest.pos.y then
             rand_vy
           else
-            -1. *. rand_vy
+            -.rand_vy
         in
         enemy.entity.v.x <- new_vx;
         enemy.entity.v.y <- new_vy;

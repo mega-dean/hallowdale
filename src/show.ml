@@ -9,8 +9,8 @@ let option (to_str : 'a -> string) (v : 'a option) =
 let line (line : line) = fmt "[%0.1fx + %0.1fy + %0.1f = 0.]" line.a line.b line.c
 
 let line_mx_b (line : line) : string =
-  let slope = -1. *. (line.a /. line.b) in
-  let y_intercept = -1. *. (line.c /. line.b) in
+  let slope = -.(line.a /. line.b) in
+  let y_intercept = -.(line.c /. line.b) in
   fmt "y = %0.1fx + %0.1f" slope y_intercept
 
 let vector (v : vector) : string = fmt "(%0.1f, %0.1f)" v.x v.y
