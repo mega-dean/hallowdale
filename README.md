@@ -4,6 +4,7 @@
 An homage to Hollow Knight.
 
 [itch.io page](https://mega-dean.itch.io/hallowdale)
+[trailer](https://vimeo.com/922178452)
 
 ![main menu screenshot](./assets/main-menu-screenshot.png)
 ![world map screenshot](./assets/npcs/shared/world-map.png)

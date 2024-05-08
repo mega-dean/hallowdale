@@ -573,6 +573,9 @@ let get_steps
     | "cutscene" -> (
       match trigger.name_suffix with
       | "ss-opening-poem" -> opening_poem
+      | "clear-corner-text" -> [
+          STEP UNSET_CORNER_TEXT
+        ]
       | "opening-poem" ->
         opening_poem
         @ [
@@ -580,6 +583,11 @@ let get_steps
             CURRENT_GHOST (SET_POSE (PERFORMING FOCUS));
             STEP (SHAKE_SCREEN 1.5);
             STEP (WAIT 2.5);
+            STEP
+              (CORNER_TEXT
+                 (fmt "Press %s to jump, press %s to attack"
+                    (key_or_button ~color:false state JUMP)
+                    (key_or_button ~color:false state NAIL)));
           ]
       | "mama-mahogany" ->
         [

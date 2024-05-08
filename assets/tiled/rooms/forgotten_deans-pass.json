@@ -858,6 +858,17 @@
                  "width":72,
                  "x":2628,
                  "y":360
+                }, 
+                {
+                 "height":180,
+                 "id":257,
+                 "name":"cutscene:clear-corner-text",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":108,
+                 "x":972,
+                 "y":1188
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -4932,7 +4943,7 @@
          "y":0
         }],
  "nextlayerid":34,
- "nextobjectid":257,
+ "nextobjectid":258,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
