@@ -25,8 +25,8 @@ automapping/fix-terrain-tile-seams.tmj
 
 
 ############ draw hanging shadows ############
-# automapping/reset-shadows.tmj
-# automapping/draw-hanging-shadows.tmj
+automapping/reset-shadows.tmj
+automapping/draw-hanging-shadows.tmj
 
 
 [trampoline_*]
