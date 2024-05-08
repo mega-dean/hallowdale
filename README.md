@@ -26,7 +26,7 @@ run. A sha256 checksum of the `.tar.gz` file is generated during the build proce
 #### Classic
 
 This is like normal Hollow Knight gameplay, and has cutscenes that follow the episode "Geothermal
-Escapism". This game mode is disabled until the map can be updated to handle both game modes.
+Escapism".
 
 #### Steel Sole
 
