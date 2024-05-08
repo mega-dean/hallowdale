@@ -896,6 +896,7 @@ let get_steps
             STEP (HIDE_LAYER "boss-doors");
             PARTY_GHOST (JEFF, ENTITY HIDE);
             PARTY_GHOST (ANNIE, ENTITY HIDE);
+            CURRENT_GHOST FILL_HEALTH;
           ]
       | LOCKER_BOY ->
         [
@@ -1083,6 +1084,7 @@ let get_steps
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
           STEP (WAIT 1.);
+          CURRENT_GHOST FILL_HEALTH;
         ]
       | LUIS_GUZMAN ->
         game.interaction.use_dashes_in_archives <- Some false;
@@ -1099,6 +1101,7 @@ let get_steps
                   this is a special school." ));
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
+          CURRENT_GHOST FILL_HEALTH;
         ]
       | BUDDY ->
         [
@@ -1113,6 +1116,7 @@ let get_steps
                   no..." ));
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
+          CURRENT_GHOST FILL_HEALTH;
         ]
       | VICE_DEAN_LAYBOURNE ->
         let facing =
@@ -1132,6 +1136,7 @@ let get_steps
           ENEMY (VICE_DEAN_LAYBOURNE, SET_POSE "dead");
           STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
+          CURRENT_GHOST FILL_HEALTH;
         ]
       | DEAN ->
         [
@@ -1143,7 +1148,9 @@ let get_steps
                ( "Dean",
                  "So after all my work, how will I be remembered? The bald dean with glasses, I \
                   guess." ));
+          STEP (WAIT 1.);
           STEP (HIDE_LAYER "boss-doors");
+          CURRENT_GHOST FILL_HEALTH;
         ]
       | JOSHUA ->
         [
@@ -1161,6 +1168,7 @@ let get_steps
           CURRENT_GHOST (ENTITY UNSET_FLOOR);
           ENEMY (JOSHUA, ENTITY UNSET_FLOOR);
           STEP (WAIT 1.);
+          CURRENT_GHOST FILL_HEALTH;
         ]
       | MANICORN_BOSS ->
         game.in_boss_fight <- true;

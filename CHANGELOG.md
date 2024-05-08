@@ -4,6 +4,7 @@
 
 - create saves/ folder if it doesn't exist
 - add instructions for jump/attack at the beginning of the game
+- heal after killing some bosses
 
 ## [1.0.0] - 2024-03-03
 

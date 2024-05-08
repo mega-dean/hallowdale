@@ -668,6 +668,7 @@ module Interaction = struct
 
   type ghost_step =
     | FILL_LIFE_VAPOR
+    | FILL_HEALTH
     | CLAIM_REWARD of int * reward
     | INCREASE_HEALTH_TEXT of string
     | (* this isn't using (PARTY (SET_POSE ...)) because it uses the real Ghost.set_pose

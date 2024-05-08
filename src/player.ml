@@ -1929,6 +1929,7 @@ let tick (game : game) (state : state) =
           match step with
           | SET_POSE pose -> set_pose game pose state.global.textures.ghost_bodies state.frame.time
           | FILL_LIFE_VAPOR -> player.soul.current <- player.soul.max
+          | FILL_HEALTH -> player.health.current <- player.health.max
           | CLAIM_REWARD (amount, reward) -> (
             game.progress.last_upgrade_claimed <- amount;
             match reward with
